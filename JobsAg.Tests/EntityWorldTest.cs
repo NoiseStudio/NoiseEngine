@@ -26,5 +26,36 @@ namespace NoiseStudio.JobsAg.Tests {
             Assert.Equal(0, group0.GetHashCode());
         }
 
+        [Fact]
+        public void GetEntityGroup() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            EntityGroup groupA = world.GetEntityGroup(entity);
+            Assert.Equal(groupA, world.GetEntityGroup(entity));
+
+            entity.Add(world, new TestComponentA());
+            EntityGroup groupB = world.GetEntityGroup(entity);
+
+            Assert.NotEqual(groupA, groupB);
+        }
+
+        [Fact]
+        public void SetEntityGroup() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            EntityGroup groupA = world.GetEntityGroup(entity);
+
+            entity.Add(world, new TestComponentA());
+            EntityGroup groupB = world.GetEntityGroup(entity);
+
+            Assert.Equal(groupB, world.GetEntityGroup(entity));
+            Assert.NotEqual(groupA, groupB);
+
+            world.SetEntityGroup(entity, groupA);
+            Assert.Equal(groupA, world.GetEntityGroup(entity));
+        }
+
     }
 }

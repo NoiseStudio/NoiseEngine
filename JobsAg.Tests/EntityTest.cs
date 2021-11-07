@@ -1,7 +1,43 @@
 using Xunit;
+using System;
 
 namespace NoiseStudio.JobsAg.Tests {
     public class EntityTest {
+
+        [Fact]
+        public void AddComponent() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            entity.Add(world, new TestComponentA());
+            Assert.Throws<InvalidOperationException>(() => {
+                entity.Add(world, new TestComponentA());
+            });
+        }
+
+        [Fact]
+        public void RemoveComponent() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            entity.Add(world, new TestComponentA());
+
+            entity.Remove<TestComponentA>(world);
+            Assert.Throws<InvalidOperationException>(() => {
+                entity.Remove<TestComponentA>(world);
+            });
+        }
+
+        [Fact]
+        public void HasComponent() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            Assert.False(entity.Has<TestComponentA>(world));
+            
+            entity.Add(world, new TestComponentA());
+            Assert.True(entity.Has<TestComponentA>(world));
+        }
 
         [Fact]
         public void GetHashCodeTest() {

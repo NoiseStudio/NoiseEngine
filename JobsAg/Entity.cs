@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NoiseStudio.JobsAg {
     public readonly struct Entity : IEquatable<Entity> {
@@ -32,6 +33,53 @@ namespace NoiseStudio.JobsAg {
         /// <returns>True if obj is an instance of Entity and equals the value of this instance or when not returns false</returns>
         public override bool Equals(object? obj) {
             return obj is Entity other && Equals(other);
+        }
+
+        /// <summary>
+        /// Adds component to this entity
+        /// </summary>
+        /// <typeparam name="T">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="world">Entity world assigned to this entity</param>
+        /// <param name="component">Component being added</param>
+        public void Add<T>(EntityWorld world, T component) where T : struct, IEntityComponent {
+            EntityGroup group = world.GetEntityGroup(this);
+            Type type = component.GetType();
+
+            if (group.HasComponent(type))
+                throw new InvalidOperationException($"{ToString()} already has the {type.Name} component. Use the {"Set" /* TODO: replace with nameof */} method to replace this component.");
+
+            List<Type> components = group.GetComponentsCopy();
+            components.Add(type);
+
+            world.SetEntityGroup(this, world.GetGroupFromComponents(components));
+        }
+
+        /// <summary>
+        /// Removes T component from this entity
+        /// </summary>
+        /// <typeparam name="T">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="world">Entity world assigned to this entity</param>
+        public void Remove<T>(EntityWorld world) where T : struct, IEntityComponent {
+            EntityGroup group = world.GetEntityGroup(this);
+            Type type = typeof(T);
+
+            if (!group.HasComponent(type))
+                throw new InvalidOperationException($"{ToString()} does not have the {type.Name} component.");
+
+            List<Type> components = group.GetComponentsCopy();
+            components.Remove(type);
+
+            world.SetEntityGroup(this, world.GetGroupFromComponents(components));
+        }
+
+        /// <summary>
+        /// Checks if this entity has T component
+        /// </summary>
+        /// <typeparam name="T">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="world">Entity world assigned to this entity</param>
+        /// <returns>Returns true when this entity contains T component and false when does not contains</returns>
+        public bool Has<T>(EntityWorld world) where T : struct, IEntityComponent {
+            return world.GetEntityGroup(this).HasComponent(typeof(T));
         }
 
         /// <summary>
