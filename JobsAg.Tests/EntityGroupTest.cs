@@ -8,7 +8,7 @@ namespace NoiseStudio.JobsAg.Tests {
         [Fact]
         public void GetHashCodeTest() {
             EntityGroup groupA = new EntityGroup(5, new List<Type>() { typeof(string), typeof(int) });
-            Assert.True(5 == groupA.GetHashCode());
+            Assert.Equal(5, groupA.GetHashCode());
         }
 
         [Fact]

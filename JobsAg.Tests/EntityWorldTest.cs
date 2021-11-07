@@ -8,10 +8,7 @@ namespace NoiseStudio.JobsAg.Tests {
         [Fact]
         public void NewEntity() {
             EntityWorld world = new EntityWorld();
-
-            Assert.Equal(new Entity(0), world.NewEntity());
-            world.NewEntity();
-            Assert.Equal(new Entity(2), world.NewEntity());
+            Assert.NotEqual(world.NewEntity(), world.NewEntity());
         }
 
         [Fact]
