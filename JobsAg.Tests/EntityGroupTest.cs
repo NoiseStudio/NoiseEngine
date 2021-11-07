@@ -18,9 +18,9 @@ namespace NoiseStudio.JobsAg.Tests {
             Entity entity = new Entity(0);
             groupA.AddEntity(entity);
 
-            Assert.True(1 == groupA.entities.Count);
+            Assert.Single(groupA.entities);
             groupA.RemoveEntity(entity);
-            Assert.True(0 == groupA.entities.Count);
+            Assert.Empty(groupA.entities);
         }
 
         [Fact]
