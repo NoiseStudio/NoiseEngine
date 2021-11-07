@@ -13,7 +13,7 @@ namespace NoiseStudio.JobsAg {
 
         private ulong nextEntityId = 0;
 
-        public uint Id { get; init; }
+        public uint Id { get; }
 
         public EntityWorld() {
             lock (locker)
