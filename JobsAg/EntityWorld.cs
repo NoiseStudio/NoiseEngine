@@ -8,6 +8,8 @@ namespace NoiseStudio.JobsAg {
         private static readonly object locker = new object();
         private static uint nextId = 0;
 
+        internal readonly ComponentsStorage ComponentsStorage = new ComponentsStorage();
+
         private readonly Dictionary<int, EntityGroup> groups = new Dictionary<int, EntityGroup>();
         private readonly Dictionary<Entity, EntityGroup> entityToGroup = new Dictionary<Entity, EntityGroup>();
 

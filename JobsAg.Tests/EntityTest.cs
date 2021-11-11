@@ -40,6 +40,30 @@ namespace NoiseStudio.JobsAg.Tests {
         }
 
         [Fact]
+        public void GetComponent() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            entity.Add(world, new TestComponentA() {
+                A = 9
+            });
+
+            Assert.Equal(9, entity.Get<TestComponentA>(world).A);
+        }
+
+        [Fact]
+        public void SetComponent() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            entity.Add(world, new TestComponentA());
+            entity.Set(world, new TestComponentA() {
+                A = 6
+            });
+            Assert.Equal(6, entity.Get<TestComponentA>(world).A);
+        }
+
+        [Fact]
         public void GetHashCodeTest() {
             Entity a = new Entity(11);
             Entity b = new Entity(11);
