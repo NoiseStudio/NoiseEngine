@@ -51,7 +51,13 @@ namespace NoiseStudio.JobsAg {
             List<Type> components = group.GetComponentsCopy();
             components.Add(type);
 
-            world.SetEntityGroup(this, world.GetGroupFromComponents(components));
+            group.RemoveEntity(this);
+            group = world.GetGroupFromComponents(components);
+
+            world.ComponentsStorage.AddComponent(this, component);
+
+            world.SetEntityGroup(this, group);
+            group.AddEntity(this);
         }
 
         /// <summary>
@@ -69,7 +75,13 @@ namespace NoiseStudio.JobsAg {
             List<Type> components = group.GetComponentsCopy();
             components.Remove(type);
 
-            world.SetEntityGroup(this, world.GetGroupFromComponents(components));
+            group.RemoveEntity(this);
+            group = world.GetGroupFromComponents(components);
+
+            world.ComponentsStorage.RemoveComponent<T>(this);
+
+            world.SetEntityGroup(this, group);
+            group.AddEntity(this);
         }
 
         /// <summary>
@@ -80,6 +92,26 @@ namespace NoiseStudio.JobsAg {
         /// <returns>Returns true when this entity contains T component and false when does not contains</returns>
         public bool Has<T>(EntityWorld world) where T : struct, IEntityComponent {
             return world.GetEntityGroup(this).HasComponent(typeof(T));
+        }
+
+        /// <summary>
+        /// Returns T component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="world">Entity world assigned to this entity</param>
+        /// <returns>T component assigned to this entity</returns>
+        public T Get<T>(EntityWorld world) where T : struct, IEntityComponent {
+            return world.ComponentsStorage.GetComponent<T>(this);
+        }
+
+        /// <summary>
+        /// Replaces T component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="world">Entity world assigned to this entity</param>
+        /// <param name="component">New component</param>
+        public void Set<T>(EntityWorld world, T component) where T : struct, IEntityComponent {
+            world.ComponentsStorage.SetComponent(this, component);
         }
 
         /// <summary>
