@@ -9,14 +9,15 @@ namespace NoiseStudio.JobsAg {
 
         internal Dictionary<Entity, T> AddStorage<T>() where T : struct, IEntityComponent {
             Type type = typeof(T);
-            if (storage.TryGetValue(type, out IDictionary? value))
-                return (Dictionary<Entity, T>)value;
+            lock (storage) {
+                if (storage.TryGetValue(type, out IDictionary? value))
+                    return (Dictionary<Entity, T>)value;
 
-            Dictionary<Entity, T> dictionary = new Dictionary<Entity, T>();
-            lock (storage)
+                Dictionary<Entity, T> dictionary = new Dictionary<Entity, T>();
                 storage.Add(type, dictionary);
 
-            return dictionary;
+                return dictionary;
+            }
         }
 
         internal Dictionary<Entity, T> GetStorage<T>() where T : struct, IEntityComponent {
