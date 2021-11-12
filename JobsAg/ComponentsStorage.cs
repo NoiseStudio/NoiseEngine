@@ -21,7 +21,15 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal Dictionary<Entity, T> GetStorage<T>() where T : struct, IEntityComponent {
-            return (Dictionary<Entity, T>)storage[typeof(T)];
+            return (Dictionary<Entity, T>)GetStorageWithoutCast(typeof(T));
+        }
+
+        internal IDictionary GetStorageWithoutCast<T>() where T : struct, IEntityComponent {
+            return storage[typeof(T)];
+        }
+
+        internal IDictionary GetStorageWithoutCast(Type componentType) {
+            return storage[componentType];
         }
 
         internal void AddComponent<T>(Entity entity, T component) where T : struct, IEntityComponent {
@@ -31,17 +39,23 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal void RemoveComponent<T>(Entity entity) where T : struct, IEntityComponent {
-            Dictionary<Entity, T> dictionary = GetStorage<T>();
+            IDictionary dictionary = GetStorageWithoutCast<T>();
+            lock (dictionary)
+                dictionary.Remove(entity);
+        }
+
+        internal void RemoveComponent(Type componentType, Entity entity) {
+            IDictionary dictionary = GetStorageWithoutCast(componentType);
             lock (dictionary)
                 dictionary.Remove(entity);
         }
 
         internal void SetComponent<T>(Entity entity, T component) where T : struct, IEntityComponent {
-            GetStorage<T>()[entity] = component;
+            GetStorageWithoutCast<T>()[entity] = component;
         }
 
         internal T GetComponent<T>(Entity entity) where T : struct, IEntityComponent {
-            return GetStorage<T>()[entity];
+            return (T)GetStorageWithoutCast<T>()[entity]!;
         }
 
     }
