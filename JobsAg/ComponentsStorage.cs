@@ -7,6 +7,10 @@ namespace NoiseStudio.JobsAg {
 
         private readonly Dictionary<Type, IDictionary> storage = new Dictionary<Type, IDictionary>();
 
+        internal static void SetComponent<T>(Dictionary<Entity, T> storage, Entity entity, T component) where T : struct, IEntityComponent {
+            storage[entity] = component;
+        }
+
         internal Dictionary<Entity, T> AddStorage<T>() where T : struct, IEntityComponent {
             Type type = typeof(T);
             lock (storage) {
