@@ -115,6 +115,24 @@ namespace NoiseStudio.JobsAg {
         }
 
         /// <summary>
+        /// Destroys this entity
+        /// </summary>
+        /// <param name="world">Entity world assigned to this entity</param>
+        public void Destroy(EntityWorld world) {
+            world.DestroyEntity(this);
+        }
+
+
+        /// <summary>
+        /// Checks if this entity was destroyed
+        /// </summary>
+        /// <param name="world">Entity world assigned to this entity</param>
+        /// <returns>True when this entity was destroyed or false when not</returns>
+        public bool IsDestroyed(EntityWorld world) {
+            return world.IsEntityDestroyed(this);
+        }
+
+        /// <summary>
         /// Returns a value indicating whether this instance is equal to a specified other Entity
         /// </summary>
         /// <param name="other">An Entity to compare to this instance</param>

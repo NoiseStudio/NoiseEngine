@@ -67,5 +67,19 @@ namespace NoiseStudio.JobsAg {
             entityToGroup[entity] = group;
         }
 
+        internal bool IsEntityDestroyed(Entity entity) {
+            return !entityToGroup.ContainsKey(entity);
+        }
+
+        internal void DestroyEntity(Entity entity) {
+            EntityGroup group = GetEntityGroup(entity);
+
+            lock (entityToGroup)
+                entityToGroup.Remove(entity);
+            group.RemoveEntity(entity);
+
+            group.DestroyEntityComponents(this, entity);
+        }
+
     }
 }

@@ -50,5 +50,10 @@ namespace NoiseStudio.JobsAg {
             return componentsHashSet.Contains(component);
         }
 
+        internal void DestroyEntityComponents(EntityWorld world, Entity entity) {
+            for (int i = 0; i < components.Count; i++)
+                world.ComponentsStorage.RemoveComponent(components[i], entity);
+        }
+
     }
 }

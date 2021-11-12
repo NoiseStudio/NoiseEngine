@@ -64,6 +64,31 @@ namespace NoiseStudio.JobsAg.Tests {
         }
 
         [Fact]
+        public void Destroy() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            entity.Add(world, new TestComponentA());
+            entity.Get<TestComponentA>(world);
+
+            entity.Destroy(world);
+            Assert.Throws<NullReferenceException>(() => entity.Get<TestComponentA>(world));
+        }
+
+        [Fact]
+        public void IsDestroyed() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            entity.Add(world, new TestComponentA());
+            entity.Get<TestComponentA>(world);
+
+            Assert.False(entity.IsDestroyed(world));
+            entity.Destroy(world);
+            Assert.True(entity.IsDestroyed(world));
+        }
+
+        [Fact]
         public void GetHashCodeTest() {
             Entity a = new Entity(11);
             Entity b = new Entity(11);
