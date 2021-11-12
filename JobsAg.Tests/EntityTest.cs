@@ -9,10 +9,15 @@ namespace NoiseStudio.JobsAg.Tests {
             EntityWorld world = new EntityWorld();
             Entity entity = world.NewEntity();
 
+            EntityGroup group = world.GetEntityGroup(entity);
+            Assert.Contains(entity, group.entities);
+
             entity.Add(world, new TestComponentA());
             Assert.Throws<InvalidOperationException>(() => {
                 entity.Add(world, new TestComponentA());
             });
+
+            Assert.DoesNotContain(entity, group.entities);
         }
 
         [Fact]
@@ -22,10 +27,15 @@ namespace NoiseStudio.JobsAg.Tests {
 
             entity.Add(world, new TestComponentA());
 
+            EntityGroup group = world.GetEntityGroup(entity);
+            Assert.Contains(entity, group.entities);
+
             entity.Remove<TestComponentA>(world);
             Assert.Throws<InvalidOperationException>(() => {
                 entity.Remove<TestComponentA>(world);
             });
+
+            Assert.DoesNotContain(entity, group.entities);
         }
 
         [Fact]
@@ -71,8 +81,13 @@ namespace NoiseStudio.JobsAg.Tests {
             entity.Add(world, new TestComponentA());
             entity.Get<TestComponentA>(world);
 
+            EntityGroup group = world.GetEntityGroup(entity);
+            Assert.Contains(entity, group.entities);
+
             entity.Destroy(world);
             Assert.Throws<NullReferenceException>(() => entity.Get<TestComponentA>(world));
+
+            Assert.DoesNotContain(entity, group.entities);
         }
 
         [Fact]
