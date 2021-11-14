@@ -5,15 +5,17 @@ using System.Linq;
 namespace NoiseStudio.JobsAg {
     public class EntityWorld {
 
-        internal static EntityWorld Empty { get; private set; } = new EntityWorld();
+        internal static EntityWorld Empty { get; } = new EntityWorld();
 
         private static readonly object locker = new object();
         private static uint nextId = 0;
 
         internal readonly ComponentsStorage ComponentsStorage = new ComponentsStorage();
 
-        private readonly List<EntitySystem> systems = new List<EntitySystem>();
-        private readonly Dictionary<int, EntityGroup> groups = new Dictionary<int, EntityGroup>();
+        private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
+        private readonly List<EntitySystemBase> disabledSystems = new List<EntitySystemBase>();
+        private readonly List<EntityGroup> groups = new List<EntityGroup>();
+        private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
         private readonly Dictionary<Entity, EntityGroup> entityToGroup = new Dictionary<Entity, EntityGroup>();
 
         private ulong nextEntityId = 0;
@@ -48,7 +50,7 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
         /// <exception cref="InvalidOperationException">Entity world already contains T entity system</exception>
-        public void AddSystem<T>() where T : EntitySystem, new() {
+        public void AddSystem<T>() where T : EntitySystemBase, new() {
             if(HasSystem<T>())
                 throw new InvalidOperationException($"Entity world already contains {typeof(T).FullName} entity system!");
 
@@ -56,7 +58,13 @@ namespace NoiseStudio.JobsAg {
             lock (systems)
                 systems.Add(system);
 
-            system.Init(this);
+            lock (groups) {
+                for (int i = 0; i < groups.Count; i++)
+                    system.RegisterGroup(groups[i]);
+            }
+
+            system.InternalInitialize(this);
+            system.InternalStart();
         }
 
         /// <summary>
@@ -64,12 +72,27 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
         /// <exception cref="InvalidOperationException">Entity world does not contains T entity system</exception>
-        public void RemoveSystem<T>() where T : EntitySystem, new() {
+        public void RemoveSystem<T>() where T : EntitySystemBase, new() {
             Type type = typeof(T);
             lock (systems) {
                 for (int i = 0; i < systems.Count; i++) {
-                    if (type == systems[i].GetType()) {
+                    EntitySystemBase system = systems[i];
+                    if (type == system.GetType()) {
                         systems.RemoveAt(i);
+
+                        system.InternalStop();
+                        system.InternalTerminate();
+                        return;
+                    }
+                }
+            }
+            lock (disabledSystems) {
+                for (int i = 0; i < disabledSystems.Count; i++) {
+                    EntitySystemBase system = disabledSystems[i];
+                    if (type == disabledSystems[i].GetType()) {
+                        disabledSystems.RemoveAt(i);
+
+                        system.InternalTerminate();
                         return;
                     }
                 }
@@ -82,7 +105,7 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
         /// <returns>True when this entity world contains T system or false when not</returns>
-        public bool HasSystem<T>() where T : EntitySystem, new() {
+        public bool HasSystem<T>() where T : EntitySystemBase, new() {
             Type type = typeof(T);
             lock (systems) {
                 for (int i = 0; i < systems.Count; i++) {
@@ -90,7 +113,55 @@ namespace NoiseStudio.JobsAg {
                         return true;
                 }
             }
+            lock (disabledSystems) {
+                for (int i = 0; i < disabledSystems.Count; i++) {
+                    if (type == disabledSystems[i].GetType())
+                        return true;
+                }
+            }
             return false;
+        }
+
+        /// <summary>
+        /// Enabling T entity system
+        /// </summary>
+        /// <typeparam name="T">Entity system</typeparam>
+        public void EnableSystem<T>() where T : EntitySystemBase, new() {
+            Type type = typeof(T);
+            lock (disabledSystems) {
+                for (int i = 0; i < disabledSystems.Count; i++) {
+                    EntitySystemBase system = disabledSystems[i];
+                    if (type == system.GetType()) {
+                        disabledSystems.RemoveAt(i);
+                        lock (systems)
+                            systems.Add(system);
+
+                        system.InternalStart();
+                        return;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Disabling T entity system
+        /// </summary>
+        /// <typeparam name="T">Entity system</typeparam>
+        public void DisableSystem<T>() where T : EntitySystemBase, new() {
+            Type type = typeof(T);
+            lock (systems) {
+                for (int i = 0; i < systems.Count; i++) {
+                    EntitySystemBase system = systems[i];
+                    if (type == system.GetType()) {
+                        systems.RemoveAt(i);
+                        lock (disabledSystems)
+                            disabledSystems.Add(system);
+
+                        system.InternalStop();
+                        return;
+                    }
+                }
+            }
         }
 
         internal EntityGroup GetGroupFromComponents(List<Type> components) {
@@ -100,15 +171,27 @@ namespace NoiseStudio.JobsAg {
                 hashCode ^= components[i].GetHashCode();
 
             EntityGroup? group;
-            while (groups.TryGetValue(hashCode, out group) && !group.CompareSortedComponents(components))
+            while (idToGroup.TryGetValue(hashCode, out group) && !group.CompareSortedComponents(components))
                 hashCode++;
 
             if (group == null) {
-                lock (groups) {
+                lock (idToGroup) {
                     group = new EntityGroup(hashCode, components);
-                    groups.Add(hashCode, group);
+                    idToGroup.Add(hashCode, group);
+                }
+                lock (group)
+                    groups.Add(group);
+
+                lock (systems) {
+                    foreach (EntitySystem system in systems)
+                        system.RegisterGroup(group);
+                }
+                lock (disabledSystems) {
+                    foreach (EntitySystem system in disabledSystems)
+                        system.RegisterGroup(group);
                 }
             }
+
             return group;
         }
 

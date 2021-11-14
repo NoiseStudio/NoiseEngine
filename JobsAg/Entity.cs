@@ -115,6 +115,16 @@ namespace NoiseStudio.JobsAg {
         }
 
         /// <summary>
+        /// Replaces T component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="system">Entity system which operating on this T component</param>
+        /// <param name="component">New component</param>
+        public void Set<T>(EntitySystem<T> system, T component) where T : struct, IEntityComponent {
+            system.SetComponent(this, component);
+        }
+
+        /// <summary>
         /// Returns a value indicating whether this instance is equal to a specified other Entity
         /// </summary>
         /// <param name="other">An Entity to compare to this instance</param>
