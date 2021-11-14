@@ -24,7 +24,7 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal override void InternalInitialize(EntityWorld world) {
-            components1 = world.ComponentsStorage.GetStorage<T>();
+            components1 = world.ComponentsStorage.AddStorage<T>();
 
             base.InternalInitialize(world);
         }

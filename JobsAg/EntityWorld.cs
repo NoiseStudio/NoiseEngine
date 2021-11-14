@@ -8,7 +8,6 @@ namespace NoiseStudio.JobsAg {
         private static readonly object locker = new object();
         private static uint nextId = 0;
 
-
         private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
         private readonly List<EntitySystemBase> disabledSystems = new List<EntitySystemBase>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
@@ -57,13 +56,13 @@ namespace NoiseStudio.JobsAg {
         /// <summary>
         /// Creates and adds new T system to this world
         /// </summary>
-        /// <typeparam name="T">Entity system</typeparam>
+        /// <typeparam name="T">Entity system type</typeparam>
+        /// <param name="system">Entity system object</param>
         /// <exception cref="InvalidOperationException">Entity world already contains T entity system</exception>
-        public void AddSystem<T>() where T : EntitySystemBase, new() {
+        public void AddSystem<T>(T system) where T : EntitySystemBase {
             if(HasSystem<T>())
                 throw new InvalidOperationException($"Entity world already contains {typeof(T).FullName} entity system!");
 
-            T system = new T();
             lock (systems)
                 systems.Add(system);
 
@@ -81,7 +80,7 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
         /// <exception cref="InvalidOperationException">Entity world does not contains T entity system</exception>
-        public void RemoveSystem<T>() where T : EntitySystemBase, new() {
+        public void RemoveSystem<T>() where T : EntitySystemBase {
             Type type = typeof(T);
             lock (systems) {
                 for (int i = 0; i < systems.Count; i++) {
@@ -114,7 +113,7 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
         /// <returns>True when this entity world contains T system or false when not</returns>
-        public bool HasSystem<T>() where T : EntitySystemBase, new() {
+        public bool HasSystem<T>() where T : EntitySystemBase {
             Type type = typeof(T);
             lock (systems) {
                 for (int i = 0; i < systems.Count; i++) {
@@ -135,7 +134,7 @@ namespace NoiseStudio.JobsAg {
         /// Enabling T entity system
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
-        public void EnableSystem<T>() where T : EntitySystemBase, new() {
+        public void EnableSystem<T>() where T : EntitySystemBase {
             Type type = typeof(T);
             lock (disabledSystems) {
                 for (int i = 0; i < disabledSystems.Count; i++) {
@@ -156,7 +155,7 @@ namespace NoiseStudio.JobsAg {
         /// Disabling T entity system
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
-        public void DisableSystem<T>() where T : EntitySystemBase, new() {
+        public void DisableSystem<T>() where T : EntitySystemBase {
             Type type = typeof(T);
             lock (systems) {
                 for (int i = 0; i < systems.Count; i++) {

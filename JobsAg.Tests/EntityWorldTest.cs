@@ -20,6 +20,34 @@ namespace NoiseStudio.JobsAg.Tests {
         }
 
         [Fact]
+        public void AddSystem() {
+            EntityWorld world = new EntityWorld();
+
+            world.AddSystem(new TestSystemA());
+            Assert.Throws<InvalidOperationException>(() => world.AddSystem(new TestSystemA()));
+        }
+
+        [Fact]
+        public void RemoveSystem() {
+            EntityWorld world = new EntityWorld();
+
+            world.AddSystem(new TestSystemA());
+
+            world.RemoveSystem<TestSystemA>();
+            Assert.Throws<InvalidOperationException>(() => world.RemoveSystem<TestSystemA>());
+        }
+
+        [Fact]
+        public void HasSystem() {
+            EntityWorld world = new EntityWorld();
+
+            Assert.False(world.HasSystem<TestSystemA>());
+
+            world.AddSystem(new TestSystemA());
+            Assert.True(world.HasSystem<TestSystemA>());
+        }
+
+        [Fact]
         public void GetGroupFromComponents() {
             EntityWorld world = new EntityWorld();
 
