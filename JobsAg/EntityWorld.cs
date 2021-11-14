@@ -5,12 +5,9 @@ using System.Linq;
 namespace NoiseStudio.JobsAg {
     public class EntityWorld {
 
-        internal static EntityWorld Empty { get; } = new EntityWorld();
-
         private static readonly object locker = new object();
         private static uint nextId = 0;
 
-        internal readonly ComponentsStorage ComponentsStorage = new ComponentsStorage();
 
         private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
         private readonly List<EntitySystemBase> disabledSystems = new List<EntitySystemBase>();
@@ -19,6 +16,10 @@ namespace NoiseStudio.JobsAg {
         private readonly Dictionary<Entity, EntityGroup> entityToGroup = new Dictionary<Entity, EntityGroup>();
 
         private ulong nextEntityId = 0;
+
+        internal static EntityWorld Empty { get; } = new EntityWorld();
+
+        internal ComponentsStorage ComponentsStorage { get; } = new ComponentsStorage();
 
         public uint Id { get; }
 
@@ -32,15 +33,23 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <returns><see cref="Entity"/></returns>
         public Entity NewEntity() {
-            Entity entity;
-            lock (this)
-                entity = new Entity(nextEntityId++);
+            Entity entity = NewEntityWorker(new List<Type>());
 
-            EntityGroup group = GetGroupFromComponents(new List<Type>());
-            group.AddEntity(entity);
+            return entity;
+        }
 
-            lock (entityToGroup)
-                entityToGroup.Add(entity, group);
+        /// <summary>
+        /// Creates new entity in this entity world
+        /// </summary>
+        /// <typeparam name="T">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="component">Component being added</param>
+        /// <returns><see cref="Entity"/></returns>
+        public Entity NewEntity<T>(T component) where T : struct, IEntityComponent {
+            Entity entity = NewEntityWorker(new List<Type>() {
+                typeof(T)
+            });
+
+            ComponentsStorage.AddComponent(entity, component);
 
             return entity;
         }
@@ -201,6 +210,20 @@ namespace NoiseStudio.JobsAg {
 
         internal void SetEntityGroup(Entity entity, EntityGroup group) {
             entityToGroup[entity] = group;
+        }
+
+        private Entity NewEntityWorker(List<Type> componentTypes) {
+            Entity entity;
+            lock (this)
+                entity = new Entity(nextEntityId++);
+
+            EntityGroup group = GetGroupFromComponents(componentTypes);
+            group.AddEntity(entity);
+
+            lock (entityToGroup)
+                entityToGroup.Add(entity, group);
+
+            return entity;
         }
 
     }

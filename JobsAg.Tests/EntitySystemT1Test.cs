@@ -10,13 +10,13 @@ namespace NoiseStudio.JobsAg.Tests {
 
         [Fact]
         public void Test() {
-            EntityWorld world = new EntityWorld();
+            /*EntityWorld world = new EntityWorld();
 
             Entity entityA = world.NewEntity();
             Entity entityB = world.NewEntity();
             Entity entityC = world.NewEntity();
 
-            world.AddSystem<TestSystemA>();
+            world.AddSystem<TestSystemA>();*/
 
         }
 
