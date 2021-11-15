@@ -122,6 +122,21 @@ namespace NoiseStudio.JobsAg {
         /// <param name="component">New component</param>
         public void Set<T>(EntitySystem<T> system, T component) where T : struct, IEntityComponent {
             system.SetComponent(this, component);
+
+        /// Destroys this entity
+        /// </summary>
+        /// <param name="world">Entity world assigned to this entity</param>
+        public void Destroy(EntityWorld world) {
+            world.DestroyEntity(this);
+        }
+
+        /// <summary>
+        /// Checks if this entity was destroyed
+        /// </summary>
+        /// <param name="world">Entity world assigned to this entity</param>
+        /// <returns>True when this entity was destroyed or false when not</returns>
+        public bool IsDestroyed(EntityWorld world) {
+            return world.IsEntityDestroyed(this);
         }
 
         /// <summary>
