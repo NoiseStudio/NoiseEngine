@@ -1,8 +1,8 @@
 ﻿namespace NoiseStudio.JobsAg {
     public abstract class EntitySystem : EntitySystemBase {
 
-        internal override void Execute() {
-            base.Execute();
+        internal override void InternalExecute() {
+            base.InternalExecute();
 
             for (int i = 0; i < groups.Count; i++) {
                 EntityGroup group = groups[i];

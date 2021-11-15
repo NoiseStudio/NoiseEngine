@@ -23,28 +23,51 @@ namespace NoiseStudio.JobsAg.Tests {
         public void AddSystem() {
             EntityWorld world = new EntityWorld();
 
-            world.AddSystem(new TestSystemA());
-            Assert.Throws<InvalidOperationException>(() => world.AddSystem(new TestSystemA()));
+            world.AddSystem(new TestSystemB());
+            Assert.Throws<InvalidOperationException>(() => world.AddSystem(new TestSystemB()));
         }
 
         [Fact]
         public void RemoveSystem() {
             EntityWorld world = new EntityWorld();
 
-            world.AddSystem(new TestSystemA());
+            world.AddSystem(new TestSystemB());
 
-            world.RemoveSystem<TestSystemA>();
-            Assert.Throws<InvalidOperationException>(() => world.RemoveSystem<TestSystemA>());
+            world.RemoveSystem<TestSystemB>();
+            Assert.Throws<InvalidOperationException>(() => world.RemoveSystem<TestSystemB>());
         }
 
         [Fact]
         public void HasSystem() {
             EntityWorld world = new EntityWorld();
 
-            Assert.False(world.HasSystem<TestSystemA>());
+            Assert.False(world.HasSystem<TestSystemB>());
 
-            world.AddSystem(new TestSystemA());
-            Assert.True(world.HasSystem<TestSystemA>());
+            world.AddSystem(new TestSystemB());
+            Assert.True(world.HasSystem<TestSystemB>());
+        }
+
+        [Fact]
+        public void GetSystem() {
+            EntityWorld world = new EntityWorld();
+            TestSystemB system = new TestSystemB();
+            world.AddSystem(system);
+
+            Assert.Equal(system, world.GetSystem<TestSystemB>());
+        }
+
+        [Fact]
+        public void EnableSystem() {
+            EntityWorld world = new EntityWorld();
+            world.AddSystem(new TestSystemB());
+            world.EnableSystem<TestSystemB>();
+        }
+
+        [Fact]
+        public void DisableSystem() {
+            EntityWorld world = new EntityWorld();
+            world.AddSystem(new TestSystemB());
+            world.DisableSystem<TestSystemB>();
         }
 
         [Fact]

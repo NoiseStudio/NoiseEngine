@@ -5,8 +5,8 @@ namespace NoiseStudio.JobsAg {
 
         private Dictionary<Entity, T>? components1;
 
-        internal override void Execute() {
-            base.Execute();
+        internal override void InternalExecute() {
+            base.InternalExecute();
 
             for (int i = 0; i < groups.Count; i++) {
                 EntityGroup group = groups[i];

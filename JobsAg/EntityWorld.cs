@@ -10,6 +10,7 @@ namespace NoiseStudio.JobsAg {
 
         private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
         private readonly List<EntitySystemBase> disabledSystems = new List<EntitySystemBase>();
+        private readonly Dictionary<Type, EntitySystemBase> typeToSystem = new Dictionary<Type, EntitySystemBase>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
         private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
         private readonly Dictionary<Entity, EntityGroup> entityToGroup = new Dictionary<Entity, EntityGroup>();
@@ -65,6 +66,8 @@ namespace NoiseStudio.JobsAg {
 
             lock (systems)
                 systems.Add(system);
+            lock (typeToSystem)
+                typeToSystem.Add(typeof(T), system);
 
             lock (groups) {
                 for (int i = 0; i < groups.Count; i++)
@@ -82,6 +85,10 @@ namespace NoiseStudio.JobsAg {
         /// <exception cref="InvalidOperationException">Entity world does not contains T entity system</exception>
         public void RemoveSystem<T>() where T : EntitySystemBase {
             Type type = typeof(T);
+
+            lock (typeToSystem)
+                typeToSystem.Remove(type);
+
             lock (systems) {
                 for (int i = 0; i < systems.Count; i++) {
                     EntitySystemBase system = systems[i];
@@ -114,20 +121,16 @@ namespace NoiseStudio.JobsAg {
         /// <typeparam name="T">Entity system</typeparam>
         /// <returns>True when this entity world contains T system or false when not</returns>
         public bool HasSystem<T>() where T : EntitySystemBase {
-            Type type = typeof(T);
-            lock (systems) {
-                for (int i = 0; i < systems.Count; i++) {
-                    if (type == systems[i].GetType())
-                        return true;
-                }
-            }
-            lock (disabledSystems) {
-                for (int i = 0; i < disabledSystems.Count; i++) {
-                    if (type == disabledSystems[i].GetType())
-                        return true;
-                }
-            }
-            return false;
+            return typeToSystem.ContainsKey(typeof(T));
+        }
+
+        /// <summary>
+        /// Returns T entity system object
+        /// </summary>
+        /// <typeparam name="T">Entity system</typeparam>
+        /// <returns><see cref="EntitySystemBase"/></returns>
+        public T GetSystem<T>() where T : EntitySystemBase {
+            return (T)typeToSystem[typeof(T)];
         }
 
         /// <summary>

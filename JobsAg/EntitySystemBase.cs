@@ -7,12 +7,19 @@ namespace NoiseStudio.JobsAg {
 
         private protected List<EntityGroup> groups = new List<EntityGroup>();
 
+        /// <summary>
+        /// Performs a cycle on this system
+        /// </summary>
+        public void Execute() {
+            InternalExecute();
+        }
+
         internal virtual void RegisterGroup(EntityGroup group) {
             lock (groups)
                 groups.Add(group);
         }
 
-        internal virtual void Execute() {
+        internal virtual void InternalExecute() {
             Update();
         }
 

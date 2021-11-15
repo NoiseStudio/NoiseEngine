@@ -7,23 +7,23 @@ namespace NoiseStudio.JobsAg.Tests {
         public void Test() {
             EntityWorld world = new EntityWorld();
 
-            Entity entityA = world.NewEntity(new TestComponentA());
-            Entity entityB = world.NewEntity(new TestComponentA());
-            Entity entityC = world.NewEntity(new TestComponentA());
+            world.NewEntity(new TestComponentA());
+            Entity entity = world.NewEntity(new TestComponentA());
+            world.NewEntity(new TestComponentA());
 
-            TestSystemA system = new TestSystemA();
+            TestSystemB system = new TestSystemB();
             world.AddSystem(system);
 
-            Assert.Equal(0, entityB.Get<TestComponentA>(world).A);
+            Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
             system.Execute();
-            Assert.Equal(1, entityB.Get<TestComponentA>(world).A);
+            Assert.Equal(1, entity.Get<TestComponentA>(world).A);
 
-            world.DisableSystem<TestSystemA>();
-            world.EnableSystem<TestSystemA>();
+            world.DisableSystem<TestSystemB>();
+            world.EnableSystem<TestSystemB>();
 
             system.Execute();
-            Assert.Equal(101, entityB.Get<TestComponentA>(world).A);
+            Assert.Equal(105, entity.Get<TestComponentA>(world).A);
         }
 
     }
