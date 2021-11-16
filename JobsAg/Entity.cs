@@ -46,7 +46,7 @@ namespace NoiseStudio.JobsAg {
             Type type = component.GetType();
 
             if (group.HasComponent(type))
-                throw new InvalidOperationException($"{ToString()} already has the {type.Name} component. Use the {"Set" /* TODO: replace with nameof */} method to replace this component.");
+                throw new InvalidOperationException($"{ToString()} already has the {type.Name} component. Use the {nameof(Set)} method to replace this component.");
 
             List<Type> components = group.GetComponentsCopy();
             components.Add(type);
@@ -122,6 +122,7 @@ namespace NoiseStudio.JobsAg {
         /// <param name="component">New component</param>
         public void Set<T>(EntitySystem<T> system, T component) where T : struct, IEntityComponent {
             system.SetComponent(this, component);
+        }
 
         /// Destroys this entity
         /// </summary>

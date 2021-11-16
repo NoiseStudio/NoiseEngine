@@ -61,13 +61,15 @@ namespace NoiseStudio.JobsAg {
         /// <param name="system">Entity system object</param>
         /// <exception cref="InvalidOperationException">Entity world already contains T entity system</exception>
         public void AddSystem<T>(T system) where T : EntitySystemBase {
-            if(HasSystem<T>())
-                throw new InvalidOperationException($"Entity world already contains {typeof(T).FullName} entity system!");
+            lock (system) {
+                lock (typeToSystem) {
+                    if (HasSystem<T>())
+                        throw new InvalidOperationException($"Entity world already contains {typeof(T).FullName} entity system.");
 
-            lock (systems)
-                systems.Add(system);
-            lock (typeToSystem)
-                typeToSystem.Add(typeof(T), system);
+                    systems.Add(system);
+                    typeToSystem.Add(typeof(T), system);
+                }
+            }
 
             lock (groups) {
                 for (int i = 0; i < groups.Count; i++)
@@ -112,7 +114,7 @@ namespace NoiseStudio.JobsAg {
                     }
                 }
             }
-            throw new InvalidOperationException($"Entity world does not contains {type.FullName} entity system!");
+            throw new InvalidOperationException($"Entity world does not contains {type.FullName} entity system.");
         }
 
         /// <summary>
@@ -190,7 +192,7 @@ namespace NoiseStudio.JobsAg {
                     group = new EntityGroup(hashCode, components);
                     idToGroup.Add(hashCode, group);
                 }
-                lock (group)
+                lock (groups)
                     groups.Add(group);
 
                 lock (systems) {
@@ -213,7 +215,7 @@ namespace NoiseStudio.JobsAg {
         internal void SetEntityGroup(Entity entity, EntityGroup group) {
             entityToGroup[entity] = group;
         }
-        
+
         internal bool IsEntityDestroyed(Entity entity) {
             return !entityToGroup.ContainsKey(entity);
         }
