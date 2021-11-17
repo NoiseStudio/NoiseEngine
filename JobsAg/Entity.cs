@@ -124,6 +124,7 @@ namespace NoiseStudio.JobsAg {
             system.SetComponent(this, component);
         }
 
+        /// <summary>
         /// Destroys this entity
         /// </summary>
         /// <param name="world">Entity world assigned to this entity</param>
