@@ -55,6 +55,28 @@ namespace NoiseStudio.JobsAg {
         }
 
         /// <summary>
+        /// Creates new entity in this entity world
+        /// </summary>
+        /// <typeparam name="T1">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T2">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="component1">Component being added</param>
+        /// <param name="component2">Component being added</param>
+        /// <returns><see cref="Entity"/></returns>
+        public Entity NewEntity<T1, T2>(T1 component1, T2 component2)
+            where T1 : struct, IEntityComponent
+            where T2 : struct, IEntityComponent
+        {
+            Entity entity = NewEntityWorker(new List<Type>() {
+                typeof(T1), typeof(T2)
+            });
+
+            ComponentsStorage.AddComponent(entity, component1);
+            ComponentsStorage.AddComponent(entity, component2);
+
+            return entity;
+        }
+
+        /// <summary>
         /// Creates and adds new T system to this world
         /// </summary>
         /// <typeparam name="T">Entity system type</typeparam>
