@@ -20,6 +20,15 @@ namespace NoiseStudio.JobsAg.Tests {
         }
 
         [Fact]
+        public void NewEntityT2() {
+            EntityWorld world = new EntityWorld();
+            
+            Entity entity = world.NewEntity(new TestComponentA(), new TestComponentB());
+            Assert.True(entity.Has<TestComponentA>(world));
+            Assert.True(entity.Has<TestComponentB>(world));
+        }
+
+        [Fact]
         public void AddSystem() {
             EntityWorld world = new EntityWorld();
 

@@ -36,6 +36,7 @@ namespace NoiseStudio.JobsAg {
         /// <summary>
         /// This method is executed every cycle of this system on every <see cref="Entity"/> assigned to this system
         /// </summary>
+        /// <typeparam name="T">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
         /// <param name="entity">Operated <see cref="Entity"/></param>
         /// <param name="component1">Component of the operated <see cref="Entity"/></param>
         protected abstract void UpdateEntity(Entity entity, T component1);
