@@ -3,7 +3,7 @@ using System.Threading;
 using System.Collections.Concurrent;
 
 namespace NoiseStudio.JobsAg {
-    public class EntityScheduler {
+    public class EntitySchedule {
 
         public const uint PackageSize = 64;
 
@@ -12,9 +12,9 @@ namespace NoiseStudio.JobsAg {
         private readonly ConcurrentQueue<int> packages = new ConcurrentQueue<int>();
         private bool works = true;
 
-        public static EntityScheduler? Instance { get; private set; }
+        public static EntitySchedule? Instance { get; private set; }
 
-        public EntityScheduler(uint? threadCount = null, uint? packageSize = null) {
+        public EntitySchedule(uint? threadCount = null, uint? packageSize = null) {
             if (threadCount == null)
                 threadCount = (uint)Environment.ProcessorCount;
             if (packageSize == null)
@@ -32,17 +32,17 @@ namespace NoiseStudio.JobsAg {
 
             for (int i = 0; i < threadCount; i++) {
                 Thread thread = new Thread(ThreadWork);
-                thread.Name = $"{nameof(EntityScheduler)} worker #{i}";
+                thread.Name = $"{nameof(EntitySchedule)} worker #{i}";
                 thread.Start();
             }
         }
 
-        ~EntityScheduler() {
+        ~EntitySchedule() {
             Abort();
         }
 
         /// <summary>
-        /// This <see cref="EntityScheduler"/> will be deactivated
+        /// This <see cref="EntitySchedule"/> will be deactivated
         /// </summary>
         public void Abort() {
             works = false;
