@@ -15,7 +15,7 @@ namespace NoiseStudio.JobsAg {
         private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
         private readonly Dictionary<Entity, EntityGroup> entityToGroup = new Dictionary<Entity, EntityGroup>();
 
-        private ulong nextEntityId = 0;
+        private ulong nextEntityId = 1;
 
         internal static EntityWorld Empty { get; } = new EntityWorld();
 
