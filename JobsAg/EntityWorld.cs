@@ -81,8 +81,10 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <typeparam name="T">Entity system type</typeparam>
         /// <param name="system">Entity system object</param>
+        /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When zero, the schedule is not used.</param>
+        /// <param name="schedule"><see cref="EntitySchedule"/> managing this system. When null is used <see cref="EntitySchedule.Instance"/>.</param>
         /// <exception cref="InvalidOperationException">Entity world already contains T entity system</exception>
-        public void AddSystem<T>(T system) where T : EntitySystemBase {
+        public void AddSystem<T>(T system, uint cycleTime = 0, EntitySchedule? schedule = null) where T : EntitySystemBase {
             lock (system) {
                 lock (typeToSystem) {
                     if (HasSystem<T>())
@@ -98,7 +100,10 @@ namespace NoiseStudio.JobsAg {
                     system.RegisterGroup(groups[i]);
             }
 
-            system.InternalInitialize(this);
+            if (cycleTime >= 0)
+                system.CycleTime = cycleTime;
+
+            system.InternalInitialize(this, schedule ?? EntitySchedule.Instance!);
             system.InternalStart();
         }
 

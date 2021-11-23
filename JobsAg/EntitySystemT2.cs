@@ -27,11 +27,11 @@ namespace NoiseStudio.JobsAg {
                 base.RegisterGroup(group);
         }
 
-        internal override void InternalInitialize(EntityWorld world) {
+        internal override void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
             components1 = world.ComponentsStorage.AddStorage<T1>();
             components2 = world.ComponentsStorage.AddStorage<T2>();
 
-            base.InternalInitialize(world);
+            base.InternalInitialize(world, schedule);
         }
 
         internal void SetComponent(Entity entity, T1 component) {

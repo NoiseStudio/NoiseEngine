@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace NoiseStudio.JobsAg {
     public class EntitySchedule {
@@ -9,7 +11,11 @@ namespace NoiseStudio.JobsAg {
 
         private static readonly object locker = new object();
 
-        private readonly ConcurrentQueue<int> packages = new ConcurrentQueue<int>();
+        private readonly AutoResetEvent autoResetEvent = new AutoResetEvent(false);
+        private readonly object addPackagesLocker = new object();
+
+        private readonly ConcurrentQueue<SchedulePackage> packages = new ConcurrentQueue<SchedulePackage>();
+        private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
         private bool works = true;
 
         public static EntitySchedule? Instance { get; private set; }
@@ -46,16 +52,50 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         public void Abort() {
             works = false;
+            autoResetEvent.Set();
+        }
+
+        internal void AddSystem(EntitySystemBase system) {
+            lock (systems)
+                systems.Add(system);
+        }
+
+        internal void RemoveSystem(EntitySystemBase system) {
+            lock (systems)
+                systems.Remove(system);
         }
 
         private void ThreadWork() {
             while (works) {
+                if (!AddPackages())
+                    autoResetEvent.WaitOne();
 
+                while (packages.TryDequeue(out SchedulePackage package)) {
+
+                }
             }
         }
 
-        private void AddPackages() {
+        private bool AddPackages() {
+            if (!Monitor.TryEnter(addPackagesLocker))
+                return false;
 
+            int executionTime = Environment.TickCount;
+            List<EntitySystemBase> sortedSystems;
+            lock (systems)
+                sortedSystems = systems.OrderByDescending(t => executionTime - t.lastExecutionTime).ToList();
+
+            foreach(EntitySystemBase system in sortedSystems) {
+                int executionTimeDifference = executionTime - system.lastExecutionTime;
+                if (system.CycleTime < executionTimeDifference) {
+                    // TODO: Add packages
+                    system.InternalUpdate();
+                }
+            }
+
+            autoResetEvent.Set();
+            Monitor.Exit(addPackagesLocker);
+            return true;
         }
 
     }

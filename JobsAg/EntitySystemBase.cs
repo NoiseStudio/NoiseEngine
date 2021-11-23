@@ -1,7 +1,46 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace NoiseStudio.JobsAg {
     public abstract class EntitySystemBase {
+
+        internal int lastExecutionTime = 0;
+
+        private bool usesSchedule = false;
+        private uint cycleTime = 0;
+        private EntitySchedule? schedule;
+
+        public uint CycleTime {
+            get {
+                return cycleTime;
+            }
+            set {
+                cycleTime = value;
+                if (cycleTime == 0) {
+                    if (usesSchedule) {
+                        usesSchedule = false;
+                        schedule?.RemoveSystem(this);
+                    }
+                } else {
+                    usesSchedule = true;
+                    schedule?.AddSystem(this);
+                }
+            }
+        }
+
+        public EntitySchedule? Schedule {
+            get {
+                return schedule;
+            }
+            set {
+                if (usesSchedule)
+                    schedule?.RemoveSystem(this);
+
+                schedule = value;
+                if (usesSchedule)
+                    schedule?.AddSystem(this);
+            }
+        }
 
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
 
@@ -20,11 +59,18 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal virtual void InternalExecute() {
+            InternalUpdate();
+        }
+
+        internal virtual void InternalUpdate() {
+            lastExecutionTime = Environment.TickCount;
             Update();
         }
 
-        internal virtual void InternalInitialize(EntityWorld world) {
+        internal virtual void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
             World = world;
+            Schedule = schedule;
+
             Initialize();
         }
 
