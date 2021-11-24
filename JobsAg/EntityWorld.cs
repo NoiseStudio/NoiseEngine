@@ -219,7 +219,7 @@ namespace NoiseStudio.JobsAg {
 
             if (group == null) {
                 lock (idToGroup) {
-                    group = new EntityGroup(hashCode, components);
+                    group = new EntityGroup(hashCode, this, components);
                     idToGroup.Add(hashCode, group);
                 }
                 lock (groups)

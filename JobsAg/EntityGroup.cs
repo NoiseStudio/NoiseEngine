@@ -22,9 +22,12 @@ namespace NoiseStudio.JobsAg {
         private bool isWorking = false;
         private long workEndTime = 0;
 
-        public EntityGroup(int hashCode, List<Type> components) {
+        public EntityWorld World { get; private set; }
+
+        public EntityGroup(int hashCode, EntityWorld world, List<Type> components) {
             this.hashCode = hashCode;
             this.components = components;
+            World = world;
 
             componentsHashSet = new HashSet<Type>(components);
         }
