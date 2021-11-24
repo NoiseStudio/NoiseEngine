@@ -1,22 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace NoiseStudio.JobsAg {
     public abstract class EntitySystemBase {
 
-        internal int lastExecutionTime = 0;
+        internal List<EntityGroup> groups = new List<EntityGroup>();
+        internal double lastExecutionTime = Time.UtcMilliseconds;
 
         private bool usesSchedule = false;
-        private uint cycleTime = 0;
+        private double? cycleTime = 0;
         private EntitySchedule? schedule;
 
-        public uint CycleTime {
+        public double? CycleTime {
             get {
                 return cycleTime;
             }
             set {
                 cycleTime = value;
-                if (cycleTime == 0) {
+                if (cycleTime == null) {
                     if (usesSchedule) {
                         usesSchedule = false;
                         schedule?.RemoveSystem(this);
@@ -25,6 +25,9 @@ namespace NoiseStudio.JobsAg {
                     usesSchedule = true;
                     schedule?.AddSystem(this);
                 }
+
+                CycleTimeSeconds = (cycleTime ?? 1000.0) / 1000.0;
+                CycleTimeSecondsF = (float)CycleTimeSeconds;
             }
         }
 
@@ -44,7 +47,10 @@ namespace NoiseStudio.JobsAg {
 
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
 
-        private protected List<EntityGroup> groups = new List<EntityGroup>();
+        protected double DeltaTime { get; private set; } = 1;
+        protected float DeltaTimeF { get; private set; } = 1;
+        protected double CycleTimeSeconds { get; private set; } = 1;
+        protected float CycleTimeSecondsF { get; private set; } = 1;
 
         /// <summary>
         /// Performs a cycle on this system
@@ -52,6 +58,8 @@ namespace NoiseStudio.JobsAg {
         public void Execute() {
             InternalExecute();
         }
+
+        internal abstract void InternalUpdateEntity(Entity entity);
 
         internal virtual void RegisterGroup(EntityGroup group) {
             lock (groups)
@@ -63,7 +71,12 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal virtual void InternalUpdate() {
-            lastExecutionTime = Environment.TickCount;
+            double executionTime = Time.UtcMilliseconds;
+
+            DeltaTime = (executionTime - lastExecutionTime) / 1000;
+            DeltaTimeF = (float)DeltaTime;
+
+            lastExecutionTime = executionTime;
             Update();
         }
 

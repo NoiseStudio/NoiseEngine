@@ -7,11 +7,11 @@
         public int PackageStartIndex { get; }
         public int PackageEndIndex { get; }
 
-        public SchedulePackage(EntitySystemBase entitySystem, EntityGroup entityGroup, ScheduleRawPackage rawPackage) {
+        public SchedulePackage(EntitySystemBase entitySystem, EntityGroup entityGroup, int packageStartIndex, int packageEndIndex) {
             EntityGroup = entityGroup;
             EntitySystem = entitySystem;
-            PackageStartIndex = rawPackage.PackageStartIndex;
-            PackageEndIndex = rawPackage.PackageEndIndex;
+            PackageStartIndex = packageStartIndex;
+            PackageEndIndex = packageEndIndex;
         }
 
     }

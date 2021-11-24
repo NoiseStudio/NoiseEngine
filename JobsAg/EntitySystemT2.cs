@@ -16,10 +16,13 @@ namespace NoiseStudio.JobsAg {
                 EntityGroup group = groups[i];
                 for (int j = 0; j < group.entities.Count; j++) {
                     Entity entity = group.entities[j];
-
-                    UpdateEntity(entity, components1![entity], components2![entity]);
+                    InternalUpdateEntity(entity);
                 }
             }
+        }
+
+        internal override void InternalUpdateEntity(Entity entity) {
+            UpdateEntity(entity, components1![entity], components2![entity]);
         }
 
         internal override void RegisterGroup(EntityGroup group) {
