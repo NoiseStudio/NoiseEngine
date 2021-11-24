@@ -134,6 +134,8 @@ namespace NoiseStudio.JobsAg {
                                 packages.Enqueue(new SchedulePackage(system, group, k, endIndex));
                                 k = endIndex;
                             }
+
+                            group.ReleaseWork();
                         }
 
                         system.InternalUpdate();

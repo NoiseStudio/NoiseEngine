@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
-using System.Diagnostics;
 
 namespace NoiseStudio.JobsAg {
     internal class EntityGroup {
@@ -17,12 +16,9 @@ namespace NoiseStudio.JobsAg {
 
         private readonly object locker = new object();
         private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
-        private int manualResetEventThreadCount = 0;
 
         private bool clean = false;
         private int ongoingWork = 0;
-        private bool isWorking = false;
-        private long workEndTime = 0;
 
         public EntityWorld World { get; }
 
@@ -45,8 +41,6 @@ namespace NoiseStudio.JobsAg {
 
         public void RemoveEntity(Entity entity) {
             entitiesToRemove.Enqueue(entity);
-
-            OrderWork();
             Wait();
 
             for (int i = 0; i < entities.Count; i++) {
@@ -85,8 +79,8 @@ namespace NoiseStudio.JobsAg {
         }
 
         public void Wait() {
-            if (isWorking && Stopwatch.GetTimestamp() - workEndTime > 32)
-                manualResetEvent.WaitOne();
+            OrderWork();
+            manualResetEvent.WaitOne();
         }
 
         internal List<Type> GetComponentsCopy() {
@@ -104,9 +98,9 @@ namespace NoiseStudio.JobsAg {
 
         private void DoWork() {
             lock (locker) {
-                if (ongoingWork > 0 || (!clean && entitiesToAdd.IsEmpty) || isWorking)
+                if ((!clean && entitiesToAdd.IsEmpty) || ongoingWork > 0)
                     return;
-                isWorking = true;
+                manualResetEvent.Reset();
 
                 if (clean) {
                     clean = false;
@@ -123,8 +117,6 @@ namespace NoiseStudio.JobsAg {
                 while (entitiesToRemove.TryDequeue(out Entity entity))
                     DestroyEntityComponents(entity);
 
-                workEndTime = Stopwatch.GetTimestamp();
-                isWorking = false;
                 manualResetEvent.Set();
             }
         }
