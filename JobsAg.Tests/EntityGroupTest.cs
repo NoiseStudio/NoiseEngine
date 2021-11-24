@@ -13,7 +13,7 @@ namespace NoiseStudio.JobsAg.Tests {
 
         [Fact]
         public void AddRemoveEntity() {
-            EntityGroup groupA = new EntityGroup(5, EntityWorld.Empty, new List<Type>() { typeof(string), typeof(int) });
+            EntityGroup groupA = new EntityGroup(5, EntityWorld.Empty, new List<Type>());
 
             Entity entity = new Entity(0);
             groupA.AddEntity(entity);

@@ -13,16 +13,18 @@ namespace NoiseStudio.JobsAg {
         private readonly List<Type> components;
         private readonly HashSet<Type> componentsHashSet;
         private readonly ConcurrentQueue<Entity> entitiesToAdd = new ConcurrentQueue<Entity>();
+        private readonly ConcurrentQueue<Entity> entitiesToRemove = new ConcurrentQueue<Entity>();
 
         private readonly object locker = new object();
-        private readonly AutoResetEvent autoResetEvent = new AutoResetEvent(false);
+        private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
+        private int manualResetEventThreadCount = 0;
 
         private bool clean = false;
         private int ongoingWork = 0;
         private bool isWorking = false;
         private long workEndTime = 0;
 
-        public EntityWorld World { get; private set; }
+        public EntityWorld World { get; }
 
         public EntityGroup(int hashCode, EntityWorld world, List<Type> components) {
             this.hashCode = hashCode;
@@ -42,6 +44,8 @@ namespace NoiseStudio.JobsAg {
         }
 
         public void RemoveEntity(Entity entity) {
+            entitiesToRemove.Enqueue(entity);
+
             OrderWork();
             Wait();
 
@@ -54,6 +58,7 @@ namespace NoiseStudio.JobsAg {
             clean = true;
 
             ReleaseWork();
+            DoWork();
         }
 
         public bool CompareSortedComponents(List<Type> components) {
@@ -81,7 +86,7 @@ namespace NoiseStudio.JobsAg {
 
         public void Wait() {
             if (isWorking && Stopwatch.GetTimestamp() - workEndTime > 32)
-                autoResetEvent.WaitOne();
+                manualResetEvent.WaitOne();
         }
 
         internal List<Type> GetComponentsCopy() {
@@ -92,9 +97,9 @@ namespace NoiseStudio.JobsAg {
             return componentsHashSet.Contains(component);
         }
 
-        internal void DestroyEntityComponents(EntityWorld world, Entity entity) {
+        internal void DestroyEntityComponents(Entity entity) {
             for (int i = 0; i < components.Count; i++)
-                world.ComponentsStorage.RemoveComponent(components[i], entity);
+                World.ComponentsStorage.RemoveComponent(components[i], entity);
         }
 
         private void DoWork() {
@@ -115,10 +120,12 @@ namespace NoiseStudio.JobsAg {
 
                 while (entitiesToAdd.TryDequeue(out Entity entity))
                     entities.Add(entity);
+                while (entitiesToRemove.TryDequeue(out Entity entity))
+                    DestroyEntityComponents(entity);
 
                 workEndTime = Stopwatch.GetTimestamp();
                 isWorking = false;
-                autoResetEvent.Set();
+                manualResetEvent.Set();
             }
         }
 

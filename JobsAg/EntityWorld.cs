@@ -239,7 +239,11 @@ namespace NoiseStudio.JobsAg {
         }
         
         internal EntityGroup GetEntityGroup(Entity entity) {
-            return entityToGroup[entity];
+            try {
+                return entityToGroup[entity];
+            } catch (KeyNotFoundException) {
+                throw new InvalidOperationException($"{entity} was destroyed.");
+            }
         }
 
         internal void SetEntityGroup(Entity entity, EntityGroup group) {
@@ -251,10 +255,8 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal void DestroyEntity(Entity entity) {
-            if (entityToGroup.TryRemove(entity, out EntityGroup? group)) {
+            if (entityToGroup.TryRemove(entity, out EntityGroup? group))
                 group.RemoveEntity(entity);
-                group.DestroyEntityComponents(this, entity);
-            }
         }
       
         private Entity NewEntityWorker() {
