@@ -7,8 +7,8 @@ using System.Linq;
 namespace NoiseStudio.JobsAg {
     public class EntitySchedule {
 
-        public const int DefaultPackageSize = 64;
-        public const int MinimumPackageSize = 8;
+        public const int DefaultMaxPackageSize = 64;
+        public const int DefaultMinPackageSize = 8;
 
         private static readonly object locker = new object();
 
@@ -20,24 +20,34 @@ namespace NoiseStudio.JobsAg {
         private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
         private readonly HashSet<EntitySystemBase> systemsHashSet = new HashSet<EntitySystemBase>();
         private readonly int threadCount;
-        private readonly int packageSize;
+        private readonly int minPackageSize;
+        private readonly int maxPackageSize;
         private bool works = true;
 
         public static EntitySchedule? Instance { get; private set; }
 
-        public EntitySchedule(int? threadCount = null, int? packageSize = null) {
+        /// <summary>
+        /// Creates new Entity Schedule
+        /// </summary>
+        /// <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
+        /// <param name="maxPackageSize">The maximum size of an UpdateEntity package shared between threads</param>
+        /// <param name="minPackageSize">The minimum size of an UpdateEntity package shared between threads</param>
+        /// <exception cref="InvalidOperationException">Error when using zero or negative threads and when the minimum package size is greater than the maximum package size</exception>
+        public EntitySchedule(int? threadCount = null, int? maxPackageSize = null, int? minPackageSize = null) {
             if (threadCount == null)
                 threadCount = Environment.ProcessorCount;
-            if (packageSize == null)
-                packageSize = DefaultPackageSize;
+            if (maxPackageSize == null)
+                maxPackageSize = DefaultMaxPackageSize;
+            if (minPackageSize == null)
+                minPackageSize = DefaultMinPackageSize;
 
             if (threadCount <= 0)
-                throw new InvalidOperationException("The number of threads cannot be zero.");
-            if (packageSize <= 0)
-                throw new InvalidOperationException("The minimum package size is 1.");
+                throw new InvalidOperationException("The number of threads cannot be zero or negative.");
+            if (minPackageSize > maxPackageSize)
+                throw new InvalidOperationException("The minimum package size is greather than used maximum package size.");
 
             this.threadCount = (int)threadCount;
-            this.packageSize = (int)packageSize;
+            this.maxPackageSize = (int)maxPackageSize;
 
             lock (locker) {
                 if (Instance == null)
@@ -127,7 +137,7 @@ namespace NoiseStudio.JobsAg {
                                 EntityGroup group = system.groups[j];
                                 group.Wait();
 
-                                int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, MinimumPackageSize, packageSize);
+                                int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, minPackageSize, maxPackageSize);
                                 for (int k = 0; k < group.entities.Count;) {
                                     group.OrderWork();
                                     system.OrderWork();
