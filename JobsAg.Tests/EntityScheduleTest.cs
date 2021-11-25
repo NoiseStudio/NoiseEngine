@@ -17,14 +17,19 @@ namespace NoiseStudio.JobsAg.Tests {
                 world.NewEntity(new TestComponentA(), new TestComponentB());
             while (system.UpdateEntityCount < entities) ;
 
-            while (system.UpdateCount < 2) ;
+            while (system.LateUpdateCount < 2) ;
+            Assert.True(system.UpdateCount >= 3);
             Assert.True(system.UsedUpdate);
+            Assert.True(system.UsedLateUpdate);
 
             for (int i = 0; i < entities; i++)
                 world.NewEntity(new TestComponentA(), new TestComponentB());
             while (system.UpdateEntityCount < entities * 2) ;
 
             Assert.True(system.UpdateCount >= 3);
+            Assert.True(system.UsedUpdate);
+            Assert.True(system.LateUpdateCount >= 3);
+            Assert.True(system.UsedLateUpdate);
 
             Thread.Sleep(50);
             Assert.True(entities * 2 <= system.UpdateEntityCount);

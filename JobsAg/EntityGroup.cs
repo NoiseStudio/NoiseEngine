@@ -52,7 +52,6 @@ namespace NoiseStudio.JobsAg {
             clean = true;
 
             ReleaseWork();
-            DoWork();
         }
 
         public bool CompareSortedComponents(List<Type> components) {
@@ -79,8 +78,10 @@ namespace NoiseStudio.JobsAg {
         }
 
         public void Wait() {
-            OrderWork();
-            manualResetEvent.WaitOne();
+            lock (locker) {
+                OrderWork();
+                manualResetEvent.WaitOne();
+            }
         }
 
         internal List<Type> GetComponentsCopy() {
@@ -98,7 +99,7 @@ namespace NoiseStudio.JobsAg {
 
         private void DoWork() {
             lock (locker) {
-                if ((!clean && entitiesToAdd.IsEmpty) || ongoingWork > 0)
+                if (ongoingWork > 0 || (!clean && entitiesToAdd.IsEmpty))
                     return;
                 manualResetEvent.Reset();
 

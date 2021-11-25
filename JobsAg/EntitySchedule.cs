@@ -60,6 +60,7 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         public void Abort() {
             works = false;
+            manualResetEventThreads = int.MaxValue;
             manualResetEvent.Set();
         }
 
@@ -99,6 +100,7 @@ namespace NoiseStudio.JobsAg {
                             package.EntitySystem.InternalUpdateEntity(entity);
                     }
                     package.EntityGroup.ReleaseWork();
+                    package.EntitySystem.ReleaseWork();
                 }
             }
         }
@@ -116,30 +118,36 @@ namespace NoiseStudio.JobsAg {
                 bool needToWait = true;
                 for (int i = 0; i < sortedSystems.Count; i++) {
                     EntitySystemBase system = sortedSystems[i];
-                    double executionTimeDifference = executionTime - system.lastExecutionTime;
 
-                    if (system.CycleTime! < executionTimeDifference) {
-                        for (int j = 0; j < system.groups.Count; j++) {
-                            EntityGroup group = system.groups[j];
-                            group.Wait();
+                    if (!system.IsWorking) {
+                        double executionTimeDifference = executionTime - system.lastExecutionTime;
 
-                            int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, MinimumPackageSize, packageSize);
-                            for (int k = 0; k < group.entities.Count;) {
-                                group.OrderWork();
+                        if (system.CycleTime! < executionTimeDifference) {
+                            for (int j = 0; j < system.groups.Count; j++) {
+                                EntityGroup group = system.groups[j];
+                                group.Wait();
 
-                                int endIndex = k + entitiesPerPackage;
-                                if (endIndex > group.entities.Count)
-                                    endIndex = group.entities.Count;
+                                int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, MinimumPackageSize, packageSize);
+                                for (int k = 0; k < group.entities.Count;) {
+                                    group.OrderWork();
+                                    system.OrderWork();
 
-                                packages.Enqueue(new SchedulePackage(system, group, k, endIndex));
-                                k = endIndex;
+                                    int endIndex = k + entitiesPerPackage;
+                                    if (endIndex > group.entities.Count)
+                                        endIndex = group.entities.Count;
+
+                                    packages.Enqueue(new SchedulePackage(system, group, k, endIndex));
+                                    k = endIndex;
+                                }
+
+                                group.ReleaseWork();
                             }
 
-                            group.ReleaseWork();
+                            system.OrderWork();
+                            system.InternalUpdate();
+                            system.ReleaseWork();
+                            needToWait = false;
                         }
-
-                        system.InternalUpdate();
-                        needToWait = false;
                     }
                 }
 

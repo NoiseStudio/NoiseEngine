@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 namespace NoiseStudio.JobsAg {
     public abstract class EntitySystemBase {
@@ -6,9 +7,12 @@ namespace NoiseStudio.JobsAg {
         internal List<EntityGroup> groups = new List<EntityGroup>();
         internal double lastExecutionTime = Time.UtcMilliseconds;
 
+        private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(true);
+
         private bool usesSchedule = false;
         private double? cycleTime = 0;
         private EntitySchedule? schedule;
+        private int ongoingWork = 0;
 
         public double? CycleTime {
             get {
@@ -46,6 +50,7 @@ namespace NoiseStudio.JobsAg {
         }
 
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
+        public bool IsWorking { get; private set; }
 
         protected double DeltaTime { get; private set; } = 1;
         protected float DeltaTimeF { get; private set; } = 1;
@@ -59,6 +64,13 @@ namespace NoiseStudio.JobsAg {
             InternalExecute();
         }
 
+        /// <summary>
+        /// Blocks the current thread until the cycle completes
+        /// </summary>
+        public void Wait() {
+            manualResetEvent.WaitOne();
+        }
+
         internal abstract void InternalUpdateEntity(Entity entity);
 
         internal virtual void RegisterGroup(EntityGroup group) {
@@ -68,16 +80,6 @@ namespace NoiseStudio.JobsAg {
 
         internal virtual void InternalExecute() {
             InternalUpdate();
-        }
-
-        internal virtual void InternalUpdate() {
-            double executionTime = Time.UtcMilliseconds;
-
-            DeltaTime = (executionTime - lastExecutionTime) / 1000;
-            DeltaTimeF = (float)DeltaTime;
-
-            lastExecutionTime = executionTime;
-            Update();
         }
 
         internal virtual void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
@@ -91,12 +93,41 @@ namespace NoiseStudio.JobsAg {
             Start();
         }
 
+        internal virtual void InternalUpdate() {
+            double executionTime = Time.UtcMilliseconds;
+
+            DeltaTime = (executionTime - lastExecutionTime) / 1000;
+            DeltaTimeF = (float)DeltaTime;
+
+            lastExecutionTime = executionTime;
+            Update();
+        }
+
+        internal virtual void InternalLateUpdate() {
+            LateUpdate();
+        }
+
         internal virtual void InternalStop() {
             Stop();
         }
 
         internal virtual void InternalTerminate() {
             Terminate();
+        }
+
+        internal void OrderWork() {
+            if (Interlocked.Increment(ref ongoingWork) == 1) {
+                manualResetEvent.Reset();
+                IsWorking = true;
+            }
+        }
+
+        internal void ReleaseWork() {
+            if (Interlocked.Decrement(ref ongoingWork) == 0) {
+                InternalLateUpdate();
+                manualResetEvent.Set();
+                IsWorking = false;
+            }
         }
 
         /// <summary>
@@ -112,9 +143,15 @@ namespace NoiseStudio.JobsAg {
         }
 
         /// <summary>
-        /// This method is executed every cycle of this system
+        /// This method is executed on begin of every cycle of this system
         /// </summary>
         protected virtual void Update() {
+        }
+
+        /// <summary>
+        /// This method is executed on end of every cycle of this system
+        /// </summary>
+        protected virtual void LateUpdate() {
         }
 
         /// <summary>
