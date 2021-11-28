@@ -19,8 +19,8 @@ namespace NoiseStudio.JobsAg.Tests {
             system.Execute();
             Assert.Equal(1, entity.Get<TestComponentA>(world).A);
 
-            world.DisableSystem<TestSystemB>();
-            world.EnableSystem<TestSystemB>();
+            system.Enabled = false;
+            system.Enabled = true;
 
             system.Execute();
             Assert.Equal(105, entity.Get<TestComponentA>(world).A);

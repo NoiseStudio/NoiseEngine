@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 
 namespace NoiseStudio.JobsAg.Tests {
     public class EntitySystemBaseTest {
@@ -20,11 +21,31 @@ namespace NoiseStudio.JobsAg.Tests {
             system.ExecuteMultithread();
             Assert.Equal(1, entity.Get<TestComponentA>(world).A);
 
-            world.DisableSystem<TestSystemB>();
-            world.EnableSystem<TestSystemB>();
+            system.Enabled = false;
+            system.Enabled = true;
 
             system.ExecuteMultithread();
             Assert.Equal(105, entity.Get<TestComponentA>(world).A);
+        }
+
+        [Fact]
+        public void Enable() {
+            EntityWorld world = new EntityWorld();
+
+            world.NewEntity();
+            world.NewEntity(new TestComponentA());
+            world.NewEntity(new TestComponentA());
+
+            TestSystemA system = new TestSystemA();
+            world.AddSystem(system);
+
+            system.Execute();
+
+            system.Enabled = false;
+            Assert.Throws<InvalidOperationException>(system.Execute);
+
+            system.Enabled = true;
+            system.Execute();
         }
 
     }

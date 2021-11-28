@@ -143,7 +143,7 @@ namespace NoiseStudio.JobsAg {
                 for (int i = 0; i < sortedSystems.Count; i++) {
                     EntitySystemBase system = sortedSystems[i];
 
-                    if (!system.IsWorking) {
+                    if (!system.IsWorking && system.Enabled) {
                         double executionTimeDifference = executionTime - system.lastExecutionTime;
 
                         if (system.cycleTimeWithDelta < executionTimeDifference) {
