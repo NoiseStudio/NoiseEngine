@@ -10,7 +10,7 @@ namespace NoiseStudio.JobsAg.Tests {
             EntityWorld world = new EntityWorld();
 
             TestSystemScheduleA system = new TestSystemScheduleA();
-            world.AddSystem(system, 0);
+            world.AddSystem(system, 100);
 
             int entities = 1024;
             for (int i = 0; i < entities; i++)
@@ -18,7 +18,7 @@ namespace NoiseStudio.JobsAg.Tests {
             while (system.UpdateEntityCount < entities) ;
 
             while (system.LateUpdateCount < 2) ;
-            Assert.True(system.UpdateCount >= 3);
+            Assert.True(system.UpdateCount >= 2);
             Assert.True(system.UsedUpdate);
             Assert.True(system.UsedLateUpdate);
 
@@ -26,9 +26,9 @@ namespace NoiseStudio.JobsAg.Tests {
                 world.NewEntity(new TestComponentA(), new TestComponentB());
             while (system.UpdateEntityCount < entities * 2) ;
 
+            while (system.LateUpdateCount < 3) ;
             Assert.True(system.UpdateCount >= 3);
             Assert.True(system.UsedUpdate);
-            Assert.True(system.LateUpdateCount >= 3);
             Assert.True(system.UsedLateUpdate);
 
             Thread.Sleep(50);

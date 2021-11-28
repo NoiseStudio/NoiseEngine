@@ -48,6 +48,7 @@ namespace NoiseStudio.JobsAg {
 
             this.threadCount = (int)threadCount;
             this.maxPackageSize = (int)maxPackageSize;
+            this.minPackageSize = (int)minPackageSize;
 
             lock (locker) {
                 if (Instance == null)
@@ -132,7 +133,7 @@ namespace NoiseStudio.JobsAg {
                     if (!system.IsWorking) {
                         double executionTimeDifference = executionTime - system.lastExecutionTime;
 
-                        if (system.CycleTime! < executionTimeDifference) {
+                        if (system.cycleTimeWithDelta < executionTimeDifference) {
                             for (int j = 0; j < system.groups.Count; j++) {
                                 EntityGroup group = system.groups[j];
                                 group.Wait();

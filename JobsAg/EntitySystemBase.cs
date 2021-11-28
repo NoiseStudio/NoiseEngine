@@ -6,6 +6,7 @@ namespace NoiseStudio.JobsAg {
 
         internal List<EntityGroup> groups = new List<EntityGroup>();
         internal double lastExecutionTime = Time.UtcMilliseconds;
+        internal double cycleTimeWithDelta = 0;
 
         private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(true);
 
@@ -26,6 +27,7 @@ namespace NoiseStudio.JobsAg {
                         schedule?.RemoveSystem(this);
                     }
                 } else {
+                    cycleTimeWithDelta = (double)cycleTime;
                     usesSchedule = true;
                     schedule?.AddSystem(this);
                 }
@@ -96,8 +98,13 @@ namespace NoiseStudio.JobsAg {
         internal virtual void InternalUpdate() {
             double executionTime = Time.UtcMilliseconds;
 
-            DeltaTime = (executionTime - lastExecutionTime) / 1000;
+            double deltaTimeInMiliseconds = executionTime - lastExecutionTime;
+            DeltaTime = deltaTimeInMiliseconds / 1000;
             DeltaTimeF = (float)DeltaTime;
+
+            if (CycleTime != null) {
+                cycleTimeWithDelta = (double)CycleTime - (deltaTimeInMiliseconds - (double)CycleTime);
+            }
 
             lastExecutionTime = executionTime;
             Update();
