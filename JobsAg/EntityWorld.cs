@@ -237,7 +237,7 @@ namespace NoiseStudio.JobsAg {
 
             return group;
         }
-        
+
         internal EntityGroup GetEntityGroup(Entity entity) {
             try {
                 return entityToGroup[entity];
