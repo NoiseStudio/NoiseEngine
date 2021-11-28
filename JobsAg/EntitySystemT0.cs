@@ -11,6 +11,8 @@
                     InternalUpdateEntity(entity);
                 }
             }
+
+            ReleaseWork();
         }
 
         internal override void InternalUpdateEntity(Entity entity) {

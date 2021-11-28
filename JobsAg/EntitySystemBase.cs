@@ -67,6 +67,18 @@ namespace NoiseStudio.JobsAg {
         }
 
         /// <summary>
+        /// Performs a cycle on this system with using schedule threads
+        /// </summary>
+        public void ExecuteMultithread() {
+            Wait();
+            OrderWork();
+            InternalUpdate();
+            Schedule!.EnqueuePriorityPackages(this);
+            ReleaseWork();
+            Wait();
+        }
+
+        /// <summary>
         /// Blocks the current thread until the cycle completes
         /// </summary>
         public void Wait() {
@@ -81,6 +93,8 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal virtual void InternalExecute() {
+            Wait();
+            OrderWork();
             InternalUpdate();
         }
 

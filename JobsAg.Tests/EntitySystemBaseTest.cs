@@ -1,10 +1,11 @@
 ﻿using Xunit;
 
 namespace NoiseStudio.JobsAg.Tests {
-    public class EntitySystemT1Test {
+    public class EntitySystemBaseTest {
 
         [Fact]
-        public void Execute() {
+        public void ExecuteMultithread() {
+            EntitySchedule schedule = new EntitySchedule();
             EntityWorld world = new EntityWorld();
 
             world.NewEntity(new TestComponentA());
@@ -16,13 +17,13 @@ namespace NoiseStudio.JobsAg.Tests {
 
             Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
-            system.Execute();
+            system.ExecuteMultithread();
             Assert.Equal(1, entity.Get<TestComponentA>(world).A);
 
             world.DisableSystem<TestSystemB>();
             world.EnableSystem<TestSystemB>();
 
-            system.Execute();
+            system.ExecuteMultithread();
             Assert.Equal(105, entity.Get<TestComponentA>(world).A);
         }
 

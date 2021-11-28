@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Threading;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace NoiseStudio.JobsAg {
     public class EntitySchedule {
@@ -16,6 +16,7 @@ namespace NoiseStudio.JobsAg {
         private int manualResetEventThreads;
         private readonly object addPackagesLocker = new object();
 
+        private readonly ConcurrentQueue<SchedulePackage> priorityPackages = new ConcurrentQueue<SchedulePackage>();
         private readonly ConcurrentQueue<SchedulePackage> packages = new ConcurrentQueue<SchedulePackage>();
         private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
         private readonly HashSet<EntitySystemBase> systemsHashSet = new HashSet<EntitySystemBase>();
@@ -96,6 +97,10 @@ namespace NoiseStudio.JobsAg {
             return systemsHashSet.Contains(system);
         }
 
+        internal void EnqueuePriorityPackages(EntitySystemBase system) {
+            EnqueuePackages(system, priorityPackages);
+        }
+
         private void ThreadWork() {
             while (works) {
                 if (!AddPackages()) {
@@ -104,7 +109,7 @@ namespace NoiseStudio.JobsAg {
                         manualResetEvent.Reset();
                 }
 
-                while (packages.TryDequeue(out SchedulePackage package)) {
+                while (priorityPackages.TryDequeue(out SchedulePackage package) || packages.TryDequeue(out package)) {
                     for (int i = package.PackageStartIndex; i < package.PackageEndIndex; i++) {
                         Entity entity = package.EntityGroup.entities[i];
                         if (entity != Entity.Empty)
@@ -134,25 +139,7 @@ namespace NoiseStudio.JobsAg {
                         double executionTimeDifference = executionTime - system.lastExecutionTime;
 
                         if (system.cycleTimeWithDelta < executionTimeDifference) {
-                            for (int j = 0; j < system.groups.Count; j++) {
-                                EntityGroup group = system.groups[j];
-                                group.Wait();
-
-                                int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, minPackageSize, maxPackageSize);
-                                for (int k = 0; k < group.entities.Count;) {
-                                    group.OrderWork();
-                                    system.OrderWork();
-
-                                    int endIndex = k + entitiesPerPackage;
-                                    if (endIndex > group.entities.Count)
-                                        endIndex = group.entities.Count;
-
-                                    packages.Enqueue(new SchedulePackage(system, group, k, endIndex));
-                                    k = endIndex;
-                                }
-
-                                group.ReleaseWork();
-                            }
+                            EnqueuePackages(system, packages);
 
                             system.OrderWork();
                             system.InternalUpdate();
@@ -177,6 +164,28 @@ namespace NoiseStudio.JobsAg {
             Monitor.Exit(addPackagesLocker);
 
             return true;
+        }
+
+        private void EnqueuePackages(EntitySystemBase system, ConcurrentQueue<SchedulePackage> packages) {
+            for (int i = 0; i < system.groups.Count; i++) {
+                EntityGroup group = system.groups[i];
+                group.Wait();
+
+                int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, minPackageSize, maxPackageSize);
+                for (int j = 0; j < group.entities.Count;) {
+                    group.OrderWork();
+                    system.OrderWork();
+
+                    int endIndex = j + entitiesPerPackage;
+                    if (endIndex > group.entities.Count)
+                        endIndex = group.entities.Count;
+
+                    packages.Enqueue(new SchedulePackage(system, group, j, endIndex));
+                    j = endIndex;
+                }
+
+                group.ReleaseWork();
+            }
         }
 
     }

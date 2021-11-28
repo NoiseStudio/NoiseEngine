@@ -15,6 +15,8 @@ namespace NoiseStudio.JobsAg {
                     InternalUpdateEntity(entity);
                 }
             }
+
+            ReleaseWork();
         }
 
         internal override void InternalUpdateEntity(Entity entity) {
