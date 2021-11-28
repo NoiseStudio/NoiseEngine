@@ -15,18 +15,24 @@ namespace NoiseStudio.JobsAg.Tests {
             int entities = 1024;
             for (int i = 0; i < entities; i++)
                 world.NewEntity(new TestComponentA(), new TestComponentB());
-            while (system.UpdateEntityCount < entities) ;
+            while (system.UpdateEntityCount < entities)
+                continue;
 
-            while (system.LateUpdateCount < 2) ;
+            while (system.LateUpdateCount < 2)
+                continue;
+
             Assert.True(system.UpdateCount >= 2);
             Assert.True(system.UsedUpdate);
             Assert.True(system.UsedLateUpdate);
 
             for (int i = 0; i < entities; i++)
                 world.NewEntity(new TestComponentA(), new TestComponentB());
-            while (system.UpdateEntityCount < entities * 2) ;
+            while (system.UpdateEntityCount < entities * 2)
+                continue;
 
-            while (system.LateUpdateCount < 3) ;
+            while (system.LateUpdateCount < 3)
+                continue;
+
             Assert.True(system.UpdateCount >= 3);
             Assert.True(system.UsedUpdate);
             Assert.True(system.UsedLateUpdate);
