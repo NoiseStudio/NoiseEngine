@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace NoiseStudio.JobsAg {
     public class EntityWorld {
@@ -13,9 +15,9 @@ namespace NoiseStudio.JobsAg {
         private readonly Dictionary<Type, EntitySystemBase> typeToSystem = new Dictionary<Type, EntitySystemBase>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
         private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
-        private readonly Dictionary<Entity, EntityGroup> entityToGroup = new Dictionary<Entity, EntityGroup>();
+        private readonly ConcurrentDictionary<Entity, EntityGroup> entityToGroup = new ConcurrentDictionary<Entity, EntityGroup>();
 
-        private ulong nextEntityId = 0;
+        private ulong nextEntityId = 1;
 
         internal static EntityWorld Empty { get; } = new EntityWorld();
 
@@ -24,8 +26,7 @@ namespace NoiseStudio.JobsAg {
         public uint Id { get; }
 
         public EntityWorld() {
-            lock (locker)
-                Id = nextId++;
+            Id = Interlocked.Increment(ref nextId);
         }
 
         /// <summary>
@@ -33,8 +34,8 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <returns><see cref="Entity"/></returns>
         public Entity NewEntity() {
-            Entity entity = NewEntityWorker(new List<Type>());
-
+            Entity entity = NewEntityWorker();
+            AddNewEntityToGroup(entity, new List<Type>());
             return entity;
         }
 
@@ -45,11 +46,13 @@ namespace NoiseStudio.JobsAg {
         /// <param name="component">Component being added</param>
         /// <returns><see cref="Entity"/></returns>
         public Entity NewEntity<T>(T component) where T : struct, IEntityComponent {
-            Entity entity = NewEntityWorker(new List<Type>() {
-                typeof(T)
-            });
+            Entity entity = NewEntityWorker();
 
             ComponentsStorage.AddComponent(entity, component);
+
+            AddNewEntityToGroup(entity, new List<Type>() {
+                typeof(T)
+            });
 
             return entity;
         }
@@ -66,12 +69,14 @@ namespace NoiseStudio.JobsAg {
             where T1 : struct, IEntityComponent
             where T2 : struct, IEntityComponent
         {
-            Entity entity = NewEntityWorker(new List<Type>() {
-                typeof(T1), typeof(T2)
-            });
+            Entity entity = NewEntityWorker();
 
             ComponentsStorage.AddComponent(entity, component1);
             ComponentsStorage.AddComponent(entity, component2);
+
+            AddNewEntityToGroup(entity, new List<Type>() {
+                typeof(T1), typeof(T2)
+            });
 
             return entity;
         }
@@ -81,8 +86,10 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <typeparam name="T">Entity system type</typeparam>
         /// <param name="system">Entity system object</param>
+        /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When null, the schedule is not used.</param>
+        /// <param name="schedule"><see cref="EntitySchedule"/> managing this system. When null is used <see cref="EntitySchedule.Instance"/>.</param>
         /// <exception cref="InvalidOperationException">Entity world already contains T entity system</exception>
-        public void AddSystem<T>(T system) where T : EntitySystemBase {
+        public void AddSystem<T>(T system, double? cycleTime = null, EntitySchedule? schedule = null) where T : EntitySystemBase {
             lock (system) {
                 lock (typeToSystem) {
                     if (HasSystem<T>())
@@ -98,8 +105,9 @@ namespace NoiseStudio.JobsAg {
                     system.RegisterGroup(groups[i]);
             }
 
-            system.InternalInitialize(this);
+            system.InternalInitialize(this, schedule ?? EntitySchedule.Instance!);
             system.InternalStart();
+            system.CycleTime = cycleTime;
         }
 
         /// <summary>
@@ -211,18 +219,18 @@ namespace NoiseStudio.JobsAg {
 
             if (group == null) {
                 lock (idToGroup) {
-                    group = new EntityGroup(hashCode, components);
+                    group = new EntityGroup(hashCode, this, components);
                     idToGroup.Add(hashCode, group);
                 }
                 lock (groups)
                     groups.Add(group);
 
                 lock (systems) {
-                    foreach (EntitySystem system in systems)
+                    foreach (EntitySystemBase system in systems)
                         system.RegisterGroup(group);
                 }
                 lock (disabledSystems) {
-                    foreach (EntitySystem system in disabledSystems)
+                    foreach (EntitySystemBase system in disabledSystems)
                         system.RegisterGroup(group);
                 }
             }
@@ -231,7 +239,11 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal EntityGroup GetEntityGroup(Entity entity) {
-            return entityToGroup[entity];
+            try {
+                return entityToGroup[entity];
+            } catch (KeyNotFoundException) {
+                throw new InvalidOperationException($"{entity} was destroyed.");
+            }
         }
 
         internal void SetEntityGroup(Entity entity, EntityGroup group) {
@@ -243,27 +255,18 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal void DestroyEntity(Entity entity) {
-            EntityGroup group = GetEntityGroup(entity);
-
-            lock (entityToGroup)
-                entityToGroup.Remove(entity);
-            group.RemoveEntity(entity);
-
-            group.DestroyEntityComponents(this, entity);
+            if (entityToGroup.TryRemove(entity, out EntityGroup? group))
+                group.RemoveEntity(entity);
         }
       
-        private Entity NewEntityWorker(List<Type> componentTypes) {
-            Entity entity;
-            lock (this)
-                entity = new Entity(nextEntityId++);
+        private Entity NewEntityWorker() {
+            return new Entity(Interlocked.Increment(ref nextEntityId));
+        }
 
+        private void AddNewEntityToGroup(Entity entity, List<Type> componentTypes) {
             EntityGroup group = GetGroupFromComponents(componentTypes);
+            entityToGroup.GetOrAdd(entity, group);
             group.AddEntity(entity);
-
-            lock (entityToGroup)
-                entityToGroup.Add(entity, group);
-
-            return entity;
         }
 
     }

@@ -16,10 +16,15 @@ namespace NoiseStudio.JobsAg {
                 EntityGroup group = groups[i];
                 for (int j = 0; j < group.entities.Count; j++) {
                     Entity entity = group.entities[j];
-
-                    UpdateEntity(entity, components1![entity], components2![entity]);
+                    InternalUpdateEntity(entity);
                 }
             }
+
+            ReleaseWork();
+        }
+
+        internal override void InternalUpdateEntity(Entity entity) {
+            UpdateEntity(entity, components1![entity], components2![entity]);
         }
 
         internal override void RegisterGroup(EntityGroup group) {
@@ -27,11 +32,11 @@ namespace NoiseStudio.JobsAg {
                 base.RegisterGroup(group);
         }
 
-        internal override void InternalInitialize(EntityWorld world) {
+        internal override void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
             components1 = world.ComponentsStorage.AddStorage<T1>();
             components2 = world.ComponentsStorage.AddStorage<T2>();
 
-            base.InternalInitialize(world);
+            base.InternalInitialize(world, schedule);
         }
 
         internal void SetComponent(Entity entity, T1 component) {
@@ -45,8 +50,6 @@ namespace NoiseStudio.JobsAg {
         /// <summary>
         /// This method is executed every cycle of this system on every <see cref="Entity"/> assigned to this system
         /// </summary>
-        /// <typeparam name="T1">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
-        /// <typeparam name="T2">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
         /// <param name="entity">Operated <see cref="Entity"/></param>
         /// <param name="component1">Component of the operated <see cref="Entity"/></param>
         /// <param name="component2">Component of the operated <see cref="Entity"/></param>

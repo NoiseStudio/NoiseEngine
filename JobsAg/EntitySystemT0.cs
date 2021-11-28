@@ -8,9 +8,15 @@
                 EntityGroup group = groups[i];
                 for (int j = 0; j < group.entities.Count; j++) {
                     Entity entity = group.entities[j];
-                    UpdateEntity(entity);
+                    InternalUpdateEntity(entity);
                 }
             }
+
+            ReleaseWork();
+        }
+
+        internal override void InternalUpdateEntity(Entity entity) {
+            UpdateEntity(entity);
         }
         
         /// <summary>

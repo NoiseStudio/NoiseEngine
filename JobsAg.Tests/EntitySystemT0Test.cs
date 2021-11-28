@@ -4,7 +4,7 @@ namespace NoiseStudio.JobsAg.Tests {
     public class EntitySystemT0Test {
 
         [Fact]
-        public void Test() {
+        public void Execute() {
             EntityWorld world = new EntityWorld();
 
             world.NewEntity();
