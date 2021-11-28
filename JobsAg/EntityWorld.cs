@@ -7,11 +7,9 @@ using System.Threading;
 namespace NoiseStudio.JobsAg {
     public class EntityWorld {
 
-        private static readonly object locker = new object();
         private static uint nextId = 0;
 
         private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
-        private readonly List<EntitySystemBase> disabledSystems = new List<EntitySystemBase>();
         private readonly Dictionary<Type, EntitySystemBase> typeToSystem = new Dictionary<Type, EntitySystemBase>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
         private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
@@ -133,17 +131,6 @@ namespace NoiseStudio.JobsAg {
                     }
                 }
             }
-            lock (disabledSystems) {
-                for (int i = 0; i < disabledSystems.Count; i++) {
-                    EntitySystemBase system = disabledSystems[i];
-                    if (type == disabledSystems[i].GetType()) {
-                        disabledSystems.RemoveAt(i);
-
-                        system.InternalTerminate();
-                        return;
-                    }
-                }
-            }
             throw new InvalidOperationException($"Entity world does not contains {type.FullName} entity system.");
         }
 
@@ -163,48 +150,6 @@ namespace NoiseStudio.JobsAg {
         /// <returns><see cref="EntitySystemBase"/></returns>
         public T GetSystem<T>() where T : EntitySystemBase {
             return (T)typeToSystem[typeof(T)];
-        }
-
-        /// <summary>
-        /// Enabling T entity system
-        /// </summary>
-        /// <typeparam name="T">Entity system</typeparam>
-        public void EnableSystem<T>() where T : EntitySystemBase {
-            Type type = typeof(T);
-            lock (disabledSystems) {
-                for (int i = 0; i < disabledSystems.Count; i++) {
-                    EntitySystemBase system = disabledSystems[i];
-                    if (type == system.GetType()) {
-                        disabledSystems.RemoveAt(i);
-                        lock (systems)
-                            systems.Add(system);
-
-                        system.InternalStart();
-                        return;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Disabling T entity system
-        /// </summary>
-        /// <typeparam name="T">Entity system</typeparam>
-        public void DisableSystem<T>() where T : EntitySystemBase {
-            Type type = typeof(T);
-            lock (systems) {
-                for (int i = 0; i < systems.Count; i++) {
-                    EntitySystemBase system = systems[i];
-                    if (type == system.GetType()) {
-                        systems.RemoveAt(i);
-                        lock (disabledSystems)
-                            disabledSystems.Add(system);
-
-                        system.InternalStop();
-                        return;
-                    }
-                }
-            }
         }
 
         internal EntityGroup GetGroupFromComponents(List<Type> components) {
@@ -227,10 +172,6 @@ namespace NoiseStudio.JobsAg {
 
                 lock (systems) {
                     foreach (EntitySystemBase system in systems)
-                        system.RegisterGroup(group);
-                }
-                lock (disabledSystems) {
-                    foreach (EntitySystemBase system in disabledSystems)
                         system.RegisterGroup(group);
                 }
             }
