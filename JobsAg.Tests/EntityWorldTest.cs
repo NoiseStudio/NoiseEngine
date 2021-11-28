@@ -67,20 +67,6 @@ namespace NoiseStudio.JobsAg.Tests {
         }
 
         [Fact]
-        public void EnableSystem() {
-            EntityWorld world = new EntityWorld();
-            world.AddSystem(new TestSystemB());
-            world.EnableSystem<TestSystemB>();
-        }
-
-        [Fact]
-        public void DisableSystem() {
-            EntityWorld world = new EntityWorld();
-            world.AddSystem(new TestSystemB());
-            world.DisableSystem<TestSystemB>();
-        }
-
-        [Fact]
         public void GetGroupFromComponents() {
             EntityWorld world = new EntityWorld();
 

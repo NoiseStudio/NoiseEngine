@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace NoiseStudio.JobsAg {
@@ -10,9 +11,10 @@ namespace NoiseStudio.JobsAg {
 
         private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(true);
 
-        private bool usesSchedule = false;
         private double? cycleTime = 0;
+        private bool usesSchedule = false;
         private EntitySchedule? schedule;
+        private bool enabled = true;
         private int ongoingWork = 0;
 
         public double? CycleTime {
@@ -51,6 +53,21 @@ namespace NoiseStudio.JobsAg {
             }
         }
 
+        public bool Enabled {
+            get {
+                return enabled;
+            }
+            set {
+                if (enabled != value) {
+                    enabled = value;
+                    if (enabled)
+                        InternalStart();
+                    else
+                        InternalStop();
+                }
+            }
+        }
+
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
         public bool IsWorking { get; private set; }
 
@@ -63,6 +80,9 @@ namespace NoiseStudio.JobsAg {
         /// Performs a cycle on this system
         /// </summary>
         public void Execute() {
+            if (!Enabled)
+                throw new InvalidOperationException($"System {ToString()} was disabled.");
+
             InternalExecute();
         }
 
@@ -70,6 +90,9 @@ namespace NoiseStudio.JobsAg {
         /// Performs a cycle on this system with using schedule threads
         /// </summary>
         public void ExecuteMultithread() {
+            if (!Enabled)
+                throw new InvalidOperationException($"System {ToString()} was disabled.");
+
             Wait();
             OrderWork();
             InternalUpdate();
@@ -83,6 +106,14 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         public void Wait() {
             manualResetEvent.WaitOne();
+        }
+
+        /// <summary>
+        /// Returns a string that represents the current system
+        /// </summary>
+        /// <returns>A string that represents the current system</returns>
+        public override string ToString() {
+            return GetType().Name;
         }
 
         internal abstract void InternalUpdateEntity(Entity entity);

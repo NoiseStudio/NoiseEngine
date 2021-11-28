@@ -19,8 +19,8 @@ namespace NoiseStudio.JobsAg.Tests {
             system.Execute();
             Assert.Equal(3, system.C);
 
-            world.DisableSystem<TestSystemA>();
-            world.EnableSystem<TestSystemA>();
+            system.Enabled = false;
+            system.Enabled = true;
 
             system.Execute();
             Assert.Equal(107, system.C);
