@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 
 namespace NoiseStudio.JobsAg {
-    public class EntitySchedule {
+    public class EntitySchedule : IDisposable {
 
         public const int DefaultMaxPackageSize = 64;
         public const int DefaultMinPackageSize = 8;
@@ -26,6 +26,8 @@ namespace NoiseStudio.JobsAg {
         private bool works = true;
 
         public static EntitySchedule? Instance { get; private set; }
+
+        public bool IsDisposed { get; private set; }
 
         /// <summary>
         /// Creates new Entity Schedule
@@ -68,12 +70,18 @@ namespace NoiseStudio.JobsAg {
         }
 
         /// <summary>
-        /// This <see cref="EntitySchedule"/> will be deactivated
+        /// This <see cref="EntitySchedule"/> will be deactivated and disposed
         /// </summary>
-        public void Abort() {
-            works = false;
-            manualResetEventThreads = int.MaxValue;
-            manualResetEvent.Set();
+        public void Dispose() {
+            lock (this) {
+                if (IsDisposed)
+                    return;
+
+                IsDisposed = true;
+            }
+
+            Abort();
+            GC.SuppressFinalize(this);
         }
 
         internal void AddSystem(EntitySystemBase system) {
@@ -186,6 +194,12 @@ namespace NoiseStudio.JobsAg {
 
                 group.ReleaseWork();
             }
+        }
+
+        private void Abort() {
+            works = false;
+            manualResetEventThreads = int.MaxValue;
+            manualResetEvent.Set();
         }
 
     }
