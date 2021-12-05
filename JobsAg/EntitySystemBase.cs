@@ -8,8 +8,12 @@ namespace NoiseStudio.JobsAg {
         internal List<EntityGroup> groups = new List<EntityGroup>();
         internal double lastExecutionTime = Time.UtcMilliseconds;
         internal double cycleTimeWithDelta = 0;
+        internal uint cyclesCount = 0;
 
-        private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(true);
+        private readonly ManualResetEvent workResetEvent = new ManualResetEvent(true);
+        private readonly ConcurrentList<EntitySystemBase> dependencies = new ConcurrentList<EntitySystemBase>();
+        private readonly Dictionary<EntitySystemBase, uint> dependenciesCyclesCount = new Dictionary<EntitySystemBase, uint>();
+        private readonly ConcurrentList<EntitySystemBase> blockadeDependencies = new ConcurrentList<EntitySystemBase>();
 
         private double? cycleTime = 0;
         private bool usesSchedule = false;
@@ -68,6 +72,24 @@ namespace NoiseStudio.JobsAg {
             }
         }
 
+        public bool CanExecute {
+            get {
+                if (IsWorking || !Enabled)
+                    return false;
+
+                foreach (EntitySystemBase system in dependencies) {
+                    if (system.IsWorking || system.cyclesCount == dependenciesCyclesCount[system])
+                        return false;
+                }
+                foreach (EntitySystemBase system in blockadeDependencies) {
+                    if (system.IsWorking)
+                        return false;
+                }
+
+                return true;
+            }
+        }
+
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
         public bool IsWorking { get; private set; }
 
@@ -80,9 +102,7 @@ namespace NoiseStudio.JobsAg {
         /// Performs a cycle on this system
         /// </summary>
         public void Execute() {
-            if (!Enabled)
-                throw new InvalidOperationException($"System {ToString()} was disabled.");
-
+            AssertCanExecute();
             InternalExecute();
         }
 
@@ -90,9 +110,7 @@ namespace NoiseStudio.JobsAg {
         /// Performs a cycle on this system with using schedule threads
         /// </summary>
         public void ExecuteMultithread() {
-            if (!Enabled)
-                throw new InvalidOperationException($"System {ToString()} was disabled.");
-
+            AssertCanExecute();
             Wait();
             OrderWork();
             InternalUpdate();
@@ -105,7 +123,19 @@ namespace NoiseStudio.JobsAg {
         /// Blocks the current thread until the cycle completes
         /// </summary>
         public void Wait() {
-            manualResetEvent.WaitOne();
+            workResetEvent.WaitOne();
+        }
+
+        public void AddDependency(EntitySystemBase system) {
+            dependenciesCyclesCount.Add(system, uint.MaxValue);
+            system.blockadeDependencies.Add(this);
+            dependencies.Add(system);
+        }
+
+        public void RemoveDependency(EntitySystemBase system) {
+            dependencies.Remove(system);
+            dependenciesCyclesCount.Remove(system);
+            system.blockadeDependencies.Remove(this);
         }
 
         /// <summary>
@@ -141,6 +171,11 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal virtual void InternalUpdate() {
+            foreach (EntitySystemBase system in dependencies) {
+                dependenciesCyclesCount[system] = system.cyclesCount;
+            }
+
+            cyclesCount++;
             double executionTime = Time.UtcMilliseconds;
 
             double deltaTimeInMiliseconds = executionTime - lastExecutionTime;
@@ -169,7 +204,7 @@ namespace NoiseStudio.JobsAg {
 
         internal void OrderWork() {
             if (Interlocked.Increment(ref ongoingWork) == 1) {
-                manualResetEvent.Reset();
+                workResetEvent.Reset();
                 IsWorking = true;
             }
         }
@@ -177,7 +212,7 @@ namespace NoiseStudio.JobsAg {
         internal void ReleaseWork() {
             if (Interlocked.Decrement(ref ongoingWork) == 0) {
                 InternalLateUpdate();
-                manualResetEvent.Set();
+                workResetEvent.Set();
                 IsWorking = false;
             }
         }
@@ -216,6 +251,11 @@ namespace NoiseStudio.JobsAg {
         /// This method is executed when this system is destroying
         /// </summary>
         protected virtual void Terminate() {
+        }
+
+        private void AssertCanExecute() {
+            if (!CanExecute)
+                throw new InvalidOperationException($"System {ToString()} could not be executed.");
         }
 
     }
