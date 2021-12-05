@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -12,85 +11,126 @@ namespace NoiseStudio.JobsAg {
         public T this[int index] {
             get {
                 locker.EnterReadLock();
-                T item = list[index];
-                locker.ExitReadLock();
+                T item;
+                try {
+                    item = list[index];
+                } finally {
+                    locker.ExitReadLock();
+                }
                 return item;
             }
             set {
                 locker.EnterReadLock();
-                list[index] = value;
-                locker.ExitReadLock();
+                try {
+                    list[index] = value;
+                } finally {
+                    locker.ExitReadLock();
+                }
             }
         }
 
         public int Count {
             get {
                 locker.EnterReadLock();
-                int count = list.Count;
-                locker.ExitReadLock();
+                int count;
+                try {
+                    count = list.Count;
+                } finally {
+                    locker.ExitReadLock();
+                }
                 return count;
             }
         }
 
-        public bool IsReadOnly => throw new NotImplementedException();
+        public bool IsReadOnly => ((ICollection<T>)list).IsReadOnly;
 
         public void Add(T item) {
             locker.EnterWriteLock();
-            list.Add(item);
-            locker.ExitWriteLock();
+            try {
+                list.Add(item);
+            } finally {
+                locker.ExitWriteLock();
+            }
         }
 
         public void Clear() {
             locker.EnterWriteLock();
-            list.Clear();
-            locker.ExitWriteLock();
+            try {
+                list.Clear();
+            } finally {
+                locker.ExitWriteLock();
+            }
         }
 
         public bool Contains(T item) {
             locker.EnterReadLock();
-            bool contains = list.Contains(item);
-            locker.ExitReadLock();
+            bool contains;
+            try {
+                contains = list.Contains(item);
+            } finally {
+                locker.ExitReadLock();
+            }
             return contains;
         }
 
         public void CopyTo(T[] array, int arrayIndex) {
             locker.EnterReadLock();
-            list.CopyTo(array, arrayIndex);
-            locker.ExitReadLock();
+            try {
+                list.CopyTo(array, arrayIndex);
+            } finally {
+                locker.ExitReadLock();
+            }
         }
 
         public IEnumerator<T> GetEnumerator() {
             locker.EnterReadLock();
-            for (int i = 0; i < Count; i++) {
-                yield return this[i];
+            try {
+                for (int i = 0; i < Count; i++) {
+                    yield return this[i];
+                }
+            } finally {
+                locker.ExitReadLock();
             }
-            locker.ExitReadLock();
         }
 
         public int IndexOf(T item) {
             locker.EnterReadLock();
-            int index = list.IndexOf(item);
-            locker.ExitReadLock();
+            int index;
+            try {
+                index = list.IndexOf(item);
+            } finally {
+                locker.ExitReadLock();
+            }
             return index;
         }
 
         public void Insert(int index, T item) {
             locker.EnterWriteLock();
-            list.Insert(index, item);
-            locker.ExitWriteLock();
+            try {
+                list.Insert(index, item);
+            } finally {
+                locker.ExitWriteLock();
+            }
         }
 
         public bool Remove(T item) {
             locker.EnterWriteLock();
-            bool removed = list.Remove(item);
-            locker.ExitWriteLock();
+            bool removed;
+            try {
+                removed = list.Remove(item);
+            } finally {
+                locker.ExitWriteLock();
+            }
             return removed;
         }
 
         public void RemoveAt(int index) {
             locker.EnterWriteLock();
-            list.RemoveAt(index);
-            locker.ExitWriteLock();
+            try {
+                list.RemoveAt(index);
+            } finally {
+                locker.ExitWriteLock();
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
