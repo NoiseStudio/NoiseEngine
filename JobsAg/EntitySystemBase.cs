@@ -72,7 +72,7 @@ namespace NoiseStudio.JobsAg {
             }
         }
 
-        public bool CanBeExecuted {
+        public bool CanExecute {
             get {
                 if (IsWorking || !Enabled)
                     return false;
@@ -102,7 +102,7 @@ namespace NoiseStudio.JobsAg {
         /// Performs a cycle on this system
         /// </summary>
         public void Execute() {
-            CanRunCheck();
+            AssertCanExecute();
             InternalExecute();
         }
 
@@ -110,7 +110,7 @@ namespace NoiseStudio.JobsAg {
         /// Performs a cycle on this system with using schedule threads
         /// </summary>
         public void ExecuteMultithread() {
-            CanRunCheck();
+            AssertCanExecute();
             Wait();
             OrderWork();
             InternalUpdate();
@@ -253,8 +253,8 @@ namespace NoiseStudio.JobsAg {
         protected virtual void Terminate() {
         }
 
-        private void CanRunCheck() {
-            if (!CanBeExecuted)
+        private void AssertCanExecute() {
+            if (!CanExecute)
                 throw new InvalidOperationException($"System {ToString()} could not be executed.");
         }
 

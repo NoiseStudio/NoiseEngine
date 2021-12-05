@@ -91,11 +91,11 @@ namespace NoiseStudio.JobsAg.Tests {
             systemB.Execute();
             systemB.AddDependency(systemA);
 
-            Assert.True(systemB.CanBeExecuted);
+            Assert.True(systemB.CanExecute);
             systemB.Execute();
-            Assert.False(systemB.CanBeExecuted);
+            Assert.False(systemB.CanExecute);
 
-            Assert.True(systemA.CanBeExecuted);
+            Assert.True(systemA.CanExecute);
         }
 
     }

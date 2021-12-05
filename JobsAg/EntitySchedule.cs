@@ -144,7 +144,7 @@ namespace NoiseStudio.JobsAg {
                     EntitySystemBase system = sortedSystems[i];
                     double executionTimeDifference = executionTime - system.lastExecutionTime;
 
-                    if (system.cycleTimeWithDelta < executionTimeDifference && system.CanBeExecuted) {
+                    if (system.cycleTimeWithDelta < executionTimeDifference && system.CanExecute) {
                         EnqueuePackages(system, packages);
 
                         system.OrderWork();
