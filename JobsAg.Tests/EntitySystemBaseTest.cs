@@ -48,5 +48,55 @@ namespace NoiseStudio.JobsAg.Tests {
             system.Execute();
         }
 
+        [Fact]
+        public void Dependency() {
+            EntitySchedule schedule = new EntitySchedule();
+            EntityWorld world = new EntityWorld();
+
+            world.NewEntity(new TestComponentA(), new TestComponentB());
+            world.NewEntity(new TestComponentA(), new TestComponentB());
+            world.NewEntity(new TestComponentA(), new TestComponentB());
+
+            TestSystemA systemA = new TestSystemA();
+            TestSystemB systemB = new TestSystemB();
+            world.AddSystem(systemA);
+            world.AddSystem(systemB);
+
+            systemB.Execute();
+            systemB.AddDependency(systemA);
+
+            systemB.ExecuteMultithread();
+            Assert.Throws<InvalidOperationException>(systemB.ExecuteMultithread);
+
+            systemA.Execute();
+            systemA.Execute();
+
+            systemB.Execute();
+            Assert.Throws<InvalidOperationException>(systemB.Execute);
+        }
+
+        [Fact]
+        public void CanBeExecuted() {
+            EntityWorld world = new EntityWorld();
+
+            world.NewEntity(new TestComponentA(), new TestComponentB());
+            world.NewEntity(new TestComponentA(), new TestComponentB());
+            world.NewEntity(new TestComponentA(), new TestComponentB());
+
+            TestSystemA systemA = new TestSystemA();
+            TestSystemB systemB = new TestSystemB();
+            world.AddSystem(systemA);
+            world.AddSystem(systemB);
+
+            systemB.Execute();
+            systemB.AddDependency(systemA);
+
+            Assert.True(systemB.CanBeExecuted);
+            systemB.Execute();
+            Assert.False(systemB.CanBeExecuted);
+
+            Assert.True(systemA.CanBeExecuted);
+        }
+
     }
 }

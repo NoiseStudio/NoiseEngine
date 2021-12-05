@@ -142,18 +142,15 @@ namespace NoiseStudio.JobsAg {
                 bool needToWait = true;
                 for (int i = 0; i < sortedSystems.Count; i++) {
                     EntitySystemBase system = sortedSystems[i];
+                    double executionTimeDifference = executionTime - system.lastExecutionTime;
 
-                    if (!system.IsWorking && system.Enabled) {
-                        double executionTimeDifference = executionTime - system.lastExecutionTime;
+                    if (system.cycleTimeWithDelta < executionTimeDifference && system.CanBeExecuted) {
+                        EnqueuePackages(system, packages);
 
-                        if (system.cycleTimeWithDelta < executionTimeDifference) {
-                            EnqueuePackages(system, packages);
-
-                            system.OrderWork();
-                            system.InternalUpdate();
-                            system.ReleaseWork();
-                            needToWait = false;
-                        }
+                        system.OrderWork();
+                        system.InternalUpdate();
+                        system.ReleaseWork();
+                        needToWait = false;
                     }
                 }
 
