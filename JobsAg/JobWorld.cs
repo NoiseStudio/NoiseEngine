@@ -27,7 +27,8 @@ namespace NoiseStudio.JobsAg {
         }
 
         private Job NewJobWorker(Delegate toExecute, ulong relativeExecutionTime) {
-            return new Job(Interlocked.Increment(ref nextJobId), toExecute);
+            JobTime jobTime = new JobTime();
+            return new Job(Interlocked.Increment(ref nextJobId), toExecute, jobTime);
         }
 
         private void AddNewJobToQueue(Job job) {

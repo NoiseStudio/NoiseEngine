@@ -5,9 +5,9 @@ namespace NoiseStudio.JobsAg.Tests {
 
         [Fact]
         public void GetHashCodeTest() {
-            Job a = new Job(11, GetHashCodeTest);
-            Job b = new Job(11, GetHashCodeTest);
-            Job c = new Job(69, GetHashCodeTest);
+            Job a = new Job(11, GetHashCodeTest, new JobTime());
+            Job b = new Job(11, GetHashCodeTest, new JobTime());
+            Job c = new Job(69, GetHashCodeTest, new JobTime());
 
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
             Assert.NotEqual(a.GetHashCode(), c.GetHashCode());
@@ -15,9 +15,9 @@ namespace NoiseStudio.JobsAg.Tests {
 
         [Fact]
         public void EqualsTest() {
-            Job a = new Job(420, EqualsTest);
-            Job b = new Job(420, EqualsTest);
-            Job c = new Job(2137, EqualsTest);
+            Job a = new Job(420, EqualsTest, new JobTime());
+            Job b = new Job(420, EqualsTest, new JobTime());
+            Job c = new Job(2137, EqualsTest, new JobTime());
 
             Assert.True(a.Equals((object)b));
             Assert.False(a.Equals((object)c));
@@ -31,9 +31,9 @@ namespace NoiseStudio.JobsAg.Tests {
 
         [Fact]
         public void EqualsGenericTest() {
-            Job a = new Job(36, EqualsGenericTest);
-            Job b = new Job(36, EqualsGenericTest);
-            Job c = new Job(773, EqualsGenericTest);
+            Job a = new Job(36, EqualsGenericTest, new JobTime());
+            Job b = new Job(36, EqualsGenericTest, new JobTime());
+            Job c = new Job(773, EqualsGenericTest, new JobTime());
 
             Assert.True(a.Equals(b));
             Assert.False(a.Equals(c));

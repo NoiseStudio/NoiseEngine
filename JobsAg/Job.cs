@@ -9,16 +9,17 @@ namespace NoiseStudio.JobsAg {
         public Delegate ToExecute { get; }
         public JobTime ExecutionTime { get; }
 
-        internal Job(ulong id, Delegate toExecute) {
+        internal Job(ulong id, Delegate toExecute, JobTime executionTime) {
             this.id = id;
             ToExecute = toExecute;
+            ExecutionTime = executionTime;
         }
 
         /// <summary>
-        /// Returns a value indicating whether this instance is equal to a specified other Entity
+        /// Returns a value indicating whether this instance is equal to a specified other <see cref="Job"/>
         /// </summary>
-        /// <param name="other">An Job to compare to this instance</param>
-        /// <returns>True if other Job is an instance of Job and equals the value of this instance or when not returns false</returns>
+        /// <param name="other">An <see cref="Job"/> to compare to this instance</param>
+        /// <returns>True if other <see cref="Job"/> is an instance of <see cref="Job"/> and equals the value of this instance or when not returns false</returns>
         public bool Equals(Job other) {
             return id == other.id;
         }
@@ -43,7 +44,7 @@ namespace NoiseStudio.JobsAg {
         /// Returns a value indicating whether this instance is equal to a specified object
         /// </summary>
         /// <param name="obj">An object to compare to this instance</param>
-        /// <returns>True if obj is an instance of Entity and equals the value of this instance or when not returns false</returns>
+        /// <returns>True if obj is an instance of <see cref="Job"/> and equals the value of this instance or when not returns false</returns>
         public override bool Equals(object? obj) {
             return obj is Job other && Equals(other);
         }
@@ -65,7 +66,7 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <param name="left"><see cref="Job"/></param>
         /// <param name="right"><see cref="Job"/></param>
-        /// <returns>True if left Job is an instance of right Job and equals the value of this instance or when not returns false</returns>
+        /// <returns>True if left <see cref="Job"/> is an instance of right <see cref="Job"/> and equals the value of this instance or when not returns false</returns>
         public static bool operator ==(Job left, Job right) {
             return left.Equals(right);
         }
@@ -75,7 +76,7 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <param name="left"><see cref="Job"/></param>
         /// <param name="right"><see cref="Job"/></param>
-        /// <returns>False if left Job is an instance of right Job and equals the value of this instance or when not returns true</returns>
+        /// <returns>False if left <see cref="Job"/> is an instance of right <see cref="Job"/> and equals the value of this instance or when not returns true</returns>
         public static bool operator !=(Job left, Job right) {
             return !(left == right);
         }
