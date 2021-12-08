@@ -98,5 +98,25 @@ namespace NoiseStudio.JobsAg {
             return left.Time < right.Time;
         }
 
+        /// <summary>
+        /// Returns a value indicating whether the left struct is later or at the same time than the right struct
+        /// </summary>
+        /// <param name="left"><see cref="JobTime"/></param>
+        /// <param name="right"><see cref="JobTime"/></param>
+        /// <returns>True if left <see cref="JobTime"/> is later or at the same time than right <see cref="JobTime"/> or when not returns false</returns>
+        public static bool operator >=(JobTime left, JobTime right) {
+            return left.Time >= right.Time;
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether the left struct is earlier or at the same time than the right struct
+        /// </summary>
+        /// <param name="left"><see cref="JobTime"/></param>
+        /// <param name="right"><see cref="JobTime"/></param>
+        /// <returns>True if left <see cref="JobTime"/> is earlier or at the same time than right <see cref="JobTime"/> or when not returns false</returns>
+        public static bool operator <=(JobTime left, JobTime right) {
+            return left.Time <= right.Time;
+        }
+
     }
 }
