@@ -51,13 +51,13 @@ namespace NoiseStudio.JobsAg {
             return obj is Job other && Equals(other);
         }
 
-        internal void Execute(JobWorld world) {
+        internal void Execute(JobsWorld world) {
             ParameterInfo[] parametersInfo = ToExecute.Method.GetParameters();
             object[] parameters = new object[parametersInfo.Length];
 
             for (int i = 0; i < parametersInfo.Length; i++) {
                 ParameterInfo parameterInfo = parametersInfo[i];
-                parameters[i] = world.ComponentsStorage.PeekComponent(this, parameterInfo.ParameterType);
+                parameters[i] = world.ComponentsStorage.PopComponent(this, parameterInfo.ParameterType);
             }
 
             ToExecute.DynamicInvoke(parameters);

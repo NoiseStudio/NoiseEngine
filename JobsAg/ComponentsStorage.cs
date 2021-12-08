@@ -66,7 +66,7 @@ namespace NoiseStudio.JobsAg {
             return GetStorageWithoutCast(componentType)[key]!;
         }
 
-        internal object PeekComponent(TKey key, Type componentType) {
+        internal object PopComponent(TKey key, Type componentType) {
             IDictionary dictionary = GetStorageWithoutCast(componentType);
             object obj = dictionary[key]!;
             dictionary.Remove(key);

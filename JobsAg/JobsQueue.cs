@@ -10,13 +10,13 @@ namespace NoiseStudio.JobsAg {
 
         private readonly ConcurrentQueue<Job>[] queues;
         private readonly uint[] queuesGaps;
-        private readonly JobWorld world;
+        private readonly JobsWorld world;
 
         private bool works = true;
 
         public bool IsDisposed { get; private set; }
 
-        public JobsQueue(JobWorld world, uint[]? queues = null) {
+        public JobsQueue(JobsWorld world, uint[]? queues = null) {
             this.world = world;
             works = true;
 

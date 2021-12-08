@@ -1,11 +1,11 @@
 ﻿using Xunit;
 
 namespace NoiseStudio.JobsAg.Tests {
-    public class JobWorldTest {
+    public class JobsWorldTest {
 
         [Fact]
         public void CreateWithoutQueues() {
-            JobWorld world = new JobWorld(new uint[0]);
+            JobsWorld world = new JobsWorld(new uint[0]);
             world.NewJob(TestMethodT0, 0);
 
             Assert.Single(world.queue.endQueue);
@@ -13,7 +13,7 @@ namespace NoiseStudio.JobsAg.Tests {
 
         [Fact]
         public void CreateWithQueues() {
-            JobWorld world = new JobWorld(new uint[] { 1 });
+            JobsWorld world = new JobsWorld(new uint[] { 1 });
             world.NewJob(TestMethodT0, 10);
 
             Assert.Empty(world.queue.endQueue);
@@ -21,13 +21,13 @@ namespace NoiseStudio.JobsAg.Tests {
 
         [Fact]
         public void NewJobT0() {
-            JobWorld world = new JobWorld();
+            JobsWorld world = new JobsWorld();
             world.NewJob(TestMethodT0, 0);
         }
 
         [Fact]
         public void NewJobT1() {
-            JobWorld world = new JobWorld();
+            JobsWorld world = new JobsWorld();
             world.NewJob(TestMethodT1, 0, "Hello");
         }
 

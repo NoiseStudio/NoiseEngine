@@ -6,7 +6,7 @@ namespace NoiseStudio.JobsAg.Tests {
 
         [Fact]
         public void Test1() {
-            JobWorld world = new JobWorld(new uint[] { 5 });
+            JobsWorld world = new JobsWorld(new uint[] { 5 });
             world.NewJob(Test1, 10);
 
             Assert.Empty(world.queue.endQueue);
