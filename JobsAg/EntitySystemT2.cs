@@ -40,11 +40,11 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal void SetComponent(Entity entity, T1 component) {
-            ComponentsStorage.SetComponent(components1!, entity, component);
+            ComponentsStorage<Entity>.SetComponent(components1!, entity, component);
         }
 
         internal void SetComponent(Entity entity, T2 component) {
-            ComponentsStorage.SetComponent(components2!, entity, component);
+            ComponentsStorage<Entity>.SetComponent(components2!, entity, component);
         }
 
         /// <summary>

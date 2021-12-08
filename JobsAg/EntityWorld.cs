@@ -19,7 +19,7 @@ namespace NoiseStudio.JobsAg {
 
         internal static EntityWorld Empty { get; } = new EntityWorld();
 
-        internal ComponentsStorage ComponentsStorage { get; } = new ComponentsStorage();
+        internal ComponentsStorage<Entity> ComponentsStorage { get; } = new ComponentsStorage<Entity>();
 
         public uint Id { get; }
 
