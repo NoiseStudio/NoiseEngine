@@ -9,7 +9,7 @@ namespace NoiseStudio.JobsAg {
         internal readonly ConcurrentQueue<Job> endQueue = new ConcurrentQueue<Job>();
 
         private readonly ConcurrentQueue<Job>[] queues;
-        private readonly uint[] queuesGaps;
+        private readonly uint[] queueGaps;
         private readonly JobsWorld world;
 
         private bool works = true;
@@ -31,7 +31,7 @@ namespace NoiseStudio.JobsAg {
                     3600_000, // 1 hour
                 };
             }
-            queuesGaps = queues;
+            queueGaps = queues;
 
             this.queues = new ConcurrentQueue<Job>[queues.Length];
             for (int i = 0; i < this.queues.Length; i++) {
@@ -61,8 +61,8 @@ namespace NoiseStudio.JobsAg {
 
         public void Enqueue(Job job) {
             ulong timeToExecute = job.ExecutionTime.Difference(world.WorldTime);
-            for (int i = queuesGaps.Length - 1; i >= 0; i--) {
-                if (timeToExecute >= queuesGaps[i]) {
+            for (int i = queueGaps.Length - 1; i >= 0; i--) {
+                if (timeToExecute >= queueGaps[i]) {
                     queues[i].Enqueue(job);
                     return;
                 }
@@ -73,7 +73,7 @@ namespace NoiseStudio.JobsAg {
         private void QueueSortThreadWork(object? indexObj) {
             int index = (int)indexObj!;
             ConcurrentQueue<Job> queue = queues[index];
-            uint gap = queuesGaps[index];
+            uint gap = queueGaps[index];
 
             int waitTime = (int)Math.Max(gap - 1, 1);
             Queue<Job> jobs = new Queue<Job>();
@@ -94,7 +94,7 @@ namespace NoiseStudio.JobsAg {
 
                     bool breaked = false;
                     for (int j = index; j >= 0; j--) {
-                        if (timeToExecute >= queuesGaps[index]) {
+                        if (timeToExecute >= queueGaps[index]) {
                             queues[index].Enqueue(job);
                             breaked = true;
                             break;

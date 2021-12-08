@@ -9,6 +9,18 @@ namespace NoiseStudio.JobsAg {
         public Delegate ToExecute { get; }
         public JobTime ExecutionTime { get; }
 
+        /// <summary>
+        /// Do not use default constructor for this type, always throws <see cref="InvalidOperationException"/>.
+        /// Use JobsWorld.NewJob method instead.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// Always throws <see cref="InvalidOperationException"/>.
+        /// </exception>
+        [Obsolete("Do not use default constructor for this type. Use JobsWorld.NewJob method instead.", true)]
+        public Job() {
+            throw new NotImplementedException("Do not use default constructor for this type. Use JobsWorld.NewJob method instead.");
+        }
+
         internal Job(ulong id, Delegate toExecute, JobTime executionTime) {
             this.id = id;
             ToExecute = toExecute;

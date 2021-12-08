@@ -23,7 +23,7 @@ namespace NoiseStudio.JobsAg {
         public delegate void JobT0();
         public delegate void JobT1<T>(T argument0);
 
-        public JobsWorld(uint[]? queues = null, JobTime ? startTime = null) {
+        public JobsWorld(uint[]? queues = null, JobTime? startTime = null) {
             if (startTime == null)
                 startTime = JobTime.Zero;
             this.startTime = (JobTime)startTime;
