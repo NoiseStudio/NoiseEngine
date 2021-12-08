@@ -3,7 +3,13 @@
 namespace NoiseStudio.JobsAg {
     public struct JobTime : IEquatable<JobTime> {
 
+        public static JobTime Zero => new JobTime(0);
+
         internal ulong Time { get; }
+
+        internal JobTime(ulong time) {
+            Time = time;
+        }
 
         /// <summary>
         /// Returns a value indicating whether this instance is equal to a specified other <see cref="JobTime"/>
@@ -29,6 +35,10 @@ namespace NoiseStudio.JobsAg {
         /// <returns>True if obj is an instance of <see cref="JobTime"/> and equals the value of this instance or when not returns false</returns>
         public override bool Equals(object? obj) {
             return obj is JobTime other && Equals(other);
+        }
+
+        internal ulong Difference(JobTime differenceTime) {
+            return Time - differenceTime.Time;
         }
 
         /// <summary>

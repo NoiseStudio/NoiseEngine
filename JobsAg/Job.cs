@@ -6,6 +6,8 @@ namespace NoiseStudio.JobsAg {
 
         private readonly ulong id;
 
+        public static Entity Empty => new Entity(0);
+
         public Delegate ToExecute { get; }
         public JobTime ExecutionTime { get; }
 
