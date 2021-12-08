@@ -18,7 +18,7 @@ namespace NoiseStudio.JobsAg {
         /// </exception>
         [Obsolete("Do not use default constructor for this type. Use JobsWorld.NewJob method instead.", true)]
         public Job() {
-            throw new NotImplementedException("Do not use default constructor for this type. Use JobsWorld.NewJob method instead.");
+            throw new InvalidOperationException("Do not use default constructor for this type. Use JobsWorld.NewJob method instead.");
         }
 
         internal Job(ulong id, Delegate toExecute, JobTime executionTime) {
