@@ -62,5 +62,16 @@ namespace NoiseStudio.JobsAg {
             return (T)GetStorageWithoutCast<T>()[key]!;
         }
 
+        internal object GetComponent(TKey key, Type componentType) {
+            return GetStorageWithoutCast(componentType)[key]!;
+        }
+
+        internal object PeekComponent(TKey key, Type componentType) {
+            IDictionary dictionary = GetStorageWithoutCast(componentType);
+            object obj = dictionary[key]!;
+            dictionary.Remove(key);
+            return obj;
+        }
+
     }
 }
