@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace NoiseStudio.JobsAg.Tests {
@@ -69,6 +70,22 @@ namespace NoiseStudio.JobsAg.Tests {
 
             world.ComponentsStorage.AddComponent(entity, component);
             Assert.Equal(component.A, world.ComponentsStorage.GetComponent<TestComponentA>(entity).A);
+        }
+
+        [Fact]
+        public void PopComponent() {
+            EntityWorld world = new EntityWorld();
+            Entity entity = world.NewEntity();
+
+            TestComponentA component = new TestComponentA() {
+                A = 5
+            };
+
+            world.ComponentsStorage.AddComponent(entity, component);
+            Assert.Equal(component.A, ((TestComponentA)world.ComponentsStorage.PopComponent(entity, typeof(TestComponentA))).A);
+            Assert.Throws<NullReferenceException>(() => {
+                world.ComponentsStorage.GetComponent<TestComponentA>(entity);
+            });
         }
 
     }

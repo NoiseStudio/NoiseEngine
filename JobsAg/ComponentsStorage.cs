@@ -3,32 +3,32 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace NoiseStudio.JobsAg {
-    internal class ComponentsStorage {
+    internal class ComponentsStorage<TKey> where TKey : notnull {
 
         private readonly Dictionary<Type, IDictionary> storage = new Dictionary<Type, IDictionary>();
 
-        internal static void SetComponent<T>(Dictionary<Entity, T> storage, Entity entity, T component) where T : struct, IEntityComponent {
-            storage[entity] = component;
+        internal static void SetComponent<T>(Dictionary<TKey, T> storage, TKey key, T component) {
+            storage[key] = component;
         }
 
-        internal Dictionary<Entity, T> AddStorage<T>() where T : struct, IEntityComponent {
+        internal Dictionary<TKey, T> AddStorage<T>() {
             Type type = typeof(T);
             lock (storage) {
                 if (storage.TryGetValue(type, out IDictionary? value))
-                    return (Dictionary<Entity, T>)value;
+                    return (Dictionary<TKey, T>)value;
 
-                Dictionary<Entity, T> dictionary = new Dictionary<Entity, T>();
+                Dictionary<TKey, T> dictionary = new Dictionary<TKey, T>();
                 storage.Add(type, dictionary);
 
                 return dictionary;
             }
         }
 
-        internal Dictionary<Entity, T> GetStorage<T>() where T : struct, IEntityComponent {
-            return (Dictionary<Entity, T>)GetStorageWithoutCast(typeof(T));
+        internal Dictionary<TKey, T> GetStorage<T>() {
+            return (Dictionary<TKey, T>)GetStorageWithoutCast(typeof(T));
         }
 
-        internal IDictionary GetStorageWithoutCast<T>() where T : struct, IEntityComponent {
+        internal IDictionary GetStorageWithoutCast<T>() {
             return storage[typeof(T)];
         }
 
@@ -36,30 +36,41 @@ namespace NoiseStudio.JobsAg {
             return storage[componentType];
         }
 
-        internal void AddComponent<T>(Entity entity, T component) where T : struct, IEntityComponent {
-            Dictionary<Entity, T> dictionary = AddStorage<T>();
+        internal void AddComponent<T>(TKey key, T component) {
+            Dictionary<TKey, T> dictionary = AddStorage<T>();
             lock (dictionary)
-                dictionary.Add(entity, component);
+                dictionary.Add(key, component);
         }
 
-        internal void RemoveComponent<T>(Entity entity) where T : struct, IEntityComponent {
+        internal void RemoveComponent<T>(TKey key) {
             IDictionary dictionary = GetStorageWithoutCast<T>();
             lock (dictionary)
-                dictionary.Remove(entity);
+                dictionary.Remove(key);
         }
 
-        internal void RemoveComponent(Type componentType, Entity entity) {
+        internal void RemoveComponent(Type componentType, TKey key) {
             IDictionary dictionary = GetStorageWithoutCast(componentType);
             lock (dictionary)
-                dictionary.Remove(entity);
+                dictionary.Remove(key);
         }
 
-        internal void SetComponent<T>(Entity entity, T component) where T : struct, IEntityComponent {
-            GetStorageWithoutCast<T>()[entity] = component;
+        internal void SetComponent<T>(TKey key, T component) {
+            GetStorageWithoutCast<T>()[key] = component;
         }
 
-        internal T GetComponent<T>(Entity entity) where T : struct, IEntityComponent {
-            return (T)GetStorageWithoutCast<T>()[entity]!;
+        internal T GetComponent<T>(TKey key) {
+            return (T)GetStorageWithoutCast<T>()[key]!;
+        }
+
+        internal object GetComponent(TKey key, Type componentType) {
+            return GetStorageWithoutCast(componentType)[key]!;
+        }
+
+        internal object PopComponent(TKey key, Type componentType) {
+            IDictionary dictionary = GetStorageWithoutCast(componentType);
+            object obj = dictionary[key]!;
+            dictionary.Remove(key);
+            return obj;
         }
 
     }
