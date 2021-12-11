@@ -61,7 +61,7 @@ namespace NoiseStudio.JobsAg {
             return obj is Job other && Equals(other);
         }
 
-        internal void Execute(JobsWorld world) {
+        internal void Invoke(JobsWorld world) {
             ParameterInfo[] parametersInfo = ToExecute.Method.GetParameters();
             object[] parameters = new object[parametersInfo.Length];
 

@@ -10,14 +10,17 @@ namespace NoiseStudio.JobsAg {
 
         private readonly ConcurrentQueue<Job>[] queues;
         private readonly uint[] queueGaps;
+        private readonly Stack<Job> endQueueSwap = new Stack<Job>();
         private readonly JobsWorld world;
+        private readonly JobsInvoker invoker;
 
         private bool works = true;
 
         public bool IsDisposed { get; private set; }
 
-        public JobsQueue(JobsWorld world, uint[]? queues = null) {
+        public JobsQueue(JobsWorld world, JobsInvoker invoker, uint[]? queues = null) {
             this.world = world;
+            this.invoker = invoker;
             works = true;
 
             if (queues == null) {
@@ -32,6 +35,8 @@ namespace NoiseStudio.JobsAg {
                 };
             }
             queueGaps = queues;
+
+            invoker.AddJobsQueue(this);
 
             this.queues = new ConcurrentQueue<Job>[queues.Length];
             for (int i = 0; i < this.queues.Length; i++) {
@@ -60,14 +65,32 @@ namespace NoiseStudio.JobsAg {
         }
 
         public void Enqueue(Job job) {
-            ulong timeToExecute = job.ExecutionTime.Difference(world.WorldTime);
-            for (int i = queueGaps.Length - 1; i >= 0; i--) {
+            long timeToExecute = job.ExecutionTime.Difference(world.WorldTime);
+            /*for (int i = queueGaps.Length - 1; i >= 0; i--) {
                 if (timeToExecute >= queueGaps[i]) {
                     queues[i].Enqueue(job);
                     return;
                 }
+            }*/
+
+            PrepareJobToInvoke(job, timeToExecute);
+        }
+
+        internal void DequeueToInvoke(ref long minimalWaitTime) {
+            JobTime time = world.WorldTime;
+            while (endQueue.TryDequeue(out Job job)) {
+                long timeToExecute = job.ExecutionTime.Difference(time);
+                if (timeToExecute > 0) {
+                    endQueueSwap.Push(job);
+                    minimalWaitTime = Math.Min(minimalWaitTime, timeToExecute);
+                    continue;
+                }
+
+                invoker.InvokeJob(job, world);
             }
-            endQueue.Enqueue(job);
+
+            for (int i = 0; i < endQueueSwap.Count; i++)
+                endQueue.Enqueue(endQueueSwap.Pop());
         }
 
         private void QueueSortThreadWork(object? indexObj) {
@@ -86,7 +109,7 @@ namespace NoiseStudio.JobsAg {
                 int count = jobs.Count;
                 for (int i = 0; i < count; i++) {
                     Job job = jobs.Dequeue();
-                    ulong timeToExecute = job.ExecutionTime.Difference(time);
+                    long timeToExecute = job.ExecutionTime.Difference(time);
                     if (timeToExecute > gap) {
                         jobs.Enqueue(job);
                         continue;
@@ -100,16 +123,27 @@ namespace NoiseStudio.JobsAg {
                             break;
                         }
                     }
+
                     if (!breaked)
-                        endQueue.Enqueue(job);
+                        PrepareJobToInvoke(job, timeToExecute);
                 }
 
                 Thread.Sleep(waitTime);
             }
         }
 
+        private void PrepareJobToInvoke(Job job, long timeToExecute) {
+            if (timeToExecute > 0) {
+                endQueue.Enqueue(job);
+                invoker.SetToInvokeWaitTime(timeToExecute);
+            } else {
+                invoker.InvokeJob(job, world);
+            }
+        }
+
         private void Abort() {
             works = false;
+            invoker.RemoveJobsQueue(this);
         }
 
     }

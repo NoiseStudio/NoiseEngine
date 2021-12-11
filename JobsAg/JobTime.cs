@@ -5,10 +5,10 @@ namespace NoiseStudio.JobsAg {
 
         public static JobTime Zero => new JobTime(0);
 
-        internal ulong Time { get; }
+        internal long Time { get; }
 
         internal JobTime(ulong time) {
-            Time = time;
+            Time = (long)time;
         }
 
         /// <summary>
@@ -54,7 +54,15 @@ namespace NoiseStudio.JobsAg {
             return obj is JobTime other && Equals(other);
         }
 
-        internal ulong Difference(JobTime differenceTime) {
+        /// <summary>
+        /// Converts the numeric value of this instance to its equivalent string representation
+        /// </summary>
+        /// <returns>The string representation of the value of this instance</returns>
+        public override string ToString() {
+            return $"{nameof(JobTime)}({Time})";
+        }
+
+        internal long Difference(JobTime differenceTime) {
             return Time - differenceTime.Time;
         }
 
