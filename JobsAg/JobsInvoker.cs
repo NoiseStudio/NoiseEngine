@@ -15,6 +15,7 @@ namespace NoiseStudio.JobsAg {
 
         private bool works = true;
         private long waitTime = 0;
+        private int toInvokeAutoResetEventRelease = 0;
 
         public static JobsInvoker? Instance { get; private set; }
 
@@ -24,7 +25,7 @@ namespace NoiseStudio.JobsAg {
         /// Creates new <see cref="JobsInvoker"/>
         /// </summary>
         /// <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
-        /// <exception cref="InvalidOperationException">Error when using zero or negative threads</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Error when using zero or negative threads</exception>
         public JobsInvoker(int? threadCount = null) {
             if (threadCount == null)
                 threadCount = Environment.ProcessorCount;
@@ -75,8 +76,10 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal void SetToInvokeWaitTime(long waitTime) {
-            if (waitTime < this.waitTime)
+            if (waitTime < this.waitTime) {
+                Interlocked.Increment(ref toInvokeAutoResetEventRelease);
                 toInvokeAutoResetEvent.Set();
+            }
         }
 
         internal void AddJobsQueue(JobsQueue queue) {
@@ -89,12 +92,18 @@ namespace NoiseStudio.JobsAg {
 
         private void ToInvokeThreadWork() {
             while (works) {
-                waitTime = long.MaxValue;
-                foreach (JobsQueue queue in queues)
-                    queue.DequeueToInvoke(ref waitTime);
+                Interlocked.Exchange(ref toInvokeAutoResetEventRelease, 0);
+                long newWaitTime = long.MaxValue;
 
-                if (waitTime > 0)
+                foreach (JobsQueue queue in queues)
+                    queue.DequeueToInvoke(ref newWaitTime);
+
+                waitTime = newWaitTime;
+                if (waitTime > 0 && toInvokeAutoResetEventRelease != 0) {
+                    toInvokeAutoResetEvent.Reset();
                     toInvokeAutoResetEvent.WaitOne((int)waitTime);
+                    waitTime = 0;
+                }
             }
         }
 

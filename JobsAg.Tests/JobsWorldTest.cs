@@ -25,10 +25,10 @@ namespace NoiseStudio.JobsAg.Tests {
             JobsInvoker invoker = new JobsInvoker();
             JobsWorld world = new JobsWorld(new uint[] {
                 2, 3, 5, 10
-            });
+            }, invoker);
 
             for (int i = 0; i < 1000; i++)
-                world.EnqueueJob(TestMethodThousand, 1);
+                world.EnqueueJob(TestMethodThousand, 15);
 
             autoResetEvent.WaitOne();
         }

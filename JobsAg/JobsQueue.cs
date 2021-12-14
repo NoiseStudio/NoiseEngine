@@ -66,12 +66,12 @@ namespace NoiseStudio.JobsAg {
 
         public void Enqueue(Job job) {
             long timeToExecute = job.ExecutionTime.Difference(world.WorldTime);
-            /*for (int i = queueGaps.Length - 1; i >= 0; i--) {
+            for (int i = queueGaps.Length - 1; i >= 0; i--) {
                 if (timeToExecute >= queueGaps[i]) {
                     queues[i].Enqueue(job);
                     return;
                 }
-            }*/
+            }
 
             PrepareJobToInvoke(job, timeToExecute);
         }
