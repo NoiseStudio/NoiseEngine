@@ -9,7 +9,7 @@ namespace NoiseStudio.JobsAg.Tests {
         [Fact]
         public void InvokeJob() {
             JobsInvoker invoker = new JobsInvoker();
-            JobsWorld world = new JobsWorld();
+            JobsWorld world = new JobsWorld(invoker);
 
             invoker.InvokeJob(new Job(0, TestMethod, JobTime.Zero), world);
 

@@ -12,7 +12,7 @@ namespace NoiseStudio.JobsAg.Tests {
         [Fact]
         public void TestOneJob() {
             JobsInvoker invoker = new JobsInvoker();
-            JobsWorld world = new JobsWorld(new uint[] {
+            JobsWorld world = new JobsWorld(invoker, new uint[] {
                 2, 3, 5, 10
             });
             world.EnqueueJob(TestMethod, 15);
@@ -23,9 +23,9 @@ namespace NoiseStudio.JobsAg.Tests {
         [Fact]
         public void TestThousandJobs() {
             JobsInvoker invoker = new JobsInvoker();
-            JobsWorld world = new JobsWorld(new uint[] {
+            JobsWorld world = new JobsWorld(invoker, new uint[] {
                 2, 3, 5, 10
-            }, invoker);
+            });
 
             for (int i = 0; i < 1000; i++)
                 world.EnqueueJob(TestMethodThousand, 15);
@@ -36,28 +36,28 @@ namespace NoiseStudio.JobsAg.Tests {
         [Fact]
         public void CreateWithoutQueues() {
             JobsInvoker invoker = new JobsInvoker();
-            JobsWorld world = new JobsWorld(new uint[0]);
+            JobsWorld world = new JobsWorld(invoker, new uint[0]);
             world.EnqueueJob(TestMethodT0, 0);
         }
 
         [Fact]
         public void CreateWithQueues() {
             JobsInvoker invoker = new JobsInvoker();
-            JobsWorld world = new JobsWorld(new uint[] { 1 });
+            JobsWorld world = new JobsWorld(invoker, new uint[] { 1 });
             world.EnqueueJob(TestMethodT0, 10);
         }
 
         [Fact]
         public void EnqueueJobT0() {
             JobsInvoker invoker = new JobsInvoker();
-            JobsWorld world = new JobsWorld();
+            JobsWorld world = new JobsWorld(invoker);
             world.EnqueueJob(TestMethodT0, 0);
         }
 
         [Fact]
         public void EnqueueJobT1() {
             JobsInvoker invoker = new JobsInvoker();
-            JobsWorld world = new JobsWorld();
+            JobsWorld world = new JobsWorld(invoker);
             world.EnqueueJob(TestMethodT1, 0, "Hello");
 
             autoResetEvent.WaitOne();

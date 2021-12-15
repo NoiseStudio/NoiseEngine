@@ -17,8 +17,6 @@ namespace NoiseStudio.JobsAg {
         private long waitTime = 0;
         private int toInvokeAutoResetEventRelease = 0;
 
-        public static JobsInvoker? Instance { get; private set; }
-
         public bool IsDisposed { get; private set; }
 
         /// <summary>
@@ -34,11 +32,6 @@ namespace NoiseStudio.JobsAg {
                 throw new ArgumentOutOfRangeException("The number of threads cannot be zero or negative.");
 
             this.threadCount = (int)threadCount;
-
-            lock (locker) {
-                if (Instance == null)
-                    Instance = this;
-            }
 
             Thread thread = new Thread(ToInvokeThreadWork);
             thread.Name = $"{nameof(JobsInvoker)} end queue";

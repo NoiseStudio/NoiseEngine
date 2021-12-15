@@ -27,15 +27,15 @@ namespace NoiseStudio.JobsAg {
         /// Creates new <see cref="JobsWorld"/>
         /// </summary>
         /// <param name="queues">Job queues gaps (affect Jobs performance when default queue is used null)</param>
-        /// <param name="invoker"><see cref="JobsInvoker"/> invoking <see cref="Job"/>s assigned to this world. When null is used <see cref="JobsInvoker.Instance"/>.</param>
+        /// <param name="invoker"><see cref="JobsInvoker"/> invoking <see cref="Job"/>s assigned to this world</param>
         /// <param name="startTime">World time, useful for saving (when null time 0 is used)</param>
-        public JobsWorld(uint[]? queues = null, JobsInvoker? invoker = null, JobTime? startTime = null) {
+        public JobsWorld(JobsInvoker invoker, uint[]? queues = null, JobTime? startTime = null) {
             if (startTime == null)
                 startTime = JobTime.Zero;
             this.startTime = (JobTime)startTime;
 
             startRealTime = Time.UtcMilliseconds;
-            queue = new JobsQueue(this, invoker ?? JobsInvoker.Instance!, queues);
+            queue = new JobsQueue(this, invoker, queues);
         }
 
         /// <summary>
