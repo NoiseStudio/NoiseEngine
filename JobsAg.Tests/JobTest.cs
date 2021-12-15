@@ -4,6 +4,23 @@ namespace NoiseStudio.JobsAg.Tests {
     public class JobTest {
 
         [Fact]
+        public void Destroy() {
+            JobsWorld world = new JobsWorld(new JobsInvoker());
+            Job job = world.EnqueueJob(TestMethod, 5);
+            job.Destroy(world);
+        }
+
+        [Fact]
+        public void IsInvoked() {
+            JobsWorld world = new JobsWorld(new JobsInvoker());
+            Job job = world.EnqueueJob(TestMethod, 0);
+            Assert.True(job.IsInvoked(world));
+
+            job = world.EnqueueJob(TestMethod, 5);
+            Assert.False(job.IsInvoked(world));
+        }
+
+        [Fact]
         public void GetHashCodeTest() {
             Job a = new Job(11, GetHashCodeTest, new JobTime());
             Job b = new Job(11, GetHashCodeTest, new JobTime());
@@ -37,6 +54,9 @@ namespace NoiseStudio.JobsAg.Tests {
 
             Assert.True(a.Equals(b));
             Assert.False(a.Equals(c));
+        }
+
+        private void TestMethod() {
         }
 
     }

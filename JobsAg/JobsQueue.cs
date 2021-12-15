@@ -6,11 +6,11 @@ using System.Threading;
 namespace NoiseStudio.JobsAg {
     internal class JobsQueue : IDisposable {
 
-        internal readonly ConcurrentQueue<Job> endQueue = new ConcurrentQueue<Job>();
-
+        private readonly ConcurrentQueue<Job> endQueue = new ConcurrentQueue<Job>();
         private readonly ConcurrentQueue<Job>[] queues;
         private readonly uint[] queueGaps;
         private readonly Stack<Job> endQueueSwap = new Stack<Job>();
+        private readonly ConcurrentHashSet<Job> jobsToDestroy = new ConcurrentHashSet<Job>();
         private readonly JobsWorld world;
         private readonly JobsInvoker invoker;
 
@@ -76,6 +76,10 @@ namespace NoiseStudio.JobsAg {
             PrepareJobToInvoke(job, timeToExecute);
         }
 
+        internal void DestroyJob(Job job) {
+            jobsToDestroy.Add(job);
+        }
+
         internal void DequeueToInvoke(ref long minimalWaitTime) {
             JobTime time = world.WorldTime;
             while (endQueue.TryDequeue(out Job job)) {
@@ -86,7 +90,8 @@ namespace NoiseStudio.JobsAg {
                     continue;
                 }
 
-                invoker.InvokeJob(job, world);
+                if (!jobsToDestroy.Remove(job))
+                    invoker.InvokeJob(job, world);
             }
 
             for (int i = 0; i < endQueueSwap.Count; i++)
@@ -112,6 +117,10 @@ namespace NoiseStudio.JobsAg {
                     long timeToExecute = job.ExecutionTime.Difference(time);
                     if (timeToExecute > gap) {
                         jobs.Enqueue(job);
+                        continue;
+                    }
+
+                    if (jobsToDestroy.Remove(job)) {
                         continue;
                     }
 
