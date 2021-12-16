@@ -29,10 +29,6 @@ namespace NoiseStudio.JobsAg {
         }
 
         public void ExceptWith(IEnumerable<T> other) {
-            if (other == null) {
-                throw new ArgumentNullException(nameof(other));
-            }
-
             if (Count == 0) {
                 return;
             }
@@ -73,10 +69,6 @@ namespace NoiseStudio.JobsAg {
         }
 
         public bool Overlaps(IEnumerable<T> other) {
-            if (other == null) {
-                throw new ArgumentNullException(nameof(other));
-            }
-
             if (Count == 0) {
                 return false;
             }
@@ -101,10 +93,6 @@ namespace NoiseStudio.JobsAg {
         }
 
         public void UnionWith(IEnumerable<T> other) {
-            if (other == null) {
-                throw new ArgumentNullException(nameof(other));
-            }
-
             foreach (T item in other) {
                 Add(item);
             }
