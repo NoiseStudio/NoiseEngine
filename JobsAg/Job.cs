@@ -9,22 +9,42 @@ namespace NoiseStudio.JobsAg {
         public Delegate ToExecute { get; }
         public JobTime ExecutionTime { get; }
 
+        internal ulong Id => id;
+
         /// <summary>
         /// Do not use default constructor for this type, always throws <see cref="InvalidOperationException"/>.
-        /// Use JobsWorld.NewJob method instead.
+        /// Use JobsWorld.EnqueueJob method instead.
         /// </summary>
         /// <exception cref="InvalidOperationException">
         /// Always throws <see cref="InvalidOperationException"/>.
         /// </exception>
-        [Obsolete("Do not use default constructor for this type. Use JobsWorld.NewJob method instead.", true)]
+        [Obsolete($"Do not use default constructor for this type. Use {nameof(JobsWorld.EnqueueJob)} method instead.", true)]
         public Job() {
-            throw new InvalidOperationException("Do not use default constructor for this type. Use JobsWorld.NewJob method instead.");
+            throw new InvalidOperationException($"Do not use default constructor for this type. Use {nameof(JobsWorld.EnqueueJob)} method instead.");
         }
 
         internal Job(ulong id, Delegate toExecute, JobTime executionTime) {
             this.id = id;
             ToExecute = toExecute;
             ExecutionTime = executionTime;
+        }
+
+        /// <summary>
+        /// Destroys this <see cref="Job"/>
+        /// </summary>
+        /// <param name="world"><see cref="JobsWorld"/> assigned to this <see cref="Job"/></param>
+        public void Destroy(JobsWorld world) {
+            if (!IsInvoked(world))
+                world.queue.DestroyJob(this);
+        }
+
+        /// <summary>
+        /// Checks if this <see cref="Job"/> was invoked
+        /// </summary>
+        /// <param name="world"><see cref="JobsWorld"/> assigned to this <see cref="Job"/></param>
+        /// <returns>True when this <see cref="Job"/> was invoked or false when not</returns>
+        public bool IsInvoked(JobsWorld world) {
+            return ExecutionTime.Difference(world.WorldTime) <= 1;
         }
 
         /// <summary>
