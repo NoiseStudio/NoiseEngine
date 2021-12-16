@@ -18,9 +18,9 @@ namespace NoiseStudio.JobsAg {
         /// <exception cref="InvalidOperationException">
         /// Always throws <see cref="InvalidOperationException"/>.
         /// </exception>
-        [Obsolete("Do not use default constructor for this type. Use JobsWorld.EnqueueJob method instead.", true)]
+        [Obsolete($"Do not use default constructor for this type. Use {nameof(JobsWorld.EnqueueJob)} method instead.", true)]
         public Job() {
-            throw new InvalidOperationException("Do not use default constructor for this type. Use JobsWorld.EnqueueJob method instead.");
+            throw new InvalidOperationException($"Do not use default constructor for this type. Use {nameof(JobsWorld.EnqueueJob)} method instead.");
         }
 
         internal Job(ulong id, Delegate toExecute, JobTime executionTime) {
