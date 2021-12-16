@@ -34,7 +34,7 @@ namespace NoiseStudio.JobsAg {
         /// </summary>
         /// <param name="world"><see cref="JobsWorld"/> assigned to this <see cref="Job"/></param>
         public void Destroy(JobsWorld world) {
-            if (IsInvoked(world))
+            if (!IsInvoked(world))
                 world.queue.DestroyJob(this);
         }
 
