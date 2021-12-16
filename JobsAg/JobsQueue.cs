@@ -10,7 +10,7 @@ namespace NoiseStudio.JobsAg {
         private readonly ConcurrentQueue<Job>[] queues;
         private readonly uint[] queueGaps;
         private readonly Stack<Job> endQueueSwap = new Stack<Job>();
-        private readonly ConcurrentHashSet<Job> jobsToDestroy = new ConcurrentHashSet<Job>();
+        private readonly ConcurrentHashSet<ulong> jobsToDestroy = new ConcurrentHashSet<ulong>();
         private readonly JobsWorld world;
         private readonly JobsInvoker invoker;
 
@@ -77,7 +77,7 @@ namespace NoiseStudio.JobsAg {
         }
 
         internal void DestroyJob(Job job) {
-            jobsToDestroy.Add(job);
+            jobsToDestroy.Add(job.Id);
         }
 
         internal void DequeueToInvoke(ref long minimalWaitTime) {
@@ -90,7 +90,7 @@ namespace NoiseStudio.JobsAg {
                     continue;
                 }
 
-                if (!jobsToDestroy.Remove(job))
+                if (!jobsToDestroy.Remove(job.Id))
                     invoker.InvokeJob(job, world);
             }
 
@@ -120,7 +120,7 @@ namespace NoiseStudio.JobsAg {
                         continue;
                     }
 
-                    if (jobsToDestroy.Remove(job)) {
+                    if (jobsToDestroy.Remove(job.Id)) {
                         continue;
                     }
 

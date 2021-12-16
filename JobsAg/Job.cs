@@ -9,6 +9,8 @@ namespace NoiseStudio.JobsAg {
         public Delegate ToExecute { get; }
         public JobTime ExecutionTime { get; }
 
+        internal ulong Id => id;
+
         /// <summary>
         /// Do not use default constructor for this type, always throws <see cref="InvalidOperationException"/>.
         /// Use JobsWorld.EnqueueJob method instead.
