@@ -12,6 +12,9 @@ namespace NoiseStudio.JobsAg {
 
         private static readonly object locker = new object();
 
+        internal readonly ConcurrentDictionary<int, int> threadIds = new ConcurrentDictionary<int, int>();
+        internal readonly int threadIdCount;
+        
         private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
         private int manualResetEventThreads;
         private readonly object addPackagesLocker = new object();
@@ -58,10 +61,12 @@ namespace NoiseStudio.JobsAg {
                     Instance = this;
             }
 
+            threadIdCount = this.threadCount + 1;
+
             for (int i = 0; i < threadCount; i++) {
                 Thread thread = new Thread(ThreadWork);
                 thread.Name = $"{nameof(EntitySchedule)} worker #{i}";
-                thread.Start();
+                thread.Start(i);
             }
         }
 
@@ -109,7 +114,10 @@ namespace NoiseStudio.JobsAg {
             EnqueuePackages(system, priorityPackages);
         }
 
-        private void ThreadWork() {
+        private void ThreadWork(object? threadIdObject) {
+            int threadId = (int)threadIdObject!;
+            threadIds.TryAdd(Environment.CurrentManagedThreadId, threadId + 1);
+
             while (works) {
                 if (!AddPackages()) {
                     manualResetEvent.WaitOne();

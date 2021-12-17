@@ -54,6 +54,8 @@ namespace NoiseStudio.JobsAg {
                 schedule = value;
                 if (usesSchedule)
                     schedule?.AddSystem(this);
+
+                OnScheduleChange();
             }
         }
 
@@ -92,6 +94,24 @@ namespace NoiseStudio.JobsAg {
 
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
         public bool IsWorking { get; private set; }
+
+        protected int ThreadId {
+            get {
+                if (Schedule == null)
+                    return 0;
+                if (Schedule.threadIds.TryGetValue(Environment.CurrentManagedThreadId, out int threadId))
+                    return threadId;
+                return 0;
+            }
+        }
+
+        protected int ThreadCount {
+            get {
+                if (Schedule == null)
+                    return 1;
+                return Schedule.threadIdCount;
+            }
+        }
 
         protected double DeltaTime { get; private set; } = 1;
         protected float DeltaTimeF { get; private set; } = 1;
@@ -251,6 +271,12 @@ namespace NoiseStudio.JobsAg {
         /// This method is executed when this system is destroying
         /// </summary>
         protected virtual void Terminate() {
+        }
+
+        /// <summary>
+        /// This method is executed when <see cref="EntitySchedule"/> was changed
+        /// </summary>
+        protected virtual void OnScheduleChange() {
         }
 
         private void AssertCanExecute() {
