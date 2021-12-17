@@ -98,5 +98,24 @@ namespace NoiseStudio.JobsAg.Tests {
             Assert.True(systemA.CanExecute);
         }
 
+        [Fact]
+        public void ThreadId() {
+            int threadCount = 16;
+            EntitySchedule schedule = new EntitySchedule();
+            EntityWorld world = new EntityWorld();
+
+            for (int i = 1; i <= threadCount; i++) {
+                world.NewEntity(new TestComponentA() {
+                    A = 2 * (int)Math.Pow(2, i) + 4
+                });
+            }
+
+            TestSystemThreadId system = new TestSystemThreadId();
+            world.AddSystem(system);
+
+            system.ExecuteMultithread();
+            Assert.Equal(262204 / threadCount, system.AverageTestComponentAAValue);
+        }
+
     }
 }
