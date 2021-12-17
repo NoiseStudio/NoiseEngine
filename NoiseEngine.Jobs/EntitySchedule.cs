@@ -112,6 +112,7 @@ namespace NoiseEngine.Jobs {
 
         internal void EnqueuePriorityPackages(EntitySystemBase system) {
             EnqueuePackages(system, priorityPackages);
+            SignalWorkerThreads();
         }
 
         private void ThreadWork(object? threadIdObject) {
@@ -172,10 +173,8 @@ namespace NoiseEngine.Jobs {
                     Thread.Sleep(timeToWait);
             }
 
-            manualResetEventThreads = threadCount - 1;
-            manualResetEvent.Set();
+            SignalWorkerThreads();
             Monitor.Exit(addPackagesLocker);
-
             return true;
         }
 
@@ -199,6 +198,11 @@ namespace NoiseEngine.Jobs {
 
                 group.ReleaseWork();
             }
+        }
+
+        private void SignalWorkerThreads() {
+            manualResetEventThreads = threadCount - 1;
+            manualResetEvent.Set();
         }
 
         private void Abort() {
