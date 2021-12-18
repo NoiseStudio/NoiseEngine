@@ -5,7 +5,7 @@ using System.Threading;
 namespace NoiseEngine.Jobs {
     public abstract class EntitySystemBase {
 
-        internal List<EntityGroup> groups = new List<EntityGroup>();
+        internal ConcurrentList<EntityGroup> groups = new ConcurrentList<EntityGroup>();
         internal double lastExecutionTime = Time.UtcMilliseconds;
         internal double cycleTimeWithDelta = 0;
         internal uint cyclesCount = 0;
@@ -15,9 +15,10 @@ namespace NoiseEngine.Jobs {
         private readonly Dictionary<EntitySystemBase, uint> dependenciesCyclesCount = new Dictionary<EntitySystemBase, uint>();
         private readonly ConcurrentList<EntitySystemBase> blockadeDependencies = new ConcurrentList<EntitySystemBase>();
 
+        private EntitySchedule? schedule;
+        private IEntityFilter? filter;
         private double? cycleTime = 0;
         private bool usesSchedule = false;
-        private EntitySchedule? schedule;
         private bool enabled = true;
         private int ongoingWork = 0;
 
@@ -71,6 +72,16 @@ namespace NoiseEngine.Jobs {
                     else
                         InternalStop();
                 }
+            }
+        }
+
+        public IEntityFilter? Filter {
+            get {
+                return filter;
+            }
+            set {
+                filter = value;
+                World.RegisterGroupsToSystem(this);
             }
         }
 
@@ -169,7 +180,7 @@ namespace NoiseEngine.Jobs {
         internal abstract void InternalUpdateEntity(Entity entity);
 
         internal virtual void RegisterGroup(EntityGroup group) {
-            lock (groups)
+            if (filter == null || filter.CompareComponents(group))
                 groups.Add(group);
         }
 

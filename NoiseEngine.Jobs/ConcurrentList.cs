@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -128,6 +129,15 @@ namespace NoiseEngine.Jobs {
             locker.EnterWriteLock();
             try {
                 list.RemoveAt(index);
+            } finally {
+                locker.ExitWriteLock();
+            }
+        }
+
+        public void WriteWork(Action action) {
+            locker.EnterWriteLock();
+            try {
+                action.Invoke();
             } finally {
                 locker.ExitWriteLock();
             }
