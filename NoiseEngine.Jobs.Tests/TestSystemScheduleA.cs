@@ -13,19 +13,19 @@ namespace NoiseEngine.Jobs.Tests {
         public int UpdateCount { get; private set; } = 0;
         public int LateUpdateCount { get; private set; } = 0;
 
-        protected override void Update() {
+        protected override void OnUpdate() {
             UsedUpdate = true;
             UpdateCount++;
 
             Assert.True(IsWorking);
         }
 
-        protected override void UpdateEntity(Entity entity, TestComponentA component1, TestComponentB component2) {
+        protected override void OnUpdateEntity(Entity entity, TestComponentA component1, TestComponentB component2) {
             Interlocked.Increment(ref updateEntityCount);
             entity.Destroy(World);
         }
 
-        protected override void LateUpdate() {
+        protected override void OnLateUpdate() {
             UsedLateUpdate = true;
             LateUpdateCount++;
 

@@ -12,16 +12,16 @@ namespace NoiseEngine.Jobs.Tests {
             adder = new int[ThreadCount];
         }
 
-        protected override void Update() {
+        protected override void OnUpdate() {
             entityCount = 0;
         }
 
-        protected override void UpdateEntity(Entity entity, TestComponentA testComponentA) {
+        protected override void OnUpdateEntity(Entity entity, TestComponentA testComponentA) {
             adder[ThreadId] += testComponentA.A;
             Interlocked.Increment(ref entityCount);
         }
 
-        protected override void LateUpdate() {
+        protected override void OnLateUpdate() {
             int a = 0;
             for (int i = 0; i < adder.Length; i++)
                 a += adder[i];

@@ -6,26 +6,26 @@
 
         public int C { get; private set; } = -11;
 
-        protected override void Initialize() {
+        protected override void OnInitialize() {
             a = 0;
         }
 
-        protected override void Start() {
+        protected override void OnStart() {
             b = a;
             a += 4;
 
             C = -5;
         }
 
-        protected override void Update() {
+        protected override void OnUpdate() {
             C = b;
         }
 
-        protected override void UpdateEntity(Entity entity) {
+        protected override void OnUpdateEntity(Entity entity) {
             C++;
         }
 
-        protected override void Stop() {
+        protected override void OnStop() {
             a += 100;
         }
 
