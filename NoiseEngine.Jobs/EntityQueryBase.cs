@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace NoiseEngine.Jobs {
-    public abstract class EntityQueryBase {
+    public abstract class EntityQueryBase : IDisposable {
 
         internal readonly ConcurrentList<EntityGroup> groups = new ConcurrentList<EntityGroup>();
 
@@ -18,6 +19,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public EntityWorld World { get; private set; }
+        public bool IsDisposed { get; private set; }
 
         public IEnumerable<Entity> Entities => GetEntityEnumerable();
 
@@ -29,7 +31,22 @@ namespace NoiseEngine.Jobs {
         }
 
         ~EntityQueryBase() {
-            World.RemoveQuery(this);
+            ReleaseResources();
+        }
+
+        /// <summary>
+        /// This <see cref="EntityQueryBase"/> will be disposed
+        /// </summary>
+        public void Dispose() {
+            lock (this) {
+                if (IsDisposed)
+                    return;
+
+                IsDisposed = true;
+            }
+
+            ReleaseResources();
+            GC.SuppressFinalize(this);
         }
 
         internal virtual void RegisterGroup(EntityGroup group) {
@@ -47,6 +64,10 @@ namespace NoiseEngine.Jobs {
 
                 group.ReleaseWork();
             }
+        }
+
+        private void ReleaseResources() {
+            World.RemoveQuery(this);
         }
 
     }
