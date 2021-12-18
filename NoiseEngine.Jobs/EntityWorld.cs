@@ -10,6 +10,7 @@ namespace NoiseEngine.Jobs {
         private static uint nextId = 0;
 
         private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
+        private readonly ConcurrentList<EntityQueryBase> queries = new ConcurrentList<EntityQueryBase>();
         private readonly Dictionary<Type, EntitySystemBase> typeToSystem = new Dictionary<Type, EntitySystemBase>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
         private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
@@ -98,8 +99,6 @@ namespace NoiseEngine.Jobs {
                 }
             }
 
-            RegisterGroupsToSystem(system);
-
             system.InternalInitialize(this, schedule ?? EntitySchedule.Instance!);
             system.InternalStart();
             system.CycleTime = cycleTime;
@@ -149,12 +148,20 @@ namespace NoiseEngine.Jobs {
             return (T)typeToSystem[typeof(T)];
         }
 
-        internal void RegisterGroupsToSystem(EntitySystemBase system) {
-            system.groups.WriteWork(() => {
-                system.groups.Clear();
+        internal void AddQuery(EntityQueryBase query) {
+            queries.Add(query);
+        }
+
+        internal void RemoveQuery(EntityQueryBase query) {
+            queries.Add(query);
+        }
+
+        internal void RegisterGroupsToQuery(EntityQueryBase query) {
+            query.groups.WriteWork(() => {
+                query.groups.Clear();
                 lock (groups) {
                     for (int i = 0; i < groups.Count; i++)
-                        system.RegisterGroup(groups[i]);
+                        query.RegisterGroup(groups[i]);
                 }
             });
         }
@@ -177,10 +184,8 @@ namespace NoiseEngine.Jobs {
                 lock (groups)
                     groups.Add(group);
 
-                lock (systems) {
-                    foreach (EntitySystemBase system in systems)
-                        system.RegisterGroup(group);
-                }
+                foreach (EntityQueryBase query in queries)
+                    query.RegisterGroup(group);
             }
 
             return group;

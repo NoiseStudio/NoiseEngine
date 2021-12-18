@@ -3,38 +3,27 @@
 namespace NoiseEngine.Jobs {
     public abstract class EntitySystem<T> : EntitySystemBase where T : struct, IEntityComponent {
 
-        private Dictionary<Entity, T>? components1;
+        internal EntityQuery<T>? queryGeneric;
 
         internal override void InternalExecute() {
             base.InternalExecute();
 
-            foreach (EntityGroup group in groups) {
-                for (int j = 0; j < group.entities.Count; j++) {
-                    Entity entity = group.entities[j];
-                    InternalUpdateEntity(entity);
-                }
+            foreach ((Entity entity, T component) element in queryGeneric!) {
+                OnUpdateEntity(element.entity, element.component);
             }
 
             ReleaseWork();
         }
 
         internal override void InternalUpdateEntity(Entity entity) {
-            OnUpdateEntity(entity, components1![entity]);
-        }
-
-        internal override void RegisterGroup(EntityGroup group) {
-            if (group.HasComponent(typeof(T)))
-                base.RegisterGroup(group);
+            OnUpdateEntity(entity, queryGeneric!.components1[entity]);
         }
 
         internal override void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
-            components1 = world.ComponentsStorage.AddStorage<T>();
+            queryGeneric = new EntityQuery<T>(world, Filter);
+            query = queryGeneric;
 
             base.InternalInitialize(world, schedule);
-        }
-
-        internal void SetComponent(Entity entity, T component) {
-            ComponentsStorage<Entity>.SetComponent(components1!, entity, component);
         }
 
         /// <summary>
