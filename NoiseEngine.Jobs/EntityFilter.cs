@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace NoiseEngine.Jobs {
     public class EntityFilter : IEntityFilter {
@@ -8,13 +9,13 @@ namespace NoiseEngine.Jobs {
         private readonly Type[] withComponents;
         private readonly HashSet<Type> withoutComponents;
 
-        public EntityFilter(Type[] withComponents) {
-            this.withComponents = (Type[])withComponents.Clone();
+        public EntityFilter(IEnumerable<Type> withComponents) {
+            this.withComponents = withComponents.ToArray();
             withoutComponents = new HashSet<Type>();
         }
 
-        public EntityFilter(Type[] withComponents, Type[] withoutComponents) {
-            this.withComponents = (Type[])withComponents.Clone();
+        public EntityFilter(IEnumerable<Type> withComponents, IEnumerable<Type> withoutComponents) {
+            this.withComponents = withComponents.ToArray();
             this.withoutComponents = new HashSet<Type>(withoutComponents);
         }
 
