@@ -8,7 +8,7 @@ namespace NoiseEngine.Jobs {
 
         internal readonly Dictionary<Entity, T> components1;
 
-        public EntityQuery(EntityWorld world, IEntityFilter? filter) : base(world, filter) {
+        public EntityQuery(EntityWorld world, IEntityFilter? filter = null) : base(world, filter) {
             components1 = world.ComponentsStorage.AddStorage<T>();
         }
 

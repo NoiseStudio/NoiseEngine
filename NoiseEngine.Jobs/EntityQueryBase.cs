@@ -21,7 +21,7 @@ namespace NoiseEngine.Jobs {
 
         public IEnumerable<Entity> Entities => GetEntityEnumerable();
 
-        public EntityQueryBase(EntityWorld world, IEntityFilter? filter) {
+        public EntityQueryBase(EntityWorld world, IEntityFilter? filter = null) {
             World = world;
             Filter = filter;
 
