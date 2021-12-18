@@ -6,44 +6,27 @@ namespace NoiseEngine.Jobs {
         where T2 : struct, IEntityComponent
     {
 
-        private Dictionary<Entity, T1>? components1;
-        private Dictionary<Entity, T2>? components2;
+        internal EntityQuery<T1, T2>? queryGeneric;
 
         internal override void InternalExecute() {
             base.InternalExecute();
 
-            foreach (EntityGroup group in groups) {
-                for (int j = 0; j < group.entities.Count; j++) {
-                    Entity entity = group.entities[j];
-                    InternalUpdateEntity(entity);
-                }
+            foreach ((Entity entity, T1 component1, T2 component2) element in queryGeneric!) {
+                OnUpdateEntity(element.entity, element.component1, element.component2);
             }
 
             ReleaseWork();
         }
 
         internal override void InternalUpdateEntity(Entity entity) {
-            OnUpdateEntity(entity, components1![entity], components2![entity]);
-        }
-
-        internal override void RegisterGroup(EntityGroup group) {
-            if (group.HasComponent(typeof(T1)) && group.HasComponent(typeof(T2)))
-                base.RegisterGroup(group);
+            OnUpdateEntity(entity, queryGeneric!.components1![entity], queryGeneric!.components2![entity]);
         }
 
         internal override void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
-            components1 = world.ComponentsStorage.AddStorage<T1>();
-            components2 = world.ComponentsStorage.AddStorage<T2>();
+            queryGeneric = new EntityQuery<T1, T2>(world, Filter);
+            query = queryGeneric;
 
             base.InternalInitialize(world, schedule);
-        }
-
-        internal void SetComponent(Entity entity, T1 component) {
-            ComponentsStorage<Entity>.SetComponent(components1!, entity, component);
-        }
-
-        internal void SetComponent(Entity entity, T2 component) {
-            ComponentsStorage<Entity>.SetComponent(components2!, entity, component);
         }
 
         /// <summary>

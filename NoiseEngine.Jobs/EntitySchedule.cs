@@ -179,7 +179,7 @@ namespace NoiseEngine.Jobs {
         }
 
         private void EnqueuePackages(EntitySystemBase system, ConcurrentQueue<SchedulePackage> packages) {
-            foreach (EntityGroup group in system.groups) {
+            foreach (EntityGroup group in system.query!.groups) {
                 group.Wait();
 
                 int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, minPackageSize, maxPackageSize);
