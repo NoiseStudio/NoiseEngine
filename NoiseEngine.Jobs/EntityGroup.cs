@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 
 namespace NoiseEngine.Jobs {
@@ -9,7 +10,7 @@ namespace NoiseEngine.Jobs {
         internal readonly List<Entity> entities = new List<Entity>();
 
         private readonly int hashCode;
-        private readonly List<Type> components;
+        private readonly ReadOnlyCollection<Type> components;
         private readonly HashSet<Type> componentsHashSet;
         private readonly ConcurrentQueue<Entity> entitiesToAdd = new ConcurrentQueue<Entity>();
         private readonly ConcurrentQueue<Entity> entitiesToRemove = new ConcurrentQueue<Entity>();
@@ -22,9 +23,11 @@ namespace NoiseEngine.Jobs {
 
         public EntityWorld World { get; }
 
+        internal ReadOnlyCollection<Type> ComponentTypes => components;
+
         public EntityGroup(int hashCode, EntityWorld world, List<Type> components) {
             this.hashCode = hashCode;
-            this.components = components;
+            this.components = new ReadOnlyCollection<Type>(components);
             World = world;
 
             componentsHashSet = new HashSet<Type>(components);

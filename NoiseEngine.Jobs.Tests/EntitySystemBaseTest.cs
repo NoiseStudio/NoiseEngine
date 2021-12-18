@@ -117,5 +117,39 @@ namespace NoiseEngine.Jobs.Tests {
             Assert.Equal(262204 / threadCount, system.AverageTestComponentAAValue);
         }
 
+        [Fact]
+        public void Filter() {
+            EntityWorld world = new EntityWorld();
+            for (int i = 0; i < 16; i++) {
+                world.NewEntity();
+                world.NewEntity(new TestComponentA());
+                world.NewEntity(new TestComponentB());
+                world.NewEntity(new TestComponentA(), new TestComponentB());
+            }
+
+            TestSystemCounter system = new TestSystemCounter();
+            world.AddSystem(system);
+
+            system.Execute();
+            Assert.Equal(64, system.EntityCount);
+
+            system.Filter = new EntityFilter(new Type[] {
+                typeof(TestComponentA)
+            });
+            system.Execute();
+            Assert.Equal(32, system.EntityCount);
+
+            system.Filter = new EntityFilter(
+                new Type[] {
+                    typeof(TestComponentA)
+                },
+                new Type[] {
+                    typeof(TestComponentB)
+                }
+            );
+            system.Execute();
+            Assert.Equal(16, system.EntityCount);
+        }
+
     }
 }

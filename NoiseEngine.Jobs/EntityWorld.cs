@@ -98,10 +98,7 @@ namespace NoiseEngine.Jobs {
                 }
             }
 
-            lock (groups) {
-                for (int i = 0; i < groups.Count; i++)
-                    system.RegisterGroup(groups[i]);
-            }
+            RegisterGroupsToSystem(system);
 
             system.InternalInitialize(this, schedule ?? EntitySchedule.Instance!);
             system.InternalStart();
@@ -150,6 +147,16 @@ namespace NoiseEngine.Jobs {
         /// <returns><see cref="EntitySystemBase"/></returns>
         public T GetSystem<T>() where T : EntitySystemBase {
             return (T)typeToSystem[typeof(T)];
+        }
+
+        internal void RegisterGroupsToSystem(EntitySystemBase system) {
+            system.groups.WriteWork(() => {
+                system.groups.Clear();
+                lock (groups) {
+                    for (int i = 0; i < groups.Count; i++)
+                        system.RegisterGroup(groups[i]);
+                }
+            });
         }
 
         internal EntityGroup GetGroupFromComponents(List<Type> components) {

@@ -8,8 +8,7 @@ namespace NoiseEngine.Jobs {
         internal override void InternalExecute() {
             base.InternalExecute();
 
-            for (int i = 0; i < groups.Count; i++) {
-                EntityGroup group = groups[i];
+            foreach (EntityGroup group in groups) {
                 for (int j = 0; j < group.entities.Count; j++) {
                     Entity entity = group.entities[j];
                     InternalUpdateEntity(entity);
