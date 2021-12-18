@@ -183,11 +183,11 @@ namespace NoiseEngine.Jobs {
             World = world;
             Schedule = schedule;
 
-            Initialize();
+            OnInitialize();
         }
 
         internal virtual void InternalStart() {
-            Start();
+            OnStart();
         }
 
         internal virtual void InternalUpdate() {
@@ -207,19 +207,19 @@ namespace NoiseEngine.Jobs {
             }
 
             lastExecutionTime = executionTime;
-            Update();
+            OnUpdate();
         }
 
         internal virtual void InternalLateUpdate() {
-            LateUpdate();
+            OnLateUpdate();
         }
 
         internal virtual void InternalStop() {
-            Stop();
+            OnStop();
         }
 
         internal virtual void InternalTerminate() {
-            Terminate();
+            OnTerminate();
         }
 
         internal void OrderWork() {
@@ -240,37 +240,37 @@ namespace NoiseEngine.Jobs {
         /// <summary>
         /// This method is executed when this system is creating
         /// </summary>
-        protected virtual void Initialize() {
+        protected virtual void OnInitialize() {
         }
 
         /// <summary>
         /// This method is executed when this system is enabling
         /// </summary>
-        protected virtual void Start() {
+        protected virtual void OnStart() {
         }
 
         /// <summary>
         /// This method is executed on begin of every cycle of this system
         /// </summary>
-        protected virtual void Update() {
+        protected virtual void OnUpdate() {
         }
 
         /// <summary>
         /// This method is executed on end of every cycle of this system
         /// </summary>
-        protected virtual void LateUpdate() {
+        protected virtual void OnLateUpdate() {
         }
 
         /// <summary>
         /// This method is executed when this system is disabling
         /// </summary>
-        protected virtual void Stop() {
+        protected virtual void OnStop() {
         }
 
         /// <summary>
         /// This method is executed when this system is destroying
         /// </summary>
-        protected virtual void Terminate() {
+        protected virtual void OnTerminate() {
         }
 
         /// <summary>

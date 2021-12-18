@@ -20,7 +20,7 @@ namespace NoiseEngine.Jobs {
         }
 
         internal override void InternalUpdateEntity(Entity entity) {
-            UpdateEntity(entity, components1![entity]);
+            OnUpdateEntity(entity, components1![entity]);
         }
 
         internal override void RegisterGroup(EntityGroup group) {
@@ -43,7 +43,7 @@ namespace NoiseEngine.Jobs {
         /// </summary>
         /// <param name="entity">Operated <see cref="Entity"/></param>
         /// <param name="component1">Component of the operated <see cref="Entity"/></param>
-        protected abstract void UpdateEntity(Entity entity, T component1);
+        protected abstract void OnUpdateEntity(Entity entity, T component1);
 
     }
 }
