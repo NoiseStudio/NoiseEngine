@@ -194,7 +194,7 @@ namespace NoiseEngine.Jobs {
             if (!IsCompatibleObject(value))
                 return -1;
 
-            int result;
+            int result = -1;
             locker.EnterWriteLock();
             try {
                 list.Add((T)value!);
