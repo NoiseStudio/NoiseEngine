@@ -20,6 +20,9 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>NoiseEngine.Jobs.Tests</_Parameter1>
     </AssemblyAttribute>
+	<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>NoiseEngine.Jobs.Benchmarks</_Parameter1>
+	</AssemblyAttribute>
   </ItemGroup>
 
 </Project>
