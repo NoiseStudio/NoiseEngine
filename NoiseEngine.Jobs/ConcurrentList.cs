@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 
 namespace NoiseEngine.Jobs {
-    internal class ConcurrentList<T> : IEnumerable<T>, IList<T> {
+    internal class ConcurrentList<T> : IEnumerable<T>, IList<T>, IList {
 
         private readonly List<T> list = new List<T>();
         private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
@@ -43,7 +43,19 @@ namespace NoiseEngine.Jobs {
             }
         }
 
+        object? IList.this[int index] {
+            get {
+                return this[index];
+            }
+            set {
+                this[index] = (T)value!;
+            }
+        }
+
         public bool IsReadOnly => ((ICollection<T>)list).IsReadOnly;
+        public bool IsSynchronized => ((IList)list).IsSynchronized;
+        public object SyncRoot => ((IList)list).SyncRoot;
+        bool IList.IsFixedSize => ((IList)list).IsFixedSize;
 
         public void Add(T item) {
             locker.EnterWriteLock();
@@ -143,8 +155,80 @@ namespace NoiseEngine.Jobs {
             }
         }
 
+        public T[] ToArray() {
+            locker.EnterReadLock();
+            T[] result;
+            try {
+                result = list.ToArray();
+            } finally {
+                locker.ExitReadLock();
+            }
+            return result;
+        }
+
+        public List<T> ToList() {
+            locker.EnterReadLock();
+            List<T> result;
+            try {
+                result = new List<T>(list);
+            } finally {
+                locker.ExitReadLock();
+            }
+            return result;
+        }
+
+        public void CopyTo(Array array, int index) {
+            locker.EnterReadLock();
+            try {
+                ((IList)list).CopyTo(array, index);
+            } finally {
+                locker.ExitReadLock();
+            }
+        }
+
         IEnumerator IEnumerable.GetEnumerator() {
             return GetEnumerator();
+        }
+
+        int IList.Add(object? value) {
+            if (!IsCompatibleObject(value))
+                return -1;
+
+            int result = -1;
+            locker.EnterWriteLock();
+            try {
+                list.Add((T)value!);
+                result = list.Count - 1;
+            } finally {
+                locker.ExitWriteLock();
+            }
+            return result;
+        }
+
+        bool IList.Contains(object? value) {
+            if (IsCompatibleObject(value))
+                return Contains((T)value!);
+            return false;
+        }
+
+        int IList.IndexOf(object? value) {
+            if (IsCompatibleObject(value))
+                return IndexOf((T)value!);
+            return -1;
+        }
+
+        void IList.Insert(int index, object? value) {
+            if (IsCompatibleObject(value))
+                Insert(index, (T)value!);
+        }
+
+        void IList.Remove(object? value) {
+            if (IsCompatibleObject(value))
+                Remove((T)value!);
+        }
+
+        private static bool IsCompatibleObject(object? value) {
+            return (value is T) || (value == null && default(T) == null);
         }
 
     }

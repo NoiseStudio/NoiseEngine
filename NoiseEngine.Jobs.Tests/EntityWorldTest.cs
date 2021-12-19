@@ -33,28 +33,40 @@ namespace NoiseEngine.Jobs.Tests {
         public void AddSystem() {
             EntityWorld world = new EntityWorld();
 
-            world.AddSystem(new TestSystemB());
-            Assert.Throws<InvalidOperationException>(() => world.AddSystem(new TestSystemB()));
+            TestSystemB system = new TestSystemB();
+            world.AddSystem(system);
+            Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
         }
 
         [Fact]
         public void RemoveSystem() {
             EntityWorld world = new EntityWorld();
 
-            world.AddSystem(new TestSystemB());
-
-            world.RemoveSystem<TestSystemB>();
-            Assert.Throws<InvalidOperationException>(() => world.RemoveSystem<TestSystemB>());
+            TestSystemB system = new TestSystemB();
+            world.AddSystem(system);
+            world.RemoveSystem(system);
+            world.RemoveSystem(system);
         }
 
         [Fact]
         public void HasSystem() {
             EntityWorld world = new EntityWorld();
+            TestSystemB system = new TestSystemB();
 
-            Assert.False(world.HasSystem<TestSystemB>());
+            Assert.False(world.HasSystem(system));
+
+            world.AddSystem(system);
+            Assert.True(world.HasSystem(system));
+        }
+
+        [Fact]
+        public void HasAnySystem() {
+            EntityWorld world = new EntityWorld();
+
+            Assert.False(world.HasAnySystem<TestSystemB>());
 
             world.AddSystem(new TestSystemB());
-            Assert.True(world.HasSystem<TestSystemB>());
+            Assert.True(world.HasAnySystem<TestSystemB>());
         }
 
         [Fact]
@@ -64,6 +76,18 @@ namespace NoiseEngine.Jobs.Tests {
             world.AddSystem(system);
 
             Assert.Equal(system, world.GetSystem<TestSystemB>());
+        }
+
+        [Fact]
+        public void GetSystems() {
+            EntityWorld world = new EntityWorld();
+            TestSystemB system = new TestSystemB();
+            world.AddSystem(system);
+
+            TestSystemB[] systems = world.GetSystems<TestSystemB>();
+            Assert.Single(systems);
+
+            Assert.NotStrictEqual(systems, world.GetSystems<TestSystemB>());
         }
 
         [Fact]

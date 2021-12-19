@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ namespace NoiseEngine.Jobs {
 
         private static uint nextId = 0;
 
-        private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
+        private readonly ConcurrentList<EntitySystemBase> systems = new ConcurrentList<EntitySystemBase>();
         private readonly ConcurrentList<EntityQueryBase> queries = new ConcurrentList<EntityQueryBase>();
-        private readonly Dictionary<Type, EntitySystemBase> typeToSystem = new Dictionary<Type, EntitySystemBase>();
+        private readonly ConcurrentDictionary<Type, IList> typeToSystems = new ConcurrentDictionary<Type, IList>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
         private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
         private readonly ConcurrentDictionary<Entity, EntityGroup> entityToGroup = new ConcurrentDictionary<Entity, EntityGroup>();
@@ -81,23 +82,21 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
-        /// Creates and adds new T system to this world
+        /// Adds T system to this world
         /// </summary>
         /// <typeparam name="T">Entity system type</typeparam>
         /// <param name="system">Entity system object</param>
         /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When null, the schedule is not used.</param>
         /// <param name="schedule"><see cref="EntitySchedule"/> managing this system. When null is used <see cref="EntitySchedule.Instance"/>.</param>
-        /// <exception cref="InvalidOperationException">Entity world already contains T entity system</exception>
+        /// <exception cref="InvalidOperationException">Entity world already contains this <see cref="EntitySystemBase"/></exception>
         public void AddSystem<T>(T system, double? cycleTime = null, EntitySchedule? schedule = null) where T : EntitySystemBase {
-            lock (system) {
-                lock (typeToSystem) {
-                    if (HasSystem<T>())
-                        throw new InvalidOperationException($"Entity world already contains {typeof(T).FullName} entity system.");
+            if (HasSystem(system))
+                throw new InvalidOperationException($"Entity world already contains this {nameof(T)}.");
 
-                    systems.Add(system);
-                    typeToSystem.Add(typeof(T), system);
-                }
-            }
+            systems.Add(system);
+            typeToSystems.GetOrAdd(typeof(T), (Type type) => {
+                return new ConcurrentList<T>();
+            }).Add(system);
 
             system.InternalInitialize(this, schedule ?? EntitySchedule.Instance!);
             system.InternalStart();
@@ -108,26 +107,13 @@ namespace NoiseEngine.Jobs {
         /// Removes T system from this world
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
-        /// <exception cref="InvalidOperationException">Entity world does not contains T entity system</exception>
-        public void RemoveSystem<T>() where T : EntitySystemBase {
-            Type type = typeof(T);
+        public void RemoveSystem<T>(T system) where T : EntitySystemBase {
+            if (!HasSystem(system))
+                return;
 
-            lock (typeToSystem)
-                typeToSystem.Remove(type);
-
-            lock (systems) {
-                for (int i = 0; i < systems.Count; i++) {
-                    EntitySystemBase system = systems[i];
-                    if (type == system.GetType()) {
-                        systems.RemoveAt(i);
-
-                        system.InternalStop();
-                        system.InternalTerminate();
-                        return;
-                    }
-                }
-            }
-            throw new InvalidOperationException($"Entity world does not contains {type.FullName} entity system.");
+            systems.Remove(system);
+            if (typeToSystems.TryGetValue(typeof(T), out IList? list))
+                list.Remove(system);
         }
 
         /// <summary>
@@ -135,17 +121,35 @@ namespace NoiseEngine.Jobs {
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
         /// <returns>True when this entity world contains T system or false when not</returns>
-        public bool HasSystem<T>() where T : EntitySystemBase {
-            return typeToSystem.ContainsKey(typeof(T));
+        public bool HasSystem<T>(T system) where T : EntitySystemBase {
+            return systems.Contains(system);
         }
 
         /// <summary>
-        /// Returns T entity system object
+        /// Checks if this entity world has any T type system
+        /// </summary>
+        /// <typeparam name="T">Entity system</typeparam>
+        /// <returns>True when this entity world contains T system or false when not</returns>
+        public bool HasAnySystem<T>() where T : EntitySystemBase {
+            return typeToSystems.ContainsKey(typeof(T));
+        }
+
+        /// <summary>
+        /// Returns first assigned T entity system
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
         /// <returns><see cref="EntitySystemBase"/></returns>
         public T GetSystem<T>() where T : EntitySystemBase {
-            return (T)typeToSystem[typeof(T)];
+            return (T)typeToSystems[typeof(T)][0]!;
+        }
+
+        /// <summary>
+        /// Returns T entity systems
+        /// </summary>
+        /// <typeparam name="T"><see cref="EntitySystemBase"/> type</typeparam>
+        /// <returns>Array of <see cref="EntitySystemBase"/></returns>
+        public T[] GetSystems<T>() where T : EntitySystemBase {
+            return ((ConcurrentList<T>)typeToSystems[typeof(T)]).ToArray();
         }
 
         internal void AddQuery(EntityQueryBase query) {
