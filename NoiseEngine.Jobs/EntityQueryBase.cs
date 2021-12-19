@@ -59,7 +59,9 @@ namespace NoiseEngine.Jobs {
                 group.Wait();
 
                 for (int i = 0; i < group.entities.Count; i++) {
-                    yield return group.entities[i];
+                    Entity entity = group.entities[i];
+                    if (entity != Entity.Empty)
+                        yield return entity;
                 }
 
                 group.ReleaseWork();
