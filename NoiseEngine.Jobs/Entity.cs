@@ -8,6 +8,18 @@ namespace NoiseEngine.Jobs {
 
         public static Entity Empty => new Entity(0);
 
+        /// <summary>
+        /// Do not use default constructor for this type, always throws <see cref="InvalidOperationException"/>.
+        /// Use EntityWorld.NewEntity method instead.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// Always throws <see cref="InvalidOperationException"/>.
+        /// </exception>
+        [Obsolete($"Do not use default constructor for this type. Use {nameof(EntityWorld.NewEntity)} method instead.", true)]
+        public Entity() {
+            throw new InvalidOperationException($"Do not use default constructor for this type. Use {nameof(EntityWorld.NewEntity)} method instead.");
+        }
+
         internal Entity(ulong id) {
             this.id = id;
         }
