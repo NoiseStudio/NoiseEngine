@@ -78,7 +78,7 @@ namespace NoiseEngine.Jobs.Tests {
         }
 
         [Fact]
-        public void CanBeExecuted() {
+        public void CanExecute() {
             EntityWorld world = new EntityWorld();
 
             world.NewEntity(new TestComponentA(), new TestComponentB());
