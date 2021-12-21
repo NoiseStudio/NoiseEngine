@@ -86,19 +86,26 @@ namespace NoiseEngine.Jobs {
         /// </summary>
         /// <typeparam name="T">Entity system type</typeparam>
         /// <param name="system">Entity system object</param>
-        /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When null, the schedule is not used.</param>
-        /// <param name="schedule"><see cref="EntitySchedule"/> managing this system. When null is used <see cref="EntitySchedule.Instance"/>.</param>
         /// <exception cref="InvalidOperationException">Entity world already contains this <see cref="EntitySystemBase"/></exception>
-        public void AddSystem<T>(T system, double? cycleTime = null, EntitySchedule? schedule = null) where T : EntitySystemBase {
-            if (HasSystem(system))
-                throw new InvalidOperationException($"Entity world already contains this {nameof(T)}.");
+        public void AddSystem<T>(T system) where T : EntitySystemBase {
+            AddSystemWorker(system);
 
-            systems.Add(system);
-            typeToSystems.GetOrAdd(typeof(T), (Type type) => {
-                return new ConcurrentList<T>();
-            }).Add(system);
+            system.InternalInitialize(this, null);
+            system.InternalStart();
+        }
 
-            system.InternalInitialize(this, schedule ?? EntitySchedule.Instance!);
+        /// <summary>
+        /// Adds T system to this world
+        /// </summary>
+        /// <typeparam name="T">Entity system type</typeparam>
+        /// <param name="system">Entity system object</param>
+        /// <param name="schedule"><see cref="EntitySchedule"/> managing this system.</param>
+        /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When null, the schedule is not used.</param>
+        /// <exception cref="InvalidOperationException">Entity world already contains this <see cref="EntitySystemBase"/></exception>
+        public void AddSystem<T>(T system, EntitySchedule schedule, double? cycleTime = null) where T : EntitySystemBase {
+            AddSystemWorker(system);
+
+            system.InternalInitialize(this, schedule);
             system.InternalStart();
             system.CycleTime = cycleTime;
         }
@@ -224,6 +231,16 @@ namespace NoiseEngine.Jobs {
             EntityGroup group = GetGroupFromComponents(componentTypes);
             entityToGroup.GetOrAdd(entity, group);
             group.AddEntity(entity);
+        }
+
+        private void AddSystemWorker<T>(T system) where T : EntitySystemBase {
+            if (HasSystem(system))
+                throw new InvalidOperationException($"Entity world already contains this {nameof(T)}.");
+
+            systems.Add(system);
+            typeToSystems.GetOrAdd(typeof(T), (Type type) => {
+                return new ConcurrentList<T>();
+            }).Add(system);
         }
 
     }

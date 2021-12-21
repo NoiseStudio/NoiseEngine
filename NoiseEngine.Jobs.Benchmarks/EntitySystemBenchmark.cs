@@ -17,7 +17,7 @@ namespace NoiseEngine.Jobs.Benchmarks {
 
             schedule = new EntitySchedule();
             system = new TestSystemA();
-            world.AddSystem(system, null, schedule);
+            world.AddSystem(system, schedule, null);
         }
 
         [Benchmark]
