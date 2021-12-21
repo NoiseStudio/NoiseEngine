@@ -14,7 +14,7 @@ namespace NoiseEngine.Jobs.Tests {
             world.NewEntity(new TestComponentA());
 
             TestSystemB system = new TestSystemB();
-            Assert.ThrowsAny<InvalidOperationException>(system.ExecuteMultithread);
+            Assert.Throws<InvalidOperationException>(system.ExecuteMultithread);
 
             world.AddSystem(system, schedule);
 
