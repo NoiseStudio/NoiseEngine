@@ -109,9 +109,10 @@ namespace NoiseEngine.Jobs {
 
         protected int ThreadId {
             get {
-                if (Schedule == null)
+                EntitySchedule? schedule = Schedule;
+                if (schedule == null)
                     return 0;
-                if (Schedule.threadIds.TryGetValue(Environment.CurrentManagedThreadId, out int threadId))
+                if (schedule.threadIds.TryGetValue(Environment.CurrentManagedThreadId, out int threadId))
                     return threadId;
                 return 0;
             }
@@ -119,9 +120,10 @@ namespace NoiseEngine.Jobs {
 
         protected int ThreadCount {
             get {
-                if (Schedule == null)
+                EntitySchedule? schedule = Schedule;
+                if (schedule == null)
                     return 1;
-                return Schedule.threadIdCount;
+                return schedule.threadIdCount;
             }
         }
 
@@ -144,9 +146,12 @@ namespace NoiseEngine.Jobs {
         public void ExecuteMultithread() {
             AssertCanExecute();
             Wait();
+
+            EntitySchedule schedule = GetEntityScheduleOrThrowException();
+
             OrderWork();
             InternalUpdate();
-            Schedule!.EnqueuePriorityPackages(this);
+            schedule.EnqueuePriorityPackages(this);
             ReleaseWork();
             Wait();
         }
@@ -290,6 +295,13 @@ namespace NoiseEngine.Jobs {
         private void AssertCanExecute() {
             if (!CanExecute)
                 throw new InvalidOperationException($"System {ToString()} could not be executed.");
+        }
+
+        private EntitySchedule GetEntityScheduleOrThrowException() {
+            EntitySchedule? schedule = Schedule;
+            if (schedule == null)
+                throw new InvalidOperationException($"{nameof(EntitySchedule)} assigned to this {ToString()} is null.");
+            return schedule;
         }
 
     }
