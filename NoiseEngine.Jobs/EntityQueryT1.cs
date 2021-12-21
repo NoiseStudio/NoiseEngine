@@ -1,12 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace NoiseEngine.Jobs {
     public class EntityQuery<T> : EntityQueryBase, IEnumerable<(Entity entity, T component)>
         where T : struct, IEntityComponent
     {
 
-        internal readonly Dictionary<Entity, T> components1;
+        internal readonly ConcurrentDictionary<Entity, T> components1;
 
         public EntityQuery(EntityWorld world, IEntityFilter? filter = null) : base(world, filter) {
             components1 = world.ComponentsStorage.AddStorage<T>();

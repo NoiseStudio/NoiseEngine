@@ -1,31 +1,22 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace NoiseEngine.Jobs {
     internal class ComponentsStorage<TKey> where TKey : notnull {
 
-        private readonly Dictionary<Type, IDictionary> storage = new Dictionary<Type, IDictionary>();
+        private readonly ConcurrentDictionary<Type, IDictionary> storage = new ConcurrentDictionary<Type, IDictionary>();
 
-        internal static void SetComponent<T>(Dictionary<TKey, T> storage, TKey key, T component) {
+        internal static void SetComponent<T>(ConcurrentDictionary<TKey, T> storage, TKey key, T component) {
             storage[key] = component;
         }
 
-        internal Dictionary<TKey, T> AddStorage<T>() {
-            Type type = typeof(T);
-            lock (storage) {
-                if (storage.TryGetValue(type, out IDictionary? value))
-                    return (Dictionary<TKey, T>)value;
-
-                Dictionary<TKey, T> dictionary = new Dictionary<TKey, T>();
-                storage.Add(type, dictionary);
-
-                return dictionary;
-            }
+        internal ConcurrentDictionary<TKey, T> AddStorage<T>() {
+            return (ConcurrentDictionary<TKey, T>)storage.GetOrAdd(typeof(T), StorageDictionaryFactory<T>);
         }
 
-        internal Dictionary<TKey, T> GetStorage<T>() {
-            return (Dictionary<TKey, T>)GetStorageWithoutCast(typeof(T));
+        internal ConcurrentDictionary<TKey, T> GetStorage<T>() {
+            return (ConcurrentDictionary<TKey, T>)GetStorageWithoutCast(typeof(T));
         }
 
         internal IDictionary GetStorageWithoutCast<T>() {
@@ -37,21 +28,18 @@ namespace NoiseEngine.Jobs {
         }
 
         internal void AddComponent<T>(TKey key, T component) {
-            Dictionary<TKey, T> dictionary = AddStorage<T>();
-            lock (dictionary)
-                dictionary.Add(key, component);
+            ConcurrentDictionary<TKey, T> dictionary = AddStorage<T>();
+            dictionary.TryAdd(key, component);
         }
 
         internal void RemoveComponent<T>(TKey key) {
             IDictionary dictionary = GetStorageWithoutCast<T>();
-            lock (dictionary)
-                dictionary.Remove(key);
+            dictionary.Remove(key);
         }
 
         internal void RemoveComponent(Type componentType, TKey key) {
             IDictionary dictionary = GetStorageWithoutCast(componentType);
-            lock (dictionary)
-                dictionary.Remove(key);
+            dictionary.Remove(key);
         }
 
         internal void SetComponent<T>(TKey key, T component) {
@@ -71,6 +59,10 @@ namespace NoiseEngine.Jobs {
             object obj = dictionary[key]!;
             dictionary.Remove(key);
             return obj;
+        }
+
+        private IDictionary StorageDictionaryFactory<T>(Type type) {
+            return new ConcurrentDictionary<TKey, T>();
         }
 
     }
