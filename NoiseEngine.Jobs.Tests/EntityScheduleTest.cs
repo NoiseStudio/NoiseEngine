@@ -10,7 +10,7 @@ namespace NoiseEngine.Jobs.Tests {
             EntityWorld world = new EntityWorld();
 
             TestSystemScheduleA system = new TestSystemScheduleA();
-            world.AddSystem(system, 100);
+            world.AddSystem(system, schedule, 100);
 
             int entities = 1024;
             for (int i = 0; i < entities; i++)

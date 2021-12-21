@@ -22,7 +22,7 @@ namespace NoiseEngine.Jobs {
             OnUpdateEntity(entity, queryGeneric!.components1![entity], queryGeneric!.components2![entity]);
         }
 
-        internal override void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
+        internal override void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
             queryGeneric = new EntityQuery<T1, T2>(world, Filter);
             query = queryGeneric;
 

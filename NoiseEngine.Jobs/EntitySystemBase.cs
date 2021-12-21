@@ -186,9 +186,10 @@ namespace NoiseEngine.Jobs {
             InternalUpdate();
         }
 
-        internal virtual void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
+        internal virtual void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
             World = world;
-            Schedule = schedule;
+            if (schedule != null)
+                Schedule = schedule;
 
             OnInitialize();
         }

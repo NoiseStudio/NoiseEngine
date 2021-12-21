@@ -14,7 +14,7 @@ namespace NoiseEngine.Jobs.Tests {
             world.NewEntity(new TestComponentA());
 
             TestSystemB system = new TestSystemB();
-            world.AddSystem(system);
+            world.AddSystem(system, schedule);
 
             Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
@@ -59,8 +59,8 @@ namespace NoiseEngine.Jobs.Tests {
 
             TestSystemA systemA = new TestSystemA();
             TestSystemB systemB = new TestSystemB();
-            world.AddSystem(systemA);
-            world.AddSystem(systemB);
+            world.AddSystem(systemA, schedule);
+            world.AddSystem(systemB, schedule);
 
             systemB.Execute();
             systemB.AddDependency(systemA);
@@ -111,7 +111,7 @@ namespace NoiseEngine.Jobs.Tests {
             }
 
             TestSystemThreadId system = new TestSystemThreadId();
-            world.AddSystem(system);
+            world.AddSystem(system, schedule);
 
             system.ExecuteMultithread();
             Assert.Equal(262204 / threadCount, system.AverageTestComponentAAValue);

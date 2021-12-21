@@ -28,8 +28,6 @@ namespace NoiseEngine.Jobs {
         private readonly int maxPackageSize;
         private bool works = true;
 
-        public static EntitySchedule? Instance { get; private set; }
-
         public bool IsDisposed { get; private set; }
 
         /// <summary>
@@ -55,11 +53,6 @@ namespace NoiseEngine.Jobs {
             this.threadCount = (int)threadCount;
             this.maxPackageSize = (int)maxPackageSize;
             this.minPackageSize = (int)minPackageSize;
-
-            lock (locker) {
-                if (Instance == null)
-                    Instance = this;
-            }
 
             threadIdCount = this.threadCount + 1;
 

@@ -17,7 +17,7 @@
             OnUpdateEntity(entity);
         }
 
-        internal override void InternalInitialize(EntityWorld world, EntitySchedule schedule) {
+        internal override void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
             queryGeneric = new EntityQuery(world, Filter);
             query = queryGeneric;
 
