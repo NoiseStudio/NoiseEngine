@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Xunit;
 
@@ -8,8 +9,8 @@ namespace NoiseEngine.Jobs.Tests {
         [Fact]
         public void AddStorage() {
             EntityWorld world = new EntityWorld();
-            Dictionary<Entity, TestComponentA> dictionaryA = world.ComponentsStorage.AddStorage<TestComponentA>();
-            Dictionary<Entity, TestComponentA> dictionaryB = world.ComponentsStorage.AddStorage<TestComponentA>();
+            ConcurrentDictionary<Entity, TestComponentA> dictionaryA = world.ComponentsStorage.AddStorage<TestComponentA>();
+            ConcurrentDictionary<Entity, TestComponentA> dictionaryB = world.ComponentsStorage.AddStorage<TestComponentA>();
 
             Assert.Equal(dictionaryA, dictionaryB);
         }
@@ -17,8 +18,8 @@ namespace NoiseEngine.Jobs.Tests {
         [Fact]
         public void GetStorage() {
             EntityWorld world = new EntityWorld();
-            Dictionary<Entity, TestComponentA> dictionaryA = world.ComponentsStorage.AddStorage<TestComponentA>();
-            Dictionary<Entity, TestComponentA> dictionaryB = world.ComponentsStorage.GetStorage<TestComponentA>();
+            ConcurrentDictionary<Entity, TestComponentA> dictionaryA = world.ComponentsStorage.AddStorage<TestComponentA>();
+            ConcurrentDictionary<Entity, TestComponentA> dictionaryB = world.ComponentsStorage.GetStorage<TestComponentA>();
 
             Assert.Equal(dictionaryA, dictionaryB);
         }
