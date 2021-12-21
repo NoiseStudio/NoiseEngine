@@ -163,12 +163,21 @@ namespace NoiseEngine.Jobs {
             workResetEvent.WaitOne();
         }
 
+        /// <summary>
+        /// Adds a dependency of this system on <paramref name="system"/> from argument.
+        /// This affects the execution of this system as dependencies must be executed first.
+        /// </summary>
+        /// <param name="system"><see cref="EntitySystemBase"/> add for dependencies.</param>
         public void AddDependency(EntitySystemBase system) {
             dependenciesCyclesCount.Add(system, uint.MaxValue);
             system.blockadeDependencies.Add(this);
             dependencies.Add(system);
         }
 
+        /// <summary>
+        /// Removes a dependency of this system on <paramref name="system"/> from argument.
+        /// </summary>
+        /// <param name="system"><see cref="EntitySystemBase"/> remove for dependencies.</param>
         public void RemoveDependency(EntitySystemBase system) {
             dependencies.Remove(system);
             dependenciesCyclesCount.Remove(system);
