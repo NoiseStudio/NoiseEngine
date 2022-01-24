@@ -27,7 +27,7 @@ namespace NoiseEngine.Threading {
         /// </summary>
         /// <param name="other">An <see cref="AtomicBool"/> to compare to this instance.</param>
         /// <returns>
-        /// <see langword="true"/> if obj is an instance of <see cref="AtomicBool"/>and equals
+        /// <see langword="true"/> if obj is an instance of <see cref="AtomicBool"/> and equals
         /// the value of this instance, otherwise <see langword="false"/>.
         /// </returns>
         public bool Equals(AtomicBool other) {
@@ -39,7 +39,7 @@ namespace NoiseEngine.Threading {
         /// </summary>
         /// <param name="obj">An object to compare to this instance.</param>
         /// <returns>
-        /// <see langword="true"/> if obj is an instance of <see cref="AtomicBool"/>and equals
+        /// <see langword="true"/> if obj is an instance of <see cref="AtomicBool"/> and equals
         /// the value of this instance, otherwise <see langword="false"/>.
         /// </returns>
         public override bool Equals(object? obj) {
