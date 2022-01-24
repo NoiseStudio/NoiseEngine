@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <AssemblyName>NoiseEngine.Networking</AssemblyName>
-        <RootNamespace>NoiseEngine.Networking</RootNamespace>
+        <AssemblyName>NoiseEngine.Threading.Tests</AssemblyName>
+        <RootNamespace>NoiseEngine.Threading.Tests</RootNamespace>
         <AssemblyName>NoiseEngine.Threading.Tests</AssemblyName>
         <RootNamespace>NoiseEngine.Threading.Tests</RootNamespace>
         <Nullable>enable</Nullable>
@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\NoiseEngine.Threading\NoiseEngine.Threading.csproj" />
+      <ProjectReference Include="../NoiseEngine.Threading/NoiseEngine.Threading.csproj" />
     </ItemGroup>
 
 </Project>

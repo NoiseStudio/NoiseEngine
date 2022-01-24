@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Threading", "NoiseEngine.Threading\NoiseEngine.Threading.csproj", "{DCB548E4-D1C5-4084-ACAF-E2F4057B6599}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Threading", "NoiseEngine.Threading/NoiseEngine.Threading.csproj", "{DCB548E4-D1C5-4084-ACAF-E2F4057B6599}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Threading.Tests", "NoiseEngine.Threading.Tests\NoiseEngine.Threading.Tests.csproj", "{5844CC98-58FC-4E14-BDBD-D06EEFCBEEF7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Threading.Tests", "NoiseEngine.Threading.Tests/NoiseEngine.Threading.Tests.csproj", "{5844CC98-58FC-4E14-BDBD-D06EEFCBEEF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

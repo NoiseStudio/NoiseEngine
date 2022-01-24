@@ -6,7 +6,7 @@
         <RootNamespace>NoiseEngine.Threading</RootNamespace>
         <Nullable>enable</Nullable>
         <Company>Noise Studio</Company>
-        <Product>NoiseEngine.Networking</Product>
+        <Product>NoiseEngine.Threading</Product>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
         <NoWarn>1591</NoWarn>
@@ -15,5 +15,11 @@
         <AssemblyVersion>0.1.0.0</AssemblyVersion>
         <FileVersion>0.1.0.0</FileVersion>
     </PropertyGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>NoiseEngine.Networking.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
 
 </Project>
