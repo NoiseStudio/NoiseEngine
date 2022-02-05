@@ -17,6 +17,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Reference Include="NoiseEngine.Logging">
+            <HintPath>../External/NoiseEngine.Logging.dll</HintPath>
+        </Reference>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
             <_Parameter1>NoiseEngine.Networking.Tests</_Parameter1>
         </AssemblyAttribute>
