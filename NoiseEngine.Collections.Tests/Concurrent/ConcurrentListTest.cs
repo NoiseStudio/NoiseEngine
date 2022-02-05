@@ -56,7 +56,7 @@ namespace NoiseEngine.Collections.Tests.Concurrent {
             list.Add(4);
             list.Add(3);
 
-            Assert.Throws<Exception>(() => {
+            Assert.ThrowsAny<Exception>(() => {
                 foreach (int item in list)
                     list.Add(5);
             });
