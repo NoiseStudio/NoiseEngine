@@ -24,7 +24,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="../NoiseEngine.Threading/NoiseEngine.Threading.csproj" />
+        <Reference Include="NoiseEngine.Logging">
+            <HintPath>../External/NoiseEngine.Logging.dll</HintPath>
+        </Reference>
+        <ProjectReference Include="../NoiseEngine.Threading/NoiseEngine.Threading.csproj" />
     </ItemGroup>
 
 </Project>
