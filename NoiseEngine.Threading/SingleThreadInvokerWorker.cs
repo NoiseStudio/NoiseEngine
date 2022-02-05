@@ -10,7 +10,6 @@ namespace NoiseEngine.Threading {
             new ConcurrentQueue<(Action, AutoResetEvent?)>();
 
         private readonly AutoResetEvent actionAdded = new AutoResetEvent(false);
-
         private readonly Logger? logger;
 
         private bool isDisposed;

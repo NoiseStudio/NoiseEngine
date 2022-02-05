@@ -65,5 +65,6 @@ namespace NoiseEngine.Threading.Tests {
 
             invoker.Destroy();
         }
+
     }
 }
