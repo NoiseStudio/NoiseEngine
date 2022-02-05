@@ -22,4 +22,8 @@
         </AssemblyAttribute>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Concurrent\" />
+    </ItemGroup>
+
 </Project>

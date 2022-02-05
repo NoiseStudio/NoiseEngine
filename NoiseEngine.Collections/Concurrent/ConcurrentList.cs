@@ -8,7 +8,7 @@ namespace NoiseEngine.Collections.Concurrent {
         IEnumerable<T>, IList<T>, IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList, ICollection
     {
 
-        private readonly List<T> list = new List<T>();
+        private readonly List<T> list;
         private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
         public T this[int index] {
@@ -48,6 +48,22 @@ namespace NoiseEngine.Collections.Concurrent {
         object ICollection.SyncRoot => ((ICollection)list).SyncRoot;
         bool IList.IsFixedSize => ((IList)list).IsFixedSize;
         bool IList.IsReadOnly => ((IList)list).IsReadOnly;
+
+        public ConcurrentList() {
+            list = new List<T>();
+        }
+
+        public ConcurrentList(IEnumerable<T> collection) {
+            list = new List<T>(collection);
+        }
+
+        public ConcurrentList(int capacity) {
+            list = new List<T>(capacity);
+        }
+
+        ~ConcurrentList() {
+            locker.Dispose();
+        }
 
         private static bool IsCompatibleObject(object? value) {
             return (value is T) || (value == null && default(T) == null);
