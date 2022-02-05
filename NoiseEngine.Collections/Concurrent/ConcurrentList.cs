@@ -4,9 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 
 namespace NoiseEngine.Collections.Concurrent {
-    public class ConcurrentList<T> :
-        IEnumerable<T>, IList<T>, IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection<T>, IList, ICollection
-    {
+    public class ConcurrentList<T> : IList<T>, IReadOnlyList<T>, IList {
 
         private readonly List<T> list;
         private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
@@ -34,20 +32,28 @@ namespace NoiseEngine.Collections.Concurrent {
 
         public int Count => list.Count;
 
-        object? IList.this[int index] {
-            get {
-                return this[index];
-            }
+        public int Capacity {
+            get => list.Capacity;
             set {
-                this[index] = (T)value!;
+                locker.EnterWriteLock();
+                try {
+                    list.Capacity = value;
+                } finally {
+                    locker.ExitWriteLock();
+                }
             }
         }
 
-        bool ICollection<T>.IsReadOnly => ((ICollection<T>)list).IsReadOnly;
-        bool ICollection.IsSynchronized => ((ICollection)list).IsSynchronized;
+        object? IList.this[int index] {
+            get => this[index];
+            set => this[index] = (T)value!;
+        }
+
         object ICollection.SyncRoot => ((ICollection)list).SyncRoot;
-        bool IList.IsFixedSize => ((IList)list).IsFixedSize;
-        bool IList.IsReadOnly => ((IList)list).IsReadOnly;
+        bool ICollection.IsSynchronized => true;
+        bool ICollection<T>.IsReadOnly => false;
+        bool IList.IsFixedSize => false;
+        bool IList.IsReadOnly => false;
 
         public ConcurrentList() {
             list = new List<T>();

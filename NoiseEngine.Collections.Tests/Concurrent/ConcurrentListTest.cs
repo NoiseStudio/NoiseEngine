@@ -55,7 +55,11 @@ namespace NoiseEngine.Collections.Tests.Concurrent {
             list.Add(4);
             list.Add(3);
 
-            Assert.Equal(3, list.Count);
+            int sum = 0;
+            foreach (int item in list)
+                sum += item;
+
+            Assert.Equal(12, sum);
         }
 
         [Fact]
