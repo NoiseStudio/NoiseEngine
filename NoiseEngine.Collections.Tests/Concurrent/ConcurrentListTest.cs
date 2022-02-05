@@ -1,11 +1,12 @@
 ﻿using NoiseEngine.Collections.Concurrent;
+using System;
 using Xunit;
 
 namespace NoiseEngine.Collections.Tests.Concurrent {
     public class ConcurrentListTest {
 
         [Fact]
-        public void Indexor() {
+        public void Indexer() {
             ConcurrentList<int> list = new ConcurrentList<int>();
             list.Add(1);
 
@@ -54,6 +55,11 @@ namespace NoiseEngine.Collections.Tests.Concurrent {
             list.Add(5);
             list.Add(4);
             list.Add(3);
+
+            Assert.Throws<Exception>(() => {
+                foreach (int item in list)
+                    list.Add(5);
+            });
 
             int sum = 0;
             foreach (int item in list)
@@ -134,7 +140,7 @@ namespace NoiseEngine.Collections.Tests.Concurrent {
         [Fact]
         public void ToArray() {
             ConcurrentList<int> list = new ConcurrentList<int>();
-            int[] items = new int[] { 1324, 333 };
+            int[] items = { 1324, 333 };
 
             foreach (int item in items)
                 list.Add(item);

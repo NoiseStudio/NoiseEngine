@@ -78,7 +78,7 @@ namespace NoiseEngine.Collections.Concurrent {
         /// <summary>
         /// Adds <paramref name="item"/> to the <see cref="ConcurrentList{T}"/>.
         /// </summary>
-        /// <param name="item">Being added item.</param>
+        /// <param name="item">Item to add.</param>
         public void Add(T item) {
             locker.EnterWriteLock();
             list.Add(item);
@@ -129,9 +129,12 @@ namespace NoiseEngine.Collections.Concurrent {
         /// <returns>An enumerator that can be used to iterate through the <see cref="ConcurrentList{T}"/>.</returns>
         public IEnumerator<T> GetEnumerator() {
             locker.EnterReadLock();
-            for (int i = 0; i < Count; i++)
-                yield return list[i];
-            locker.ExitReadLock();
+            try {
+                for (int i = 0; i < Count; i++)
+                    yield return list[i];
+            } finally {
+                locker.ExitReadLock();
+            }
         }
 
         /// <summary>
