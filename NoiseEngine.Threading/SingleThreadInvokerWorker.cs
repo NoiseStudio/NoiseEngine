@@ -64,7 +64,6 @@ namespace NoiseEngine.Threading {
                     }
                 } catch (Exception e) {
                     logger?.CriticalError(e);
-                } finally {
                     actionAutoResetEvent?.Set();
                 }
             }
