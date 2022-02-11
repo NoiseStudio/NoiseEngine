@@ -60,7 +60,6 @@ namespace NoiseEngine.Threading {
                     while (toExecute.TryDequeue(out (Action action, AutoResetEvent? autoResetEvent) result)) {
                         actionAutoResetEvent = result.autoResetEvent;
                         result.action();
-                        result.autoResetEvent?.Set();
                     }
                 } catch (Exception e) {
                     logger?.CriticalError(e);
