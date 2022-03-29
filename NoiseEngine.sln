@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine", "NoiseEngine\NoiseEngine.csproj", "{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine", "NoiseEngine/NoiseEngine.csproj", "{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Tests", "NoiseEngine.Tests\NoiseEngine.Tests.csproj", "{BBFBF8C3-000C-4B63-9704-44CD338E31FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Tests", "NoiseEngine.Tests/NoiseEngine.Tests.csproj", "{BBFBF8C3-000C-4B63-9704-44CD338E31FE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

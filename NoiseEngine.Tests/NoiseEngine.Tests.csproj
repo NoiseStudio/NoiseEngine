@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\NoiseEngine\NoiseEngine.csproj" />
+        <ProjectReference Include="../NoiseEngine/NoiseEngine.csproj" />
     </ItemGroup>
 
 </Project>
