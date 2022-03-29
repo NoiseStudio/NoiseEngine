@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine", "NoiseEngine/NoiseEngine.csproj", "{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Tests", "NoiseEngine.Tests/NoiseEngine.Tests.csproj", "{BBFBF8C3-000C-4B63-9704-44CD338E31FE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBFBF8C3-000C-4B63-9704-44CD338E31FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBFBF8C3-000C-4B63-9704-44CD338E31FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBFBF8C3-000C-4B63-9704-44CD338E31FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBFBF8C3-000C-4B63-9704-44CD338E31FE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
