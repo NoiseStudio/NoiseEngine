@@ -343,11 +343,6 @@ namespace NoiseEngine.Jobs {
         protected virtual void OnScheduleChange() {
         }
 
-        private void AssertCanExecute() {
-            if (!CanExecute)
-                throw new InvalidOperationException($"System {ToString()} could not be executed.");
-        }
-
         private EntitySchedule GetEntityScheduleOrThrowException() {
             EntitySchedule? schedule = Schedule;
             if (schedule == null)
