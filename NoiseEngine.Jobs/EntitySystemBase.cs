@@ -151,7 +151,7 @@ namespace NoiseEngine.Jobs {
 
             OrderWork();
             InternalUpdate();
-            schedule.EnqueuePriorityPackages(this);
+            schedule.EnqueuePackages(this);
             ReleaseWork();
             Wait();
         }
