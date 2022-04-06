@@ -16,13 +16,13 @@ namespace NoiseEngine.Jobs.Tests {
 
             Assert.Equal(-5, system.C);
 
-            system.ExecuteAndWait();
+            system.TryExecuteAndWait();
             Assert.Equal(3, system.C);
 
             system.Enabled = false;
             system.Enabled = true;
 
-            system.ExecuteAndWait();
+            system.TryExecuteAndWait();
             Assert.Equal(107, system.C);
         }
 

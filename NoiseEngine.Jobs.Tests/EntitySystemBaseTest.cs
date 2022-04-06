@@ -14,19 +14,19 @@ namespace NoiseEngine.Jobs.Tests {
             world.NewEntity(new TestComponentA());
 
             TestSystemB system = new TestSystemB();
-            Assert.Throws<InvalidOperationException>(() => system.ExecuteAndWaitMultithread());
+            Assert.Throws<InvalidOperationException>(() => system.TryExecuteParallelAndWait());
 
             world.AddSystem(system, schedule);
 
             Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
-            system.ExecuteAndWaitMultithread();
+            system.TryExecuteParallelAndWait();
             Assert.Equal(1, entity.Get<TestComponentA>(world).A);
 
             system.Enabled = false;
             system.Enabled = true;
 
-            system.ExecuteAndWaitMultithread();
+            system.TryExecuteParallelAndWait();
             Assert.Equal(105, entity.Get<TestComponentA>(world).A);
         }
 
@@ -41,13 +41,13 @@ namespace NoiseEngine.Jobs.Tests {
             TestSystemA system = new TestSystemA();
             world.AddSystem(system);
 
-            system.ExecuteAndWait();
+            system.TryExecuteAndWait();
 
             system.Enabled = false;
-            Assert.False(system.ExecuteAndWait());
+            Assert.False(system.TryExecuteAndWait());
 
             system.Enabled = true;
-            system.ExecuteAndWait();
+            system.TryExecuteAndWait();
         }
 
         [Fact]
@@ -64,17 +64,17 @@ namespace NoiseEngine.Jobs.Tests {
             world.AddSystem(systemA, schedule);
             world.AddSystem(systemB, schedule);
 
-            systemB.ExecuteAndWait();
+            systemB.TryExecuteAndWait();
             systemB.AddDependency(systemA);
 
-            systemB.ExecuteAndWaitMultithread();
-            Assert.False(systemB.Execute());
+            systemB.TryExecuteParallelAndWait();
+            Assert.False(systemB.TryExecute());
 
-            systemA.ExecuteAndWait();
-            systemA.ExecuteAndWait();
+            systemA.TryExecuteAndWait();
+            systemA.TryExecuteAndWait();
 
-            systemB.ExecuteAndWait();
-            Assert.False(systemB.ExecuteAndWait());
+            systemB.TryExecuteAndWait();
+            Assert.False(systemB.TryExecuteAndWait());
         }
 
         [Fact]
@@ -90,11 +90,11 @@ namespace NoiseEngine.Jobs.Tests {
             world.AddSystem(systemA);
             world.AddSystem(systemB);
 
-            systemB.ExecuteAndWait();
+            systemB.TryExecuteAndWait();
             systemB.AddDependency(systemA);
 
             Assert.True(systemB.CanExecute);
-            systemB.ExecuteAndWait();
+            systemB.TryExecuteAndWait();
             Assert.False(systemB.CanExecute);
 
             Assert.True(systemA.CanExecute);
@@ -115,7 +115,7 @@ namespace NoiseEngine.Jobs.Tests {
             TestSystemThreadId system = new TestSystemThreadId();
             world.AddSystem(system, schedule);
 
-            system.ExecuteAndWaitMultithread();
+            system.TryExecuteParallelAndWait();
             Assert.Equal(262204 / threadCount, system.AverageTestComponentAAValue);
         }
 
@@ -132,13 +132,13 @@ namespace NoiseEngine.Jobs.Tests {
             TestSystemCounter system = new TestSystemCounter();
             world.AddSystem(system);
 
-            system.ExecuteAndWait();
+            system.TryExecuteAndWait();
             Assert.Equal(64, system.EntityCount);
 
             system.Filter = new EntityFilter(new Type[] {
                 typeof(TestComponentA)
             });
-            system.ExecuteAndWait();
+            system.TryExecuteAndWait();
             Assert.Equal(32, system.EntityCount);
 
             system.Filter = new EntityFilter(
@@ -149,7 +149,7 @@ namespace NoiseEngine.Jobs.Tests {
                     typeof(TestComponentB)
                 }
             );
-            system.ExecuteAndWait();
+            system.TryExecuteAndWait();
             Assert.Equal(16, system.EntityCount);
         }
 

@@ -16,7 +16,6 @@ namespace NoiseEngine.Jobs {
         private readonly IReadOnlyList<AutoResetEvent> autoResetEvents;
         private readonly object addPackagesLocker = new object();
 
-        private readonly ConcurrentQueue<SchedulePackage> priorityPackages = new ConcurrentQueue<SchedulePackage>();
         private readonly ConcurrentQueue<SchedulePackage> packages = new ConcurrentQueue<SchedulePackage>();
         private readonly ConcurrentList<EntitySystemBase> systems = new ConcurrentList<EntitySystemBase>();
         private readonly ConcurrentHashSet<EntitySystemBase> systemsHashSet = new ConcurrentHashSet<EntitySystemBase>();
@@ -134,9 +133,8 @@ namespace NoiseEngine.Jobs {
 
             while (true) {
                 double executionTime = Time.UtcMilliseconds;
-                List<EntitySystemBase> sortedSystems;
-
-                sortedSystems = systems.OrderByDescending(t => executionTime - t.lastExecutionTime).ToList();
+                List<EntitySystemBase> sortedSystems =
+                    systems.OrderByDescending(t => executionTime - t.lastExecutionTime).ToList();
 
                 bool needToWait = true;
                 for (int i = 0; i < sortedSystems.Count; i++) {

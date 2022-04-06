@@ -128,10 +128,34 @@ namespace NoiseEngine.Jobs {
         protected float CycleTimeSecondsF { get; private set; } = 1;
 
         /// <summary>
-        /// Performs a cycle on this system and wait to finish.
+        /// Tries to performs a cycle on this system and waits for it to finish.
         /// </summary>
-        /// <returns>If <see langword="true"/> system was executed; otherwise false.</returns>
-        public bool ExecuteAndWait() {
+        public void ExecuteAndWait() {
+            if (!TryExecuteAndWait())
+                ThrowCouldNotExecuteException();
+        }
+
+        /// <summary>
+        /// Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
+        /// </summary>
+        public void ExecuteParallelAndWait() {
+            if (!TryExecuteParallelAndWait())
+                ThrowCouldNotExecuteException();
+        }
+
+        /// <summary>
+        /// Tries to performs a cycle on this system with using schedule threads.
+        /// </summary>
+        public void Execute() {
+            if (!TryExecute())
+                ThrowCouldNotExecuteException();
+        }
+
+        /// <summary>
+        /// Tries to performs a cycle on this system and waits for it to finish.
+        /// </summary>
+        /// <returns><see langword="true"/> if system was executed; otherwise false.</returns>
+        public bool TryExecuteAndWait() {
             if (!CheckIfCanExecuteAndOrderWork())
                 return false;
 
@@ -142,10 +166,10 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
-        /// Performs a cycle on this system with using schedule threads and wait to finish.
+        /// Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
         /// </summary>
-        /// <returns>If <see langword="true"/> system was executed; otherwise false.</returns>
-        public bool ExecuteAndWaitMultithread() {
+        /// <returns><see langword="true"/> if system was executed; otherwise false.</returns>
+        public bool TryExecuteParallelAndWait() {
             EntitySchedule schedule = GetEntityScheduleOrThrowException();
 
             if (!CheckIfCanExecuteAndOrderWork())
@@ -160,10 +184,10 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
-        /// Performs a cycle on this system with using schedule threads.
+        /// Tries to performs a cycle on this system with using schedule threads.
         /// </summary>
-        /// <returns>If <see langword="true"/> work was queued; otherwise false.</returns>
-        public bool Execute() {
+        /// <returns><see langword="true"/> if work was queued; otherwise false.</returns>
+        public bool TryExecute() {
             EntitySchedule schedule = GetEntityScheduleOrThrowException();
 
             if (!CheckIfCanExecuteAndOrderWork())
@@ -341,6 +365,10 @@ namespace NoiseEngine.Jobs {
         /// This method is executed when <see cref="EntitySchedule"/> was changed
         /// </summary>
         protected virtual void OnScheduleChange() {
+        }
+
+        private void ThrowCouldNotExecuteException() {
+            throw new InvalidOperationException($"System {ToString()} could not be executed.");
         }
 
         private EntitySchedule GetEntityScheduleOrThrowException() {

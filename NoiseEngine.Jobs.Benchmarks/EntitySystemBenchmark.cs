@@ -22,7 +22,7 @@ namespace NoiseEngine.Jobs.Benchmarks {
 
         [Benchmark]
         public void ExecuteMultithread() {
-            system.ExecuteAndWaitMultithread();
+            system.TryExecuteParallelAndWait();
         }
 
     }
