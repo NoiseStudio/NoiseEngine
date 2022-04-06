@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
+using NoiseEngine.Threading;
 
 namespace NoiseEngine.Jobs {
     public abstract class EntitySystemBase {
@@ -21,11 +23,10 @@ namespace NoiseEngine.Jobs {
         private bool usesSchedule = false;
         private bool enabled = true;
         private int ongoingWork = 0;
+        private AtomicBool isWorking;
 
         public double? CycleTime {
-            get {
-                return cycleTime;
-            }
+            get => cycleTime;
             set {
                 cycleTime = value;
                 if (cycleTime == null) {
@@ -45,9 +46,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public EntitySchedule? Schedule {
-            get {
-                return schedule;
-            }
+            get => schedule;
             set {
                 if (usesSchedule)
                     schedule?.RemoveSystem(this);
@@ -61,9 +60,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public bool Enabled {
-            get {
-                return enabled;
-            }
+            get => enabled;
             set {
                 if (enabled != value) {
                     enabled = value;
@@ -76,9 +73,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public IEntityFilter? Filter {
-            get {
-                return filter;
-            }
+            get => filter;
             set {
                 if (query != null)
                     query.Filter = value;
@@ -105,7 +100,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
-        public bool IsWorking { get; private set; }
+        public bool IsWorking => isWorking;
 
         protected int ThreadId {
             get {
@@ -133,27 +128,54 @@ namespace NoiseEngine.Jobs {
         protected float CycleTimeSecondsF { get; private set; } = 1;
 
         /// <summary>
-        /// Performs a cycle on this system
+        /// Performs a cycle on this system and wait to finish.
         /// </summary>
-        public void Execute() {
-            AssertCanExecute();
+        /// <returns>If <see langword="true"/> system was executed; otherwise false.</returns>
+        public bool ExecuteAndWait() {
+            if (!CheckIfCanExecuteAndOrderWork())
+                return false;
+
             InternalExecute();
+            ReleaseWork();
+
+            return true;
         }
 
         /// <summary>
-        /// Performs a cycle on this system with using schedule threads
+        /// Performs a cycle on this system with using schedule threads and wait to finish.
         /// </summary>
-        public void ExecuteMultithread() {
-            AssertCanExecute();
-            Wait();
-
+        /// <returns>If <see langword="true"/> system was executed; otherwise false.</returns>
+        public bool ExecuteAndWaitMultithread() {
             EntitySchedule schedule = GetEntityScheduleOrThrowException();
 
-            OrderWork();
+            if (!CheckIfCanExecuteAndOrderWork())
+                return false;
+
             InternalUpdate();
             schedule.EnqueuePackages(this);
             ReleaseWork();
+
             Wait();
+            return true;
+        }
+
+        /// <summary>
+        /// Performs a cycle on this system with using schedule threads.
+        /// </summary>
+        /// <returns>If <see langword="true"/> work was queued; otherwise false.</returns>
+        public bool Execute() {
+            EntitySchedule schedule = GetEntityScheduleOrThrowException();
+
+            if (!CheckIfCanExecuteAndOrderWork())
+                return false;
+
+            Task.Run(() => {
+                InternalUpdate();
+                schedule.EnqueuePackages(this);
+                ReleaseWork();
+            });
+
+            return true;
         }
 
         /// <summary>
@@ -195,7 +217,6 @@ namespace NoiseEngine.Jobs {
         internal abstract void InternalUpdateEntity(Entity entity);
 
         internal virtual void InternalExecute() {
-            Wait();
             OrderWork();
             InternalUpdate();
         }
@@ -247,7 +268,7 @@ namespace NoiseEngine.Jobs {
         internal void OrderWork() {
             if (Interlocked.Increment(ref ongoingWork) == 1) {
                 workResetEvent.Reset();
-                IsWorking = true;
+                isWorking = true;
             }
         }
 
@@ -255,8 +276,29 @@ namespace NoiseEngine.Jobs {
             if (Interlocked.Decrement(ref ongoingWork) == 0) {
                 InternalLateUpdate();
                 workResetEvent.Set();
-                IsWorking = false;
+                isWorking = false;
             }
+        }
+
+        internal bool CheckIfCanExecuteAndOrderWork() {
+            if (!Enabled || isWorking.Exchange(true))
+                return false;
+
+            foreach (EntitySystemBase system in dependencies) {
+                if (system.IsWorking || system.cyclesCount == dependenciesCyclesCount[system]) {
+                    isWorking.Exchange(false);
+                    return false;
+                }
+            }
+            foreach (EntitySystemBase system in blockadeDependencies) {
+                if (system.IsWorking) {
+                    isWorking.Exchange(false);
+                    return false;
+                }
+            }
+
+            OrderWork();
+            return true;
         }
 
         /// <summary>

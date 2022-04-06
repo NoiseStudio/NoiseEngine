@@ -16,13 +16,13 @@ namespace NoiseEngine.Jobs.Tests {
 
             Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
-            system.Execute();
+            system.ExecuteAndWait();
             Assert.Equal(1, entity.Get<TestComponentA>(world).A);
 
             system.Enabled = false;
             system.Enabled = true;
 
-            system.Execute();
+            system.ExecuteAndWait();
             Assert.Equal(105, entity.Get<TestComponentA>(world).A);
         }
 

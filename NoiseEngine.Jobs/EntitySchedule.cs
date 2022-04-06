@@ -135,19 +135,17 @@ namespace NoiseEngine.Jobs {
             while (true) {
                 double executionTime = Time.UtcMilliseconds;
                 List<EntitySystemBase> sortedSystems;
-                lock (systems)
-                    sortedSystems = systems.OrderByDescending(t => executionTime - t.lastExecutionTime).ToList();
+
+                sortedSystems = systems.OrderByDescending(t => executionTime - t.lastExecutionTime).ToList();
 
                 bool needToWait = true;
                 for (int i = 0; i < sortedSystems.Count; i++) {
                     EntitySystemBase system = sortedSystems[i];
                     double executionTimeDifference = executionTime - system.lastExecutionTime;
 
-                    if (system.cycleTimeWithDelta < executionTimeDifference && system.CanExecute) {
-                        EnqueuePackagesWorker(system);
-
-                        system.OrderWork();
+                    if (system.cycleTimeWithDelta < executionTimeDifference && system.CheckIfCanExecuteAndOrderWork()) {
                         system.InternalUpdate();
+                        EnqueuePackagesWorker(system);
                         system.ReleaseWork();
                         needToWait = false;
                     }
