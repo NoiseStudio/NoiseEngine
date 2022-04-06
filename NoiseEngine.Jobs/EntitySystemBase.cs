@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
+using NoiseEngine.Threading;
 
 namespace NoiseEngine.Jobs {
     public abstract class EntitySystemBase {
@@ -21,11 +23,10 @@ namespace NoiseEngine.Jobs {
         private bool usesSchedule = false;
         private bool enabled = true;
         private int ongoingWork = 0;
+        private AtomicBool isWorking;
 
         public double? CycleTime {
-            get {
-                return cycleTime;
-            }
+            get => cycleTime;
             set {
                 cycleTime = value;
                 if (cycleTime == null) {
@@ -45,9 +46,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public EntitySchedule? Schedule {
-            get {
-                return schedule;
-            }
+            get => schedule;
             set {
                 if (usesSchedule)
                     schedule?.RemoveSystem(this);
@@ -61,9 +60,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public bool Enabled {
-            get {
-                return enabled;
-            }
+            get => enabled;
             set {
                 if (enabled != value) {
                     enabled = value;
@@ -76,9 +73,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public IEntityFilter? Filter {
-            get {
-                return filter;
-            }
+            get => filter;
             set {
                 if (query != null)
                     query.Filter = value;
@@ -105,7 +100,7 @@ namespace NoiseEngine.Jobs {
         }
 
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
-        public bool IsWorking { get; private set; }
+        public bool IsWorking => isWorking;
 
         protected int ThreadId {
             get {
@@ -133,27 +128,78 @@ namespace NoiseEngine.Jobs {
         protected float CycleTimeSecondsF { get; private set; } = 1;
 
         /// <summary>
-        /// Performs a cycle on this system
+        /// Tries to performs a cycle on this system and waits for it to finish.
         /// </summary>
-        public void Execute() {
-            AssertCanExecute();
-            InternalExecute();
+        public void ExecuteAndWait() {
+            if (!TryExecuteAndWait())
+                ThrowCouldNotExecuteException();
         }
 
         /// <summary>
-        /// Performs a cycle on this system with using schedule threads
+        /// Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
         /// </summary>
-        public void ExecuteMultithread() {
-            AssertCanExecute();
-            Wait();
+        public void ExecuteParallelAndWait() {
+            if (!TryExecuteParallelAndWait())
+                ThrowCouldNotExecuteException();
+        }
 
+        /// <summary>
+        /// Tries to performs a cycle on this system with using schedule threads.
+        /// </summary>
+        public void Execute() {
+            if (!TryExecute())
+                ThrowCouldNotExecuteException();
+        }
+
+        /// <summary>
+        /// Tries to performs a cycle on this system and waits for it to finish.
+        /// </summary>
+        /// <returns><see langword="true"/> if system was executed; otherwise false.</returns>
+        public bool TryExecuteAndWait() {
+            if (!CheckIfCanExecuteAndOrderWork())
+                return false;
+
+            InternalExecute();
+            ReleaseWork();
+
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
+        /// </summary>
+        /// <returns><see langword="true"/> if system was executed; otherwise false.</returns>
+        public bool TryExecuteParallelAndWait() {
             EntitySchedule schedule = GetEntityScheduleOrThrowException();
 
-            OrderWork();
+            if (!CheckIfCanExecuteAndOrderWork())
+                return false;
+
             InternalUpdate();
-            schedule.EnqueuePriorityPackages(this);
+            schedule.EnqueuePackages(this);
             ReleaseWork();
+
             Wait();
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to performs a cycle on this system with using schedule threads.
+        /// </summary>
+        /// <returns><see langword="true"/> if work was queued; otherwise false.</returns>
+        public bool TryExecute() {
+            EntitySchedule schedule = GetEntityScheduleOrThrowException();
+
+            if (!CheckIfCanExecuteAndOrderWork())
+                return false;
+
+            Task.Run(() => {
+                InternalUpdate();
+                schedule.EnqueuePackages(this);
+                ReleaseWork();
+            });
+
+            return true;
         }
 
         /// <summary>
@@ -195,7 +241,6 @@ namespace NoiseEngine.Jobs {
         internal abstract void InternalUpdateEntity(Entity entity);
 
         internal virtual void InternalExecute() {
-            Wait();
             OrderWork();
             InternalUpdate();
         }
@@ -247,7 +292,7 @@ namespace NoiseEngine.Jobs {
         internal void OrderWork() {
             if (Interlocked.Increment(ref ongoingWork) == 1) {
                 workResetEvent.Reset();
-                IsWorking = true;
+                isWorking = true;
             }
         }
 
@@ -255,8 +300,29 @@ namespace NoiseEngine.Jobs {
             if (Interlocked.Decrement(ref ongoingWork) == 0) {
                 InternalLateUpdate();
                 workResetEvent.Set();
-                IsWorking = false;
+                isWorking = false;
             }
+        }
+
+        internal bool CheckIfCanExecuteAndOrderWork() {
+            if (!Enabled || isWorking.Exchange(true))
+                return false;
+
+            foreach (EntitySystemBase system in dependencies) {
+                if (system.IsWorking || system.cyclesCount == dependenciesCyclesCount[system]) {
+                    isWorking.Exchange(false);
+                    return false;
+                }
+            }
+            foreach (EntitySystemBase system in blockadeDependencies) {
+                if (system.IsWorking) {
+                    isWorking.Exchange(false);
+                    return false;
+                }
+            }
+
+            OrderWork();
+            return true;
         }
 
         /// <summary>
@@ -301,9 +367,8 @@ namespace NoiseEngine.Jobs {
         protected virtual void OnScheduleChange() {
         }
 
-        private void AssertCanExecute() {
-            if (!CanExecute)
-                throw new InvalidOperationException($"System {ToString()} could not be executed.");
+        private void ThrowCouldNotExecuteException() {
+            throw new InvalidOperationException($"System {ToString()} could not be executed.");
         }
 
         private EntitySchedule GetEntityScheduleOrThrowException() {

@@ -25,4 +25,10 @@
 	</AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="NoiseEngine.Threading">
+      <HintPath>../External/NoiseEngine.Threading.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

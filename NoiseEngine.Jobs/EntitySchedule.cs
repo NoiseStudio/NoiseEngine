@@ -7,25 +7,23 @@ using System.Threading;
 namespace NoiseEngine.Jobs {
     public class EntitySchedule : IDisposable {
 
-        public const int DefaultMaxPackageSize = 64;
-        public const int DefaultMinPackageSize = 8;
-
-        private static readonly object locker = new object();
+        private const int DefaultMaxPackageSize = 64;
+        private const int DefaultMinPackageSize = 8;
 
         internal readonly ConcurrentDictionary<int, int> threadIds = new ConcurrentDictionary<int, int>();
         internal readonly int threadIdCount;
-        
-        private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
-        private int manualResetEventThreads;
+
+        private readonly IReadOnlyList<AutoResetEvent> autoResetEvents;
         private readonly object addPackagesLocker = new object();
 
-        private readonly ConcurrentQueue<SchedulePackage> priorityPackages = new ConcurrentQueue<SchedulePackage>();
         private readonly ConcurrentQueue<SchedulePackage> packages = new ConcurrentQueue<SchedulePackage>();
-        private readonly List<EntitySystemBase> systems = new List<EntitySystemBase>();
-        private readonly HashSet<EntitySystemBase> systemsHashSet = new HashSet<EntitySystemBase>();
+        private readonly ConcurrentList<EntitySystemBase> systems = new ConcurrentList<EntitySystemBase>();
+        private readonly ConcurrentHashSet<EntitySystemBase> systemsHashSet = new ConcurrentHashSet<EntitySystemBase>();
         private readonly int threadCount;
         private readonly int minPackageSize;
         private readonly int maxPackageSize;
+
+        private int nextThreadToSignal;
         private bool works = true;
 
         public bool IsDisposed { get; private set; }
@@ -38,12 +36,9 @@ namespace NoiseEngine.Jobs {
         /// <param name="minPackageSize">The minimum size of an UpdateEntity package shared between threads</param>
         /// <exception cref="InvalidOperationException">Error when using zero or negative threads and when the minimum package size is greater than the maximum package size</exception>
         public EntitySchedule(int? threadCount = null, int? maxPackageSize = null, int? minPackageSize = null) {
-            if (threadCount == null)
-                threadCount = Environment.ProcessorCount;
-            if (maxPackageSize == null)
-                maxPackageSize = DefaultMaxPackageSize;
-            if (minPackageSize == null)
-                minPackageSize = DefaultMinPackageSize;
+            threadCount ??= Environment.ProcessorCount;
+            maxPackageSize ??= DefaultMaxPackageSize;
+            minPackageSize ??= DefaultMinPackageSize;
 
             if (threadCount <= 0)
                 throw new InvalidOperationException("The number of threads cannot be zero or negative.");
@@ -56,7 +51,12 @@ namespace NoiseEngine.Jobs {
 
             threadIdCount = this.threadCount + 1;
 
-            for (int i = 0; i < threadCount; i++) {
+            AutoResetEvent[] autoResetEvents = new AutoResetEvent[this.threadCount];
+            this.autoResetEvents = autoResetEvents;
+
+            for (int i = 0; i < this.threadCount; i++) {
+                autoResetEvents[i] = new AutoResetEvent(false);
+
                 Thread thread = new Thread(ThreadWork);
                 thread.Name = $"{nameof(EntitySchedule)} worker #{i}";
                 thread.Start(i);
@@ -83,28 +83,23 @@ namespace NoiseEngine.Jobs {
         }
 
         internal void AddSystem(EntitySystemBase system) {
-            lock (systems)
-                systems.Add(system);
-            lock (systemsHashSet)
-                systemsHashSet.Add(system);
+            systems.Add(system);
+            systemsHashSet.Add(system);
 
-            manualResetEventThreads = threadCount;
-            manualResetEvent.Set();
+            SignalWorkerThread();
         }
 
         internal void RemoveSystem(EntitySystemBase system) {
-            lock (systems)
-                systems.Remove(system);
-            lock (systemsHashSet)
-                systemsHashSet.Remove(system);
+            systems.Remove(system);
+            systemsHashSet.Remove(system);
         }
 
         internal bool HasSystem(EntitySystemBase system) {
             return systemsHashSet.Contains(system);
         }
 
-        internal void EnqueuePriorityPackages(EntitySystemBase system) {
-            EnqueuePackages(system, priorityPackages);
+        internal void EnqueuePackages(EntitySystemBase system) {
+            EnqueuePackagesWorker(system);
             SignalWorkerThreads();
         }
 
@@ -112,45 +107,43 @@ namespace NoiseEngine.Jobs {
             int threadId = (int)threadIdObject!;
             threadIds.TryAdd(Environment.CurrentManagedThreadId, threadId + 1);
 
+            AutoResetEvent autoResetEvent = autoResetEvents[threadId];
+
             while (works) {
-                if (!AddPackages()) {
-                    manualResetEvent.WaitOne();
-                    if (Interlocked.Decrement(ref manualResetEventThreads) <= 0)
-                        manualResetEvent.Reset();
+                if (!AddPackages(autoResetEvent)) {
+                    autoResetEvent.WaitOne();
                 }
 
-                while (priorityPackages.TryDequeue(out SchedulePackage package) || packages.TryDequeue(out package)) {
+                while (packages.TryDequeue(out SchedulePackage package)) {
                     for (int i = package.PackageStartIndex; i < package.PackageEndIndex; i++) {
                         Entity entity = package.EntityGroup.entities[i];
                         if (entity != Entity.Empty)
                             package.EntitySystem.InternalUpdateEntity(entity);
                     }
+
                     package.EntityGroup.ReleaseWork();
                     package.EntitySystem.ReleaseWork();
                 }
             }
         }
 
-        private bool AddPackages() {
+        private bool AddPackages(AutoResetEvent autoResetEvent) {
             if (systems.Count == 0 || !Monitor.TryEnter(addPackagesLocker))
                 return false;
 
             while (true) {
                 double executionTime = Time.UtcMilliseconds;
-                List<EntitySystemBase> sortedSystems;
-                lock (systems)
-                    sortedSystems = systems.OrderByDescending(t => executionTime - t.lastExecutionTime).ToList();
+                List<EntitySystemBase> sortedSystems =
+                    systems.OrderByDescending(t => executionTime - t.lastExecutionTime).ToList();
 
                 bool needToWait = true;
                 for (int i = 0; i < sortedSystems.Count; i++) {
                     EntitySystemBase system = sortedSystems[i];
                     double executionTimeDifference = executionTime - system.lastExecutionTime;
 
-                    if (system.cycleTimeWithDelta < executionTimeDifference && system.CanExecute) {
-                        EnqueuePackages(system, packages);
-
-                        system.OrderWork();
+                    if (system.cycleTimeWithDelta < executionTimeDifference && system.CheckIfCanExecuteAndOrderWork()) {
                         system.InternalUpdate();
+                        EnqueuePackagesWorker(system);
                         system.ReleaseWork();
                         needToWait = false;
                     }
@@ -162,8 +155,9 @@ namespace NoiseEngine.Jobs {
                 EntitySystemBase systemToWait = sortedSystems[0];
                 double executionTimeDifferenceToWait = Time.UtcMilliseconds - systemToWait.lastExecutionTime;
                 int timeToWait = (int)(systemToWait.CycleTime! - executionTimeDifferenceToWait);
+
                 if (timeToWait > 0)
-                    Thread.Sleep(timeToWait);
+                    autoResetEvent.WaitOne(timeToWait);
             }
 
             SignalWorkerThreads();
@@ -171,7 +165,7 @@ namespace NoiseEngine.Jobs {
             return true;
         }
 
-        private void EnqueuePackages(EntitySystemBase system, ConcurrentQueue<SchedulePackage> packages) {
+        private void EnqueuePackagesWorker(EntitySystemBase system) {
             foreach (EntityGroup group in system.query!.groups) {
                 group.Wait();
 
@@ -193,14 +187,20 @@ namespace NoiseEngine.Jobs {
         }
 
         private void SignalWorkerThreads() {
-            manualResetEventThreads = threadCount - 1;
-            manualResetEvent.Set();
+            int signalThreadsCount = Math.Min(packages.Count, threadCount);
+            for (int i = 0; i < signalThreadsCount; i++)
+                SignalWorkerThread();
+        }
+
+        private void SignalWorkerThread() {
+            autoResetEvents[Interlocked.Increment(ref nextThreadToSignal) % threadCount].Set();
         }
 
         private void Abort() {
             works = false;
-            manualResetEventThreads = int.MaxValue;
-            manualResetEvent.Set();
+
+            for (int i = 0; i < threadCount; i++)
+                SignalWorkerThread();
         }
 
     }
