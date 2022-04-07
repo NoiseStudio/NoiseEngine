@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using NoiseEngine.Common;
 using NoiseEngine.Threading;
 
 namespace NoiseEngine.Jobs {
-    public abstract class EntitySystemBase {
+    public abstract class EntitySystemBase : IDestroyable {
 
         internal EntityQueryBase? query;
         internal double lastExecutionTime = Time.UtcMilliseconds;
@@ -24,6 +25,7 @@ namespace NoiseEngine.Jobs {
         private bool enabled = true;
         private int ongoingWork = 0;
         private AtomicBool isWorking;
+        private AtomicBool isDestroyed;
 
         public double? CycleTime {
             get => cycleTime;
@@ -83,7 +85,7 @@ namespace NoiseEngine.Jobs {
 
         public bool CanExecute {
             get {
-                if (IsWorking || !Enabled)
+                if (IsWorking || !Enabled || !IsDestroyed)
                     return false;
 
                 foreach (EntitySystemBase system in dependencies) {
@@ -101,6 +103,7 @@ namespace NoiseEngine.Jobs {
 
         public EntityWorld World { get; private set; } = EntityWorld.Empty;
         public bool IsWorking => isWorking;
+        public bool IsDestroyed => isDestroyed;
 
         protected int ThreadId {
             get {
@@ -126,6 +129,10 @@ namespace NoiseEngine.Jobs {
         protected float DeltaTimeF { get; private set; } = 1;
         protected double CycleTimeSeconds { get; private set; } = 1;
         protected float CycleTimeSecondsF { get; private set; } = 1;
+
+        ~EntitySystemBase() {
+            Destroy();
+        }
 
         /// <summary>
         /// Tries to performs a cycle on this system and waits for it to finish.
@@ -231,6 +238,28 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
+        /// Destroys object. It is not required to call this method because resources are automatically released.
+        /// </summary>
+        public void Destroy() {
+            if (isDestroyed.Exchange(true))
+                return;
+
+            Wait();
+
+            Enabled = false;
+
+            InternalTerminate();
+
+            foreach (EntitySystemBase system in dependencies)
+                RemoveDependency(system);
+
+            Schedule = null;
+            World.RemoveSystem(this);
+
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
         /// Returns a string that represents the current system
         /// </summary>
         /// <returns>A string that represents the current system</returns>
@@ -265,12 +294,12 @@ namespace NoiseEngine.Jobs {
             cyclesCount++;
             double executionTime = Time.UtcMilliseconds;
 
-            double deltaTimeInMiliseconds = executionTime - lastExecutionTime;
-            DeltaTime = deltaTimeInMiliseconds / 1000;
+            double deltaTimeInMilliseconds = executionTime - lastExecutionTime;
+            DeltaTime = deltaTimeInMilliseconds / 1000;
             DeltaTimeF = (float)DeltaTime;
 
             if (CycleTime != null) {
-                cycleTimeWithDelta = (double)CycleTime - (deltaTimeInMiliseconds - (double)CycleTime);
+                cycleTimeWithDelta = (double)CycleTime - (deltaTimeInMilliseconds - (double)CycleTime);
             }
 
             lastExecutionTime = executionTime;
@@ -305,7 +334,7 @@ namespace NoiseEngine.Jobs {
         }
 
         internal bool CheckIfCanExecuteAndOrderWork() {
-            if (!Enabled || isWorking.Exchange(true))
+            if (!Enabled || !IsDestroyed || isWorking.Exchange(true))
                 return false;
 
             foreach (EntitySystemBase system in dependencies) {
