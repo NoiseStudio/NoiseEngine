@@ -14,6 +14,8 @@ namespace NoiseEngine.Jobs {
         private readonly ConcurrentQueue<Entity> entitiesToAdd = new ConcurrentQueue<Entity>();
         private readonly ConcurrentQueue<Entity> entitiesToRemove = new ConcurrentQueue<Entity>();
         private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
+        private readonly ManualResetEvent readLockResetEvent = new ManualResetEvent(false);
+        private readonly ManualResetEvent writeLockResetEvent = new ManualResetEvent(false);
 
         private bool clean;
         private uint ongoingWork;
@@ -71,15 +73,23 @@ namespace NoiseEngine.Jobs {
         public bool TryEnterReadLock(object? exclusiveWriteObject = null) {
             Interlocked.Increment(ref readLock);
 
-            if (this.exclusiveWriteObject == null || this.exclusiveWriteObject == exclusiveWriteObject)
+            if (this.exclusiveWriteObject == null || this.exclusiveWriteObject == exclusiveWriteObject) {
+                readLockResetEvent.Reset();
                 return true;
+            }
 
             Interlocked.Decrement(ref readLock);
             return false;
         }
 
+        public void EnterReadLock(object? exclusiveWriteObject = null) {
+            while (!TryEnterReadLock(exclusiveWriteObject))
+                writeLockResetEvent.WaitOne();
+        }
+
         public void ExitReadLock() {
-            Interlocked.Decrement(ref readLock);
+            if (Interlocked.Decrement(ref readLock) == 0)
+                readLockResetEvent.Set();
         }
 
         public bool TryEnterWriteLock(object exclusiveWriteObject) {
@@ -101,12 +111,20 @@ namespace NoiseEngine.Jobs {
                 return result;
             }
 
+            writeLockResetEvent.Reset();
             return true;
         }
 
+        public void EnterWriteLock(object exclusiveWriteObject) {
+            while (!TryEnterWriteLock(exclusiveWriteObject))
+                readLockResetEvent.WaitOne();
+        }
+
         public void ExitWriteLock() {
-            if (Interlocked.Decrement(ref writeLock) == 0)
+            if (Interlocked.Decrement(ref writeLock) == 0) {
                 Interlocked.Exchange(ref exclusiveWriteObject, null);
+                writeLockResetEvent.Set();
+            }
         }
 
         public void OrderWork() {
