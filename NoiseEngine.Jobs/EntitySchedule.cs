@@ -115,16 +115,42 @@ namespace NoiseEngine.Jobs {
                 }
 
                 while (packages.TryDequeue(out SchedulePackage package)) {
+                    EntityQueryBase query = package.EntitySystem.query!;
+                    if (query.IsReadOnly) {
+                        if (!package.EntityGroup.TryEnterReadLock()) {
+                            EnqueuePackageAndWait(package);
+                            continue;
+                        }
+                    } else {
+                        if (!package.EntityGroup.TryEnterWriteLock(package.EntitySystem)) {
+                            EnqueuePackageAndWait(package);
+                            continue;
+                        }
+                    }
+
                     for (int i = package.PackageStartIndex; i < package.PackageEndIndex; i++) {
                         Entity entity = package.EntityGroup.entities[i];
                         if (entity != Entity.Empty)
                             package.EntitySystem.InternalUpdateEntity(entity);
                     }
 
+                    if (query.IsReadOnly) {
+                        package.EntityGroup.ExitReadLock();
+                    } else {
+                        package.EntityGroup.ExitWriteLock();
+                    }
+
                     package.EntityGroup.ReleaseWork();
                     package.EntitySystem.ReleaseWork();
                 }
             }
+        }
+
+        private void EnqueuePackageAndWait(in SchedulePackage package) {
+            packages.Enqueue(package);
+
+            if (packages.Count == 1)
+                Thread.Sleep(1);
         }
 
         private bool AddPackages(AutoResetEvent autoResetEvent) {
@@ -167,7 +193,7 @@ namespace NoiseEngine.Jobs {
 
         private void EnqueuePackagesWorker(EntitySystemBase system) {
             foreach (EntityGroup group in system.query!.groups) {
-                group.Wait();
+                group.OrderWorkAndWait();
 
                 int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, minPackageSize, maxPackageSize);
                 for (int j = 0; j < group.entities.Count;) {

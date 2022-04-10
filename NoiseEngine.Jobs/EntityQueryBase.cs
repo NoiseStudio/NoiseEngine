@@ -20,6 +20,7 @@ namespace NoiseEngine.Jobs {
 
         public EntityWorld World { get; private set; }
         public bool IsDisposed { get; private set; }
+        public bool IsReadOnly => false;
 
         public IEnumerable<Entity> Entities => GetEntityEnumerable();
 
@@ -56,7 +57,7 @@ namespace NoiseEngine.Jobs {
 
         private IEnumerable<Entity> GetEntityEnumerable() {
             foreach (EntityGroup group in groups) {
-                group.Wait();
+                group.OrderWorkAndWait();
 
                 for (int i = 0; i < group.entities.Count; i++) {
                     Entity entity = group.entities[i];

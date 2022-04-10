@@ -30,12 +30,6 @@ namespace NoiseEngine.Jobs.Tests {
         }
 
         [Fact]
-        public void GetComponentsCopy() {
-            EntityGroup groupA = new EntityGroup(5, EntityWorld.Empty, new List<Type>() { typeof(string), typeof(int) });
-            Assert.True(groupA.CompareSortedComponents(groupA.GetComponentsCopy()));
-        }
-
-        [Fact]
         public void HasComponent() {
             EntityGroup groupA = new EntityGroup(5, EntityWorld.Empty, new List<Type>() { typeof(string), typeof(int) });
             Assert.True(groupA.HasComponent(typeof(string)));
