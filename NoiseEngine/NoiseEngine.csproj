@@ -51,5 +51,7 @@
             <HintPath>../External/NoiseEngine.Threading.dll</HintPath>
         </Reference>
     </ItemGroup>
-    
+
+    <Import Project="$(SolutionDir)NoiseEngine.Shared.xml" />
+
 </Project>

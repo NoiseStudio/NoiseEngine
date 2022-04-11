@@ -1,0 +1,49 @@
+<Project>
+    <PropertyGroup>
+        <RenderTiNativeBuildLocation>../NoiseEngine.Rendering.Native/build/$(Configuration)</RenderTiNativeBuildLocation>
+        <RenderTiNativeName>NoiseEngine.Rendering.Native</RenderTiNativeName>
+        <GlfwName>glfw3</GlfwName>
+    </PropertyGroup>
+
+    <!-- Windows -->
+    <PropertyGroup Condition="$(OS) == 'Windows_NT'">
+        <OSLibExt>dll</OSLibExt>
+        <OSLibPrefix />
+    </PropertyGroup>
+
+    <!-- Linux -->
+    <PropertyGroup Condition="$(OS) != 'Windows_NT'">
+        <OSLibExt>so</OSLibExt>
+        <OSLibPrefix>lib</OSLibPrefix>
+    </PropertyGroup>
+
+    <!-- Lib paths -->
+    <PropertyGroup>
+        <RenderTiNativeLibLocation>$(RenderTiNativeBuildLocation)/$(OSLibPrefix)$(RenderTiNativeName).$(OSLibExt)</RenderTiNativeLibLocation>
+        <GlfwLibLocation>$(RenderTiNativeBuildLocation)/$(OSLibPrefix)$(GlfwName).$(OSLibExt)</GlfwLibLocation>
+    </PropertyGroup>
+
+    <!-- CMake generator name -->
+    <PropertyGroup>
+        <CMakeGeneratorParam>-G="$(NS_CMAKE_GENERATOR)"</CMakeGeneratorParam>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(NS_CMAKE_GENERATOR)' == ''">
+        <CMakeGeneratorParam />
+    </PropertyGroup>
+
+    <Target Name="OnAfterBuild" BeforeTargets="AfterBuild">
+        <Exec Command="cmake $(CMakeGeneratorParam) -DCMAKE_TOOLCHAIN_FILE=&quot;$(NS_CMAKE_TOOLCHAIN_FILE)&quot; -DCMAKE_BUILD_TYPE=$(Configuration) -B../NoiseEngine.Rendering.Native/build -S../NoiseEngine.Rendering.Native" />
+        <Exec Command="cmake --build ../NoiseEngine.Rendering.Native/build --config $(Configuration)" />
+        <Copy SourceFiles="$(RenderTiNativeLibLocation)" DestinationFiles="$(OutputPath)/$(RenderTiNativeName).$(OSLibExt)" />
+        <Copy Condition="Exists('$(GlfwLibLocation)')" SourceFiles="$(GlfwLibLocation)" DestinationFolder="$(OutputPath)" />
+    </Target>
+
+    <!-- External libraries -->
+    <PropertyGroup>
+        <ExternalPath>../External</ExternalPath>
+    </PropertyGroup>
+
+    <Target Name="CopyExternalLibraries" BeforeTargets="AfterBuild">
+        <Copy SourceFiles="$(ExternalPath)/NoiseEngine.InteropServices.Native.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
+    </Target>
+</Project>
