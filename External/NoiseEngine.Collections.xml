@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>NoiseEngine.Collections</name>
+    </assembly>
+    <members>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.Add(`0)">
+            <summary>
+            Adds <paramref name="item"/> to the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.
+            </summary>
+            <param name="item">Item to add.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.Clear">
+            <summary>
+            Removes all elements from the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.Contains(`0)">
+            <summary>
+            Determines whether the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/> contains specific value.
+            </summary>
+            <param name="item">The item to locate in the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.</param>
+            <returns><see langword="true"/> if <paramref name="item"/> is found in the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>;
+            otherwise, <see langword="false"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.CopyTo(`0[],System.Int32)">
+            <summary>
+            Copies the elements of the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/> to an <see cref="T:System.Array"/>,
+            starting at a particular <see cref="T:System.Array"/> index.
+            </summary>
+            <param name="array">The one-dimensional <see cref="T:System.Array"/> that is the destination of the elements copied
+            from <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>. The <see cref="T:System.Array"/> must have zero-based indexing.</param>
+            <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.GetEnumerator">
+            <summary>
+            Returns an enumerator that iterates through the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.
+            </summary>
+            <returns>An enumerator that can be used to iterate through the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.IndexOf(`0)">
+            <summary>
+            Determines the index of a specific <paramref name="item"/> in the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.
+            </summary>
+            <param name="item">The item to locate in the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.</param>
+            <returns>The index of item if found in the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>; otherwise, -1.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.Insert(System.Int32,`0)">
+            <summary>
+            Inserts an item to the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/> at the specified index.
+            </summary>
+            <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
+            <param name="item">The item to insert into the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.Remove(`0)">
+            <summary>
+            Removes the first occurrence of a specific <paramref name="item"/> from the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.
+            </summary>
+            <param name="item">The item to remove from the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.</param>
+            <returns><see langword="true"/> if item was successfully removed from the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>;
+            otherwise, <see langword="false"/>. This method also returns <see langword="false"/> if item is not found in
+            the original <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.RemoveAt(System.Int32)">
+            <summary>
+            Removes the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/> item at the specified <paramref name="index"/>.
+            </summary>
+            <param name="index">The zero-based index of the item to remove.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.WriteWork(System.Action)">
+            <summary>
+            Performs <paramref name="action"/> with exclusive write access to this <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.
+            </summary>
+            <param name="action">Performed <see cref="T:System.Action"/>.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.Concurrent.ConcurrentList`1.ToArray">
+            <summary>
+            Copies the elements of the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/> to a new array.
+            </summary>
+            <returns>An array containing copies of the elements of the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.</returns>
+        </member>
+    </members>
+</doc>
