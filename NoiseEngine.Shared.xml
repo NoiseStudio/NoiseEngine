@@ -20,6 +20,7 @@
     <Target Name="CopyExternalLibraries" BeforeTargets="AfterBuild">
         <Copy SourceFiles="$(ExternalPath)/NoiseEngine.InteropServices.Native.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
         <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Rendering.Native.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
+        <Copy SourceFiles="$(ExternalPath)/$(OSLibPrefix)glfw3.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
     </Target>
 
 </Project>
