@@ -203,15 +203,38 @@
             This <see cref="T:NoiseEngine.Jobs.EntitySchedule"/> will be deactivated and disposed
             </summary>
         </member>
-        <member name="M:NoiseEngine.Jobs.EntitySystemBase.Execute">
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.ExecuteAndWait">
             <summary>
-            Performs a cycle on this system
+            Tries to performs a cycle on this system and waits for it to finish.
             </summary>
         </member>
-        <member name="M:NoiseEngine.Jobs.EntitySystemBase.ExecuteMultithread">
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.ExecuteParallelAndWait">
             <summary>
-            Performs a cycle on this system with using schedule threads
+            Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
             </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.Execute">
+            <summary>
+            Tries to performs a cycle on this system with using schedule threads.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.TryExecuteAndWait">
+            <summary>
+            Tries to performs a cycle on this system and waits for it to finish.
+            </summary>
+            <returns><see langword="true"/> if system was executed; otherwise false.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.TryExecuteParallelAndWait">
+            <summary>
+            Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
+            </summary>
+            <returns><see langword="true"/> if system was executed; otherwise false.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.TryExecute">
+            <summary>
+            Tries to performs a cycle on this system with using schedule threads.
+            </summary>
+            <returns><see langword="true"/> if work was queued; otherwise false.</returns>
         </member>
         <member name="M:NoiseEngine.Jobs.EntitySystemBase.Wait">
             <summary>
