@@ -1,0 +1,25 @@
+<Project>
+
+    <!-- Windows -->
+    <PropertyGroup Condition="$(OS) == 'Windows_NT'">
+        <OSLibExt>dll</OSLibExt>
+        <OSLibPrefix />
+    </PropertyGroup>
+
+    <!-- Linux -->
+    <PropertyGroup Condition="$(OS) != 'Windows_NT'">
+        <OSLibExt>so</OSLibExt>
+        <OSLibPrefix>lib</OSLibPrefix>
+    </PropertyGroup>
+
+    <!-- External libraries -->
+    <PropertyGroup>
+        <ExternalPath>../External</ExternalPath>
+    </PropertyGroup>
+
+    <Target Name="CopyExternalLibraries" BeforeTargets="AfterBuild">
+        <Copy SourceFiles="$(ExternalPath)/NoiseEngine.InteropServices.Native.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
+        <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Rendering.Native.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
+    </Target>
+
+</Project>
