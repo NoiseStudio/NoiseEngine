@@ -56,6 +56,6 @@
         </Reference>
     </ItemGroup>
 
-    <Import Project="$(SolutionDir)NoiseEngine.Shared.xml" />
+    <Import Project="../NoiseEngine.Shared.xml" />
 
 </Project>
