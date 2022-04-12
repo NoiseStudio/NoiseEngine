@@ -1,0 +1,342 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>NoiseEngine.Rendering</name>
+    </assembly>
+    <members>
+        <member name="M:NoiseEngine.Rendering.Buffers.DeviceBuffer`1.SetData(System.ReadOnlySpan{`0},System.UInt64)">
+            <summary>
+            Set buffer's data.
+            </summary>
+            <param name="data">Data to set.</param>
+            <param name="offset">Byte offset to write to.</param>
+            <exception cref="T:System.ArgumentException">Array length does not match size of the buffer.</exception>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Buffers.VertexDescriptionBuilder.WithBinding(System.UInt32)">
+            <summary>
+            Sets what binding to use in vertex description.
+            </summary>
+            <param name="binding">Binding to use.</param>
+            <returns>This builder instance.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Buffers.VertexDescriptionBuilder.WithStride(System.UInt32)">
+            <summary>
+            Sets stride of the vertex (its size in bytes).
+            </summary>
+            <param name="stride">Stride (size) of the vertex.</param>
+            <returns>This builder instance.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Buffers.VertexDescriptionBuilder.AddAttribute(NoiseEngine.Rendering.Buffers.VertexAttributeDescription)">
+            <summary>
+            Adds vertex attribute to the description.
+            </summary>
+            <param name="attributeDescription">Vertex attribute to add.</param>
+            <returns>This builder instance.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Buffers.VertexDescriptionBuilder.Build">
+            <summary>
+            Builds <see cref="T:NoiseEngine.Rendering.Buffers.VertexDescription"/>.
+            </summary>
+            <returns>New <see cref="T:NoiseEngine.Rendering.Buffers.VertexDescription"/> instance.</returns>
+        </member>
+        <member name="P:NoiseEngine.Rendering.Camera.OrthographicSize">
+            <summary>
+            Half-size of the vertical viewing volume for orthographic camera.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.CommandBuffer.#ctor(NoiseEngine.Rendering.GraphicsDevice,NoiseEngine.Rendering.Camera)">
+            <summary>
+            Creates new <see cref="T:NoiseEngine.Rendering.CommandBuffer"/>.
+            </summary>
+            <param name="graphicsDevice">Graphics device to use for rendering.</param>
+            <param name="camera">
+            Camera to use for rendering. Camera's properties are cached after a call to <see cref="M:NoiseEngine.Rendering.CommandBuffer.Clear"/>.
+            </param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.CommandBuffer.DrawMesh(NoiseEngine.Rendering.Mesh,NoiseEngine.Rendering.Material)">
+            <summary>
+            Draws mesh with current internal data.
+            After this method returns it is safe to modify passed in mesh instance and it will not affect drawing.
+            Specified <paramref name="material"/> must not be modified during a call to <see cref="M:NoiseEngine.Rendering.CommandBuffer.Execute"/>.
+            </summary>
+            <param name="mesh">Mesh to draw.</param>
+            <param name="material">Material to use.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.CommandBuffer.DrawMesh(NoiseEngine.Rendering.Mesh,NoiseEngine.Rendering.Material,NoiseEngine.Rendering.PushConstantsRange)">
+            <summary>
+            Draws mesh with current internal data and custom push constants.
+            After this method returns it is safe to modify passed in mesh instance and it will not affect drawing.
+            Specified <paramref name="material"/> must not be modified during a call to <see cref="M:NoiseEngine.Rendering.CommandBuffer.Execute"/>.
+            </summary>
+            <param name="mesh">Mesh to draw.</param>
+            <param name="material">Material to use.</param>
+            <param name="pushConstants">Custom push constants range.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.CommandBuffer.DrawMesh(NoiseEngine.Rendering.Mesh,NoiseEngine.Rendering.Material,NoiseEngine.Mathematics.Matrix4x4)">
+            <summary>
+            Draws mesh with current internal data and custom push constants.
+            After this method returns it is safe to modify passed in mesh instance and it will not affect drawing.
+            Specified <paramref name="material"/> must not be modified during a call to <see cref="M:NoiseEngine.Rendering.CommandBuffer.Execute"/>.
+            </summary>
+            <param name="mesh">Mesh to draw.</param>
+            <param name="material">Material to use.</param>
+            <param name="transform">Transformation matrix used as first 64 bytes of push constants range.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.CommandBuffer.Execute">
+            <summary>
+            Executes command buffer. Adding commands after call to this method will not have any effect,
+            unless <see cref="M:NoiseEngine.Rendering.CommandBuffer.Clear"/> is called beforehand.
+            Executing multiple command buffers on the same render target at the same time results in undefined behavior.
+            </summary>
+            <remarks>
+            If any of the render targets is a window, executing command buffer will result in drawing new frame.
+            </remarks>
+        </member>
+        <member name="M:NoiseEngine.Rendering.CommandBuffer.Clear">
+            <summary>
+            Clears command buffer and caches current camera properties for draw calls.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.CommandBuffer.Destroy">
+            <summary>
+            Destroys object. It is not required to call this method because resources are automatically released.
+            </summary>
+        </member>
+        <member name="P:NoiseEngine.Rendering.Descriptors.DescriptorLayout.FrameLayout">
+            <summary>
+            Represents descriptor set 0.
+            Used for data persistent throughout frame, such as delta time and fog color.
+            </summary>
+        </member>
+        <member name="P:NoiseEngine.Rendering.Descriptors.DescriptorLayout.CameraLayout">
+            <summary>
+            Represents descriptor set 1.
+            Used for data persistent for single camera draws, such as camera projection matrix.
+            </summary>
+        </member>
+        <member name="P:NoiseEngine.Rendering.Descriptors.DescriptorLayout.MaterialLayout">
+            <summary>
+            Represents descriptor set 2.
+            Used for data persistent for single material, such as albedo and texture samplers.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Graphics.Initialize(NoiseEngine.Logging.Logger,System.String,System.Version)">
+            <summary>
+            Initializes library.
+            </summary>
+            <param name="logger">Logger to use for logging.</param>
+            <param name="applicationName">Name of the application.</param>
+            <param name="applicationVersion">Version of the application.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Graphics.Terminate">
+            <summary>
+            Cleans up resources and terminates library.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.GraphicsDevice.#ctor(System.Boolean)">
+            <summary>
+            Creates a new graphics device.
+            At least a single window should be created right after <see cref="T:NoiseEngine.Rendering.GraphicsDevice"/>
+            to ensure proper Vulkan device initialization if rendering to window is used.
+            </summary>
+            <param name="enableValidationLayers">If true, Vulkan validation layers will be enabled.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.GraphicsDevice.ToString">
+            <summary>
+            Returns a text representation of the <see cref="T:NoiseEngine.Rendering.GraphicsDevice"/> object.
+            </summary>
+            <returns>Text representation of the <see cref="T:NoiseEngine.Rendering.GraphicsDevice"/> object.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Material.SetProperty``1(``0,System.UInt32,System.UInt32)">
+            <summary>
+            Sets property at specified binding.
+            </summary>
+            <param name="value">Value to set.</param>
+            <param name="binding">Binding index.</param>
+            <param name="index">Index of the array.</param>
+            <typeparam name="T">Type of the property.</typeparam>
+        </member>
+        <member name="M:NoiseEngine.Rendering.MeshData.ReleaseResources">
+            <summary>
+            Releases native resources of this object.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Mesh`2.SetVerticesIndices(`0[],`1[])">
+            <summary>
+            Sets vertex and index buffers.
+            </summary>
+            <param name="vertices">Vertices to use for vertex buffer.</param>
+            <param name="indices">Indices to use for index buffer.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Mesh`2.SetVertices(`0[])">
+            <summary>
+            Sets vertex buffer.
+            </summary>
+            <param name="vertices">Vertices to use for vertex buffer.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Mesh`2.SetIndices(`1[])">
+            <summary>
+            Sets index buffer.
+            </summary>
+            <param name="indices">Indices to use for index buffer.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.NativeException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:NoiseEngine.Rendering.NativeException"/> class with a specified error message.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.Window.#ctor(NoiseEngine.Rendering.GraphicsDevice,NoiseEngine.Mathematics.UInt2,System.String)">
+            <summary>
+            Creates a new window.
+            </summary>
+            <param name="graphicsDevice">Instance to use.</param>
+            <param name="size">
+            Size of the window with dimensions between 1 and <see cref="T:System.Int32"/>.<see cref="F:System.Int32.MaxValue"/>.
+            </param>
+            <param name="title">Title of the window.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            <paramref name="size"/>'s dimension is 0 or greater than <see cref="T:System.Int32"/>.<see cref="F:System.Int32.MaxValue"/>.
+            </exception>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.Window.Close">
+            <summary>
+            Sets the value returned by <see cref="M:NoiseEngine.Rendering.Presentation.Window.GetShouldClose"/> to <see langword="true"/>.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.Window.GetShouldClose">
+            <summary>
+            Gets if the window should close this frame. Note that window still needs to be destroyed explicitly.
+            </summary>
+            <returns>Value indicating if the window should close.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.Window.SetShouldClose(System.Boolean)">
+            <summary>
+            Sets the value returned by <see cref="M:NoiseEngine.Rendering.Presentation.Window.GetShouldClose"/>.
+            Can be used to prevent window closing by user input.
+            </summary>
+            <param name="value">Value indicating if the window should close.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.Window.ToString">
+            <summary>
+            Returns a text representation of the <see cref="T:NoiseEngine.Rendering.Presentation.Window"/> object.
+            </summary>
+            <returns>Text representation of the <see cref="T:NoiseEngine.Rendering.Presentation.Window"/> object.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.Window.ReleaseResources">
+            <summary>
+            Releases native resources of this object.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.WindowRawInput.Destroy">
+            <summary>
+            Destroys object. This method does not need to be called because resources are automatically released.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.WindowRawInput.GetKeyState(System.Int32)">
+            <summary>
+            Returns current state of the button assigned to the given key code
+            (warning: key code does not coincide with key code from GLFW).
+            See <see href="https://www.glfw.org/docs/3.3/group__input.html"/>
+            for more informations about button state and modifying flags.
+            </summary>
+            <param name="keyCode">Key code.</param>
+            <returns>Button state.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.WindowRawInput.GetKeyState(System.Int32,System.Byte@)">
+            <summary>
+            Returns current state of the button assigned to the given key code
+            (warning: key code does not coincide with key code from GLFW).
+            See <see href="https://www.glfw.org/docs/3.3/group__input.html"/>
+            for more informations about button state and modifying flags.
+            </summary>
+            <param name="keyCode">Key code.</param>
+            <param name="modifierFlags">Modifying flags (e.g. whether ctrl is pressed).</param>
+            <returns>Button state.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.WindowRawInput.SetInputMode(System.Int32,System.Int32)">
+            <summary>
+            Sets input mode for one of modes by given value.
+            See <see href="https://www.glfw.org/docs/3.3/group__input.html#gaa92336e173da9c8834558b54ee80563b"/>
+            for more informations.
+            </summary>
+            <param name="mode">One of modes.</param>
+            <param name="value">The new value of the specified input mode.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Shader.#ctor(NoiseEngine.Rendering.GraphicsDevice,System.Byte[],System.Byte[],System.String,System.String,NoiseEngine.Rendering.Buffers.VertexDescription,NoiseEngine.Rendering.Descriptors.DescriptorLayout,System.Int32)">
+            <summary>
+            Creates a new shader.
+            </summary>
+            <param name="graphicsDevice">Graphics device used to create shader.</param>
+            <param name="vertBytecode">Vertex shader SPIR-V bytecode.</param>
+            <param name="fragBytecode">Fragment shader SPIR-V bytecode.</param>
+            <param name="vertEntryPoint">Name of the function to use as entry point in vertex shader.</param>
+            <param name="fragEntryPoint">Name of the function to use as entry point in fragment shader.</param>
+            <param name="vertexDescription">Description of the vertex.</param>
+            <param name="descriptorLayout">Layout of descriptor sets.</param>
+            <param name="priority">Priority of the shader. Shaders with greater values will be drawn later.</param>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Shader.FromGlslSource(NoiseEngine.Rendering.GraphicsDevice,System.String,System.String,System.String,System.String,NoiseEngine.Rendering.Buffers.VertexDescription,NoiseEngine.Rendering.Descriptors.DescriptorLayout,System.Int32)">
+            <summary>
+            Creates shader from GLSL source.
+            </summary>
+            <param name="graphicsDevice">Graphics device used to create shader.</param>
+            <param name="vertGlslSource">Vertex shader source.</param>
+            <param name="fragGlslSource">Fragment shader source.</param>
+            <param name="vertEntryPoint">Name of the function to use as entry point in vertex shader.</param>
+            <param name="fragEntryPoint">Name of the function to use as entry point in fragment shader.</param>
+            <param name="vertexDescription">Description of the vertex.</param>
+            <param name="descriptorLayout">Layout of descriptor sets.</param>
+            <param name="priority">Priority of the shader. Shaders with greater values will be drawn later.</param>
+            <returns>Shader instance.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Shader.ToString">
+            <summary>
+            Returns a text representation of the <see cref="T:NoiseEngine.Rendering.Shader"/> object.
+            </summary>
+            <returns>Text representation of the <see cref="T:NoiseEngine.Rendering.Shader"/> object.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Shader.ReleaseResources">
+            <summary>
+            Releases native resources of this object.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Shader.CompareTo(NoiseEngine.Rendering.Shader)">
+            <summary>
+            Compares the current instance with another object of the same type and returns an integer
+            that indicates whether the current instance precedes, follows,
+            or occurs in the same position in the sort order as the other object.
+            </summary>
+            <param name="other">An object to compare with this instance.</param>
+            <returns>A value that indicates the relative order of the objects being compared.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Shader.CompareTo(System.Object)">
+            <summary>
+            Compares the current instance with another object of the same type and returns an integer
+            that indicates whether the current instance precedes, follows,
+            or occurs in the same position in the sort order as the other object.
+            </summary>
+            <param name="obj">An object to compare with this instance.</param>
+            <returns>A value that indicates the relative order of the objects being compared.</returns>
+            <exception cref="T:System.ArgumentException">
+            <paramref name="obj"/> is not the same type as this instance.
+            </exception>
+        </member>
+        <member name="M:NoiseEngine.Rendering.ShaderCompiler.CompileGlslUInt(System.String,NoiseEngine.Rendering.ShaderStage)">
+            <summary>
+            Compiles GLSL into SPIR-V bytecode in <see cref="T:System.UInt32"/>s.
+            </summary>
+            <param name="source">Source in GLSL.</param>
+            <param name="shaderStage">Target shader stage.</param>
+            <returns>SPIR-V bytecode in <see cref="T:System.UInt32"/>s.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.ShaderCompiler.CompileGlsl(System.String,NoiseEngine.Rendering.ShaderStage)">
+            <summary>
+            Compiles GLSL into SPIR-V bytecode.
+            </summary>
+            <param name="source">Source in GLSL.</param>
+            <param name="shaderStage">Target shader stage.</param>
+            <returns>SPIR-V bytecode.</returns>
+        </member>
+    </members>
+</doc>
