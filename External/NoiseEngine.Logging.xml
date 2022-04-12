@@ -1,0 +1,259 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>NoiseEngine.Logging</name>
+    </assembly>
+    <members>
+        <member name="M:NoiseEngine.Logging.Log.Debug(System.Object)">
+            <summary>
+            Reports a debug log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Debug(System.Object,System.Object[])">
+            <summary>
+            Reports a debug log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Trace(System.Object)">
+            <summary>
+            Reports a trace log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Trace(System.Object,System.Object[])">
+            <summary>
+            Reports a trace log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Info(System.Object)">
+            <summary>
+            Reports a info log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Info(System.Object,System.Object[])">
+            <summary>
+            Reports a info log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Warning(System.Object)">
+            <summary>
+            Reports a warning log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Warning(System.Object,System.Object[])">
+            <summary>
+            Reports a warning log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Error(System.Exception)">
+            <summary>
+            Reports a error log entry
+            </summary>
+            <param name="exception">Log exception</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Error(System.Object)">
+            <summary>
+            Reports a error log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.Error(System.Object,System.Object[])">
+            <summary>
+            Reports a error log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.CriticalError(System.Exception)">
+            <summary>
+            Reports a critical error log entry
+            </summary>
+            <param name="exception">Log exception</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.CriticalError(System.Object)">
+            <summary>
+            Reports a critical error log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Log.CriticalError(System.Object,System.Object[])">
+            <summary>
+            Reports a critical error log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Log(NoiseEngine.Logging.LogType,System.Object)">
+            <summary>
+            Reports a log entry
+            </summary>
+            <param name="type">Log type</param>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Log(NoiseEngine.Logging.LogType,System.Object,System.Object[])">
+            <summary>
+            Reports a log entry with parameters
+            </summary>
+            <param name="type">Log type</param>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.LogException(NoiseEngine.Logging.LogType,System.Exception)">
+            <summary>
+            Reports a exception log entry
+            </summary>
+            <param name="type">Log type</param>
+            <param name="exception">Log exception</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Debug(System.Object)">
+            <summary>
+            Reports a debug log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Debug(System.Object,System.Object[])">
+            <summary>
+            Reports a debug log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Trace(System.Object)">
+            <summary>
+            Reports a trace log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Trace(System.Object,System.Object[])">
+            <summary>
+            Reports a trace log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Info(System.Object)">
+            <summary>
+            Reports a info log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Info(System.Object,System.Object[])">
+            <summary>
+            Reports a info log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Warning(System.Object)">
+            <summary>
+            Reports a warning log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Warning(System.Object,System.Object[])">
+            <summary>
+            Reports a warning log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Error(System.Exception)">
+            <summary>
+            Reports a error log entry
+            </summary>
+            <param name="exception">Log exception</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Error(System.Object)">
+            <summary>
+            Reports a error log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Error(System.Object,System.Object[])">
+            <summary>
+            Reports a error log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.CriticalError(System.Exception)">
+            <summary>
+            Reports a critical error log entry
+            </summary>
+            <param name="exception">Log exception</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.CriticalError(System.Object)">
+            <summary>
+            Reports a critical error log entry
+            </summary>
+            <param name="message">Log message</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.CriticalError(System.Object,System.Object[])">
+            <summary>
+            Reports a critical error log entry
+            </summary>
+            <param name="message">Log message</param>
+            <param name="parameters">Log parameters (replace "{0}" in the message with a 0 object in the array etc.)</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.AddHandler(NoiseEngine.Logging.LoggerHandler)">
+            <summary>
+            Adds <paramref name="handler"/> to this <see cref="T:NoiseEngine.Logging.Logger"/>.
+            </summary>
+            <param name="handler"><see cref="T:NoiseEngine.Logging.LoggerHandler"/>.</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.RemoveHandler(NoiseEngine.Logging.LoggerHandler)">
+            <summary>
+            Removes <paramref name="handler"/> from this <see cref="T:NoiseEngine.Logging.Logger"/>.
+            </summary>
+            <param name="handler"><see cref="T:NoiseEngine.Logging.LoggerHandler"/>.</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Logger.Terminate">
+            <summary>
+            Cleans up resources and terminates <see cref="T:NoiseEngine.Logging.Logger"/>.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Logging.LoggerConfiguration.GetConsoleColor(NoiseEngine.Logging.LogType)">
+            <summary>
+            Returns console color taken from dictionary with log type used as key
+            </summary>
+            <param name="type">Log type</param>
+            <returns>Console color</returns>
+        </member>
+        <member name="M:NoiseEngine.Logging.LoggerHandler.RegisterLogger(NoiseEngine.Logging.Logger)">
+            <summary>
+            Register handlers for logger events
+            </summary>
+            <param name="logger">Logger</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.LoggerHandler.UnregisterLogger(NoiseEngine.Logging.Logger)">
+            <summary>
+            Unregister handlers for logger events
+            </summary>
+            <param name="logger">Logger</param>
+        </member>
+        <member name="M:NoiseEngine.Logging.Standard.FileLoggerHandler.CreateLogFileInDirectory(System.String)">
+            <summary>
+            Creates FileLoggerHandler with log file in path from given <paramref name="directoryPath"/>.
+            </summary>
+            <param name="directoryPath">Log file directory path.</param>
+            <returns><see cref="T:NoiseEngine.Logging.Standard.FileLoggerHandler"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Logging.Standard.FileLoggerHandler.UnregisterLogger(NoiseEngine.Logging.Logger)">
+            <summary>
+            Unregister handlers for logger events
+            </summary>
+            <param name="logger">Logger</param>
+        </member>
+    </members>
+</doc>

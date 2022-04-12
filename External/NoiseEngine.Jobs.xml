@@ -1,0 +1,594 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>NoiseEngine.Jobs</name>
+    </assembly>
+    <members>
+        <member name="M:NoiseEngine.Jobs.Entity.#ctor">
+            <summary>
+            Do not use default constructor for this type, always throws <see cref="T:System.InvalidOperationException"/>.
+            Use EntityWorld.NewEntity method instead.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">
+            Always throws <see cref="T:System.InvalidOperationException"/>.
+            </exception>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.ToString">
+            <summary>
+            Converts the numeric value of this instance to its equivalent string representation
+            </summary>
+            <returns>The string representation of the value of this instance</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.GetHashCode">
+            <summary>
+            Returns the hash code for this instance
+            </summary>
+            <returns>A 32-bit signed integer hash code</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Equals(System.Object)">
+            <summary>
+            Returns a value indicating whether this instance is equal to a specified object
+            </summary>
+            <param name="obj">An object to compare to this instance</param>
+            <returns>True if obj is an instance of Entity and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Add``1(NoiseEngine.Jobs.EntityWorld,``0)">
+            <summary>
+            Adds component to this entity
+            </summary>
+            <typeparam name="T">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="world">Entity world assigned to this entity</param>
+            <param name="component">Component being added</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Remove``1(NoiseEngine.Jobs.EntityWorld)">
+            <summary>
+            Removes T component from this entity
+            </summary>
+            <typeparam name="T">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="world">Entity world assigned to this entity</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Has``1(NoiseEngine.Jobs.EntityWorld)">
+            <summary>
+            Checks if this entity has T component
+            </summary>
+            <typeparam name="T">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="world">Entity world assigned to this entity</param>
+            <returns>Returns true when this entity contains T component and false when does not contains</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Get``1(NoiseEngine.Jobs.EntityWorld)">
+            <summary>
+            Returns T component assigned to this entity
+            </summary>
+            <typeparam name="T">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="world">Entity world assigned to this entity</param>
+            <returns>T component assigned to this entity</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``1(NoiseEngine.Jobs.EntityWorld,``0)">
+            <summary>
+            Replaces T component assigned to this entity
+            </summary>
+            <typeparam name="T">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="world">Entity world assigned to this entity</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``1(NoiseEngine.Jobs.EntityQuery{``0},``0)">
+            <summary>
+            Replaces T component assigned to this entity
+            </summary>
+            <typeparam name="T">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="query"><see cref="T:NoiseEngine.Jobs.EntityQuery"/> which operating on this T component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``1(NoiseEngine.Jobs.EntitySystem{``0},``0)">
+            <summary>
+            Replaces T component assigned to this entity
+            </summary>
+            <typeparam name="T">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="system">Entity system which operating on this T component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``2(NoiseEngine.Jobs.EntityQuery{``0,``1},``0)">
+            <summary>
+            Replaces T1 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="query"><see cref="T:NoiseEngine.Jobs.EntityQuery"/> which operating on this T1 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``2(NoiseEngine.Jobs.EntitySystem{``0,``1},``0)">
+            <summary>
+            Replaces T1 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="system">Entity system which operating on this T1 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``2(NoiseEngine.Jobs.EntityQuery{``0,``1},``1)">
+            <summary>
+            Replaces T2 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="query"><see cref="T:NoiseEngine.Jobs.EntityQuery"/> which operating on this T2 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``2(NoiseEngine.Jobs.EntitySystem{``0,``1},``1)">
+            <summary>
+            Replaces T2 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="system">Entity system which operating on this T2 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Destroy(NoiseEngine.Jobs.EntityWorld)">
+            <summary>
+            Destroys this entity
+            </summary>
+            <param name="world">Entity world assigned to this entity</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.IsDestroyed(NoiseEngine.Jobs.EntityWorld)">
+            <summary>
+            Checks if this entity was destroyed
+            </summary>
+            <param name="world">Entity world assigned to this entity</param>
+            <returns>True when this entity was destroyed or false when not</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Equals(NoiseEngine.Jobs.Entity)">
+            <summary>
+            Returns a value indicating whether this instance is equal to a specified other Entity
+            </summary>
+            <param name="other">An Entity to compare to this instance</param>
+            <returns>True if other Entity is an instance of Entity and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.op_Equality(NoiseEngine.Jobs.Entity,NoiseEngine.Jobs.Entity)">
+            <summary>
+            Returns a value indicating whether this instance left is equal to a instance right
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <returns>True if left Entity is an instance of right Entity and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.op_Inequality(NoiseEngine.Jobs.Entity,NoiseEngine.Jobs.Entity)">
+            <summary>
+            Returns a value indicating whether this instance left is not equal to a instance right
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <returns>False if left Entity is an instance of right Entity and equals the value of this instance or when not returns true</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityFilter.CompareComponents(System.Collections.ObjectModel.ReadOnlyCollection{System.Type})">
+            <summary>
+            Checks that the types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/> meet the requirements of this filter.
+            </summary>
+            <param name="componentTypes">Types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/>.</param>
+            <returns>If <see langword="true"/>, then the types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/> meet the filter's requirements, if <see langword="false"/>, they do not.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityQueryBase.Dispose">
+            <summary>
+            This <see cref="T:NoiseEngine.Jobs.EntityQueryBase"/> will be disposed
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityQuery.GetEnumerator">
+            <summary>
+            Returns an enumerator that iterates through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.
+            </summary>
+            <returns>An enumerator that can be used to iterate through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityQuery`1.GetEnumerator">
+            <summary>
+            Returns an enumerator that iterates through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.
+            </summary>
+            <returns>An enumerator that can be used to iterate through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityQuery`2.GetEnumerator">
+            <summary>
+            Returns an enumerator that iterates through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.
+            </summary>
+            <returns>An enumerator that can be used to iterate through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySchedule.#ctor(System.Nullable{System.Int32},System.Nullable{System.Int32},System.Nullable{System.Int32})">
+            <summary>
+            Creates new Entity Schedule
+            </summary>
+            <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
+            <param name="maxPackageSize">The maximum size of an UpdateEntity package shared between threads</param>
+            <param name="minPackageSize">The minimum size of an UpdateEntity package shared between threads</param>
+            <exception cref="T:System.InvalidOperationException">Error when using zero or negative threads and when the minimum package size is greater than the maximum package size</exception>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySchedule.Dispose">
+            <summary>
+            This <see cref="T:NoiseEngine.Jobs.EntitySchedule"/> will be deactivated and disposed
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.ExecuteAndWait">
+            <summary>
+            Tries to performs a cycle on this system and waits for it to finish.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.ExecuteParallelAndWait">
+            <summary>
+            Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.Execute">
+            <summary>
+            Tries to performs a cycle on this system with using schedule threads.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.TryExecuteAndWait">
+            <summary>
+            Tries to performs a cycle on this system and waits for it to finish.
+            </summary>
+            <returns><see langword="true"/> if system was executed; otherwise false.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.TryExecuteParallelAndWait">
+            <summary>
+            Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
+            </summary>
+            <returns><see langword="true"/> if system was executed; otherwise false.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.TryExecute">
+            <summary>
+            Tries to performs a cycle on this system with using schedule threads.
+            </summary>
+            <returns><see langword="true"/> if work was queued; otherwise false.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.Wait">
+            <summary>
+            Blocks the current thread until the cycle completes
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.AddDependency(NoiseEngine.Jobs.EntitySystemBase)">
+            <summary>
+            Adds a dependency of this system on <paramref name="system"/> from argument.
+            This affects the execution of this system as dependencies must be executed first.
+            </summary>
+            <param name="system"><see cref="T:NoiseEngine.Jobs.EntitySystemBase"/> add for dependencies.</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.RemoveDependency(NoiseEngine.Jobs.EntitySystemBase)">
+            <summary>
+            Removes a dependency of this system on <paramref name="system"/> from argument.
+            </summary>
+            <param name="system"><see cref="T:NoiseEngine.Jobs.EntitySystemBase"/> remove for dependencies.</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.ToString">
+            <summary>
+            Returns a string that represents the current system
+            </summary>
+            <returns>A string that represents the current system</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.OnInitialize">
+            <summary>
+            This method is executed when this system is creating
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.OnStart">
+            <summary>
+            This method is executed when this system is enabling
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.OnUpdate">
+            <summary>
+            This method is executed on begin of every cycle of this system
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.OnLateUpdate">
+            <summary>
+            This method is executed on end of every cycle of this system
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.OnStop">
+            <summary>
+            This method is executed when this system is disabling
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.OnTerminate">
+            <summary>
+            This method is executed when this system is destroying
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.OnScheduleChange">
+            <summary>
+            This method is executed when <see cref="T:NoiseEngine.Jobs.EntitySchedule"/> was changed
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystem.OnUpdateEntity(NoiseEngine.Jobs.Entity)">
+            <summary>
+            This method is executed every cycle of this system on every <see cref="T:NoiseEngine.Jobs.Entity"/> assigned to this system
+            </summary>
+            <param name="entity">Operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystem`1.OnUpdateEntity(NoiseEngine.Jobs.Entity,`0)">
+            <summary>
+            This method is executed every cycle of this system on every <see cref="T:NoiseEngine.Jobs.Entity"/> assigned to this system
+            </summary>
+            <param name="entity">Operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <param name="component1">Component of the operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystem`2.OnUpdateEntity(NoiseEngine.Jobs.Entity,`0,`1)">
+            <summary>
+            This method is executed every cycle of this system on every <see cref="T:NoiseEngine.Jobs.Entity"/> assigned to this system
+            </summary>
+            <param name="entity">Operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <param name="component1">Component of the operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <param name="component2">Component of the operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.NewEntity">
+            <summary>
+            Creates new entity in this entity world
+            </summary>
+            <returns><see cref="T:NoiseEngine.Jobs.Entity"/></returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.NewEntity``1(``0)">
+            <summary>
+            Creates new entity in this entity world
+            </summary>
+            <typeparam name="T">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="component">Component being added</param>
+            <returns><see cref="T:NoiseEngine.Jobs.Entity"/></returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.NewEntity``2(``0,``1)">
+            <summary>
+            Creates new entity in this entity world
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="component1">Component being added</param>
+            <param name="component2">Component being added</param>
+            <returns><see cref="T:NoiseEngine.Jobs.Entity"/></returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.AddSystem``1(``0)">
+            <summary>
+            Adds T system to this world
+            </summary>
+            <typeparam name="T">Entity system type</typeparam>
+            <param name="system">Entity system object</param>
+            <exception cref="T:System.InvalidOperationException">Entity world already contains this <see cref="T:NoiseEngine.Jobs.EntitySystemBase"/></exception>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.AddSystem``1(``0,NoiseEngine.Jobs.EntitySchedule,System.Nullable{System.Double})">
+            <summary>
+            Adds T system to this world
+            </summary>
+            <typeparam name="T">Entity system type</typeparam>
+            <param name="system">Entity system object</param>
+            <param name="schedule"><see cref="T:NoiseEngine.Jobs.EntitySchedule"/> managing this system.</param>
+            <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When null, the schedule is not used.</param>
+            <exception cref="T:System.InvalidOperationException">Entity world already contains this <see cref="T:NoiseEngine.Jobs.EntitySystemBase"/></exception>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.RemoveSystem``1(``0)">
+            <summary>
+            Removes T system from this world
+            </summary>
+            <typeparam name="T">Entity system</typeparam>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.HasSystem``1(``0)">
+            <summary>
+            Checks if this entity world has T system
+            </summary>
+            <typeparam name="T">Entity system</typeparam>
+            <returns>True when this entity world contains T system or false when not</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.HasAnySystem``1">
+            <summary>
+            Checks if this entity world has any T type system
+            </summary>
+            <typeparam name="T">Entity system</typeparam>
+            <returns>True when this entity world contains T system or false when not</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.GetSystem``1">
+            <summary>
+            Returns first assigned T entity system
+            </summary>
+            <typeparam name="T">Entity system</typeparam>
+            <returns><see cref="T:NoiseEngine.Jobs.EntitySystemBase"/></returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.GetSystems``1">
+            <summary>
+            Returns T entity systems
+            </summary>
+            <typeparam name="T"><see cref="T:NoiseEngine.Jobs.EntitySystemBase"/> type</typeparam>
+            <returns>Array of <see cref="T:NoiseEngine.Jobs.EntitySystemBase"/></returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.IEntityFilter.CompareComponents(System.Collections.ObjectModel.ReadOnlyCollection{System.Type})">
+            <summary>
+            Checks that the types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/> meet the requirements of this filter.
+            </summary>
+            <param name="componentTypes">Types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/>.</param>
+            <returns>If <see langword="true"/>, then the types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/> meet the filter's requirements, if <see langword="false"/>, they do not.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.#ctor">
+            <summary>
+            Do not use default constructor for this type, always throws <see cref="T:System.InvalidOperationException"/>.
+            Use JobsWorld.EnqueueJob method instead.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">
+            Always throws <see cref="T:System.InvalidOperationException"/>.
+            </exception>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.Destroy(NoiseEngine.Jobs.JobsWorld)">
+            <summary>
+            Destroys this <see cref="T:NoiseEngine.Jobs.Job"/>
+            </summary>
+            <param name="world"><see cref="T:NoiseEngine.Jobs.JobsWorld"/> assigned to this <see cref="T:NoiseEngine.Jobs.Job"/></param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.IsInvoked(NoiseEngine.Jobs.JobsWorld)">
+            <summary>
+            Checks if this <see cref="T:NoiseEngine.Jobs.Job"/> was invoked
+            </summary>
+            <param name="world"><see cref="T:NoiseEngine.Jobs.JobsWorld"/> assigned to this <see cref="T:NoiseEngine.Jobs.Job"/></param>
+            <returns>True when this <see cref="T:NoiseEngine.Jobs.Job"/> was invoked or false when not</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.Equals(NoiseEngine.Jobs.Job)">
+            <summary>
+            Returns a value indicating whether this instance is equal to a specified other <see cref="T:NoiseEngine.Jobs.Job"/>
+            </summary>
+            <param name="other">An <see cref="T:NoiseEngine.Jobs.Job"/> to compare to this instance</param>
+            <returns>True if other <see cref="T:NoiseEngine.Jobs.Job"/> is an instance of <see cref="T:NoiseEngine.Jobs.Job"/> and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.ToString">
+            <summary>
+            Converts the numeric value of this instance to its equivalent string representation
+            </summary>
+            <returns>The string representation of the value of this instance</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.GetHashCode">
+            <summary>
+            Returns the hash code for this instance
+            </summary>
+            <returns>A 32-bit signed integer hash code</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.Equals(System.Object)">
+            <summary>
+            Returns a value indicating whether this instance is equal to a specified object
+            </summary>
+            <param name="obj">An object to compare to this instance</param>
+            <returns>True if obj is an instance of <see cref="T:NoiseEngine.Jobs.Job"/> and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.op_Equality(NoiseEngine.Jobs.Job,NoiseEngine.Jobs.Job)">
+            <summary>
+            Returns a value indicating whether this instance left is equal to a instance right
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.Job"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.Job"/></param>
+            <returns>True if left <see cref="T:NoiseEngine.Jobs.Job"/> is an instance of right <see cref="T:NoiseEngine.Jobs.Job"/> and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Job.op_Inequality(NoiseEngine.Jobs.Job,NoiseEngine.Jobs.Job)">
+            <summary>
+            Returns a value indicating whether this instance left is not equal to a instance right
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.Job"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.Job"/></param>
+            <returns>False if left <see cref="T:NoiseEngine.Jobs.Job"/> is an instance of right <see cref="T:NoiseEngine.Jobs.Job"/> and equals the value of this instance or when not returns true</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobsInvoker.#ctor(System.Nullable{System.Int32})">
+            <summary>
+            Creates new <see cref="T:NoiseEngine.Jobs.JobsInvoker"/>
+            </summary>
+            <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Error when using zero or negative threads</exception>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobsInvoker.Dispose">
+            <summary>
+            This <see cref="T:NoiseEngine.Jobs.JobsInvoker"/> will be deactivated and disposed
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobsWorld.#ctor(NoiseEngine.Jobs.JobsInvoker,System.UInt32[],System.Nullable{NoiseEngine.Jobs.JobTime})">
+            <summary>
+            Creates new <see cref="T:NoiseEngine.Jobs.JobsWorld"/>
+            </summary>
+            <param name="queues">Job queues gaps (affect Jobs performance when default queue is used null)</param>
+            <param name="invoker"><see cref="T:NoiseEngine.Jobs.JobsInvoker"/> invoking <see cref="T:NoiseEngine.Jobs.Job"/>s assigned to this world</param>
+            <param name="startTime">World time, useful for saving (when null time 0 is used)</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobsWorld.EnqueueJob(NoiseEngine.Jobs.JobsWorld.JobT0,System.UInt32)">
+            <summary>
+            Creates new <see cref="T:NoiseEngine.Jobs.Job"/> in this <see cref="T:NoiseEngine.Jobs.JobsWorld"/>
+            </summary>
+            <param name="toExecute">The method that will be executed</param>
+            <param name="relativeExecutionTime">Relative waiting time in milliseconds to <see cref="T:NoiseEngine.Jobs.Job"/> execution</param>
+            <returns><see cref="T:NoiseEngine.Jobs.Job"/></returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobsWorld.EnqueueJob``1(NoiseEngine.Jobs.JobsWorld.JobT1{``0},System.UInt32,``0)">
+            <summary>
+            Creates new <see cref="T:NoiseEngine.Jobs.Job"/> in this <see cref="T:NoiseEngine.Jobs.JobsWorld"/>
+            </summary>
+            <typeparam name="T">First argument type</typeparam>
+            <param name="toExecute">The method that will be executed</param>
+            <param name="relativeExecutionTime">Relative waiting time in milliseconds to <see cref="T:NoiseEngine.Jobs.Job"/> execution</param>
+            <param name="argument0">First argument</param>
+            <returns><see cref="T:NoiseEngine.Jobs.Job"/></returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.CompareTo(NoiseEngine.Jobs.JobTime)">
+            <summary>
+            Compares the current instance with another object of the same type and returns
+            an integer that indicates whether the current instance precedes, follows, or
+            occurs in the same position in the sort order as the other object
+            </summary>
+            <param name="other">An object to compare with this instance</param>
+            <returns>
+            A value that indicates the relative order of the objects being compared. The
+            return value has these meanings:<br/>
+                Less than zero – This instance precedes other in the sort order.<br/>
+                Zero – This instance occurs in the same position in the sort order as other.<br/>
+                Greater than zero – This instance follows other in the sort order.<br/>
+            </returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.Equals(NoiseEngine.Jobs.JobTime)">
+            <summary>
+            Returns a value indicating whether this instance is equal to a specified other <see cref="T:NoiseEngine.Jobs.JobTime"/>
+            </summary>
+            <param name="other">An <see cref="T:NoiseEngine.Jobs.JobTime"/> to compare to this instance</param>
+            <returns>True if other <see cref="T:NoiseEngine.Jobs.JobTime"/> is an instance of <see cref="T:NoiseEngine.Jobs.JobTime"/> and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.GetHashCode">
+            <summary>
+            Returns the hash code for this instance
+            </summary>
+            <returns>A 32-bit signed integer hash code</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.Equals(System.Object)">
+            <summary>
+            Returns a value indicating whether this instance is equal to a specified object
+            </summary>
+            <param name="obj">An object to compare to this instance</param>
+            <returns>True if obj is an instance of <see cref="T:NoiseEngine.Jobs.JobTime"/> and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.ToString">
+            <summary>
+            Converts the numeric value of this instance to its equivalent string representation
+            </summary>
+            <returns>The string representation of the value of this instance</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.op_Equality(NoiseEngine.Jobs.JobTime,NoiseEngine.Jobs.JobTime)">
+            <summary>
+            Returns a value indicating whether this instance left is equal to a instance right
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <returns>True if left <see cref="T:NoiseEngine.Jobs.JobTime"/> is an instance of right <see cref="T:NoiseEngine.Jobs.JobTime"/> and equals the value of this instance or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.op_Inequality(NoiseEngine.Jobs.JobTime,NoiseEngine.Jobs.JobTime)">
+            <summary>
+            Returns a value indicating whether this instance left is not equal to a instance right
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <returns>False if left <see cref="T:NoiseEngine.Jobs.JobTime"/> is an instance of right <see cref="T:NoiseEngine.Jobs.JobTime"/> and equals the value of this instance or when not returns true</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.op_GreaterThan(NoiseEngine.Jobs.JobTime,NoiseEngine.Jobs.JobTime)">
+            <summary>
+            Returns a value indicating whether the left struct is later than the right struct
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <returns>True if left <see cref="T:NoiseEngine.Jobs.JobTime"/> is later than right <see cref="T:NoiseEngine.Jobs.JobTime"/> or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.op_LessThan(NoiseEngine.Jobs.JobTime,NoiseEngine.Jobs.JobTime)">
+            <summary>
+            Returns a value indicating whether the left struct is earlier than the right struct
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <returns>True if left <see cref="T:NoiseEngine.Jobs.JobTime"/> is earlier than right <see cref="T:NoiseEngine.Jobs.JobTime"/> or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.op_GreaterThanOrEqual(NoiseEngine.Jobs.JobTime,NoiseEngine.Jobs.JobTime)">
+            <summary>
+            Returns a value indicating whether the left struct is later or at the same time than the right struct
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <returns>True if left <see cref="T:NoiseEngine.Jobs.JobTime"/> is later or at the same time than right <see cref="T:NoiseEngine.Jobs.JobTime"/> or when not returns false</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobTime.op_LessThanOrEqual(NoiseEngine.Jobs.JobTime,NoiseEngine.Jobs.JobTime)">
+            <summary>
+            Returns a value indicating whether the left struct is earlier or at the same time than the right struct
+            </summary>
+            <param name="left"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <param name="right"><see cref="T:NoiseEngine.Jobs.JobTime"/></param>
+            <returns>True if left <see cref="T:NoiseEngine.Jobs.JobTime"/> is earlier or at the same time than right <see cref="T:NoiseEngine.Jobs.JobTime"/> or when not returns false</returns>
+        </member>
+    </members>
+</doc>
