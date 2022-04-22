@@ -18,8 +18,8 @@ namespace NoiseEngine.Jobs {
             }
         }
 
-        public EntityWorld World { get; }
         public bool IsDisposed { get; private set; }
+        public EntityWorld World { get; }
         public bool IsReadOnly { get; }
 
         public IEnumerable<Entity> Entities => GetEntityEnumerable();
