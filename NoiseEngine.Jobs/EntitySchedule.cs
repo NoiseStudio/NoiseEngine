@@ -116,29 +116,19 @@ namespace NoiseEngine.Jobs {
 
                 while (packages.TryDequeue(out SchedulePackage package)) {
                     EntityQueryBase query = package.EntitySystem.query!;
-                    if (query.IsReadOnly) {
-                        if (!package.EntityGroup.TryEnterReadLock()) {
-                            EnqueuePackageAndWait(package);
-                            continue;
-                        }
-                    } else {
-                        if (!package.EntityGroup.TryEnterWriteLock(package.EntitySystem)) {
-                            EnqueuePackageAndWait(package);
-                            continue;
-                        }
+                    if (!query.IsReadOnly && !package.EntityGroup.TryEnterWriteLock(package.PackageStartIndex)) {
+                        EnqueuePackageAndWait(package);
+                        continue;
                     }
 
                     for (int i = package.PackageStartIndex; i < package.PackageEndIndex; i++) {
-                        Entity entity = package.EntityGroup.entities[i];
+                        Entity entity = package.EntityGroup.Entities[i];
                         if (entity != Entity.Empty)
                             package.EntitySystem.InternalUpdateEntity(entity);
                     }
 
-                    if (query.IsReadOnly) {
-                        package.EntityGroup.ExitReadLock();
-                    } else {
-                        package.EntityGroup.ExitWriteLock();
-                    }
+                    if (!query.IsReadOnly)
+                        package.EntityGroup.ExitWriteLock(package.PackageStartIndex);
 
                     package.EntityGroup.ReleaseWork();
                     package.EntitySystem.ReleaseWork();
@@ -195,14 +185,14 @@ namespace NoiseEngine.Jobs {
             foreach (EntityGroup group in system.query!.groups) {
                 group.OrderWorkAndWait();
 
-                int entitiesPerPackage = Math.Clamp(group.entities.Count / threadCount, minPackageSize, maxPackageSize);
-                for (int j = 0; j < group.entities.Count;) {
+                int entitiesPerPackage = Math.Clamp(group.Entities.Count / threadCount, minPackageSize, maxPackageSize);
+                for (int j = 0; j < group.Entities.Count;) {
                     group.OrderWork();
                     system.OrderWork();
 
                     int endIndex = j + entitiesPerPackage;
-                    if (endIndex > group.entities.Count)
-                        endIndex = group.entities.Count;
+                    if (endIndex > group.Entities.Count)
+                        endIndex = group.Entities.Count;
 
                     packages.Enqueue(new SchedulePackage(system, group, j, endIndex));
                     j = endIndex;

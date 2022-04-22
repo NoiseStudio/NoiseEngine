@@ -10,14 +10,14 @@ namespace NoiseEngine.Jobs.Tests {
             Entity entity = world.NewEntity();
 
             EntityGroup group = world.GetEntityGroup(entity);
-            Assert.Contains(entity, group.entities);
+            Assert.Contains(entity, group.Entities);
 
             entity.Add(world, new TestComponentA());
             Assert.Throws<InvalidOperationException>(() => {
                 entity.Add(world, new TestComponentA());
             });
 
-            Assert.DoesNotContain(entity, group.entities);
+            Assert.DoesNotContain(entity, group.Entities);
         }
 
         [Fact]
@@ -28,14 +28,14 @@ namespace NoiseEngine.Jobs.Tests {
             entity.Add(world, new TestComponentA());
 
             EntityGroup group = world.GetEntityGroup(entity);
-            Assert.Contains(entity, group.entities);
+            Assert.Contains(entity, group.Entities);
 
             entity.Remove<TestComponentA>(world);
             Assert.Throws<InvalidOperationException>(() => {
                 entity.Remove<TestComponentA>(world);
             });
 
-            Assert.DoesNotContain(entity, group.entities);
+            Assert.DoesNotContain(entity, group.Entities);
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace NoiseEngine.Jobs.Tests {
             Entity entity = world.NewEntity();
 
             Assert.False(entity.Has<TestComponentA>(world));
-            
+
             entity.Add(world, new TestComponentA());
             Assert.True(entity.Has<TestComponentA>(world));
         }
@@ -82,12 +82,12 @@ namespace NoiseEngine.Jobs.Tests {
             entity.Get<TestComponentA>(world);
 
             EntityGroup group = world.GetEntityGroup(entity);
-            Assert.Contains(entity, group.entities);
+            Assert.Contains(entity, group.Entities);
 
             entity.Destroy(world);
             Assert.Throws<NullReferenceException>(() => entity.Get<TestComponentA>(world));
 
-            Assert.DoesNotContain(entity, group.entities);
+            Assert.DoesNotContain(entity, group.Entities);
         }
 
         [Fact]

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace NoiseEngine.Jobs {
     public abstract class EntityQueryBase : IDisposable {
@@ -60,21 +59,26 @@ namespace NoiseEngine.Jobs {
             foreach (EntityGroup group in groups) {
                 group.OrderWorkAndWait();
 
-                if (IsReadOnly)
-                    group.EnterReadLock(Thread.CurrentThread);
-                else
-                    group.EnterWriteLock(Thread.CurrentThread);
+                if (IsReadOnly) {
+                    for (int i = 0; i < group.Entities.Count; i++) {
+                        Entity entity = group.Entities[i];
+                        if (entity != Entity.Empty)
+                            yield return entity;
+                    }
+                } else {
+                    for (int i = 0; i < group.Entities.Count; i += EntityGroup.PackageSize) {
+                        group.EnterWriteLock(i);
 
-                for (int i = 0; i < group.entities.Count; i++) {
-                    Entity entity = group.entities[i];
-                    if (entity != Entity.Empty)
-                        yield return entity;
+                        int maxIndex = Math.Min(i + EntityGroup.PackageSize, group.Entities.Count);
+                        for (int j = i; j < maxIndex; j++) {
+                            Entity entity = group.Entities[j];
+                            if (entity != Entity.Empty)
+                                yield return entity;
+                        }
+
+                        group.ExitWriteLock(i);
+                    }
                 }
-
-                if (IsReadOnly)
-                    group.ExitReadLock();
-                else
-                    group.ExitWriteLock();
 
                 group.ReleaseWork();
             }

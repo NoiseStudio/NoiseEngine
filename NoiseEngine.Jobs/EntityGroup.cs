@@ -6,26 +6,24 @@ using System.Threading;
 namespace NoiseEngine.Jobs {
     internal class EntityGroup {
 
-        internal readonly List<Entity> entities = new List<Entity>();
+        internal const int PackageSize = 256;
 
         private readonly int hashCode;
         private readonly IReadOnlyList<Type> components;
         private readonly HashSet<Type> componentsHashSet;
+        private readonly List<Entity> entities = new List<Entity>();
         private readonly ConcurrentQueue<Entity> entitiesToAdd = new ConcurrentQueue<Entity>();
         private readonly ConcurrentQueue<Entity> entitiesToRemove = new ConcurrentQueue<Entity>();
-        private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
-        private readonly ManualResetEvent readLockResetEvent = new ManualResetEvent(false);
-        private readonly ManualResetEvent writeLockResetEvent = new ManualResetEvent(false);
+        private readonly ManualResetEvent workResetEvent = new ManualResetEvent(false);
+        private readonly List<ReaderWriterLockSlim> writeLock = new List<ReaderWriterLockSlim>();
 
         private bool clean;
         private uint ongoingWork;
-        private uint readLock;
-        private uint writeLock;
-        private object? exclusiveWriteObject;
 
         public EntityWorld World { get; }
 
         internal IReadOnlyList<Type> ComponentTypes => components;
+        internal IReadOnlyList<Entity> Entities => entities;
 
         public EntityGroup(int hashCode, EntityWorld world, List<Type> components) {
             this.hashCode = hashCode;
@@ -70,61 +68,16 @@ namespace NoiseEngine.Jobs {
             return true;
         }
 
-        public bool TryEnterReadLock(object? exclusiveWriteObject = null) {
-            Interlocked.Increment(ref readLock);
-
-            if (this.exclusiveWriteObject == null || this.exclusiveWriteObject == exclusiveWriteObject) {
-                readLockResetEvent.Reset();
-                return true;
-            }
-
-            Interlocked.Decrement(ref readLock);
-            return false;
+        public bool TryEnterWriteLock(int startIndex) {
+            return writeLock[startIndex / PackageSize].TryEnterWriteLock(0);
         }
 
-        public void EnterReadLock(object? exclusiveWriteObject = null) {
-            while (!TryEnterReadLock(exclusiveWriteObject))
-                writeLockResetEvent.WaitOne();
+        public void EnterWriteLock(int startIndex) {
+            writeLock[startIndex / PackageSize].EnterWriteLock();
         }
 
-        public void ExitReadLock() {
-            if (Interlocked.Decrement(ref readLock) == 0)
-                readLockResetEvent.Set();
-        }
-
-        public bool TryEnterWriteLock(object exclusiveWriteObject) {
-            if (readLock > 0)
-                return false;
-
-            object? obj = Interlocked.CompareExchange(ref this.exclusiveWriteObject, exclusiveWriteObject, null);
-            if (obj != null && obj != exclusiveWriteObject)
-                return false;
-
-            if (readLock > 0) {
-                Interlocked.CompareExchange(ref this.exclusiveWriteObject, null, exclusiveWriteObject);
-                return false;
-            }
-
-            if (Interlocked.Increment(ref writeLock) == 1) {
-                bool result = TryEnterWriteLock(exclusiveWriteObject);
-                Interlocked.Decrement(ref writeLock);
-                return result;
-            }
-
-            writeLockResetEvent.Reset();
-            return true;
-        }
-
-        public void EnterWriteLock(object exclusiveWriteObject) {
-            while (!TryEnterWriteLock(exclusiveWriteObject))
-                readLockResetEvent.WaitOne();
-        }
-
-        public void ExitWriteLock() {
-            if (Interlocked.Decrement(ref writeLock) == 0) {
-                Interlocked.Exchange(ref exclusiveWriteObject, null);
-                writeLockResetEvent.Set();
-            }
+        public void ExitWriteLock(int startIndex) {
+            writeLock[startIndex / PackageSize].ExitWriteLock();
         }
 
         public void OrderWork() {
@@ -138,7 +91,7 @@ namespace NoiseEngine.Jobs {
 
         public void OrderWorkAndWait() {
             OrderWork();
-            manualResetEvent.WaitOne();
+            workResetEvent.WaitOne();
         }
 
         internal bool HasComponent(Type component) {
@@ -151,10 +104,10 @@ namespace NoiseEngine.Jobs {
         }
 
         private void DoWork() {
-            manualResetEvent.Reset();
+            workResetEvent.Reset();
 
             if (ongoingWork > 0 || (!clean && entitiesToAdd.IsEmpty)) {
-                manualResetEvent.Set();
+                workResetEvent.Set();
                 return;
             }
 
@@ -173,7 +126,13 @@ namespace NoiseEngine.Jobs {
             while (entitiesToRemove.TryDequeue(out Entity entity))
                 DestroyEntityComponents(entity);
 
-            manualResetEvent.Set();
+            int exceptedWriteLockCount = (int)MathF.Ceiling(entities.Count / (float)PackageSize);
+            while (writeLock.Count < exceptedWriteLockCount)
+                writeLock.Add(new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion));
+            while (writeLock.Count > exceptedWriteLockCount)
+                writeLock.RemoveAt(writeLock.Count - 1);
+
+            workResetEvent.Set();
         }
 
     }
