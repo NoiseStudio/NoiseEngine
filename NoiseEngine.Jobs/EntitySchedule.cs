@@ -117,8 +117,12 @@ namespace NoiseEngine.Jobs {
                 while (packages.TryDequeue(out SchedulePackage package)) {
                     EntityQueryBase query = package.EntitySystem.query!;
                     if (!query.IsReadOnly && !package.EntityGroup.TryEnterWriteLock(package.PackageStartIndex)) {
-                        EnqueuePackageAndWait(package);
-                        continue;
+                        if (packages.Count > 0) {
+                            packages.Enqueue(package);
+                            continue;
+                        }
+
+                        package.EntityGroup.EnterWriteLock(package.PackageStartIndex);
                     }
 
                     for (int i = package.PackageStartIndex; i < package.PackageEndIndex; i++) {
@@ -134,13 +138,6 @@ namespace NoiseEngine.Jobs {
                     package.EntitySystem.ReleaseWork();
                 }
             }
-        }
-
-        private void EnqueuePackageAndWait(in SchedulePackage package) {
-            packages.Enqueue(package);
-
-            if (packages.Count == 1)
-                Thread.Sleep(1);
         }
 
         private bool AddPackages(AutoResetEvent autoResetEvent) {
