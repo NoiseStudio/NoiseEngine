@@ -164,7 +164,7 @@ namespace NoiseEngine.Jobs {
         }
 
         internal void RemoveQuery(EntityQueryBase query) {
-            queries.Add(query);
+            queries.Remove(query);
         }
 
         internal void RegisterGroupsToQuery(EntityQueryBase query) {
@@ -222,7 +222,7 @@ namespace NoiseEngine.Jobs {
             if (entityToGroup.TryRemove(entity, out EntityGroup? group))
                 group.RemoveEntity(entity);
         }
-      
+
         private Entity NewEntityWorker() {
             return new Entity(Interlocked.Increment(ref nextEntityId));
         }

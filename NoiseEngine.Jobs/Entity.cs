@@ -62,7 +62,7 @@ namespace NoiseEngine.Jobs {
             if (group.HasComponent(type))
                 throw new InvalidOperationException($"{ToString()} already has the {type.Name} component. Use the {nameof(Set)} method to replace this component.");
 
-            List<Type> components = group.GetComponentsCopy();
+            List<Type> components = new List<Type>(group.ComponentTypes);
             components.Add(type);
 
             group.RemoveEntity(this);
@@ -86,7 +86,7 @@ namespace NoiseEngine.Jobs {
             if (!group.HasComponent(type))
                 throw new InvalidOperationException($"{ToString()} does not have the {type.Name} component.");
 
-            List<Type> components = group.GetComponentsCopy();
+            List<Type> components = new List<Type>(group.ComponentTypes);
             components.Remove(type);
 
             group.RemoveEntity(this);

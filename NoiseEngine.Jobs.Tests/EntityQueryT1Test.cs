@@ -6,7 +6,7 @@ namespace NoiseEngine.Jobs.Tests {
         [Fact]
         public void Foreach() {
             EntityWorld world = new EntityWorld();
-            EntityQuery<TestComponentA> query = new EntityQuery<TestComponentA>(world);
+            EntityQuery<TestComponentA> query = new EntityQuery<TestComponentA>(world, true);
 
             world.NewEntity();
             world.NewEntity(new TestComponentA());

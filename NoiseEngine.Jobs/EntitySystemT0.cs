@@ -18,7 +18,7 @@
         }
 
         internal override void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
-            queryGeneric = new EntityQuery(world, Filter);
+            queryGeneric = new EntityQuery(world, true, Filter); // TODO: add real isReadOnly param
             query = queryGeneric;
 
             base.InternalInitialize(world, schedule);
