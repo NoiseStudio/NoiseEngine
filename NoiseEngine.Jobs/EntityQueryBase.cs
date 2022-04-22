@@ -18,14 +18,15 @@ namespace NoiseEngine.Jobs {
             }
         }
 
-        public EntityWorld World { get; private set; }
+        public EntityWorld World { get; }
         public bool IsDisposed { get; private set; }
-        public bool IsReadOnly => false;
+        public bool IsReadOnly { get; }
 
         public IEnumerable<Entity> Entities => GetEntityEnumerable();
 
-        public EntityQueryBase(EntityWorld world, IEntityFilter? filter = null) {
+        public EntityQueryBase(EntityWorld world, bool isReadOnly, IEntityFilter? filter = null) {
             World = world;
+            IsReadOnly = isReadOnly;
             Filter = filter;
 
             World.AddQuery(this);

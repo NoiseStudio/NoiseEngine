@@ -9,7 +9,8 @@ namespace NoiseEngine.Jobs {
 
         internal readonly ConcurrentDictionary<Entity, T> components1;
 
-        public EntityQuery(EntityWorld world, IEntityFilter? filter = null) : base(world, filter) {
+        public EntityQuery(EntityWorld world, bool isReadOnly, IEntityFilter? filter = null) :
+            base(world, isReadOnly, filter) {
             components1 = world.ComponentsStorage.AddStorage<T>();
         }
 

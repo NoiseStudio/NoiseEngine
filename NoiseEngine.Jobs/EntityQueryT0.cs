@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace NoiseEngine.Jobs {
     public class EntityQuery : EntityQueryBase, IEnumerable<Entity> {
 
-        public EntityQuery(EntityWorld world, IEntityFilter? filter = null) : base(world, filter) {
+        public EntityQuery(EntityWorld world, bool isReadOnly, IEntityFilter? filter = null) :
+            base(world, isReadOnly, filter) {
         }
 
         /// <summary>

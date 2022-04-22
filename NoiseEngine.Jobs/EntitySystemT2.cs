@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace NoiseEngine.Jobs {
+﻿namespace NoiseEngine.Jobs {
     public abstract class EntitySystem<T1, T2> : EntitySystemBase
         where T1 : struct, IEntityComponent
         where T2 : struct, IEntityComponent
@@ -23,7 +21,7 @@ namespace NoiseEngine.Jobs {
         }
 
         internal override void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
-            queryGeneric = new EntityQuery<T1, T2>(world, Filter);
+            queryGeneric = new EntityQuery<T1, T2>(world, true, Filter); // TODO: add real isReadOnly param
             query = queryGeneric;
 
             base.InternalInitialize(world, schedule);
