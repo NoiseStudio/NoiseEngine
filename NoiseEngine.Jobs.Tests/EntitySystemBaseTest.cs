@@ -132,13 +132,13 @@ namespace NoiseEngine.Jobs.Tests {
             TestSystemCounter system = new TestSystemCounter();
             world.AddSystem(system);
 
-            system.TryExecuteAndWait();
+            system.ExecuteAndWait();
             Assert.Equal(64, system.EntityCount);
 
             system.Filter = new EntityFilter(new Type[] {
                 typeof(TestComponentA)
             });
-            system.TryExecuteAndWait();
+            system.ExecuteAndWait();
             Assert.Equal(32, system.EntityCount);
 
             system.Filter = new EntityFilter(
@@ -151,6 +151,23 @@ namespace NoiseEngine.Jobs.Tests {
             );
             system.TryExecuteAndWait();
             Assert.Equal(16, system.EntityCount);
+        }
+
+        [Fact]
+        public void OnTerminate() {
+            EntityWorld world = new EntityWorld();
+
+            for (int i = 0; i < 16; i++)
+                world.NewEntity();
+
+            TestSystemA system = new TestSystemA();
+            world.AddSystem(system);
+
+            system.ExecuteAndWait();
+            system.Destroy();
+
+            Assert.True(system.IsDestroyed);
+            Assert.True(system.IsTerminated);
         }
 
     }

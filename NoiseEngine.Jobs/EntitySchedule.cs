@@ -83,9 +83,10 @@ namespace NoiseEngine.Jobs {
         }
 
         internal void AddSystem(EntitySystemBase system) {
-            systems.Add(system);
-            systemsHashSet.Add(system);
+            if (!systemsHashSet.Add(system))
+                return;
 
+            systems.Add(system);
             SignalWorkerThread();
         }
 

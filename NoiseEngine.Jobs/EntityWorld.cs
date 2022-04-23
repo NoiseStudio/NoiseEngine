@@ -222,7 +222,7 @@ namespace NoiseEngine.Jobs {
             if (entityToGroup.TryRemove(entity, out EntityGroup? group))
                 group.RemoveEntity(entity);
         }
-      
+
         private Entity NewEntityWorker() {
             return new Entity(Interlocked.Increment(ref nextEntityId));
         }

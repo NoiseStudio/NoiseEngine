@@ -10,22 +10,22 @@ namespace NoiseEngine.Jobs {
 
         internal EntityQueryBase? query;
         internal double lastExecutionTime = Time.UtcMilliseconds;
-        internal double cycleTimeWithDelta = 0;
-        internal uint cyclesCount = 0;
+        internal double cycleTimeWithDelta;
+        internal uint cyclesCount;
 
         private readonly ManualResetEvent workResetEvent = new ManualResetEvent(true);
         private readonly ConcurrentList<EntitySystemBase> dependencies = new ConcurrentList<EntitySystemBase>();
         private readonly Dictionary<EntitySystemBase, uint> dependenciesCyclesCount = new Dictionary<EntitySystemBase, uint>();
         private readonly ConcurrentList<EntitySystemBase> blockadeDependencies = new ConcurrentList<EntitySystemBase>();
 
-        private EntitySchedule? schedule;
-        private IEntityFilter? filter;
-        private double? cycleTime = 0;
-        private bool usesSchedule = false;
-        private bool enabled = true;
-        private int ongoingWork = 0;
+        private AtomicBool enabled = true;
         private AtomicBool isWorking;
         private AtomicBool isDestroyed;
+        private IEntityFilter? filter;
+        private EntitySchedule? schedule;
+        private double? cycleTime;
+        private bool usesSchedule;
+        private int ongoingWork;
 
         public double? CycleTime {
             get => cycleTime;
@@ -64,9 +64,8 @@ namespace NoiseEngine.Jobs {
         public bool Enabled {
             get => enabled;
             set {
-                if (enabled != value) {
-                    enabled = value;
-                    if (enabled)
+                if (enabled.Exchange(value) != value) {
+                    if (value)
                         InternalStart();
                     else
                         InternalStop();
@@ -77,15 +76,16 @@ namespace NoiseEngine.Jobs {
         public IEntityFilter? Filter {
             get => filter;
             set {
-                if (query != null)
-                    query.Filter = value;
                 filter = value;
+
+                if (query != null)
+                    query.Filter = filter;
             }
         }
 
         public bool CanExecute {
             get {
-                if (IsWorking || !Enabled || !IsDestroyed)
+                if (IsWorking || !Enabled || IsDestroyed)
                     return false;
 
                 foreach (EntitySystemBase system in dependencies) {
@@ -138,24 +138,40 @@ namespace NoiseEngine.Jobs {
         /// Tries to performs a cycle on this system and waits for it to finish.
         /// </summary>
         public void ExecuteAndWait() {
-            if (!TryExecuteAndWait())
-                ThrowCouldNotExecuteException();
+            WaitWhenCanExecuteAndOrderWork();
+
+            InternalExecute();
+            ReleaseWork();
         }
 
         /// <summary>
         /// Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
         /// </summary>
         public void ExecuteParallelAndWait() {
-            if (!TryExecuteParallelAndWait())
-                ThrowCouldNotExecuteException();
+            EntitySchedule schedule = GetEntityScheduleOrThrowException();
+            WaitWhenCanExecuteAndOrderWork();
+
+            InternalUpdate();
+            schedule.EnqueuePackages(this);
+            ReleaseWork();
+
+            Wait();
         }
 
         /// <summary>
         /// Tries to performs a cycle on this system with using schedule threads.
         /// </summary>
         public void Execute() {
-            if (!TryExecute())
-                ThrowCouldNotExecuteException();
+            EntitySchedule schedule = GetEntityScheduleOrThrowException();
+            AssertCouldExecute();
+
+            Task.Run(() => {
+                WaitWhenCanExecuteAndOrderWork();
+
+                InternalUpdate();
+                schedule.EnqueuePackages(this);
+                ReleaseWork();
+            });
         }
 
         /// <summary>
@@ -259,14 +275,6 @@ namespace NoiseEngine.Jobs {
             GC.SuppressFinalize(this);
         }
 
-        /// <summary>
-        /// Returns a string that represents the current system
-        /// </summary>
-        /// <returns>A string that represents the current system</returns>
-        public override string ToString() {
-            return GetType().Name;
-        }
-
         internal abstract void InternalUpdateEntity(Entity entity);
 
         internal virtual void InternalExecute() {
@@ -334,7 +342,7 @@ namespace NoiseEngine.Jobs {
         }
 
         internal bool CheckIfCanExecuteAndOrderWork() {
-            if (!Enabled || !IsDestroyed || isWorking.Exchange(true))
+            if (!Enabled || IsDestroyed || isWorking.Exchange(true))
                 return false;
 
             foreach (EntitySystemBase system in dependencies) {
@@ -396,8 +404,18 @@ namespace NoiseEngine.Jobs {
         protected virtual void OnScheduleChange() {
         }
 
-        private void ThrowCouldNotExecuteException() {
-            throw new InvalidOperationException($"System {ToString()} could not be executed.");
+        private void WaitWhenCanExecuteAndOrderWork() {
+            while (!CheckIfCanExecuteAndOrderWork()) {
+                AssertCouldExecute();
+                Wait();
+            }
+        }
+
+        private void AssertCouldExecute() {
+            if (!Enabled)
+                throw new InvalidOperationException($"The {ToString()} system is disabled.");
+            if (isDestroyed)
+                throw new InvalidOperationException($"The {ToString()} system is destroyed.");
         }
 
         private EntitySchedule GetEntityScheduleOrThrowException() {
