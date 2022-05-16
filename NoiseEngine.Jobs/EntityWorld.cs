@@ -196,7 +196,7 @@ namespace NoiseEngine.Jobs {
         }
 
         internal void RemoveQuery(EntityQueryBase query) {
-            queries.Add(query);
+            queries.Remove(query);
         }
 
         internal void RegisterGroupsToQuery(EntityQueryBase query) {

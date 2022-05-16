@@ -23,7 +23,7 @@ namespace NoiseEngine.Jobs {
             if (!base.InternalInitialize(world, schedule))
                 return false;
 
-            queryGeneric = new EntityQuery<T>(world, Filter);
+            queryGeneric = new EntityQuery<T>(world, true, Filter); // TODO: add real isReadOnly param
             query = queryGeneric;
 
             return true;
