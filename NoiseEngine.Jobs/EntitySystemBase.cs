@@ -17,6 +17,7 @@ namespace NoiseEngine.Jobs {
         private readonly Dictionary<EntitySystemBase, uint> dependenciesCyclesCount = new Dictionary<EntitySystemBase, uint>();
         private readonly ConcurrentList<EntitySystemBase> blockadeDependencies = new ConcurrentList<EntitySystemBase>();
 
+        private EntityWorld world = EntityWorld.Empty;
         private AtomicBool enabled = true;
         private AtomicBool isWorking;
         private AtomicBool isDisposed;
@@ -109,7 +110,7 @@ namespace NoiseEngine.Jobs {
                 EntitySchedule? schedule = Schedule;
                 if (schedule == null)
                     return 0;
-                if (schedule.threadIds.TryGetValue(Environment.CurrentManagedThreadId, out int threadId))
+                if (schedule.ThreadIds.TryGetValue(Environment.CurrentManagedThreadId, out int threadId))
                     return threadId;
                 return 0;
             }
@@ -120,7 +121,7 @@ namespace NoiseEngine.Jobs {
                 EntitySchedule? schedule = Schedule;
                 if (schedule == null)
                     return 1;
-                return schedule.threadIdCount;
+                return schedule.ThreadIdCount;
             }
         }
 
@@ -128,8 +129,6 @@ namespace NoiseEngine.Jobs {
         protected float DeltaTimeF { get; private set; } = 1;
         protected double CycleTimeSeconds { get; private set; } = 1;
         protected float CycleTimeSecondsF { get; private set; } = 1;
-
-        private EntityWorld world = EntityWorld.Empty;
 
         ~EntitySystemBase() {
             Dispose();
