@@ -4,28 +4,6 @@
         <name>NoiseEngine.Common</name>
     </assembly>
     <members>
-        <member name="T:NoiseEngine.Common.Destroyable`1">
-            <summary>
-            Default <see cref="T:NoiseEngine.Common.IDestroyable"/> implementation.
-            </summary>
-            <typeparam name="TDestroyableOwner">Type of the owner.</typeparam>
-        </member>
-        <member name="P:NoiseEngine.Common.Destroyable`1.DestroyableOwner">
-            <summary>
-            Owner of this object.
-            </summary>
-        </member>
-        <member name="M:NoiseEngine.Common.Destroyable`1.ReleaseResources">
-            <summary>
-            Releases native resources.
-            </summary>
-        </member>
-        <member name="M:NoiseEngine.Common.Destroyable`1.Destroy">
-            <summary>
-            Destroys object. It is not required to call this method because
-            resources are automatically released by GC or the owner of this object.
-            </summary>
-        </member>
         <member name="T:NoiseEngine.Common.DestroyableOwner">
             <summary>
             Default <see cref="T:NoiseEngine.Common.IDestroyableOwner"/> implementation.
@@ -57,6 +35,44 @@
             was not previously added with <see cref="M:NoiseEngine.Common.IDestroyableOwner.AddOwnedObject(NoiseEngine.Common.IDestroyable)"/>.
             </summary>
             <param name="toRemove">Object to disown.</param>
+        </member>
+        <member name="T:NoiseEngine.Common.Destroyable">
+            <summary>
+            Default <see cref="T:NoiseEngine.Common.IDestroyable"/> implementation.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.Destroyable.ReleaseResources">
+            <summary>
+            Releases resources.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.Destroyable.Destroy">
+            <summary>
+            Destroys object. It is not required to call this method because
+            resources are automatically released by GC or the owner of this object.
+            </summary>
+        </member>
+        <member name="T:NoiseEngine.Common.Destroyable`1">
+            <summary>
+            Default <see cref="T:NoiseEngine.Common.IDestroyable"/> implementation.
+            </summary>
+            <typeparam name="TDestroyableOwner">Type of the owner.</typeparam>
+        </member>
+        <member name="P:NoiseEngine.Common.Destroyable`1.DestroyableOwner">
+            <summary>
+            Owner of this object.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.Destroyable`1.ReleaseResources">
+            <summary>
+            Releases resources.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.Destroyable`1.Destroy">
+            <summary>
+            Destroys object. It is not required to call this method because
+            resources are automatically released by GC or the owner of this object.
+            </summary>
         </member>
         <member name="T:NoiseEngine.Common.DestroyQueue">
             <summary>
