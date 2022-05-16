@@ -21,7 +21,7 @@
             if (!base.InternalInitialize(world, schedule))
                 return false;
 
-            queryGeneric = new EntityQuery(world, true, Filter); // TODO: add real isReadOnly param
+            queryGeneric = new EntityQuery(world, WritableComponents, Filter);
             query = queryGeneric;
 
             return true;

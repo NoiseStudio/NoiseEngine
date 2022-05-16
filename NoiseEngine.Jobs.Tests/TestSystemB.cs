@@ -1,9 +1,16 @@
-﻿namespace NoiseEngine.Jobs.Tests {
+﻿using System;
+using System.Collections.Generic;
+
+namespace NoiseEngine.Jobs.Tests {
     internal class TestSystemB : EntitySystem<TestComponentA> {
 
         private int a = -5;
         private int b = -6;
         private int c = -11;
+
+        public override IReadOnlyList<Type> WritableComponents { get; } = new Type[] {
+            typeof(TestComponentA)
+        };
 
         protected override void OnInitialize() {
             a = 0;

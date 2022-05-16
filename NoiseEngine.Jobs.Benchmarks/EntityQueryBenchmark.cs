@@ -19,8 +19,8 @@ namespace NoiseEngine.Jobs.Benchmarks {
                 world.NewEntity(new TestComponentA(), new TestComponentB());
             }
 
-            query = new EntityQuery(world, true);
-            queryWithComponents = new EntityQuery<TestComponentA, TestComponentB>(world, true);
+            query = new EntityQuery(world);
+            queryWithComponents = new EntityQuery<TestComponentA, TestComponentB>(world);
         }
 
         [Benchmark]
