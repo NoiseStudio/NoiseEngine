@@ -1,8 +1,9 @@
-﻿using System;
+﻿using NoiseEngine.Common;
+using System;
 using System.Collections.Concurrent;
 
 namespace NoiseEngine.Jobs {
-    public class EntitySchedule {
+    public class EntitySchedule : Destroyable {
 
         private readonly EntityScheduleWorker worker;
 
@@ -34,6 +35,10 @@ namespace NoiseEngine.Jobs {
 
         internal void EnqueuePackages(EntitySystemBase system) {
             worker.EnqueuePackages(system);
+        }
+
+        protected override void ReleaseResources() {
+            worker.Dispose();
         }
 
     }
