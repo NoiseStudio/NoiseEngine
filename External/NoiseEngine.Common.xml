@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>NoiseEngine.Common</name>
+    </assembly>
+    <members>
+        <member name="T:NoiseEngine.Common.Destroyable`1">
+            <summary>
+            Default <see cref="T:NoiseEngine.Common.IDestroyable"/> implementation.
+            </summary>
+            <typeparam name="TDestroyableOwner">Type of the owner.</typeparam>
+        </member>
+        <member name="P:NoiseEngine.Common.Destroyable`1.DestroyableOwner">
+            <summary>
+            Owner of this object.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.Destroyable`1.ReleaseResources">
+            <summary>
+            Releases native resources.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.Destroyable`1.Destroy">
+            <summary>
+            Destroys object. It is not required to call this method because
+            resources are automatically released by GC or the owner of this object.
+            </summary>
+        </member>
+        <member name="T:NoiseEngine.Common.DestroyableOwner">
+            <summary>
+            Default <see cref="T:NoiseEngine.Common.IDestroyableOwner"/> implementation.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.DestroyableOwner.ReleaseResources">
+            <summary>
+            Releases native resources of this object.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.DestroyableOwner.Destroy">
+            <summary>
+            Destroys all owned objects and this object. It is not required to call this method because
+            resources are automatically released by GC or the owner of this object (if present).
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.DestroyableOwner.NoiseEngine#Common#IDestroyableOwner#AddOwnedObject(NoiseEngine.Common.IDestroyable)">
+            <summary>
+            Adds <see cref="T:NoiseEngine.Common.IDestroyable"/> owned by this object.
+            This must be called only once per <paramref name="toAdd"/>.
+            Added object must be removed later.
+            </summary>
+            <param name="toAdd">Object to own.</param>
+        </member>
+        <member name="M:NoiseEngine.Common.DestroyableOwner.NoiseEngine#Common#IDestroyableOwner#RemoveOwnedObject(NoiseEngine.Common.IDestroyable)">
+            <summary>
+            Removes <see cref="T:NoiseEngine.Common.IDestroyable"/> owned by this object.
+            This must not be called if <paramref name="toRemove"/>
+            was not previously added with <see cref="M:NoiseEngine.Common.IDestroyableOwner.AddOwnedObject(NoiseEngine.Common.IDestroyable)"/>.
+            </summary>
+            <param name="toRemove">Object to disown.</param>
+        </member>
+        <member name="T:NoiseEngine.Common.DestroyQueue">
+            <summary>
+            Queue of weak references to <see cref="T:NoiseEngine.Common.IDestroyable"/> instances.
+            Use this class to ensure that all objects are destroyed at specific time.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.DestroyQueue.CollectNullReferences">
+            <summary>
+            Erases items from the queue that have been already collected by GC.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Common.DestroyQueue.Enqueue(NoiseEngine.Common.IDestroyable)">
+            <summary>
+            Adds <paramref name="item"/> to the queue.
+            </summary>
+            <remarks>
+            Internally object is stored as <see cref="T:System.WeakReference`1"/>, so GC is still able to collect them.
+            </remarks>
+            <param name="item">Item to add.</param>
+        </member>
+        <member name="M:NoiseEngine.Common.DestroyQueue.DestroyElements">
+            <summary>
+            Destroys all enqueued items. Using queue after calling this method results in undefined behavior.
+            </summary>
+        </member>
+        <member name="T:NoiseEngine.Common.IDestroyable">
+            <summary>
+            Represents an object that can be explicitly cleaned up, but it is not required to do so.
+            </summary>
+            <remarks>
+            This interface exists as an alternative to <see cref="T:System.IDisposable"/>
+            which should always be cleaned up by the user.
+            </remarks>
+        </member>
+        <member name="M:NoiseEngine.Common.IDestroyable.Destroy">
+            <summary>
+            Destroys object. It is not required to call this method because resources are automatically released.
+            </summary>
+            <remarks>
+            Implementations of this method should be thread-safe.
+            </remarks>
+        </member>
+        <member name="M:NoiseEngine.Common.IDestroyableOwner.AddOwnedObject(NoiseEngine.Common.IDestroyable)">
+            <summary>
+            Adds <see cref="T:NoiseEngine.Common.IDestroyable"/> owned by this object.
+            This must be called only once per <paramref name="toAdd"/>.
+            Added object must be removed later.
+            </summary>
+            <param name="toAdd">Object to own.</param>
+        </member>
+        <member name="M:NoiseEngine.Common.IDestroyableOwner.RemoveOwnedObject(NoiseEngine.Common.IDestroyable)">
+            <summary>
+            Removes <see cref="T:NoiseEngine.Common.IDestroyable"/> owned by this object.
+            This must not be called if <paramref name="toRemove"/>
+            was not previously added with <see cref="M:NoiseEngine.Common.IDestroyableOwner.AddOwnedObject(NoiseEngine.Common.IDestroyable)"/>.
+            </summary>
+            <param name="toRemove">Object to disown.</param>
+        </member>
+    </members>
+</doc>

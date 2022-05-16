@@ -1,29 +1,30 @@
-﻿using System;
+﻿using NoiseEngine.Threading;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using NoiseEngine.Threading;
 
 namespace NoiseEngine.Jobs {
-    public abstract class EntitySystemBase {
+    public abstract class EntitySystemBase : IDisposable {
 
         internal EntityQueryBase? query;
         internal double lastExecutionTime = Time.UtcMilliseconds;
-        internal double cycleTimeWithDelta = 0;
-        internal uint cyclesCount = 0;
+        internal double cycleTimeWithDelta;
+        internal uint cyclesCount;
 
         private readonly ManualResetEvent workResetEvent = new ManualResetEvent(true);
         private readonly ConcurrentList<EntitySystemBase> dependencies = new ConcurrentList<EntitySystemBase>();
         private readonly Dictionary<EntitySystemBase, uint> dependenciesCyclesCount = new Dictionary<EntitySystemBase, uint>();
         private readonly ConcurrentList<EntitySystemBase> blockadeDependencies = new ConcurrentList<EntitySystemBase>();
 
-        private EntitySchedule? schedule;
-        private IEntityFilter? filter;
-        private double? cycleTime = 0;
-        private bool usesSchedule = false;
-        private bool enabled = true;
-        private int ongoingWork = 0;
+        private AtomicBool enabled = true;
         private AtomicBool isWorking;
+        private AtomicBool isDisposed;
+        private IEntityFilter? filter;
+        private EntitySchedule? schedule;
+        private double? cycleTime;
+        private bool usesSchedule;
+        private int ongoingWork;
 
         public double? CycleTime {
             get => cycleTime;
@@ -62,9 +63,8 @@ namespace NoiseEngine.Jobs {
         public bool Enabled {
             get => enabled;
             set {
-                if (enabled != value) {
-                    enabled = value;
-                    if (enabled)
+                if (enabled.Exchange(value) != value) {
+                    if (value)
                         InternalStart();
                     else
                         InternalStop();
@@ -75,15 +75,16 @@ namespace NoiseEngine.Jobs {
         public IEntityFilter? Filter {
             get => filter;
             set {
-                if (query != null)
-                    query.Filter = value;
                 filter = value;
+
+                if (query != null)
+                    query.Filter = filter;
             }
         }
 
         public bool CanExecute {
             get {
-                if (IsWorking || !Enabled)
+                if (IsWorking || !Enabled || IsDestroyed)
                     return false;
 
                 foreach (EntitySystemBase system in dependencies) {
@@ -99,8 +100,9 @@ namespace NoiseEngine.Jobs {
             }
         }
 
-        public EntityWorld World { get; private set; } = EntityWorld.Empty;
+        public EntityWorld World => world;
         public bool IsWorking => isWorking;
+        public bool IsDestroyed => isDisposed;
 
         protected int ThreadId {
             get {
@@ -127,28 +129,50 @@ namespace NoiseEngine.Jobs {
         protected double CycleTimeSeconds { get; private set; } = 1;
         protected float CycleTimeSecondsF { get; private set; } = 1;
 
+        private EntityWorld world = EntityWorld.Empty;
+
+        ~EntitySystemBase() {
+            Dispose();
+        }
+
         /// <summary>
         /// Tries to performs a cycle on this system and waits for it to finish.
         /// </summary>
         public void ExecuteAndWait() {
-            if (!TryExecuteAndWait())
-                ThrowCouldNotExecuteException();
+            WaitWhenCanExecuteAndOrderWork();
+
+            InternalExecute();
+            ReleaseWork();
         }
 
         /// <summary>
         /// Tries to performs a cycle on this system with using schedule threads and waits for it to finish.
         /// </summary>
         public void ExecuteParallelAndWait() {
-            if (!TryExecuteParallelAndWait())
-                ThrowCouldNotExecuteException();
+            EntitySchedule schedule = GetEntityScheduleOrThrowException();
+            WaitWhenCanExecuteAndOrderWork();
+
+            InternalUpdate();
+            schedule.EnqueuePackages(this);
+            ReleaseWork();
+
+            Wait();
         }
 
         /// <summary>
         /// Tries to performs a cycle on this system with using schedule threads.
         /// </summary>
         public void Execute() {
-            if (!TryExecute())
-                ThrowCouldNotExecuteException();
+            EntitySchedule schedule = GetEntityScheduleOrThrowException();
+            AssertCouldExecute();
+
+            Task.Run(() => {
+                WaitWhenCanExecuteAndOrderWork();
+
+                InternalUpdate();
+                schedule.EnqueuePackages(this);
+                ReleaseWork();
+            });
         }
 
         /// <summary>
@@ -231,11 +255,25 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
-        /// Returns a string that represents the current system
+        /// Disposes this object.
         /// </summary>
-        /// <returns>A string that represents the current system</returns>
-        public override string ToString() {
-            return GetType().Name;
+        public void Dispose() {
+            if (isDisposed.Exchange(true))
+                return;
+
+            Wait();
+
+            Enabled = false;
+
+            InternalTerminate();
+
+            foreach (EntitySystemBase system in dependencies)
+                RemoveDependency(system);
+
+            Schedule = null;
+            World.RemoveSystem(this);
+
+            GC.SuppressFinalize(this);
         }
 
         internal abstract void InternalUpdateEntity(Entity entity);
@@ -245,12 +283,15 @@ namespace NoiseEngine.Jobs {
             InternalUpdate();
         }
 
-        internal virtual void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
-            World = world;
+        internal virtual bool InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
+            if (Interlocked.Exchange(ref this.world, world) != EntityWorld.Empty)
+                return false;
+
             if (schedule != null)
                 Schedule = schedule;
 
             OnInitialize();
+            return true;
         }
 
         internal virtual void InternalStart() {
@@ -265,12 +306,12 @@ namespace NoiseEngine.Jobs {
             cyclesCount++;
             double executionTime = Time.UtcMilliseconds;
 
-            double deltaTimeInMiliseconds = executionTime - lastExecutionTime;
-            DeltaTime = deltaTimeInMiliseconds / 1000;
+            double deltaTimeInMilliseconds = executionTime - lastExecutionTime;
+            DeltaTime = deltaTimeInMilliseconds / 1000;
             DeltaTimeF = (float)DeltaTime;
 
             if (CycleTime != null) {
-                cycleTimeWithDelta = (double)CycleTime - (deltaTimeInMiliseconds - (double)CycleTime);
+                cycleTimeWithDelta = (double)CycleTime - (deltaTimeInMilliseconds - (double)CycleTime);
             }
 
             lastExecutionTime = executionTime;
@@ -305,7 +346,7 @@ namespace NoiseEngine.Jobs {
         }
 
         internal bool CheckIfCanExecuteAndOrderWork() {
-            if (!Enabled || isWorking.Exchange(true))
+            if (!Enabled || IsDestroyed || isWorking.Exchange(true))
                 return false;
 
             foreach (EntitySystemBase system in dependencies) {
@@ -323,6 +364,11 @@ namespace NoiseEngine.Jobs {
 
             OrderWork();
             return true;
+        }
+
+        internal void AssertIsNotDestroyed() {
+            if (isDisposed)
+                throw new InvalidOperationException($"The {ToString()} entity system is destroyed.");
         }
 
         /// <summary>
@@ -367,8 +413,17 @@ namespace NoiseEngine.Jobs {
         protected virtual void OnScheduleChange() {
         }
 
-        private void ThrowCouldNotExecuteException() {
-            throw new InvalidOperationException($"System {ToString()} could not be executed.");
+        private void WaitWhenCanExecuteAndOrderWork() {
+            while (!CheckIfCanExecuteAndOrderWork()) {
+                AssertCouldExecute();
+                Wait();
+            }
+        }
+
+        private void AssertCouldExecute() {
+            AssertIsNotDestroyed();
+            if (!Enabled)
+                throw new InvalidOperationException($"The {ToString} entity system is disabled.");
         }
 
         private EntitySchedule GetEntityScheduleOrThrowException() {

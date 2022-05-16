@@ -15,7 +15,7 @@ namespace NoiseEngine.Jobs.Tests {
         [Fact]
         public void NewEntityT1() {
             EntityWorld world = new EntityWorld();
-            
+
             Entity entity = world.NewEntity(new TestComponentA());
             Assert.True(entity.Has<TestComponentA>(world));
         }
@@ -23,7 +23,7 @@ namespace NoiseEngine.Jobs.Tests {
         [Fact]
         public void NewEntityT2() {
             EntityWorld world = new EntityWorld();
-            
+
             Entity entity = world.NewEntity(new TestComponentA(), new TestComponentB());
             Assert.True(entity.Has<TestComponentA>(world));
             Assert.True(entity.Has<TestComponentB>(world));
@@ -34,18 +34,12 @@ namespace NoiseEngine.Jobs.Tests {
             EntityWorld world = new EntityWorld();
 
             TestSystemB system = new TestSystemB();
+
             world.AddSystem(system);
             Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
-        }
 
-        [Fact]
-        public void RemoveSystem() {
-            EntityWorld world = new EntityWorld();
-
-            TestSystemB system = new TestSystemB();
-            world.AddSystem(system);
-            world.RemoveSystem(system);
-            world.RemoveSystem(system);
+            system.Dispose();
+            Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
         }
 
         [Fact]
@@ -75,7 +69,7 @@ namespace NoiseEngine.Jobs.Tests {
             TestSystemB system = new TestSystemB();
             world.AddSystem(system);
 
-            Assert.Equal(system, world.GetSystem<TestSystemB>());
+            //Assert.Equal(system, world.GetSystem<TestSystemB>());
         }
 
         [Fact]
@@ -131,6 +125,26 @@ namespace NoiseEngine.Jobs.Tests {
 
             world.SetEntityGroup(entity, groupA);
             Assert.Equal(groupA, world.GetEntityGroup(entity));
+        }
+
+        [Fact]
+        public void Destroy() {
+            EntityWorld world = new EntityWorld();
+
+            for (int i = 0; i < 16; i++)
+                world.NewEntity();
+
+            TestSystemA system = new TestSystemA();
+            world.AddSystem(system);
+
+            system.ExecuteAndWait();
+
+            world.Dispose();
+
+            Assert.True(system.IsDestroyed);
+            Assert.True(system.IsTerminated);
+
+            Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
         }
 
     }

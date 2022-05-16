@@ -11,33 +11,33 @@ namespace NoiseEngine.Jobs {
 
         public T this[int index] {
             get {
-                locker.EnterReadLock();
+                locker.EnterUpgradeableReadLock();
                 T item;
                 try {
                     item = list[index];
                 } finally {
-                    locker.ExitReadLock();
+                    locker.ExitUpgradeableReadLock();
                 }
                 return item;
             }
             set {
-                locker.EnterReadLock();
+                locker.EnterUpgradeableReadLock();
                 try {
                     list[index] = value;
                 } finally {
-                    locker.ExitReadLock();
+                    locker.ExitUpgradeableReadLock();
                 }
             }
         }
 
         public int Count {
             get {
-                locker.EnterReadLock();
+                locker.EnterUpgradeableReadLock();
                 int count;
                 try {
                     count = list.Count;
                 } finally {
-                    locker.ExitReadLock();
+                    locker.ExitUpgradeableReadLock();
                 }
                 return count;
             }
@@ -76,43 +76,43 @@ namespace NoiseEngine.Jobs {
         }
 
         public bool Contains(T item) {
-            locker.EnterReadLock();
+            locker.EnterUpgradeableReadLock();
             bool contains;
             try {
                 contains = list.Contains(item);
             } finally {
-                locker.ExitReadLock();
+                locker.ExitUpgradeableReadLock();
             }
             return contains;
         }
 
         public void CopyTo(T[] array, int arrayIndex) {
-            locker.EnterReadLock();
+            locker.EnterUpgradeableReadLock();
             try {
                 list.CopyTo(array, arrayIndex);
             } finally {
-                locker.ExitReadLock();
+                locker.ExitUpgradeableReadLock();
             }
         }
 
         public IEnumerator<T> GetEnumerator() {
-            locker.EnterReadLock();
+            locker.EnterUpgradeableReadLock();
             try {
                 for (int i = 0; i < Count; i++) {
                     yield return this[i];
                 }
             } finally {
-                locker.ExitReadLock();
+                locker.ExitUpgradeableReadLock();
             }
         }
 
         public int IndexOf(T item) {
-            locker.EnterReadLock();
+            locker.EnterUpgradeableReadLock();
             int index;
             try {
                 index = list.IndexOf(item);
             } finally {
-                locker.ExitReadLock();
+                locker.ExitUpgradeableReadLock();
             }
             return index;
         }
@@ -156,33 +156,33 @@ namespace NoiseEngine.Jobs {
         }
 
         public T[] ToArray() {
-            locker.EnterReadLock();
+            locker.EnterUpgradeableReadLock();
             T[] result;
             try {
                 result = list.ToArray();
             } finally {
-                locker.ExitReadLock();
+                locker.ExitUpgradeableReadLock();
             }
             return result;
         }
 
         public List<T> ToList() {
-            locker.EnterReadLock();
+            locker.EnterUpgradeableReadLock();
             List<T> result;
             try {
                 result = new List<T>(list);
             } finally {
-                locker.ExitReadLock();
+                locker.ExitUpgradeableReadLock();
             }
             return result;
         }
 
         public void CopyTo(Array array, int index) {
-            locker.EnterReadLock();
+            locker.EnterUpgradeableReadLock();
             try {
                 ((IList)list).CopyTo(array, index);
             } finally {
-                locker.ExitReadLock();
+                locker.ExitUpgradeableReadLock();
             }
         }
 

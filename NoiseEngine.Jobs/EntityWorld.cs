@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Threading;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Threading;
 
 namespace NoiseEngine.Jobs {
-    public class EntityWorld {
+    public class EntityWorld : IDisposable {
 
         private static uint nextId = 0;
 
@@ -18,15 +19,21 @@ namespace NoiseEngine.Jobs {
         private readonly ConcurrentDictionary<Entity, EntityGroup> entityToGroup = new ConcurrentDictionary<Entity, EntityGroup>();
 
         private ulong nextEntityId = 1;
+        private AtomicBool isDisposed;
 
-        internal static EntityWorld Empty { get; } = new EntityWorld();
+        internal static EntityWorld Empty { get; } = null!;
 
         internal ComponentsStorage<Entity> ComponentsStorage { get; } = new ComponentsStorage<Entity>();
 
         public uint Id { get; }
+        public bool IsDestroyed => isDisposed;
 
         public EntityWorld() {
             Id = Interlocked.Increment(ref nextId);
+        }
+
+        ~EntityWorld() {
+            Dispose();
         }
 
         /// <summary>
@@ -88,9 +95,7 @@ namespace NoiseEngine.Jobs {
         /// <param name="system">Entity system object</param>
         /// <exception cref="InvalidOperationException">Entity world already contains this <see cref="EntitySystemBase"/></exception>
         public void AddSystem<T>(T system) where T : EntitySystemBase {
-            AddSystemWorker(system);
-
-            system.InternalInitialize(this, null);
+            AddSystemWorker(system, null);
             system.InternalStart();
         }
 
@@ -103,24 +108,10 @@ namespace NoiseEngine.Jobs {
         /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When null, the schedule is not used.</param>
         /// <exception cref="InvalidOperationException">Entity world already contains this <see cref="EntitySystemBase"/></exception>
         public void AddSystem<T>(T system, EntitySchedule schedule, double? cycleTime = null) where T : EntitySystemBase {
-            AddSystemWorker(system);
+            AddSystemWorker(system, schedule);
 
-            system.InternalInitialize(this, schedule);
             system.InternalStart();
             system.CycleTime = cycleTime;
-        }
-
-        /// <summary>
-        /// Removes T system from this world
-        /// </summary>
-        /// <typeparam name="T">Entity system</typeparam>
-        public void RemoveSystem<T>(T system) where T : EntitySystemBase {
-            if (!HasSystem(system))
-                return;
-
-            systems.Remove(system);
-            if (typeToSystems.TryGetValue(typeof(T), out IList? list))
-                list.Remove(system);
         }
 
         /// <summary>
@@ -159,7 +150,48 @@ namespace NoiseEngine.Jobs {
             return ((ConcurrentList<T>)typeToSystems[typeof(T)]).ToArray();
         }
 
+        /// <summary>
+        /// Disposes this object and all systems.
+        /// </summary>
+        public void Dispose() {
+            if (isDisposed.Exchange(true))
+                return;
+
+            foreach (EntitySystemBase system in systems)
+                system.Dispose();
+
+            systems.Clear();
+            queries.Clear();
+            typeToSystems.Clear();
+            groups.Clear();
+            idToGroup.Clear();
+            entityToGroup.Clear();
+
+            ComponentsStorage.Clear();
+
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>A string that represents the current object.</returns>
+        public override string ToString() {
+            return $"{nameof(EntityWorld)}<{Id}>";
+        }
+
+        /// <summary>
+        /// Removes T system from this world
+        /// </summary>
+        /// <typeparam name="T">Entity system</typeparam>
+        internal void RemoveSystem<T>(T system) where T : EntitySystemBase {
+            systems.Remove(system);
+            if (typeToSystems.TryGetValue(typeof(T), out IList? list))
+                list.Remove(system);
+        }
+
         internal void AddQuery(EntityQueryBase query) {
+            AssertIsNotDisposed();
             queries.Add(query);
         }
 
@@ -224,6 +256,7 @@ namespace NoiseEngine.Jobs {
         }
 
         private Entity NewEntityWorker() {
+            AssertIsNotDisposed();
             return new Entity(Interlocked.Increment(ref nextEntityId));
         }
 
@@ -233,14 +266,25 @@ namespace NoiseEngine.Jobs {
             group.AddEntity(entity);
         }
 
-        private void AddSystemWorker<T>(T system) where T : EntitySystemBase {
+        private void AddSystemWorker<T>(T system, EntitySchedule? schedule) where T : EntitySystemBase {
+            AssertIsNotDisposed();
+            system.AssertIsNotDestroyed();
+
             if (HasSystem(system))
-                throw new InvalidOperationException($"Entity world already contains this {nameof(T)}.");
+                throw new InvalidOperationException($"{ToString} already contains this {nameof(T)}.");
+
+            if (!system.InternalInitialize(this, schedule))
+                throw new InvalidOperationException($"{system} is initialized.");
 
             systems.Add(system);
             typeToSystems.GetOrAdd(typeof(T), (Type type) => {
                 return new ConcurrentList<T>();
             }).Add(system);
+        }
+
+        private void AssertIsNotDisposed() {
+            if (IsDestroyed)
+                throw new InvalidOperationException($"{ToString} is disposed.");
         }
 
     }

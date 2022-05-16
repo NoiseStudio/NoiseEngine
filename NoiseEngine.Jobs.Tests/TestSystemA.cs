@@ -5,6 +5,7 @@
         private int b = -6;
 
         public int C { get; private set; } = -11;
+        public bool IsTerminated { get; private set; }
 
         protected override void OnInitialize() {
             a = 0;
@@ -27,6 +28,10 @@
 
         protected override void OnStop() {
             a += 100;
+        }
+
+        protected override void OnTerminate() {
+            IsTerminated = true;
         }
 
     }

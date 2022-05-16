@@ -17,11 +17,14 @@
             OnUpdateEntity(entity);
         }
 
-        internal override void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
+        internal override bool InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
+            if (!base.InternalInitialize(world, schedule))
+                return false;
+
             queryGeneric = new EntityQuery(world, true, Filter); // TODO: add real isReadOnly param
             query = queryGeneric;
 
-            base.InternalInitialize(world, schedule);
+            return true;
         }
 
         /// <summary>
