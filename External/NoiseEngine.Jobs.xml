@@ -159,17 +159,12 @@
             <param name="right"><see cref="T:NoiseEngine.Jobs.Entity"/></param>
             <returns>False if left Entity is an instance of right Entity and equals the value of this instance or when not returns true</returns>
         </member>
-        <member name="M:NoiseEngine.Jobs.EntityFilter.CompareComponents(System.Collections.ObjectModel.ReadOnlyCollection{System.Type})">
+        <member name="M:NoiseEngine.Jobs.EntityFilter.CompareComponents(System.Collections.Generic.IReadOnlyList{System.Type})">
             <summary>
             Checks that the types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/> meet the requirements of this filter.
             </summary>
             <param name="componentTypes">Types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/>.</param>
             <returns>If <see langword="true"/>, then the types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/> meet the filter's requirements, if <see langword="false"/>, they do not.</returns>
-        </member>
-        <member name="M:NoiseEngine.Jobs.EntityQueryBase.Dispose">
-            <summary>
-            This <see cref="T:NoiseEngine.Jobs.EntityQueryBase"/> will be disposed
-            </summary>
         </member>
         <member name="M:NoiseEngine.Jobs.EntityQuery.GetEnumerator">
             <summary>
@@ -198,9 +193,18 @@
             <param name="minPackageSize">The minimum size of an UpdateEntity package shared between threads</param>
             <exception cref="T:System.InvalidOperationException">Error when using zero or negative threads and when the minimum package size is greater than the maximum package size</exception>
         </member>
-        <member name="M:NoiseEngine.Jobs.EntitySchedule.Dispose">
+        <member name="M:NoiseEngine.Jobs.EntityScheduleWorker.#ctor(System.Nullable{System.Int32},System.Nullable{System.Int32},System.Nullable{System.Int32})">
             <summary>
-            This <see cref="T:NoiseEngine.Jobs.EntitySchedule"/> will be deactivated and disposed
+            Creates new Entity Schedule Worker
+            </summary>
+            <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
+            <param name="maxPackageSize">The maximum size of an UpdateEntity package shared between threads</param>
+            <param name="minPackageSize">The minimum size of an UpdateEntity package shared between threads</param>
+            <exception cref="T:System.InvalidOperationException">Error when using zero or negative threads and when the minimum package size is greater than the maximum package size</exception>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityScheduleWorker.Dispose">
+            <summary>
+            This <see cref="T:NoiseEngine.Jobs.EntityScheduleWorker"/> will be deactivated and disposed
             </summary>
         </member>
         <member name="M:NoiseEngine.Jobs.EntitySystemBase.ExecuteAndWait">
@@ -254,11 +258,10 @@
             </summary>
             <param name="system"><see cref="T:NoiseEngine.Jobs.EntitySystemBase"/> remove for dependencies.</param>
         </member>
-        <member name="M:NoiseEngine.Jobs.EntitySystemBase.ToString">
+        <member name="M:NoiseEngine.Jobs.EntitySystemBase.Dispose">
             <summary>
-            Returns a string that represents the current system
+            Disposes this object.
             </summary>
-            <returns>A string that represents the current system</returns>
         </member>
         <member name="M:NoiseEngine.Jobs.EntitySystemBase.OnInitialize">
             <summary>
@@ -358,12 +361,6 @@
             <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When null, the schedule is not used.</param>
             <exception cref="T:System.InvalidOperationException">Entity world already contains this <see cref="T:NoiseEngine.Jobs.EntitySystemBase"/></exception>
         </member>
-        <member name="M:NoiseEngine.Jobs.EntityWorld.RemoveSystem``1(``0)">
-            <summary>
-            Removes T system from this world
-            </summary>
-            <typeparam name="T">Entity system</typeparam>
-        </member>
         <member name="M:NoiseEngine.Jobs.EntityWorld.HasSystem``1(``0)">
             <summary>
             Checks if this entity world has T system
@@ -392,7 +389,24 @@
             <typeparam name="T"><see cref="T:NoiseEngine.Jobs.EntitySystemBase"/> type</typeparam>
             <returns>Array of <see cref="T:NoiseEngine.Jobs.EntitySystemBase"/></returns>
         </member>
-        <member name="M:NoiseEngine.Jobs.IEntityFilter.CompareComponents(System.Collections.ObjectModel.ReadOnlyCollection{System.Type})">
+        <member name="M:NoiseEngine.Jobs.EntityWorld.Dispose">
+            <summary>
+            Disposes this object and all systems.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.ToString">
+            <summary>
+            Returns a string that represents the current object.
+            </summary>
+            <returns>A string that represents the current object.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.RemoveSystem``1(``0)">
+            <summary>
+            Removes T system from this world
+            </summary>
+            <typeparam name="T">Entity system</typeparam>
+        </member>
+        <member name="M:NoiseEngine.Jobs.IEntityFilter.CompareComponents(System.Collections.Generic.IReadOnlyList{System.Type})">
             <summary>
             Checks that the types of <see cref="T:NoiseEngine.Jobs.IEntityComponent"/> meet the requirements of this filter.
             </summary>
@@ -470,9 +484,16 @@
             <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
             <exception cref="T:System.ArgumentOutOfRangeException">Error when using zero or negative threads</exception>
         </member>
-        <member name="M:NoiseEngine.Jobs.JobsInvoker.Dispose">
+        <member name="M:NoiseEngine.Jobs.JobsInvokerWorker.#ctor(System.Nullable{System.Int32})">
             <summary>
-            This <see cref="T:NoiseEngine.Jobs.JobsInvoker"/> will be deactivated and disposed
+            Creates new <see cref="T:NoiseEngine.Jobs.JobsInvokerWorker"/>
+            </summary>
+            <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Error when using zero or negative threads</exception>
+        </member>
+        <member name="M:NoiseEngine.Jobs.JobsInvokerWorker.Dispose">
+            <summary>
+            This <see cref="T:NoiseEngine.Jobs.JobsInvokerWorker"/> will be deactivated and disposed
             </summary>
         </member>
         <member name="M:NoiseEngine.Jobs.JobsWorld.#ctor(NoiseEngine.Jobs.JobsInvoker,System.UInt32[],System.Nullable{NoiseEngine.Jobs.JobTime})">
