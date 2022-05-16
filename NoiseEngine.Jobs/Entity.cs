@@ -205,6 +205,96 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
+        /// Replaces T1 component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T1">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T2">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T3">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="query"><see cref="EntityQuery"/> which operating on this T1 component</param>
+        /// <param name="component">New component</param>
+        public void Set<T1, T2, T3>(EntityQuery<T1, T2, T3> query, T1 component)
+            where T1 : struct, IEntityComponent
+            where T2 : struct, IEntityComponent
+            where T3 : struct, IEntityComponent {
+            query.SetComponent(this, component);
+        }
+
+        /// <summary>
+        /// Replaces T1 component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T1">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T2">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T3">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="system">Entity system which operating on this T1 component</param>
+        /// <param name="component">New component</param>
+        public void Set<T1, T2, T3>(EntitySystem<T1, T2, T3> system, T1 component)
+            where T1 : struct, IEntityComponent
+            where T2 : struct, IEntityComponent
+            where T3 : struct, IEntityComponent {
+            Set(system.queryGeneric!, component);
+        }
+
+        /// <summary>
+        /// Replaces T2 component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T1">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T2">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T3">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="query"><see cref="EntityQuery"/> which operating on this T2 component</param>
+        /// <param name="component">New component</param>
+        public void Set<T1, T2, T3>(EntityQuery<T1, T2, T3> query, T2 component)
+            where T1 : struct, IEntityComponent
+            where T2 : struct, IEntityComponent
+            where T3 : struct, IEntityComponent {
+            query.SetComponent(this, component);
+        }
+
+        /// <summary>
+        /// Replaces T2 component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T1">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T2">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T3">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="system">Entity system which operating on this T2 component</param>
+        /// <param name="component">New component</param>
+        public void Set<T1, T2, T3>(EntitySystem<T1, T2, T3> system, T2 component)
+            where T1 : struct, IEntityComponent
+            where T2 : struct, IEntityComponent
+            where T3 : struct, IEntityComponent {
+            Set(system.queryGeneric!, component);
+        }
+
+        /// <summary>
+        /// Replaces T3 component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T1">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T2">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T3">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="query"><see cref="EntityQuery"/> which operating on this T3 component</param>
+        /// <param name="component">New component</param>
+        public void Set<T1, T2, T3>(EntityQuery<T1, T2, T3> query, T3 component)
+            where T1 : struct, IEntityComponent
+            where T2 : struct, IEntityComponent
+            where T3 : struct, IEntityComponent {
+            query.SetComponent(this, component);
+        }
+
+        /// <summary>
+        /// Replaces T3 component assigned to this entity
+        /// </summary>
+        /// <typeparam name="T1">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T2">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <typeparam name="T3">Struct inheriting from <see cref="IEntityComponent"/></typeparam>
+        /// <param name="system">Entity system which operating on this T3 component</param>
+        /// <param name="component">New component</param>
+        public void Set<T1, T2, T3>(EntitySystem<T1, T2, T3> system, T3 component)
+            where T1 : struct, IEntityComponent
+            where T2 : struct, IEntityComponent
+            where T3 : struct, IEntityComponent {
+            Set(system.queryGeneric!, component);
+        }
+
+        /// <summary>
         /// Destroys this entity
         /// </summary>
         /// <param name="world">Entity world assigned to this entity</param>
