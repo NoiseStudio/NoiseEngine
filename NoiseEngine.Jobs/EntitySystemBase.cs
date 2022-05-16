@@ -1,12 +1,11 @@
-﻿using System;
+﻿using NoiseEngine.Threading;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using NoiseEngine.Common;
-using NoiseEngine.Threading;
 
 namespace NoiseEngine.Jobs {
-    public abstract class EntitySystemBase : IDestroyable {
+    public abstract class EntitySystemBase : IDisposable {
 
         internal EntityQueryBase? query;
         internal double lastExecutionTime = Time.UtcMilliseconds;
@@ -20,7 +19,7 @@ namespace NoiseEngine.Jobs {
 
         private AtomicBool enabled = true;
         private AtomicBool isWorking;
-        private AtomicBool isDestroyed;
+        private AtomicBool isDisposed;
         private IEntityFilter? filter;
         private EntitySchedule? schedule;
         private double? cycleTime;
@@ -101,9 +100,9 @@ namespace NoiseEngine.Jobs {
             }
         }
 
-        public EntityWorld World { get; private set; } = EntityWorld.Empty;
+        public EntityWorld World => world;
         public bool IsWorking => isWorking;
-        public bool IsDestroyed => isDestroyed;
+        public bool IsDestroyed => isDisposed;
 
         protected int ThreadId {
             get {
@@ -130,8 +129,10 @@ namespace NoiseEngine.Jobs {
         protected double CycleTimeSeconds { get; private set; } = 1;
         protected float CycleTimeSecondsF { get; private set; } = 1;
 
+        private EntityWorld world = EntityWorld.Empty;
+
         ~EntitySystemBase() {
-            Destroy();
+            Dispose();
         }
 
         /// <summary>
@@ -254,10 +255,10 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
-        /// Destroys object. It is not required to call this method because resources are automatically released.
+        /// Disposes this object.
         /// </summary>
-        public void Destroy() {
-            if (isDestroyed.Exchange(true))
+        public void Dispose() {
+            if (isDisposed.Exchange(true))
                 return;
 
             Wait();
@@ -282,12 +283,15 @@ namespace NoiseEngine.Jobs {
             InternalUpdate();
         }
 
-        internal virtual void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
-            World = world;
+        internal virtual bool InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
+            if (Interlocked.Exchange(ref this.world, world) != EntityWorld.Empty)
+                return false;
+
             if (schedule != null)
                 Schedule = schedule;
 
             OnInitialize();
+            return true;
         }
 
         internal virtual void InternalStart() {
@@ -362,6 +366,11 @@ namespace NoiseEngine.Jobs {
             return true;
         }
 
+        internal void AssertIsNotDestroyed() {
+            if (isDisposed)
+                throw new InvalidOperationException($"The {ToString()} entity system is destroyed.");
+        }
+
         /// <summary>
         /// This method is executed when this system is creating
         /// </summary>
@@ -412,10 +421,9 @@ namespace NoiseEngine.Jobs {
         }
 
         private void AssertCouldExecute() {
+            AssertIsNotDestroyed();
             if (!Enabled)
-                throw new InvalidOperationException($"The {ToString()} system is disabled.");
-            if (isDestroyed)
-                throw new InvalidOperationException($"The {ToString()} system is destroyed.");
+                throw new InvalidOperationException($"The {ToString} entity system is disabled.");
         }
 
         private EntitySchedule GetEntityScheduleOrThrowException() {

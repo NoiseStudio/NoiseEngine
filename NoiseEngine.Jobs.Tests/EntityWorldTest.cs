@@ -34,18 +34,12 @@ namespace NoiseEngine.Jobs.Tests {
             EntityWorld world = new EntityWorld();
 
             TestSystemB system = new TestSystemB();
+
             world.AddSystem(system);
             Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
-        }
 
-        [Fact]
-        public void RemoveSystem() {
-            EntityWorld world = new EntityWorld();
-
-            TestSystemB system = new TestSystemB();
-            world.AddSystem(system);
-            world.RemoveSystem(system);
-            world.RemoveSystem(system);
+            system.Dispose();
+            Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
         }
 
         [Fact]
@@ -131,6 +125,26 @@ namespace NoiseEngine.Jobs.Tests {
 
             world.SetEntityGroup(entity, groupA);
             Assert.Equal(groupA, world.GetEntityGroup(entity));
+        }
+
+        [Fact]
+        public void Destroy() {
+            EntityWorld world = new EntityWorld();
+
+            for (int i = 0; i < 16; i++)
+                world.NewEntity();
+
+            TestSystemA system = new TestSystemA();
+            world.AddSystem(system);
+
+            system.ExecuteAndWait();
+
+            world.Dispose();
+
+            Assert.True(system.IsDestroyed);
+            Assert.True(system.IsTerminated);
+
+            Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
         }
 
     }

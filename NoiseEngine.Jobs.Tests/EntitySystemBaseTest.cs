@@ -164,7 +164,7 @@ namespace NoiseEngine.Jobs.Tests {
             world.AddSystem(system);
 
             system.ExecuteAndWait();
-            system.Destroy();
+            system.Dispose();
 
             Assert.True(system.IsDestroyed);
             Assert.True(system.IsTerminated);

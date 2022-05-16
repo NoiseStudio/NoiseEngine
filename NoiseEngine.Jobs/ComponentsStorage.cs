@@ -11,6 +11,10 @@ namespace NoiseEngine.Jobs {
             storage[key] = component;
         }
 
+        internal void Clear() {
+            storage.Clear();
+        }
+
         internal ConcurrentDictionary<TKey, T> AddStorage<T>() {
             return (ConcurrentDictionary<TKey, T>)storage.GetOrAdd(typeof(T), StorageDictionaryFactory<T>);
         }
