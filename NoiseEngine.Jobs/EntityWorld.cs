@@ -12,11 +12,13 @@ namespace NoiseEngine.Jobs {
         private static uint nextId = 0;
 
         private readonly ConcurrentList<EntitySystemBase> systems = new ConcurrentList<EntitySystemBase>();
-        private readonly ConcurrentList<EntityQueryBase> queries = new ConcurrentList<EntityQueryBase>();
         private readonly ConcurrentDictionary<Type, IList> typeToSystems = new ConcurrentDictionary<Type, IList>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
         private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
-        private readonly ConcurrentDictionary<Entity, EntityGroup> entityToGroup = new ConcurrentDictionary<Entity, EntityGroup>();
+        private readonly ConcurrentDictionary<Entity, EntityGroup> entityToGroup =
+            new ConcurrentDictionary<Entity, EntityGroup>();
+        private readonly ConcurrentHashSet<WeakReference<EntityQueryBase>> queries =
+            new ConcurrentHashSet<WeakReference<EntityQueryBase>>();
 
         private ulong nextEntityId = 1;
         private AtomicBool isDisposed;
@@ -190,12 +192,12 @@ namespace NoiseEngine.Jobs {
                 list.Remove(system);
         }
 
-        internal void AddQuery(EntityQueryBase query) {
+        internal void AddQuery(WeakReference<EntityQueryBase> query) {
             AssertIsNotDisposed();
             queries.Add(query);
         }
 
-        internal void RemoveQuery(EntityQueryBase query) {
+        internal void RemoveQuery(WeakReference<EntityQueryBase> query) {
             queries.Remove(query);
         }
 
@@ -227,8 +229,10 @@ namespace NoiseEngine.Jobs {
                 lock (groups)
                     groups.Add(group);
 
-                foreach (EntityQueryBase query in queries)
-                    query.RegisterGroup(group);
+                foreach (WeakReference<EntityQueryBase> queryReference in queries) {
+                    if (queryReference.TryGetTarget(out EntityQueryBase? query))
+                        query.RegisterGroup(group);
+                }
             }
 
             return group;

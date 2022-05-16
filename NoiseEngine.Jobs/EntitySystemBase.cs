@@ -17,6 +17,7 @@ namespace NoiseEngine.Jobs {
         private readonly Dictionary<EntitySystemBase, uint> dependenciesCyclesCount = new Dictionary<EntitySystemBase, uint>();
         private readonly ConcurrentList<EntitySystemBase> blockadeDependencies = new ConcurrentList<EntitySystemBase>();
 
+        private EntityWorld world = EntityWorld.Empty;
         private AtomicBool enabled = true;
         private AtomicBool isWorking;
         private AtomicBool isDisposed;
@@ -128,8 +129,6 @@ namespace NoiseEngine.Jobs {
         protected float DeltaTimeF { get; private set; } = 1;
         protected double CycleTimeSeconds { get; private set; } = 1;
         protected float CycleTimeSecondsF { get; private set; } = 1;
-
-        private EntityWorld world = EntityWorld.Empty;
 
         ~EntitySystemBase() {
             Dispose();

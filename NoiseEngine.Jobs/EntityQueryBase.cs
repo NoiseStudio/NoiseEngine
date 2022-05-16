@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 
 namespace NoiseEngine.Jobs {
-    public abstract class EntityQueryBase : IDisposable {
+    public abstract class EntityQueryBase {
 
         internal readonly ConcurrentList<EntityGroup> groups = new ConcurrentList<EntityGroup>();
+
+        private readonly WeakReference<EntityQueryBase> queryWeakReference;
 
         private IEntityFilter? filter;
 
@@ -18,7 +20,6 @@ namespace NoiseEngine.Jobs {
             }
         }
 
-        public bool IsDisposed { get; private set; }
         public EntityWorld World { get; }
         public bool IsReadOnly { get; }
 
@@ -29,26 +30,12 @@ namespace NoiseEngine.Jobs {
             IsReadOnly = isReadOnly;
             Filter = filter;
 
-            World.AddQuery(this);
+            queryWeakReference = new WeakReference<EntityQueryBase>(this);
+            World.AddQuery(queryWeakReference);
         }
 
         ~EntityQueryBase() {
-            ReleaseResources();
-        }
-
-        /// <summary>
-        /// This <see cref="EntityQueryBase"/> will be disposed
-        /// </summary>
-        public void Dispose() {
-            lock (this) {
-                if (IsDisposed)
-                    return;
-
-                IsDisposed = true;
-            }
-
-            ReleaseResources();
-            GC.SuppressFinalize(this);
+            World.RemoveQuery(queryWeakReference);
         }
 
         internal virtual void RegisterGroup(EntityGroup group) {
@@ -83,10 +70,6 @@ namespace NoiseEngine.Jobs {
 
                 group.ReleaseWork();
             }
-        }
-
-        private void ReleaseResources() {
-            World.RemoveQuery(this);
         }
 
     }
