@@ -10,6 +10,8 @@ namespace NoiseEngine.Jobs {
 
         private IEntityFilter? filter;
 
+        public virtual IReadOnlyList<Type> WritableComponents { get; }
+
         public IEntityFilter? Filter {
             get {
                 return filter;
@@ -21,13 +23,14 @@ namespace NoiseEngine.Jobs {
         }
 
         public EntityWorld World { get; }
-        public bool IsReadOnly { get; }
 
         public IEnumerable<Entity> Entities => GetEntityEnumerable();
 
-        public EntityQueryBase(EntityWorld world, bool isReadOnly, IEntityFilter? filter = null) {
+        public EntityQueryBase(
+            EntityWorld world, IReadOnlyList<Type>? writableComponents = null, IEntityFilter? filter = null
+        ) {
             World = world;
-            IsReadOnly = isReadOnly;
+            WritableComponents = writableComponents ?? Array.Empty<Type>();
             Filter = filter;
 
             queryWeakReference = new WeakReference<EntityQueryBase>(this);
@@ -47,7 +50,7 @@ namespace NoiseEngine.Jobs {
             foreach (EntityGroup group in groups) {
                 group.OrderWorkAndWait();
 
-                if (IsReadOnly) {
+                if (WritableComponents.Count == 0) {
                     for (int i = 0; i < group.Entities.Count; i++) {
                         Entity entity = group.Entities[i];
                         if (entity != Entity.Empty)

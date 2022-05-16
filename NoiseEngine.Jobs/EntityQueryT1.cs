@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System;
 
 namespace NoiseEngine.Jobs {
     public class EntityQuery<T> : EntityQueryBase, IEnumerable<(Entity entity, T component)>
@@ -9,8 +10,11 @@ namespace NoiseEngine.Jobs {
 
         internal readonly ConcurrentDictionary<Entity, T> components1;
 
-        public EntityQuery(EntityWorld world, bool isReadOnly, IEntityFilter? filter = null) :
-            base(world, isReadOnly, filter) {
+        public EntityQuery(
+            EntityWorld world, IReadOnlyList<Type>? writableComponents = null, IEntityFilter? filter = null
+        ) :
+            base(world, writableComponents, filter)
+        {
             components1 = world.ComponentsStorage.AddStorage<T>();
         }
 

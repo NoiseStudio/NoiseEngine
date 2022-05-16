@@ -106,7 +106,10 @@ namespace NoiseEngine.Jobs {
 
                 while (packages.TryDequeue(out SchedulePackage package)) {
                     EntityQueryBase query = package.EntitySystem.query!;
-                    if (!query.IsReadOnly && !package.EntityGroup.TryEnterWriteLock(package.PackageStartIndex)) {
+                    if (
+                        query.WritableComponents.Count != 0 &&
+                        !package.EntityGroup.TryEnterWriteLock(package.PackageStartIndex)
+                    ) {
                         if (packages.Count > 0) {
                             packages.Enqueue(package);
                             continue;
@@ -121,7 +124,7 @@ namespace NoiseEngine.Jobs {
                             package.EntitySystem.InternalUpdateEntity(entity);
                     }
 
-                    if (!query.IsReadOnly)
+                    if (query.WritableComponents.Count != 0)
                         package.EntityGroup.ExitWriteLock(package.PackageStartIndex);
 
                     package.EntityGroup.ReleaseWork();

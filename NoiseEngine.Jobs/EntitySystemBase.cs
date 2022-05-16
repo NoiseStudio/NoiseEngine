@@ -27,6 +27,8 @@ namespace NoiseEngine.Jobs {
         private bool usesSchedule;
         private int ongoingWork;
 
+        public virtual IReadOnlyList<Type> WritableComponents { get; } = Array.Empty<Type>();
+
         public double? CycleTime {
             get => cycleTime;
             set {

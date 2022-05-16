@@ -1,11 +1,15 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace NoiseEngine.Jobs {
     public class EntityQuery : EntityQueryBase, IEnumerable<Entity> {
 
-        public EntityQuery(EntityWorld world, bool isReadOnly, IEntityFilter? filter = null) :
-            base(world, isReadOnly, filter) {
+        public EntityQuery(
+            EntityWorld world, IReadOnlyList<Type>? writableComponents = null, IEntityFilter? filter = null
+        ) :
+            base(world, writableComponents, filter)
+        {
         }
 
         /// <summary>
