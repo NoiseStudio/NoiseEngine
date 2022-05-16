@@ -110,7 +110,7 @@ namespace NoiseEngine.Jobs {
                 EntitySchedule? schedule = Schedule;
                 if (schedule == null)
                     return 0;
-                if (schedule.threadIds.TryGetValue(Environment.CurrentManagedThreadId, out int threadId))
+                if (schedule.ThreadIds.TryGetValue(Environment.CurrentManagedThreadId, out int threadId))
                     return threadId;
                 return 0;
             }
@@ -121,7 +121,7 @@ namespace NoiseEngine.Jobs {
                 EntitySchedule? schedule = Schedule;
                 if (schedule == null)
                     return 1;
-                return schedule.threadIdCount;
+                return schedule.ThreadIdCount;
             }
         }
 
