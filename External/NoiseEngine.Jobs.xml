@@ -123,6 +123,66 @@
             <param name="system">Entity system which operating on this T2 component</param>
             <param name="component">New component</param>
         </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``3(NoiseEngine.Jobs.EntityQuery{``0,``1,``2},``0)">
+            <summary>
+            Replaces T1 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T3">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="query"><see cref="T:NoiseEngine.Jobs.EntityQuery"/> which operating on this T1 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``3(NoiseEngine.Jobs.EntitySystem{``0,``1,``2},``0)">
+            <summary>
+            Replaces T1 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T3">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="system">Entity system which operating on this T1 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``3(NoiseEngine.Jobs.EntityQuery{``0,``1,``2},``1)">
+            <summary>
+            Replaces T2 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T3">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="query"><see cref="T:NoiseEngine.Jobs.EntityQuery"/> which operating on this T2 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``3(NoiseEngine.Jobs.EntitySystem{``0,``1,``2},``1)">
+            <summary>
+            Replaces T2 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T3">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="system">Entity system which operating on this T2 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``3(NoiseEngine.Jobs.EntityQuery{``0,``1,``2},``2)">
+            <summary>
+            Replaces T3 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T3">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="query"><see cref="T:NoiseEngine.Jobs.EntityQuery"/> which operating on this T3 component</param>
+            <param name="component">New component</param>
+        </member>
+        <member name="M:NoiseEngine.Jobs.Entity.Set``3(NoiseEngine.Jobs.EntitySystem{``0,``1,``2},``2)">
+            <summary>
+            Replaces T3 component assigned to this entity
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T3">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="system">Entity system which operating on this T3 component</param>
+            <param name="component">New component</param>
+        </member>
         <member name="M:NoiseEngine.Jobs.Entity.Destroy(NoiseEngine.Jobs.EntityWorld)">
             <summary>
             Destroys this entity
@@ -179,6 +239,12 @@
             <returns>An enumerator that can be used to iterate through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.</returns>
         </member>
         <member name="M:NoiseEngine.Jobs.EntityQuery`2.GetEnumerator">
+            <summary>
+            Returns an enumerator that iterates through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.
+            </summary>
+            <returns>An enumerator that can be used to iterate through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityQuery`3.GetEnumerator">
             <summary>
             Returns an enumerator that iterates through this <see cref="T:NoiseEngine.Jobs.EntityQuery"/>.
             </summary>
@@ -319,6 +385,15 @@
             <param name="component1">Component of the operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
             <param name="component2">Component of the operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
         </member>
+        <member name="M:NoiseEngine.Jobs.EntitySystem`3.OnUpdateEntity(NoiseEngine.Jobs.Entity,`0,`1,`2)">
+            <summary>
+            This method is executed every cycle of this system on every <see cref="T:NoiseEngine.Jobs.Entity"/> assigned to this system
+            </summary>
+            <param name="entity">Operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <param name="component1">Component of the operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <param name="component2">Component of the operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+            <param name="component3">Component of the operated <see cref="T:NoiseEngine.Jobs.Entity"/></param>
+        </member>
         <member name="M:NoiseEngine.Jobs.EntityWorld.NewEntity">
             <summary>
             Creates new entity in this entity world
@@ -341,6 +416,18 @@
             <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
             <param name="component1">Component being added</param>
             <param name="component2">Component being added</param>
+            <returns><see cref="T:NoiseEngine.Jobs.Entity"/></returns>
+        </member>
+        <member name="M:NoiseEngine.Jobs.EntityWorld.NewEntity``3(``0,``1,``1)">
+            <summary>
+            Creates new entity in this entity world
+            </summary>
+            <typeparam name="T1">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T2">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <typeparam name="T3">Struct inheriting from <see cref="T:NoiseEngine.Jobs.IEntityComponent"/></typeparam>
+            <param name="component1">Component being added</param>
+            <param name="component2">Component being added</param>
+            <param name="component3">Component being added</param>
             <returns><see cref="T:NoiseEngine.Jobs.Entity"/></returns>
         </member>
         <member name="M:NoiseEngine.Jobs.EntityWorld.AddSystem``1(``0)">
