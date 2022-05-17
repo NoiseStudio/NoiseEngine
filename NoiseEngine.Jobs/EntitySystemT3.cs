@@ -22,14 +22,11 @@
                 queryGeneric!.components3![entity]);
         }
 
-        internal override bool InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
-            if (!base.InternalInitialize(world, schedule))
-                return false;
+        internal override void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
+            base.InternalInitialize(world, schedule);
 
             queryGeneric = new EntityQuery<T1, T2, T3>(world, WritableComponents, Filter);
             query = queryGeneric;
-
-            return true;
         }
 
         /// <summary>

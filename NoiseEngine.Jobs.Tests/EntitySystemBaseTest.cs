@@ -16,7 +16,7 @@ namespace NoiseEngine.Jobs.Tests {
             TestSystemB system = new TestSystemB();
             Assert.Throws<InvalidOperationException>(() => system.TryExecuteParallelAndWait());
 
-            world.AddSystem(system, schedule);
+            system.Initialize(world, schedule);
 
             Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
@@ -39,7 +39,7 @@ namespace NoiseEngine.Jobs.Tests {
             world.NewEntity(new TestComponentA());
 
             TestSystemA system = new TestSystemA();
-            world.AddSystem(system);
+            system.Initialize(world);
 
             system.TryExecuteAndWait();
 
@@ -61,8 +61,8 @@ namespace NoiseEngine.Jobs.Tests {
 
             TestSystemA systemA = new TestSystemA();
             TestSystemB systemB = new TestSystemB();
-            world.AddSystem(systemA, schedule);
-            world.AddSystem(systemB, schedule);
+            systemA.Initialize(world, schedule);
+            systemB.Initialize(world, schedule);
 
             systemB.TryExecuteAndWait();
             systemB.AddDependency(systemA);
@@ -87,8 +87,8 @@ namespace NoiseEngine.Jobs.Tests {
 
             TestSystemA systemA = new TestSystemA();
             TestSystemB systemB = new TestSystemB();
-            world.AddSystem(systemA);
-            world.AddSystem(systemB);
+            systemA.Initialize(world);
+            systemB.Initialize(world);
 
             systemB.TryExecuteAndWait();
             systemB.AddDependency(systemA);
@@ -113,7 +113,7 @@ namespace NoiseEngine.Jobs.Tests {
             }
 
             TestSystemThreadId system = new TestSystemThreadId();
-            world.AddSystem(system, schedule);
+            system.Initialize(world, schedule);
 
             system.TryExecuteParallelAndWait();
             Assert.Equal(262204 / threadCount, system.AverageTestComponentAAValue);
@@ -130,7 +130,7 @@ namespace NoiseEngine.Jobs.Tests {
             }
 
             TestSystemCounter system = new TestSystemCounter();
-            world.AddSystem(system);
+            system.Initialize(world);
 
             system.ExecuteAndWait();
             Assert.Equal(64, system.EntityCount);
@@ -161,13 +161,26 @@ namespace NoiseEngine.Jobs.Tests {
                 world.NewEntity();
 
             TestSystemA system = new TestSystemA();
-            world.AddSystem(system);
+            system.Initialize(world);
 
             system.ExecuteAndWait();
             system.Dispose();
 
             Assert.True(system.IsDestroyed);
             Assert.True(system.IsTerminated);
+        }
+
+        [Fact]
+        public void Initialize() {
+            EntityWorld world = new EntityWorld();
+
+            TestSystemB system = new TestSystemB();
+
+            system.Initialize(world);
+            Assert.Throws<InvalidOperationException>(() => system.Initialize(world));
+
+            system.Dispose();
+            Assert.Throws<InvalidOperationException>(() => system.Initialize(world));
         }
 
     }

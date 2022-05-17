@@ -18,7 +18,7 @@ namespace NoiseEngine.Jobs {
         private readonly ConcurrentList<EntitySystemBase> blockadeDependencies = new ConcurrentList<EntitySystemBase>();
 
         private EntityWorld world = EntityWorld.Empty;
-        private AtomicBool enabled = true;
+        private AtomicBool enabled;
         private AtomicBool isWorking;
         private AtomicBool isDisposed;
         private IEntityFilter? filter;
@@ -277,6 +277,36 @@ namespace NoiseEngine.Jobs {
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Initialize this <see cref="EntitySystem"/> on given <see cref="EntityWorld"/>.
+        /// </summary>
+        /// <param name="world"><see cref="EntityWorld"/> to initialize.</param>
+        /// <exception cref="InvalidOperationException"><see cref="EntityWorld"/> already contains
+        /// this <see cref="EntitySystemBase"/>.</exception>
+        public void Initialize(EntityWorld world) {
+            InternalInitialize(world, null);
+
+            world.AddSystem(this);
+            Enabled = true;
+        }
+
+        /// <summary>
+        /// Initialize this <see cref="EntitySystem"/> on given <see cref="EntityWorld"/>.
+        /// </summary>
+        /// <param name="world"><see cref="EntityWorld"/> to initialize.</param>
+        /// <param name="schedule"><see cref="EntitySchedule"/> managing this <see cref="EntitySystem"/>.</param>
+        /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule.
+        /// When null, the schedule is not used.</param>
+        /// <exception cref="InvalidOperationException"><see cref="EntityWorld"/> already contains
+        /// this <see cref="EntitySystemBase"/>.</exception>
+        public void Initialize(EntityWorld world, EntitySchedule schedule, double? cycleTime = null) {
+            InternalInitialize(world, schedule);
+            CycleTime = cycleTime;
+
+            world.AddSystem(this);
+            Enabled = true;
+        }
+
         internal abstract void InternalUpdateEntity(Entity entity);
 
         internal virtual void InternalExecute() {
@@ -284,15 +314,16 @@ namespace NoiseEngine.Jobs {
             InternalUpdate();
         }
 
-        internal virtual bool InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
+        internal virtual void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
+            AssertIsNotDestroyed();
+
             if (Interlocked.Exchange(ref this.world, world) != EntityWorld.Empty)
-                return false;
+                throw new InvalidOperationException($"{ToString} is initialized.");
 
             if (schedule != null)
                 Schedule = schedule;
 
             OnInitialize();
-            return true;
         }
 
         internal virtual void InternalStart() {

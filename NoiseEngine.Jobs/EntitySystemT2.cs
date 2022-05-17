@@ -20,14 +20,11 @@
             OnUpdateEntity(entity, queryGeneric!.components1![entity], queryGeneric!.components2![entity]);
         }
 
-        internal override bool InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
-            if (!base.InternalInitialize(world, schedule))
-                return false;
+        internal override void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
+            base.InternalInitialize(world, schedule);
 
             queryGeneric = new EntityQuery<T1, T2>(world, WritableComponents, Filter);
             query = queryGeneric;
-
-            return true;
         }
 
         /// <summary>

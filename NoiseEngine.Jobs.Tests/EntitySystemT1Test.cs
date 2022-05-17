@@ -12,7 +12,7 @@ namespace NoiseEngine.Jobs.Tests {
             world.NewEntity(new TestComponentA());
 
             TestSystemB system = new TestSystemB();
-            world.AddSystem(system);
+            system.Initialize(world);
 
             Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
