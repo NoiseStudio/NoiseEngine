@@ -11,14 +11,16 @@ namespace NoiseEngine.Systems {
             CommandBuffer = new CommandBuffer(graphicsDevice, camera);
         }
 
-        protected override void OnUpdate() {
-            CommandBuffer.Clear();
-        }
-
         protected override void OnUpdateEntity(
             Entity entity, TransformComponent transform, MeshRendererComponent meshRenderer, MaterialComponent material
         ) {
+            Logging.Log.Info(DeltaTime);
             CommandBuffer.DrawMesh(meshRenderer.Mesh, material.Material, transform.Matrix);
+        }
+
+        protected override void OnLateUpdate() {
+            CommandBuffer.Execute();
+            CommandBuffer.Clear();
         }
 
     }
