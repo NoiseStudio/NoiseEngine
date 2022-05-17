@@ -35,6 +35,13 @@ namespace NoiseEngine.Components {
 
         public Matrix4x4 Matrix { get; private set; }
 
+        public Float3 Left => Rotation * Float3.Left;
+        public Float3 Right => Rotation * Float3.Right;
+        public Float3 Up => Rotation * Float3.Up;
+        public Float3 Down => Rotation * Float3.Down;
+        public Float3 Front => Rotation * Float3.Front;
+        public Float3 Back => Rotation * Float3.Back;
+
         public TransformComponent(Float3 position, Quaternion rotation, Float3 scale) {
             this.position = position;
             this.rotation = rotation;
