@@ -10,12 +10,14 @@ using NoiseEngine.Systems;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
 namespace NoiseEngine {
     public class Application : IDisposable {
 
+        private readonly ConcurrentBag<Window> windows = new ConcurrentBag<Window>();
         private readonly ConcurrentBag<EntitySystemBase> frameDependentSystems = new ConcurrentBag<EntitySystemBase>();
         private readonly ManualResetEvent applicationEndEvent = new ManualResetEvent(false);
         private readonly EntitySchedule schedule;
@@ -32,6 +34,7 @@ namespace NoiseEngine {
         public PrimitiveCreator Primitive { get; }
 
         public bool IsDisposed => isDisposed;
+        public IEnumerable<Window> Windows => windows;
 
         public Application(Logger logger, GraphicsDevice graphicsDevice, EntitySchedule schedule, string title) {
             Logger = logger;
@@ -67,6 +70,8 @@ namespace NoiseEngine {
             Application application = new Application(logger, graphicsDevice, new EntitySchedule(), title);
             application.simpleCreated = true;
 
+            application.AddFrameDependentSystem(new CameraSystem());
+
             cameraEntity = application.CreateCamera(new Window(graphicsDevice, new UInt2(1280, 720), title));
             return application;
         }
@@ -96,22 +101,22 @@ namespace NoiseEngine {
         /// <returns><see cref="Entity"/> with <see cref="Camera"/>.</returns>
         public Entity CreateCamera(Window renderTarget) {
             TransformComponent transform = new TransformComponent(new Float3(0, 0, -5));
-            Entity entity = World.NewEntity(transform);
 
             Camera camera = new Camera(renderTarget) {
                 ProjectionType = ProjectionType.Perspective,
-                NearClipPlane = 1.0f,
+                NearClipPlane = 0.01f,
                 FarClipPlane = 1000.0f,
                 Position = transform.Position,
                 Rotation = transform.Rotation
             };
+            windows.Add(renderTarget);
 
             Thread windowThread = new Thread(RenderThreadWorker) {
                 Name = Title
             };
             windowThread.Start((renderTarget, camera));
 
-            return entity;
+            return World.NewEntity(transform, new CameraComponent(camera));
         }
 
         /// <summary>

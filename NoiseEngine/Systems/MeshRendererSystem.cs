@@ -14,7 +14,6 @@ namespace NoiseEngine.Systems {
         protected override void OnUpdateEntity(
             Entity entity, TransformComponent transform, MeshRendererComponent meshRenderer, MaterialComponent material
         ) {
-            Logging.Log.Info(DeltaTime);
             CommandBuffer.DrawMesh(meshRenderer.Mesh, material.Material, transform.Matrix);
         }
 
