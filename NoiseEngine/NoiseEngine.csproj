@@ -29,6 +29,9 @@
         <Reference Include="NoiseEngine.Common">
             <HintPath>../External/NoiseEngine.Common.dll</HintPath>
         </Reference>
+        <Reference Include="NoiseEngine.Inputs">
+            <HintPath>../External/NoiseEngine.Inputs.dll</HintPath>
+        </Reference>
         <Reference Include="NoiseEngine.InteropServices">
             <HintPath>../External/NoiseEngine.InteropServices.dll</HintPath>
         </Reference>
