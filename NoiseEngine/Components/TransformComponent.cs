@@ -5,35 +5,37 @@ using System.Text;
 namespace NoiseEngine.Components {
     public record struct TransformComponent : IEntityComponent {
 
-        private Float3 position;
-        private Quaternion rotation;
-        private Float3 scale;
+        private readonly Float3 position;
+        private readonly Quaternion rotation;
+        private readonly Float3 scale;
+
+        public static TransformComponent Default => new TransformComponent();
 
         public Float3 Position {
             get => position;
-            set {
+            init {
                 position = value;
-                CalculateMatrix();
+                Matrix = CalculateMatrix();
             }
         }
 
         public Quaternion Rotation {
             get => rotation;
-            set {
+            init {
                 rotation = value;
-                CalculateMatrix();
+                Matrix = CalculateMatrix();
             }
         }
 
         public Float3 Scale {
             get => scale;
-            set {
+            init {
                 scale = value;
-                CalculateMatrix();
+                Matrix = CalculateMatrix();
             }
         }
 
-        public Matrix4x4 Matrix { get; private set; }
+        public Matrix4x4 Matrix { get; private init; }
 
         public Float3 Left => Rotation * Float3.Left;
         public Float3 Right => Rotation * Float3.Right;
@@ -47,14 +49,16 @@ namespace NoiseEngine.Components {
             this.rotation = rotation;
             this.scale = scale;
 
-            Matrix = default;
-            CalculateMatrix();
+            Matrix = Matrix4x4.Translate(position) * Matrix4x4.Rotate(rotation) * Matrix4x4.Scale(scale);
         }
 
         public TransformComponent(Float3 position, Quaternion rotation) : this(position, rotation, Float3.One) {
         }
 
         public TransformComponent(Float3 position) : this(position, Quaternion.Identity) {
+        }
+
+        public TransformComponent() : this(Float3.Zero) {
         }
 
         /// <summary>
@@ -75,8 +79,8 @@ namespace NoiseEngine.Components {
             return Matrix.GetHashCode();
         }
 
-        private void CalculateMatrix() {
-            Matrix = Matrix4x4.Translate(Position) * Matrix4x4.Rotate(Rotation) * Matrix4x4.Scale(Scale);
+        private Matrix4x4 CalculateMatrix() {
+            return Matrix4x4.Translate(Position) * Matrix4x4.Rotate(Rotation) * Matrix4x4.Scale(Scale);
         }
 
         private bool PrintMembers(StringBuilder builder) {

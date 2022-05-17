@@ -2,6 +2,6 @@
 using NoiseEngine.Rendering;
 
 namespace NoiseEngine.Components {
-    public record struct MaterialComponent(Material Material) : IEntityComponent {
+    public readonly record struct MaterialComponent(Material Material) : IEntityComponent {
     }
 }
