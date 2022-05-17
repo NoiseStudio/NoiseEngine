@@ -14,7 +14,7 @@ namespace NoiseEngine.Jobs.Tests {
             world.NewEntity(new TestComponentA(), new TestComponentB());
 
             TestSystemC system = new TestSystemC();
-            world.AddSystem(system);
+            system.Initialize(world);
 
             Assert.Equal(0, entity.Get<TestComponentB>(world).A);
 

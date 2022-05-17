@@ -12,13 +12,14 @@ namespace NoiseEngine.Jobs {
         private static uint nextId = 0;
 
         private readonly ConcurrentList<EntitySystemBase> systems = new ConcurrentList<EntitySystemBase>();
-        private readonly ConcurrentDictionary<Type, IList> typeToSystems = new ConcurrentDictionary<Type, IList>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
         private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
         private readonly ConcurrentDictionary<Entity, EntityGroup> entityToGroup =
             new ConcurrentDictionary<Entity, EntityGroup>();
         private readonly ConcurrentHashSet<WeakReference<EntityQueryBase>> queries =
             new ConcurrentHashSet<WeakReference<EntityQueryBase>>();
+        private readonly ConcurrentDictionary<Type, ConcurrentList<EntitySystemBase>> typeToSystems =
+            new ConcurrentDictionary<Type, ConcurrentList<EntitySystemBase>>();
 
         private ulong nextEntityId = 1;
         private AtomicBool isDisposed;
@@ -117,38 +118,12 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
-        /// Adds T system to this world
-        /// </summary>
-        /// <typeparam name="T">Entity system type</typeparam>
-        /// <param name="system">Entity system object</param>
-        /// <exception cref="InvalidOperationException">Entity world already contains this <see cref="EntitySystemBase"/></exception>
-        public void AddSystem<T>(T system) where T : EntitySystemBase {
-            AddSystemWorker(system, null);
-            system.InternalStart();
-        }
-
-        /// <summary>
-        /// Adds T system to this world
-        /// </summary>
-        /// <typeparam name="T">Entity system type</typeparam>
-        /// <param name="system">Entity system object</param>
-        /// <param name="schedule"><see cref="EntitySchedule"/> managing this system.</param>
-        /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule. When null, the schedule is not used.</param>
-        /// <exception cref="InvalidOperationException">Entity world already contains this <see cref="EntitySystemBase"/></exception>
-        public void AddSystem<T>(T system, EntitySchedule schedule, double? cycleTime = null) where T : EntitySystemBase {
-            AddSystemWorker(system, schedule);
-
-            system.InternalStart();
-            system.CycleTime = cycleTime;
-        }
-
-        /// <summary>
         /// Checks if this entity world has T system
         /// </summary>
         /// <typeparam name="T">Entity system</typeparam>
         /// <returns>True when this entity world contains T system or false when not</returns>
         public bool HasSystem<T>(T system) where T : EntitySystemBase {
-            return systems.Contains(system);
+            return system.World == this;
         }
 
         /// <summary>
@@ -170,12 +145,12 @@ namespace NoiseEngine.Jobs {
         }
 
         /// <summary>
-        /// Returns T entity systems
+        /// Returns T entity systems.
         /// </summary>
-        /// <typeparam name="T"><see cref="EntitySystemBase"/> type</typeparam>
-        /// <returns>Array of <see cref="EntitySystemBase"/></returns>
-        public T[] GetSystems<T>() where T : EntitySystemBase {
-            return ((ConcurrentList<T>)typeToSystems[typeof(T)]).ToArray();
+        /// <typeparam name="T"><see cref="EntitySystemBase"/> type.</typeparam>
+        /// <returns><see cref="IReadOnlyList{T}"/> of <see cref="EntitySystemBase"/>.</returns>
+        public IReadOnlyList<T> GetSystems<T>() where T : EntitySystemBase {
+            return typeToSystems[typeof(T)].Cast<T>().ToArray();
         }
 
         /// <summary>
@@ -208,13 +183,16 @@ namespace NoiseEngine.Jobs {
             return $"{nameof(EntityWorld)}<{Id}>";
         }
 
-        /// <summary>
-        /// Removes T system from this world
-        /// </summary>
-        /// <typeparam name="T">Entity system</typeparam>
-        internal void RemoveSystem<T>(T system) where T : EntitySystemBase {
+        internal void AddSystem(EntitySystemBase system) {
+            AssertIsNotDisposed();
+
+            systems.Add(system);
+            typeToSystems.GetOrAdd(system.GetType(), static _ => new ConcurrentList<EntitySystemBase>()).Add(system);
+        }
+
+        internal void RemoveSystem(EntitySystemBase system) {
             systems.Remove(system);
-            if (typeToSystems.TryGetValue(typeof(T), out IList? list))
+            if (typeToSystems.TryGetValue(system.GetType(), out ConcurrentList<EntitySystemBase>? list))
                 list.Remove(system);
         }
 
@@ -294,22 +272,6 @@ namespace NoiseEngine.Jobs {
             EntityGroup group = GetGroupFromComponents(componentTypes);
             entityToGroup.GetOrAdd(entity, group);
             group.AddEntity(entity);
-        }
-
-        private void AddSystemWorker<T>(T system, EntitySchedule? schedule) where T : EntitySystemBase {
-            AssertIsNotDisposed();
-            system.AssertIsNotDestroyed();
-
-            if (HasSystem(system))
-                throw new InvalidOperationException($"{ToString} already contains this {nameof(T)}.");
-
-            if (!system.InternalInitialize(this, schedule))
-                throw new InvalidOperationException($"{system} is initialized.");
-
-            systems.Add(system);
-            typeToSystems.GetOrAdd(typeof(T), (Type type) => {
-                return new ConcurrentList<T>();
-            }).Add(system);
         }
 
         private void AssertIsNotDisposed() {

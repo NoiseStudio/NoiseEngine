@@ -30,26 +30,13 @@ namespace NoiseEngine.Jobs.Tests {
         }
 
         [Fact]
-        public void AddSystem() {
-            EntityWorld world = new EntityWorld();
-
-            TestSystemB system = new TestSystemB();
-
-            world.AddSystem(system);
-            Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
-
-            system.Dispose();
-            Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
-        }
-
-        [Fact]
         public void HasSystem() {
             EntityWorld world = new EntityWorld();
             TestSystemB system = new TestSystemB();
 
             Assert.False(world.HasSystem(system));
 
-            world.AddSystem(system);
+            system.Initialize(world);
             Assert.True(world.HasSystem(system));
         }
 
@@ -59,7 +46,7 @@ namespace NoiseEngine.Jobs.Tests {
 
             Assert.False(world.HasAnySystem<TestSystemB>());
 
-            world.AddSystem(new TestSystemB());
+            new TestSystemB().Initialize(world);
             Assert.True(world.HasAnySystem<TestSystemB>());
         }
 
@@ -67,18 +54,18 @@ namespace NoiseEngine.Jobs.Tests {
         public void GetSystem() {
             EntityWorld world = new EntityWorld();
             TestSystemB system = new TestSystemB();
-            world.AddSystem(system);
+            system.Initialize(world);
 
-            //Assert.Equal(system, world.GetSystem<TestSystemB>());
+            Assert.Equal(system, world.GetSystem<TestSystemB>());
         }
 
         [Fact]
         public void GetSystems() {
             EntityWorld world = new EntityWorld();
             TestSystemB system = new TestSystemB();
-            world.AddSystem(system);
+            system.Initialize(world);
 
-            TestSystemB[] systems = world.GetSystems<TestSystemB>();
+            IReadOnlyList<TestSystemB> systems = world.GetSystems<TestSystemB>();
             Assert.Single(systems);
 
             Assert.NotStrictEqual(systems, world.GetSystems<TestSystemB>());
@@ -135,7 +122,7 @@ namespace NoiseEngine.Jobs.Tests {
                 world.NewEntity();
 
             TestSystemA system = new TestSystemA();
-            world.AddSystem(system);
+            system.Initialize(world);
 
             system.ExecuteAndWait();
 
@@ -144,7 +131,7 @@ namespace NoiseEngine.Jobs.Tests {
             Assert.True(system.IsDestroyed);
             Assert.True(system.IsTerminated);
 
-            Assert.Throws<InvalidOperationException>(() => world.AddSystem(system));
+            Assert.Throws<InvalidOperationException>(() => new TestSystemA().Initialize(world));
         }
 
     }
