@@ -73,6 +73,7 @@ namespace NoiseEngine.Collections.Tests {
         [Fact]
         public void Insert() {
             List<int> list2 = new List<int>(TestArray);
+            ReadOnlySpan<int> span = list2.ToArray().AsSpan();
             FastList<int> list = new FastList<int>(TestArray);
 
             list2.Insert(4, 2);
