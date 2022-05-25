@@ -43,7 +43,6 @@ namespace NoiseEngine.Jobs {
         }
 
         public void RemoveEntity(Entity entity) {
-            entitiesToRemove.Enqueue(entity);
             OrderWorkAndWait();
 
             for (int i = 0; i < entities.Count; i++) {
@@ -55,6 +54,11 @@ namespace NoiseEngine.Jobs {
             clean = true;
 
             ReleaseWork();
+        }
+
+        public void RemoveEntityWithDestroyComponents(Entity entity) {
+            entitiesToRemove.Enqueue(entity);
+            RemoveEntity(entity);
         }
 
         public bool CompareSortedComponents(IReadOnlyList<Type> components) {

@@ -62,13 +62,13 @@ namespace NoiseEngine.Jobs {
             if (group.HasComponent(type))
                 throw new InvalidOperationException($"{ToString()} already has the {type.Name} component. Use the {nameof(Set)} method to replace this component.");
 
+            world.ComponentsStorage.AddComponent(this, component);
+
             List<Type> components = new List<Type>(group.ComponentTypes);
             components.Add(type);
 
             group.RemoveEntity(this);
             group = world.GetGroupFromComponents(components);
-
-            world.ComponentsStorage.AddComponent(this, component);
 
             world.SetEntityGroup(this, group);
             group.AddEntity(this);

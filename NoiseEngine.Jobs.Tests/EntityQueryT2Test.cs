@@ -10,7 +10,7 @@ namespace NoiseEngine.Jobs.Tests {
                 new EntityQuery<TestComponentA, TestComponentB>(world);
 
             world.NewEntity();
-            world.NewEntity(new TestComponentA());
+            world.NewEntity(new TestComponentA()).Add(world, new TestComponentB());
             world.NewEntity(new TestComponentB());
             world.NewEntity(new TestComponentA(), new TestComponentB());
 
@@ -18,7 +18,7 @@ namespace NoiseEngine.Jobs.Tests {
             foreach ((Entity, TestComponentA, TestComponentB) element in query)
                 count++;
 
-            Assert.Equal(1, count);
+            Assert.Equal(2, count);
         }
 
     }

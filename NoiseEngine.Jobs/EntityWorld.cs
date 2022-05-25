@@ -101,7 +101,7 @@ namespace NoiseEngine.Jobs {
         /// <param name="component2">Component being added</param>
         /// <param name="component3">Component being added</param>
         /// <returns><see cref="Entity"/></returns>
-        public Entity NewEntity<T1, T2, T3>(T1 component1, T2 component2, T2 component3)
+        public Entity NewEntity<T1, T2, T3>(T1 component1, T2 component2, T3 component3)
             where T1 : struct, IEntityComponent
             where T2 : struct, IEntityComponent
             where T3 : struct, IEntityComponent {
@@ -109,6 +109,7 @@ namespace NoiseEngine.Jobs {
 
             ComponentsStorage.AddComponent(entity, component1);
             ComponentsStorage.AddComponent(entity, component2);
+            ComponentsStorage.AddComponent(entity, component3);
 
             AddNewEntityToGroup(entity, new List<Type>() {
                 typeof(T1), typeof(T2), typeof(T3)
@@ -260,7 +261,7 @@ namespace NoiseEngine.Jobs {
 
         internal void DestroyEntity(Entity entity) {
             if (entityToGroup.TryRemove(entity, out EntityGroup? group))
-                group.RemoveEntity(entity);
+                group.RemoveEntityWithDestroyComponents(entity);
         }
 
         private Entity NewEntityWorker() {
