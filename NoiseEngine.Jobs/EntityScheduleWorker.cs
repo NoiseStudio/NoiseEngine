@@ -175,7 +175,7 @@ namespace NoiseEngine.Jobs {
             foreach (EntityGroup group in system.query!.groups) {
                 group.OrderWorkAndWait();
 
-                int entitiesPerPackage = Math.Clamp(group.Entities.Count / threadCount, minPackageSize, maxPackageSize);
+                int entitiesPerPackage = Math.Clamp(group.EntityCount / threadCount, minPackageSize, maxPackageSize);
                 for (int j = 0; j < group.Entities.Count;) {
                     group.OrderWork();
                     system.OrderWork();

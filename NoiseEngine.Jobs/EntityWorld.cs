@@ -9,7 +9,7 @@ using System.Threading;
 namespace NoiseEngine.Jobs {
     public class EntityWorld : IDisposable {
 
-        private static uint nextId = 0;
+        private static uint nextId;
 
         private readonly ConcurrentList<EntitySystemBase> systems = new ConcurrentList<EntitySystemBase>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
@@ -21,7 +21,7 @@ namespace NoiseEngine.Jobs {
         private readonly ConcurrentDictionary<Type, ConcurrentList<EntitySystemBase>> typeToSystems =
             new ConcurrentDictionary<Type, ConcurrentList<EntitySystemBase>>();
 
-        private ulong nextEntityId = 1;
+        private ulong nextEntityId;
         private AtomicBool isDisposed;
 
         internal static EntityWorld Empty { get; } = null!;

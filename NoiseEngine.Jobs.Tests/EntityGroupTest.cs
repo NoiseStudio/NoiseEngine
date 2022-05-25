@@ -18,9 +18,9 @@ namespace NoiseEngine.Jobs.Tests {
             Entity entity = new Entity(0);
             groupA.AddEntity(entity);
 
-            Assert.Single(groupA.Entities);
+            Assert.Equal(1, groupA.EntityCount);
             groupA.RemoveEntity(entity);
-            Assert.Empty(groupA.Entities);
+            Assert.Equal(0, groupA.EntityCount);
         }
 
         [Fact]
