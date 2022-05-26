@@ -79,5 +79,147 @@
             </summary>
             <returns>An array containing copies of the elements of the <see cref="T:NoiseEngine.Collections.Concurrent.ConcurrentList`1"/>.</returns>
         </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.Add(`0)">
+            <summary>
+            Adds <paramref name="item"/> to the <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+            <param name="item">Item to add.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.AddRange(System.Collections.Generic.ICollection{`0}[])">
+            <summary>
+            Adds <paramref name="items"/> to the <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+            <param name="items">Items to add.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.AddRange(System.Span{`0})">
+            <summary>
+            Adds <paramref name="items"/> to the <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+            <param name="items">Items to add.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.Clear">
+            <summary>
+            Removes all elements from the <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.Contains(`0)">
+            <summary>
+            Determines whether the <see cref="T:NoiseEngine.Collections.FastList`1"/> contains specific value.
+            </summary>
+            <param name="item">The item to locate in the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</param>
+            <returns><see langword="true"/> if <paramref name="item"/> is found in the <see cref="T:NoiseEngine.Collections.FastList`1"/>;
+            otherwise, <see langword="false"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.CopyTo(`0[],System.Int32)">
+            <summary>
+            Copies the elements of the <see cref="T:NoiseEngine.Collections.FastList`1"/> to an <paramref name="array"/>,
+            starting at a particular <paramref name="array"/> index.
+            </summary>
+            <param name="array">The one-dimensional <see cref="T:System.Array"/> that is the destination of the elements copied
+            from <see cref="T:NoiseEngine.Collections.FastList`1"/>. The <see cref="T:System.Array"/> must have zero-based indexing.</param>
+            <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.CopyTo(NoiseEngine.Collections.FastList{`0},System.Int32)">
+            <summary>
+            Copies the elements of the <see cref="T:NoiseEngine.Collections.FastList`1"/> to an <paramref name="list"/>,
+            starting at a particular <paramref name="list"/> index.
+            </summary>
+            <param name="list">The one-dimensional <see cref="T:NoiseEngine.Collections.FastList`1"/> that is the destination of the elements
+            copied from <see cref="T:NoiseEngine.Collections.FastList`1"/>. The <see cref="T:NoiseEngine.Collections.FastList`1"/> must have zero-based indexing.</param>
+            <param name="listIndex">The zero-based index in <paramref name="list"/> at which copying begins.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.GetEnumerator">
+            <summary>
+            Returns an enumerator that iterates through the <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+            <returns>An enumerator that can be used to iterate through the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.IndexOf(`0)">
+            <summary>
+            Determines the index of a specific <paramref name="item"/> in the <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+            <param name="item">The item to locate in the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</param>
+            <returns>The index of item if found in the <see cref="T:NoiseEngine.Collections.FastList`1"/>; otherwise, -1.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.Insert(System.Int32,`0)">
+            <summary>
+            Inserts an item to the <see cref="T:NoiseEngine.Collections.FastList`1"/> at the specified index.
+            </summary>
+            <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
+            <param name="item">The item to insert into the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.InsertRange(System.Int32,System.Collections.Generic.ICollection{`0}[])">
+            <summary>
+            Inserts an items to the <see cref="T:NoiseEngine.Collections.FastList`1"/> at the specified index.
+            </summary>
+            <param name="index">The zero-based index at which <paramref name="items"/> should be inserted.</param>
+            <param name="items">The item to insert into the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.InsertRange(System.Int32,System.Span{`0})">
+            <summary>
+            Inserts an items to the <see cref="T:NoiseEngine.Collections.FastList`1"/> at the specified index.
+            </summary>
+            <param name="index">The zero-based index at which <paramref name="items"/> should be inserted.</param>
+            <param name="items">The item to insert into the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.Remove(`0)">
+            <summary>
+            Removes the first occurrence of a specific <paramref name="item"/> from the <see cref="T:System.Collections.Generic.List`1"/>.
+            </summary>
+            <param name="item">The item to remove from the <see cref="T:System.Collections.Generic.List`1"/>.</param>
+            <returns><see langword="true"/> if item was successfully removed from the <see cref="T:System.Collections.Generic.List`1"/>;
+            otherwise, <see langword="false"/>. This method also returns <see langword="false"/> if item is not found in
+            the original <see cref="T:System.Collections.Generic.List`1"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.RemoveAt(System.Int32)">
+            <summary>
+            Removes the <see cref="T:NoiseEngine.Collections.FastList`1"/> item at the specified <paramref name="index"/>.
+            </summary>
+            <param name="index">The zero-based index of the item to remove.</param>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.ToArray">
+            <summary>
+            Copies the elements of the <see cref="T:NoiseEngine.Collections.FastList`1"/> to a new array.
+            </summary>
+            <returns>An array containing copies of the elements of the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.AsSpan">
+            <summary>
+            Creates a new span over this <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+            <returns>The span representation of the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.AsSpan(System.Int32)">
+            <summary>
+            Creates a new span over a portion of this <see cref="T:NoiseEngine.Collections.FastList`1"/> starting at a specified
+            position to the end of the <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+            <param name="start">The initial index from which the <see cref="T:NoiseEngine.Collections.FastList`1"/> will be converted.</param>
+            <returns>The span representation of the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.AsSpan(System.Int32,System.Int32)">
+            <summary>
+            Creates a new span over a portion of this <see cref="T:NoiseEngine.Collections.FastList`1"/> starting at a specified
+            position for a specified length.
+            </summary>
+            <param name="start">The initial index from which the <see cref="T:NoiseEngine.Collections.FastList`1"/> will be converted.</param>
+            <param name="length">The number of items in the span.</param>
+            <returns>The span representation of the <see cref="T:NoiseEngine.Collections.FastList`1"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Collections.FastList`1.TrimExcess">
+            <summary>
+            Sets the <see cref="P:NoiseEngine.Collections.FastList`1.Capacity"/> to the actual number of elements in the <see cref="T:NoiseEngine.Collections.FastList`1"/>,
+            if that number is less than a threshold value.
+            </summary>
+        </member>
+        <member name="M:NoiseEngine.Collections.LinqExtensions.ToFastList``1(System.Collections.Generic.IEnumerable{``0})">
+            <summary>
+            Converts <paramref name="enumerable"/> to <see cref="T:NoiseEngine.Collections.FastList`1"/>.
+            </summary>
+            <typeparam name="T"><see cref="T:System.Type"/> of elements in <see cref="T:System.Collections.Generic.IEnumerable`1"/>
+            and <see cref="T:NoiseEngine.Collections.FastList`1"/>.</typeparam>
+            <param name="enumerable"><see cref="T:System.Collections.Generic.IEnumerable`1"/> which converts to <see cref="T:NoiseEngine.Collections.FastList`1"/>.</param>
+            <returns>New <see cref="T:NoiseEngine.Collections.FastList`1"/> from <see cref="T:System.Collections.Generic.IEnumerable`1"/>.</returns>
+        </member>
     </members>
 </doc>
