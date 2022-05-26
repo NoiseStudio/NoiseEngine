@@ -9,7 +9,7 @@ namespace NoiseEngine.Tests {
 
         [Fact]
         public void SimpleScene() {
-            using Application application = Application.Create(out Entity cameraEntity);
+            using Application application = Application.Create(out Entity cameraEntity, "A lot of X-Cuboids 3090 Ti.");
 
             for (int x = -10; x < 10; x += 2) {
                 for (int y = -10; y < 10; y += 2) {

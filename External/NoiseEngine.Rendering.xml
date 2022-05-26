@@ -44,6 +44,233 @@
             Half-size of the vertical viewing volume for orthographic camera.
             </summary>
         </member>
+        <member name="M:NoiseEngine.Rendering.Color.Lerp(NoiseEngine.Rendering.Color,NoiseEngine.Rendering.Color,System.Single)">
+            <summary>
+            Linearly interpolates between two colors.
+            </summary>
+            <param name="a">Start value, returned when <paramref name="t"/> = 0.</param>
+            <param name="b">End value, returned when <paramref name="t"/> = 1.</param>
+            <param name="t">
+            Not clamped value used to interpolate between <paramref name="a"/> and <paramref name="b"/>.
+            </param>
+            <returns>Interpolated value.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.Equals(NoiseEngine.Rendering.Color)">
+            <summary>
+            Returns a value that indicates whether this instance and another color are equal.
+            </summary>
+            <param name="other">The other color.</param>
+            <returns><see langword="true"/> if the two colors are equal; otherwise, <see langword="false"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.Similar(NoiseEngine.Rendering.Color)">
+            <summary>
+            Returns a value that indicates whether this instance and another color
+            are similar enough to be considered as equal.
+            </summary>
+            <param name="other">The other color.</param>
+            <returns>
+            <see langword="true"/> if the two colors are similar enough to be considered as equal;
+            otherwise, <see langword="false"/>.
+            </returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.ToString">
+            <summary>
+            Returns a text representation of the <see cref="T:NoiseEngine.Rendering.Color"/>.
+            </summary>
+            <returns>Text representation of the <see cref="T:NoiseEngine.Rendering.Color"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.Equals(System.Object)">
+            <summary>
+            Returns a value that indicates whether this instance and a specified object are equal.
+            </summary>
+            <param name="obj">The object to compare with the current object.</param>
+            <returns>
+            <see langword="true"/> if the specified object is equal to the current object;
+            otherwise, <see langword="false"/>.
+            </returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.GetHashCode">
+            <summary>
+            Returns the hash code for this instance.
+            </summary>
+            <returns>Hash code for this instance.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.op_Addition(NoiseEngine.Rendering.Color,NoiseEngine.Rendering.Color)">
+            <summary>
+            Adds two colors together.
+            </summary>
+            <param name="a">First <see cref="T:NoiseEngine.Rendering.Color"/>.</param>
+            <param name="b">Second <see cref="T:NoiseEngine.Rendering.Color"/>.</param>
+            <returns>Sum of <paramref name="a"/> and <paramref name="b"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.op_Subtraction(NoiseEngine.Rendering.Color,NoiseEngine.Rendering.Color)">
+            <summary>
+            Subtracts <paramref name="b"/> from <paramref name="a"/>.
+            </summary>
+            <param name="a">First <see cref="T:NoiseEngine.Rendering.Color"/>.</param>
+            <param name="b">Second <see cref="T:NoiseEngine.Rendering.Color"/>.</param>
+            <returns>Difference of <paramref name="a"/> and <paramref name="b"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.op_Multiply(NoiseEngine.Rendering.Color,System.Single)">
+            <summary>
+            Multiplies color <paramref name="a"/> by the float <paramref name="b"/>.
+            </summary>
+            <param name="a"><see cref="T:NoiseEngine.Rendering.Color"/> to multiply.</param>
+            <param name="b">Multiplier.</param>
+            <returns><see cref="T:NoiseEngine.Rendering.Color"/> scaled by <paramref name="b"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.op_Division(NoiseEngine.Rendering.Color,System.Single)">
+            <summary>
+            Divides color <paramref name="a"/> by the float <paramref name="b"/>.
+            </summary>
+            <param name="a"><see cref="T:NoiseEngine.Rendering.Color"/> to divide.</param>
+            <param name="b">Divisor.</param>
+            <returns><see cref="T:NoiseEngine.Rendering.Color"/> divided by <paramref name="b"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.op_Implicit(NoiseEngine.Rendering.Color)~NoiseEngine.Mathematics.Float4">
+            <summary>
+            Casts <see cref="T:NoiseEngine.Rendering.Color"/> to <see cref="T:NoiseEngine.Mathematics.Float4"/>.
+            </summary>
+            <param name="color"><see cref="T:NoiseEngine.Rendering.Color"/> to cast.</param>
+            <returns><see cref="T:NoiseEngine.Mathematics.Float4"/> with components from <paramref name="color"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.op_Implicit(NoiseEngine.Mathematics.Float4)~NoiseEngine.Rendering.Color">
+            <summary>
+            Casts <see cref="T:NoiseEngine.Mathematics.Float4"/> to <see cref="T:NoiseEngine.Rendering.Color"/>.
+            </summary>
+            <param name="vector"><see cref="T:NoiseEngine.Mathematics.Float4"/> to cast.</param>
+            <returns><see cref="T:NoiseEngine.Rendering.Color"/> with components from <paramref name="vector"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.op_Equality(NoiseEngine.Rendering.Color,NoiseEngine.Rendering.Color)">
+            <summary>
+            Returns a value that indicates whether each pair of elements in two specified colors is equal.
+            </summary>
+            <param name="left">The first color to compare.</param>
+            <param name="right">The second color to compare.</param>
+            <returns>
+            <see langword="true"/> if <paramref name="left"/> and <paramref name="right"/> are equal;
+            otherwise, <see langword="false"/>.
+            </returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color.op_Inequality(NoiseEngine.Rendering.Color,NoiseEngine.Rendering.Color)">
+            <summary>
+            Returns a value that indicates whether two specified colors are not equal.
+            </summary>
+            <param name="left">The first color to compare.</param>
+            <param name="right">The second color to compare.</param>
+            <returns>
+            <see langword="true"/> if <paramref name="left"/> and <paramref name="right"/> are not equal;
+            otherwise, <see langword="false"/>.
+            </returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.Lerp(NoiseEngine.Rendering.Color32,NoiseEngine.Rendering.Color32,System.Single)">
+            <summary>
+            Linearly interpolates between two colors.
+            </summary>
+            <param name="a">Start value, returned when <paramref name="t"/> = 0.</param>
+            <param name="b">End value, returned when <paramref name="t"/> = 1.</param>
+            <param name="t">
+            Not clamped value used to interpolate between <paramref name="a"/> and <paramref name="b"/>.
+            </param>
+            <returns>Interpolated value.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.Equals(NoiseEngine.Rendering.Color32)">
+            <summary>
+            Returns a value that indicates whether this instance and another color are equal.
+            </summary>
+            <param name="other">The other color.</param>
+            <returns><see langword="true"/> if the two colors are equal; otherwise, <see langword="false"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.Equals(System.Object)">
+            <summary>
+            Returns a value that indicates whether this instance and a specified object are equal.
+            </summary>
+            <param name="obj">The object to compare with the current object.</param>
+            <returns>
+            <see langword="true"/> if the specified object is equal to the current object;
+            otherwise, <see langword="false"/>.
+            </returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.GetHashCode">
+            <summary>
+            Returns the hash code for this instance.
+            </summary>
+            <returns>Hash code for this instance.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.ToString">
+            <summary>
+            Returns a text representation of the <see cref="T:NoiseEngine.Rendering.Color32"/>.
+            </summary>
+            <returns>Text representation of the <see cref="T:NoiseEngine.Rendering.Color32"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.op_Addition(NoiseEngine.Rendering.Color32,NoiseEngine.Rendering.Color32)">
+            <summary>
+            Adds two colors together.
+            </summary>
+            <param name="a">First <see cref="T:NoiseEngine.Rendering.Color32"/>.</param>
+            <param name="b">Second <see cref="T:NoiseEngine.Rendering.Color32"/>.</param>
+            <returns>Sum of <paramref name="a"/> and <paramref name="b"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.op_Subtraction(NoiseEngine.Rendering.Color32,NoiseEngine.Rendering.Color32)">
+            <summary>
+            Subtracts <paramref name="b"/> from <paramref name="a"/>.
+            </summary>
+            <param name="a">First <see cref="T:NoiseEngine.Rendering.Color32"/>.</param>
+            <param name="b">Second <see cref="T:NoiseEngine.Rendering.Color32"/>.</param>
+            <returns>Difference of <paramref name="a"/> and <paramref name="b"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.op_Multiply(NoiseEngine.Rendering.Color32,System.Single)">
+            <summary>
+            Multiplies color <paramref name="a"/> by the float <paramref name="b"/>.
+            </summary>
+            <param name="a"><see cref="T:NoiseEngine.Rendering.Color32"/> to multiply.</param>
+            <param name="b">Multiplier.</param>
+            <returns><see cref="T:NoiseEngine.Rendering.Color32"/> scaled by <paramref name="b"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.op_Division(NoiseEngine.Rendering.Color32,System.Single)">
+            <summary>
+            Divides color <paramref name="a"/> by the float <paramref name="b"/>.
+            </summary>
+            <param name="a"><see cref="T:NoiseEngine.Rendering.Color32"/> to divide.</param>
+            <param name="b">Divisor.</param>
+            <returns><see cref="T:NoiseEngine.Rendering.Color32"/> divided by <paramref name="b"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.op_Explicit(NoiseEngine.Rendering.Color)~NoiseEngine.Rendering.Color32">
+            <summary>
+            Casts <see cref="T:NoiseEngine.Rendering.Color"/> to <see cref="T:NoiseEngine.Rendering.Color32"/>.
+            </summary>
+            <param name="color"><see cref="T:NoiseEngine.Rendering.Color"/> to cast.</param>
+            <returns><see cref="T:NoiseEngine.Rendering.Color32"/> with components from <paramref name="color"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.op_Explicit(NoiseEngine.Rendering.Color32)~NoiseEngine.Rendering.Color">
+            <summary>
+            Casts <see cref="T:NoiseEngine.Rendering.Color32"/> to <see cref="T:NoiseEngine.Rendering.Color"/>.
+            </summary>
+            <param name="color"><see cref="T:NoiseEngine.Rendering.Color32"/> to cast.</param>
+            <returns><see cref="T:NoiseEngine.Rendering.Color"/> with components from <paramref name="color"/>.</returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.op_Equality(NoiseEngine.Rendering.Color32,NoiseEngine.Rendering.Color32)">
+            <summary>
+            Returns a value that indicates whether each pair of elements in two specified colors is equal.
+            </summary>
+            <param name="left">The first color to compare.</param>
+            <param name="right">The second color to compare.</param>
+            <returns>
+            <see langword="true"/> if <paramref name="left"/> and <paramref name="right"/> are equal;
+            otherwise, <see langword="false"/>.
+            </returns>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Color32.op_Inequality(NoiseEngine.Rendering.Color32,NoiseEngine.Rendering.Color32)">
+            <summary>
+            Returns a value that indicates whether two specified colors are not equal.
+            </summary>
+            <param name="left">The first color to compare.</param>
+            <param name="right">The second color to compare.</param>
+            <returns>
+            <see langword="true"/> if <paramref name="left"/> and <paramref name="right"/> are not equal;
+            otherwise, <see langword="false"/>.
+            </returns>
+        </member>
         <member name="M:NoiseEngine.Rendering.CommandBuffer.#ctor(NoiseEngine.Rendering.GraphicsDevice,NoiseEngine.Rendering.Camera)">
             <summary>
             Creates new <see cref="T:NoiseEngine.Rendering.CommandBuffer"/>.
@@ -65,7 +292,6 @@
         <member name="M:NoiseEngine.Rendering.CommandBuffer.DrawMesh(NoiseEngine.Rendering.Mesh,NoiseEngine.Rendering.Material,NoiseEngine.Rendering.PushConstantsRange)">
             <summary>
             Draws mesh with current internal data and custom push constants.
-            After this method returns it is safe to modify passed in mesh instance and it will not affect drawing.
             Specified <paramref name="material"/> must not be modified during a call to <see cref="M:NoiseEngine.Rendering.CommandBuffer.Execute"/>.
             </summary>
             <param name="mesh">Mesh to draw.</param>
@@ -156,11 +382,6 @@
             <param name="index">Index of the array.</param>
             <typeparam name="T">Type of the property.</typeparam>
         </member>
-        <member name="M:NoiseEngine.Rendering.MeshData.ReleaseResources">
-            <summary>
-            Releases native resources of this object.
-            </summary>
-        </member>
         <member name="M:NoiseEngine.Rendering.Mesh`2.SetVerticesIndices(`0[],`1[])">
             <summary>
             Sets vertex and index buffers.
@@ -198,6 +419,14 @@
             <exception cref="T:System.ArgumentOutOfRangeException">
             <paramref name="size"/>'s dimension is 0 or greater than <see cref="T:System.Int32"/>.<see cref="F:System.Int32.MaxValue"/>.
             </exception>
+        </member>
+        <member name="M:NoiseEngine.Rendering.Presentation.Window.TryGetFocusedWindow(NoiseEngine.Rendering.Presentation.Window@)">
+            <summary>
+            Try gets current focused <see cref="T:NoiseEngine.Rendering.Presentation.Window"/> in this process.
+            </summary>
+            <param name="focusedWindow"><see cref="T:NoiseEngine.Rendering.Presentation.Window"/> focused window of this process.</param>
+            <returns><see langword="true"/> if some process <see cref="T:NoiseEngine.Rendering.Presentation.Window"/> is focused;
+            otherwise <see langword="false"/>.</returns>
         </member>
         <member name="M:NoiseEngine.Rendering.Presentation.Window.Close">
             <summary>

@@ -44,7 +44,7 @@ namespace NoiseEngine {
 
             this.schedule = schedule;
 
-            Logger.Info($"Created game: {this}.");
+            Logger.Info($"Created application named: `{Title}`.");
         }
 
         /// <summary>
@@ -140,9 +140,11 @@ namespace NoiseEngine {
 
             World.Dispose();
 
-            Logger.Info($"Disposed game: {this}.");
+            Logger.Info($"Disposed application named: `{Title}`.");
 
             if (simpleCreated) {
+                schedule.Destroy();
+
                 Graphics.Terminate();
                 Logger.Terminate();
             }
