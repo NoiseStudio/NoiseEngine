@@ -79,6 +79,14 @@ namespace NoiseEngine.Collections {
         /// <param name="item">Item to add.</param>
         public void Add(T item) {
             EnsureCapacity(count + 1);
+            UnsafeAdd(item);
+        }
+
+        /// <summary>
+        /// Adds <paramref name="item"/> to the <see cref="FastList{T}"/> without ensuring capacity.
+        /// </summary>
+        /// <param name="item">Item to add.</param>
+        public void UnsafeAdd(T item) {
             items[count++] = item;
         }
 
@@ -289,6 +297,23 @@ namespace NoiseEngine.Collections {
                 Array.Resize(ref items, count);
         }
 
+        /// <summary>
+        /// Ensures that the <see cref="Capacity"/> is at least the given <paramref name="minCapacity"/>.
+        /// If current <see cref="Capacity"/> is less than <paramref name="minCapacity"/>, <see cref="Capacity"/>
+        /// is increased to twice the <see cref="Capacity"/>.
+        /// </summary>
+        /// <param name="minCapacity"></param>
+        public void EnsureCapacity(int minCapacity) {
+            if (minCapacity <= Capacity)
+                return;
+
+            int newCapacity = Capacity == 0 ? DefaultCapacity : Capacity * 2;
+            if (newCapacity < minCapacity)
+                newCapacity = minCapacity;
+
+            Array.Resize(ref items, newCapacity);
+        }
+
         IEnumerator IEnumerable.GetEnumerator() {
             return GetEnumerator();
         }
@@ -326,17 +351,6 @@ namespace NoiseEngine.Collections {
         void IList.Remove(object? value) {
             if (IsCompatibleObject(value))
                 Remove((T)value!);
-        }
-
-        private void EnsureCapacity(int count) {
-            if (count <= this.count)
-                return;
-
-            int newCapacity = this.count == 0 ? DefaultCapacity : this.count * 2;
-            if (newCapacity < count)
-                newCapacity = count;
-
-            Array.Resize(ref items, newCapacity);
         }
 
         private void MoveElements(int index, int move) {
