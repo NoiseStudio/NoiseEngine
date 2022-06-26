@@ -13,7 +13,8 @@ namespace NoiseEngine.Jobs {
 
         private readonly ConcurrentList<EntitySystemBase> systems = new ConcurrentList<EntitySystemBase>();
         private readonly List<EntityGroup> groups = new List<EntityGroup>();
-        private readonly Dictionary<int, EntityGroup> idToGroup = new Dictionary<int, EntityGroup>();
+        private readonly ConcurrentDictionary<int, EntityGroup> idToGroup
+            = new ConcurrentDictionary<int, EntityGroup>();
         private readonly ConcurrentDictionary<Entity, EntityGroup> entityToGroup =
             new ConcurrentDictionary<Entity, EntityGroup>();
         private readonly ConcurrentHashSet<WeakReference<EntityQueryBase>> queries =
@@ -218,19 +219,12 @@ namespace NoiseEngine.Jobs {
 
         internal EntityGroup GetGroupFromComponents(List<Type> components) {
             int hashCode = 0;
-            components = components.OrderBy(t => t.GetHashCode()).ToList();
             for (int i = 0; i < components.Count; i++)
                 hashCode ^= components[i].GetHashCode();
 
-            EntityGroup? group;
-            while (idToGroup.TryGetValue(hashCode, out group) && !group.CompareSortedComponents(components))
-                hashCode++;
+            return idToGroup.GetOrAdd(hashCode, _ => {
+                EntityGroup group = new EntityGroup(hashCode, this, components);
 
-            if (group == null) {
-                lock (idToGroup) {
-                    group = new EntityGroup(hashCode, this, components);
-                    idToGroup.Add(hashCode, group);
-                }
                 lock (groups)
                     groups.Add(group);
 
@@ -238,9 +232,9 @@ namespace NoiseEngine.Jobs {
                     if (queryReference.TryGetTarget(out EntityQueryBase? query))
                         query.RegisterGroup(group);
                 }
-            }
 
-            return group;
+                return group;
+            });
         }
 
         internal EntityGroup GetEntityGroup(Entity entity) {

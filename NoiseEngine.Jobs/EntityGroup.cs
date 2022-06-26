@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Threading;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -159,13 +158,19 @@ namespace NoiseEngine.Jobs {
         }
 
         private void DoWork() {
+            while (entitiesToDestroyComponents.TryDequeue(out Entity entity))
+                DestroyEntityComponents(entity);
+
+            if (ongoingWork > 0 || clean <= PackageSize)
+                return;
+
             workResetEvent.Reset();
-            if (ongoingWork > 0 || clean == 0) {
+            if (ongoingWork > 0 || clean <= PackageSize) {
                 workResetEvent.Set();
                 return;
             }
 
-            if (clean > 0) {
+            if (clean >= PackageSize) {
                 entityLocker.EnterWriteLock();
 
                 Entity[] newEntities = new Entity[
@@ -185,9 +190,6 @@ namespace NoiseEngine.Jobs {
                 entityLocker.ExitWriteLock();
             }
 
-            while (entitiesToDestroyComponents.TryDequeue(out Entity entity))
-                DestroyEntityComponents(entity);
-
             int exceptedWriteLockCount = PackageCount;
             while (writeLock.Count < exceptedWriteLockCount)
                 writeLock.Add(new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion));
@@ -203,16 +205,15 @@ namespace NoiseEngine.Jobs {
 
             entityLocker.EnterWriteLock();
 
-            if (count <= entities.Length)
-                return;
+            if (count > entities.Length) {
+                int newCapacity = entities.Length == 0 ? DefaultCapacity : entities.Length * 2;
+                if (newCapacity < count)
+                    newCapacity = count;
+                else if (newCapacity - entities.Length > PackageSize)
+                    newCapacity = entities.Length + PackageSize;
 
-            int newCapacity = entities.Length == 0 ? DefaultCapacity : entities.Length * 2;
-            if (newCapacity < count)
-                newCapacity = count;
-            else if (newCapacity - entities.Length > PackageSize)
-                newCapacity = entities.Length + PackageSize;
-
-            Array.Resize(ref entities, newCapacity);
+                Array.Resize(ref entities, newCapacity);
+            }
 
             entityLocker.ExitWriteLock();
         }
