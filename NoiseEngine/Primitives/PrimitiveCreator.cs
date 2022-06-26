@@ -131,7 +131,7 @@ namespace NoiseEngine.Primitives {
                 ), null);
             }
 
-            return game.World.NewEntity(
+            return game.CurrentScene.EntityWorld.NewEntity(
                 new TransformComponent(position ?? Float3.Zero, rotation ?? Quaternion.Identity, scale ?? Float3.One),
                 new MeshRendererComponent(cubeMesh!),
                 new MaterialComponent(DefaultMaterial)

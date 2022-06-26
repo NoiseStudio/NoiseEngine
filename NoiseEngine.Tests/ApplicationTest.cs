@@ -9,7 +9,7 @@ namespace NoiseEngine.Tests {
 
         [Fact]
         public void SimpleScene() {
-            using Application application = Application.Create(out Entity cameraEntity, "A lot of X-Cuboids 3090 Ti.");
+            using Application application = Application.Create(out CameraData data, "A lot of X-Cuboids 3090 Ti.");
 
             for (int x = -10; x < 10; x += 2) {
                 for (int y = -10; y < 10; y += 2) {
@@ -17,8 +17,8 @@ namespace NoiseEngine.Tests {
                 }
             }
 
-            cameraEntity.Add(application.World, new DebugMovementComponent());
-            application.AddFrameDependentSystem(new DebugMovementSystem(application));
+            data.Entity.Add(application.CurrentScene.EntityWorld, new DebugMovementComponent());
+            application.CurrentScene.AddFrameDependentSystem(new DebugMovementSystem(application));
 
             application.WaitToEnd();
         }

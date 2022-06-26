@@ -11,38 +11,47 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 
 namespace NoiseEngine {
     public class Application : IDisposable {
 
-        private readonly ConcurrentBag<Window> windows = new ConcurrentBag<Window>();
-        private readonly ConcurrentBag<EntitySystemBase> frameDependentSystems = new ConcurrentBag<EntitySystemBase>();
-        private readonly ManualResetEvent applicationEndEvent = new ManualResetEvent(false);
-        private readonly EntitySchedule schedule;
+        private readonly ManualResetEvent applicationEndEvent = new ManualResetEvent(true);
+        private readonly object sceneLocker = new object();
+
+        private ConcurrentBag<CameraData> cameraData = new ConcurrentBag<CameraData>();
 
         private uint activeRenderers;
         private AtomicBool isDisposed;
-
+        private ApplicationScene currentScene;
         private bool simpleCreated;
 
-        public EntityWorld World { get; } = new EntityWorld();
+        public Window? MainWindow { get; set; }
+        public EntitySchedule EntitySchedule { get; }
         public string Title { get; }
         public Logger Logger { get; }
         public GraphicsDevice GraphicsDevice { get; }
         public PrimitiveCreator Primitive { get; }
 
+        public ApplicationScene CurrentScene => currentScene;
         public bool IsDisposed => isDisposed;
-        public IEnumerable<Window> Windows => windows;
+        public IEnumerable<Window> Windows => cameraData.Where(x => x.IsWindow).Select(x => x.RenderTarget);
 
-        public Application(Logger logger, GraphicsDevice graphicsDevice, EntitySchedule schedule, string title) {
+        public Application(
+            ApplicationScene scene, Logger logger, GraphicsDevice graphicsDevice,
+            EntitySchedule entitySchedule, string title
+        ) {
             Logger = logger;
             GraphicsDevice = graphicsDevice;
             Title = title;
             Primitive = new PrimitiveCreator(this);
+            EntitySchedule = entitySchedule;
 
-            this.schedule = schedule;
+            currentScene = scene;
+            CurrentScene.Initialize(this);
+            CurrentScene.OnLoadInternal();
 
             Logger.Info($"Created application named: `{Title}`.");
         }
@@ -56,8 +65,10 @@ namespace NoiseEngine {
         /// <param name="visibleLogs">Defines what logs will be processed by the handlers.</param>
         /// <returns>New instance of <see cref="Application"/>.</returns>
         public static Application Create(
-            out Entity cameraEntity, string? title = null, LogType visibleLogs = LogType.AllWithoutTrace
+            out CameraData cameraData, string? title = null, ApplicationScene? scene = null,
+            LogType visibleLogs = LogType.AllWithoutTrace
         ) {
+            scene ??= new DefaultApplicationScene();
             title ??= Assembly.GetEntryAssembly()?.GetName().Name!;
 
             Logger logger = new Logger(visibleLogs);
@@ -67,12 +78,13 @@ namespace NoiseEngine {
             Graphics.Initialize(logger, title, Assembly.GetEntryAssembly()!.GetName().Version!);
             GraphicsDevice graphicsDevice = new GraphicsDevice(false);
 
-            Application application = new Application(logger, graphicsDevice, new EntitySchedule(), title);
+            Application application = new Application(scene, logger, graphicsDevice, new EntitySchedule(), title);
             application.simpleCreated = true;
 
-            application.AddFrameDependentSystem(new CameraSystem());
+            if (!scene.HasFrameDependentSystem<CameraSystem>())
+                scene.AddFrameDependentSystem(new CameraSystem());
 
-            cameraEntity = application.CreateCamera(new Window(graphicsDevice, new UInt2(1280, 720), title));
+            cameraData = application.CreateRenderCamera(new Window(graphicsDevice, new UInt2(1280, 720), title));
             return application;
         }
 
@@ -83,8 +95,10 @@ namespace NoiseEngine {
         /// By default this will be the name of the entry assembly.</param>
         /// <param name="visibleLogs">Defines what logs will be processed by the handlers.</param>
         /// <returns>New instance of <see cref="Application"/>.</returns>
-        public static Application Create(string? title = null, LogType visibleLogs = LogType.AllWithoutTrace) {
-            return Create(out _, title, visibleLogs);
+        public static Application Create(
+            string? title = null, ApplicationScene? scene = null, LogType visibleLogs = LogType.AllWithoutTrace
+        ) {
+            return Create(out _, title, scene, visibleLogs);
         }
 
         /// <summary>
@@ -99,7 +113,7 @@ namespace NoiseEngine {
         /// </summary>
         /// <param name="renderTarget">Object to which the <see cref="Camera"/> output image will be drawn.</param>
         /// <returns><see cref="Entity"/> with <see cref="Camera"/>.</returns>
-        public Entity CreateCamera(Window renderTarget) {
+        public CameraData CreateRenderCamera(Window renderTarget) {
             TransformComponent transform = new TransformComponent(new Float3(0, 0, -5));
 
             Camera camera = new Camera(renderTarget) {
@@ -109,24 +123,53 @@ namespace NoiseEngine {
                 Position = transform.Position,
                 Rotation = transform.Rotation
             };
-            windows.Add(renderTarget);
+
+            CameraData data = new CameraData(this, renderTarget, camera);
+            cameraData.Add(data);
 
             Thread windowThread = new Thread(RenderThreadWorker) {
                 Name = Title
             };
-            windowThread.Start((renderTarget, camera));
+            windowThread.Start(data);
 
-            return World.NewEntity(transform, new CameraComponent(camera));
+            data.UpdateEntity(CurrentScene.EntityWorld.NewEntity(transform, new CameraComponent(data)));
+            return data;
         }
 
-        /// <summary>
-        /// Initializes and adds <paramref name="system"/> to systems witch will be executed on each render frame.
-        /// </summary>
-        /// <param name="system"><see cref="EntitySystemBase"/> system witch will be
-        /// executed on each render frame.</param>
-        public void AddFrameDependentSystem(EntitySystemBase system) {
-            system.Initialize(World, schedule);
-            frameDependentSystems.Add(system);
+        public void LoadScene(ApplicationScene scene) {
+            lock (sceneLocker) {
+                ApplicationScene lastScene = Interlocked.Exchange(ref currentScene, scene);
+                if (lastScene == scene)
+                    return;
+
+                lastScene.OnUnloadInternal();
+                CurrentScene.Initialize(this);
+
+                ConcurrentBag<CameraData> cameraData = new ConcurrentBag<CameraData>();
+                foreach (CameraData data in this.cameraData) {
+                    if (data.IsWindow && scene.ReuseWindowInternal(data, out Entity newCameraEntity)) {
+                        cameraData.Add(data);
+
+                        if (!newCameraEntity.Has<TransformComponent>(scene.EntityWorld))
+                            newCameraEntity.Add(scene.EntityWorld, new TransformComponent(new Float3(0, 0, -5)));
+                        if (!newCameraEntity.Has<CameraComponent>(scene.EntityWorld))
+                            newCameraEntity.Add(scene.EntityWorld, new CameraComponent(data));
+
+                        data.UpdateScene();
+                        data.UpdateEntity(newCameraEntity);
+
+                        continue;
+                    }
+
+                    data.Dispose();
+                }
+
+                this.cameraData = cameraData;
+                scene.OnLoadInternal();
+
+                if (!scene.HasFrameDependentSystem<CameraSystem>())
+                    scene.AddFrameDependentSystem(new CameraSystem());
+            }
         }
 
         /// <summary>
@@ -138,12 +181,12 @@ namespace NoiseEngine {
 
             WaitToEnd();
 
-            World.Dispose();
+            CurrentScene.Dispose();
 
             Logger.Info($"Disposed application named: `{Title}`.");
 
             if (simpleCreated) {
-                schedule.Destroy();
+                EntitySchedule.Destroy();
 
                 Graphics.Terminate();
                 Logger.Terminate();
@@ -160,25 +203,23 @@ namespace NoiseEngine {
             return $"{nameof(Application)} {{ {nameof(Title)} = \"{Title}\" }}";
         }
 
-        private void RenderThreadWorker(object? data) {
-            (Window renderTarget, Camera camera) = ((Window, Camera))data!;
+        private void RenderThreadWorker(object? dataObject) {
+            CameraData data = (CameraData)dataObject!;
 
-            Interlocked.Increment(ref activeRenderers);
+            if (Interlocked.Increment(ref activeRenderers) == 1)
+                applicationEndEvent.Reset();
 
-            MeshRendererSystem meshRenderer = new MeshRendererSystem(GraphicsDevice, camera);
-            meshRenderer.Initialize(World, schedule);
-
-            while (!IsDisposed && !renderTarget.GetShouldClose()) {
-                foreach (EntitySystemBase system in frameDependentSystems)
+            while (!IsDisposed && !data.IsShouldClose) {
+                foreach (EntitySystemBase system in CurrentScene.FrameDependentSystems)
                     system.TryExecute();
 
-                foreach (EntitySystemBase system in frameDependentSystems)
+                foreach (EntitySystemBase system in CurrentScene.FrameDependentSystems)
                     system.Wait();
 
-                meshRenderer.ExecuteParallelAndWait();
+                data.MeshRenderer.ExecuteParallelAndWait();
             }
 
-            renderTarget.Destroy();
+            data.Dispose();
 
             if (Interlocked.Decrement(ref activeRenderers) == 0)
                 applicationEndEvent.Set();

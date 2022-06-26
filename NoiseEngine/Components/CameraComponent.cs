@@ -2,6 +2,15 @@
 using NoiseEngine.Rendering;
 
 namespace NoiseEngine.Components {
-    public readonly record struct CameraComponent(Camera Camera) : IEntityComponent {
+    public readonly struct CameraComponent : IEntityComponent {
+
+        private readonly CameraData data;
+
+        public Camera Camera => data.Camera;
+
+        public CameraComponent(CameraData data) {
+            this.data = data;
+        }
+
     }
 }
