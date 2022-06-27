@@ -12,8 +12,6 @@ namespace NoiseEngine.DeveloperTools.Systems {
 
         private const float MouseDownLookLimiter = (float)Math.PI / 2;
 
-        private readonly Application application;
-
         private float speed = 1f;
 
         public float SpeedIncrease { get; set; } = 0.2f;
@@ -25,10 +23,6 @@ namespace NoiseEngine.DeveloperTools.Systems {
         public override IReadOnlyList<Type> WritableComponents { get; } = new Type[] {
             typeof(TransformComponent), typeof(DebugMovementComponent)
         };
-
-        public DebugMovementSystem(Application application) {
-            this.application = application;
-        }
 
         protected override void OnUpdateEntity(
             Entity entity, TransformComponent transform, DebugMovementComponent movement

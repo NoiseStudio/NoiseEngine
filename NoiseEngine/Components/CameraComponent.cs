@@ -1,15 +1,16 @@
 ﻿using NoiseEngine.Jobs;
-using NoiseEngine.Rendering;
 
 namespace NoiseEngine.Components {
     public readonly struct CameraComponent : IEntityComponent {
 
-        private readonly CameraData data;
+        public RenderCamera RenderCamera { get; }
 
-        public Camera Camera => data.Camera;
+        internal CameraComponent(RenderCamera camera) {
+            RenderCamera = camera;
+        }
 
-        public CameraComponent(CameraData data) {
-            this.data = data;
+        public static implicit operator RenderCamera(CameraComponent component) {
+            return component.RenderCamera;
         }
 
     }

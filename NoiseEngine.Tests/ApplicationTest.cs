@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.DeveloperTools.Components;
 using NoiseEngine.DeveloperTools.Systems;
-using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using Xunit;
 
@@ -9,16 +8,18 @@ namespace NoiseEngine.Tests {
 
         [Fact]
         public void SimpleScene() {
-            using Application application = Application.Create(out CameraData data, "A lot of X-Cuboids 3090 Ti.");
+            using Application application = Application.Create();
+            ApplicationScene scene = new ApplicationScene(application);
 
             for (int x = -10; x < 10; x += 2) {
                 for (int y = -10; y < 10; y += 2) {
-                    application.Primitive.CreateCube(new Float3(x, 0, y));
+                    scene.Primitive.CreateCube(new Float3(x, 0, y));
                 }
             }
 
-            data.Entity.Add(application.CurrentScene.EntityWorld, new DebugMovementComponent());
-            application.CurrentScene.AddFrameDependentSystem(new DebugMovementSystem(application));
+            RenderCamera camera = scene.CreateWindow("A lot of X-Cuboids 3090 Ti.");
+            camera.Entity.Add(scene.EntityWorld, new DebugMovementComponent());
+            camera.Scene.AddFrameDependentSystem(new DebugMovementSystem());
 
             application.WaitToEnd();
         }
