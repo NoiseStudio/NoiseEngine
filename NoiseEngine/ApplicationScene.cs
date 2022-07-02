@@ -98,6 +98,8 @@ namespace NoiseEngine {
             FrameDependentSystems.Clear();
             EntityWorld.Dispose();
             Primitive.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         internal void RemoveRenderCameraFromScene(RenderCamera renderCamera) {

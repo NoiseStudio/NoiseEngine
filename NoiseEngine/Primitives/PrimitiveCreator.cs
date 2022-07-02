@@ -22,6 +22,7 @@ namespace NoiseEngine.Primitives {
         /// Disposes this <see cref="PrimitiveCreator"/>.
         /// </summary>
         public void Dispose() {
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
