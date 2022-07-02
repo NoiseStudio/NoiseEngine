@@ -1,7 +1,21 @@
 ﻿using NoiseEngine.Jobs;
-using NoiseEngine.Rendering;
 
 namespace NoiseEngine.Components {
-    public readonly record struct CameraComponent(Camera Camera) : IEntityComponent {
+    public readonly struct CameraComponent : IEntityComponent {
+
+        public RenderCamera RenderCamera { get; }
+
+        internal CameraComponent(RenderCamera camera) {
+            RenderCamera = camera;
+        }
+
+        /// <summary>
+        /// Casts <paramref name="component"/> to <see cref="RenderCamera"/>.
+        /// </summary>
+        /// <param name="component"><see cref="CameraComponent"/> to cast.</param>
+        public static implicit operator RenderCamera(CameraComponent component) {
+            return component.RenderCamera;
+        }
+
     }
 }

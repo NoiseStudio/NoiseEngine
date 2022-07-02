@@ -1,90 +1,79 @@
-﻿using NoiseEngine.Components;
+﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs;
 using NoiseEngine.Logging;
 using NoiseEngine.Logging.Standard;
-using NoiseEngine.Mathematics;
 using NoiseEngine.Primitives;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Presentation;
-using NoiseEngine.Systems;
 using NoiseEngine.Threading;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 
 namespace NoiseEngine {
     public class Application : IDisposable {
 
-        private readonly ConcurrentBag<Window> windows = new ConcurrentBag<Window>();
-        private readonly ConcurrentBag<EntitySystemBase> frameDependentSystems = new ConcurrentBag<EntitySystemBase>();
-        private readonly ManualResetEvent applicationEndEvent = new ManualResetEvent(false);
-        private readonly EntitySchedule schedule;
+        internal RenderCamera? mainWindow;
+
+        private readonly ConcurrentHashSet<ApplicationScene> loadedScenes = new ConcurrentHashSet<ApplicationScene>();
+        private readonly ManualResetEvent applicationEndEvent = new ManualResetEvent(true);
 
         private uint activeRenderers;
         private AtomicBool isDisposed;
-
         private bool simpleCreated;
 
-        public EntityWorld World { get; } = new EntityWorld();
-        public string Title { get; }
+        public EntitySchedule EntitySchedule { get; }
+        public string ApplicationName { get; }
         public Logger Logger { get; }
         public GraphicsDevice GraphicsDevice { get; }
-        public PrimitiveCreator Primitive { get; }
+
+        public RenderCamera? MainWindow {
+            get => mainWindow;
+            set => mainWindow = value ?? throw new ArgumentNullException();
+        }
 
         public bool IsDisposed => isDisposed;
-        public IEnumerable<Window> Windows => windows;
+        public IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
+        public IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
 
-        public Application(Logger logger, GraphicsDevice graphicsDevice, EntitySchedule schedule, string title) {
+        internal PrimitiveCreatorShared PrimitiveShared { get; }
+
+        public Application(
+            Logger logger, GraphicsDevice graphicsDevice,
+            EntitySchedule entitySchedule, string applicationName
+        ) {
             Logger = logger;
             GraphicsDevice = graphicsDevice;
-            Title = title;
-            Primitive = new PrimitiveCreator(this);
+            ApplicationName = applicationName;
+            PrimitiveShared = new PrimitiveCreatorShared(this);
+            EntitySchedule = entitySchedule;
 
-            this.schedule = schedule;
-
-            Logger.Info($"Created application named: `{Title}`.");
+            Logger.Info($"Created application named: `{ApplicationName}`.");
         }
 
         /// <summary>
         /// Creates simple default <see cref="Application"/>.
         /// </summary>
-        /// <param name="cameraEntity"><see cref="Entity"/> with <see cref="Camera"/>.</param>
-        /// <param name="title">Title of <see cref="Application"/>.
+        /// <param name="applicationName">Application name of <see cref="Application"/>.
         /// By default this will be the name of the entry assembly.</param>
         /// <param name="visibleLogs">Defines what logs will be processed by the handlers.</param>
         /// <returns>New instance of <see cref="Application"/>.</returns>
-        public static Application Create(
-            out Entity cameraEntity, string? title = null, LogType visibleLogs = LogType.AllWithoutTrace
-        ) {
-            title ??= Assembly.GetEntryAssembly()?.GetName().Name!;
+        public static Application Create(string? applicationName = null, LogType visibleLogs = LogType.AllWithoutTrace) {
+            applicationName ??= Assembly.GetEntryAssembly()?.GetName().Name!;
 
             Logger logger = new Logger(visibleLogs);
             logger.AddHandler(new ConsoleLoggerHandler(new LoggerConfiguration()));
             logger.AddHandler(FileLoggerHandler.CreateLogFileInDirectory("logs"));
 
-            Graphics.Initialize(logger, title, Assembly.GetEntryAssembly()!.GetName().Version!);
+            Graphics.Initialize(logger, applicationName, Assembly.GetEntryAssembly()!.GetName().Version!);
             GraphicsDevice graphicsDevice = new GraphicsDevice(false);
 
-            Application application = new Application(logger, graphicsDevice, new EntitySchedule(), title);
+            Application application = new Application(logger, graphicsDevice, new EntitySchedule(), applicationName);
             application.simpleCreated = true;
 
-            application.AddFrameDependentSystem(new CameraSystem());
-
-            cameraEntity = application.CreateCamera(new Window(graphicsDevice, new UInt2(1280, 720), title));
             return application;
-        }
-
-        /// <summary>
-        /// Creates simple default <see cref="Application"/>.
-        /// </summary>
-        /// <param name="title">Title of <see cref="Application"/>.
-        /// By default this will be the name of the entry assembly.</param>
-        /// <param name="visibleLogs">Defines what logs will be processed by the handlers.</param>
-        /// <returns>New instance of <see cref="Application"/>.</returns>
-        public static Application Create(string? title = null, LogType visibleLogs = LogType.AllWithoutTrace) {
-            return Create(out _, title, visibleLogs);
         }
 
         /// <summary>
@@ -92,41 +81,6 @@ namespace NoiseEngine {
         /// </summary>
         public void WaitToEnd() {
             applicationEndEvent.WaitOne();
-        }
-
-        /// <summary>
-        /// Creates new <see cref="Entity"/> with <see cref="Camera"/>.
-        /// </summary>
-        /// <param name="renderTarget">Object to which the <see cref="Camera"/> output image will be drawn.</param>
-        /// <returns><see cref="Entity"/> with <see cref="Camera"/>.</returns>
-        public Entity CreateCamera(Window renderTarget) {
-            TransformComponent transform = new TransformComponent(new Float3(0, 0, -5));
-
-            Camera camera = new Camera(renderTarget) {
-                ProjectionType = ProjectionType.Perspective,
-                NearClipPlane = 0.01f,
-                FarClipPlane = 1000.0f,
-                Position = transform.Position,
-                Rotation = transform.Rotation
-            };
-            windows.Add(renderTarget);
-
-            Thread windowThread = new Thread(RenderThreadWorker) {
-                Name = Title
-            };
-            windowThread.Start((renderTarget, camera));
-
-            return World.NewEntity(transform, new CameraComponent(camera));
-        }
-
-        /// <summary>
-        /// Initializes and adds <paramref name="system"/> to systems witch will be executed on each render frame.
-        /// </summary>
-        /// <param name="system"><see cref="EntitySystemBase"/> system witch will be
-        /// executed on each render frame.</param>
-        public void AddFrameDependentSystem(EntitySystemBase system) {
-            system.Initialize(World, schedule);
-            frameDependentSystems.Add(system);
         }
 
         /// <summary>
@@ -138,18 +92,18 @@ namespace NoiseEngine {
 
             WaitToEnd();
 
-            World.Dispose();
+            foreach (ApplicationScene scene in LoadedScenes)
+                scene.Dispose();
 
-            Logger.Info($"Disposed application named: `{Title}`.");
+            PrimitiveShared.Dispose();
+            Logger.Info($"Disposed application named: `{ApplicationName}`.");
 
             if (simpleCreated) {
-                schedule.Destroy();
+                EntitySchedule.Destroy();
 
                 Graphics.Terminate();
                 Logger.Terminate();
             }
-
-            Primitive.Dispose();
         }
 
         /// <summary>
@@ -157,31 +111,25 @@ namespace NoiseEngine {
         /// </summary>
         /// <returns>A string that represents the current object.</returns>
         public override string ToString() {
-            return $"{nameof(Application)} {{ {nameof(Title)} = \"{Title}\" }}";
+            return $"{nameof(Application)} {{ {nameof(ApplicationName)} = \"{ApplicationName}\" }}";
         }
 
-        private void RenderThreadWorker(object? data) {
-            (Window renderTarget, Camera camera) = ((Window, Camera))data!;
+        internal void IncrementActiveRenderers() {
+            if (Interlocked.Increment(ref activeRenderers) == 1)
+                applicationEndEvent.Reset();
+        }
 
-            Interlocked.Increment(ref activeRenderers);
-
-            MeshRendererSystem meshRenderer = new MeshRendererSystem(GraphicsDevice, camera);
-            meshRenderer.Initialize(World, schedule);
-
-            while (!IsDisposed && !renderTarget.GetShouldClose()) {
-                foreach (EntitySystemBase system in frameDependentSystems)
-                    system.TryExecute();
-
-                foreach (EntitySystemBase system in frameDependentSystems)
-                    system.Wait();
-
-                meshRenderer.ExecuteParallelAndWait();
-            }
-
-            renderTarget.Destroy();
-
+        internal void DecrementActiveRenderers() {
             if (Interlocked.Decrement(ref activeRenderers) == 0)
                 applicationEndEvent.Set();
+        }
+
+        internal void AddSceneToLoaded(ApplicationScene scene) {
+            loadedScenes.Add(scene);
+        }
+
+        internal void RemoveSceneFromLoaded(ApplicationScene scene) {
+            loadedScenes.Remove(scene);
         }
 
     }
