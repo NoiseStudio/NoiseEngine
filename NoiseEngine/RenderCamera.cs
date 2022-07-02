@@ -79,6 +79,10 @@ namespace NoiseEngine {
             Dispose();
         }
 
+        /// <summary>
+        /// Disposes this <see cref="RenderCamera"/> and removes
+        /// <see cref="CameraComponent"/> from <see cref="Entity"/>.
+        /// </summary>
         public void Dispose() {
             if (isDisposed.Exchange(true))
                 return;
@@ -95,6 +99,9 @@ namespace NoiseEngine {
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Renders one frame to <see cref="RenderTarget"/>.
+        /// </summary>
         public void Render() {
             foreach (EntitySystemBase system in Scene.FrameDependentSystems)
                 system.TryExecute();

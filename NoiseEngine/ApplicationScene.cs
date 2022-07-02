@@ -35,6 +35,15 @@ namespace NoiseEngine {
             Application.AddSceneToLoaded(this);
         }
 
+        /// <summary>
+        /// Creates new Window on this <see cref="ApplicationScene"/>.
+        /// </summary>
+        /// <param name="title">Title of <see cref="Window"/>.</param>
+        /// <param name="width">Width of <see cref="Window"/>.</param>
+        /// <param name="height">Height of <see cref="Window"/>.</param>
+        /// <param name="autoRender">If <see langword="true"/> render camera will be automatically renders
+        /// their view to window on each frame.</param>
+        /// <returns>New <see cref="RenderCamera"/>.</returns>
         public RenderCamera CreateWindow(
             string? title = null, uint width = 1280, uint height = 720, bool autoRender = true
         ) {
@@ -64,11 +73,20 @@ namespace NoiseEngine {
             FrameDependentSystems.Add(system);
         }
 
+        /// <summary>
+        /// Checks if this <see cref="ApplicationScene"/> has frame dependent system of a T type.
+        /// </summary>
+        /// <typeparam name="T">Type of <see cref="EntitySystemBase"/>.</typeparam>
+        /// <returns><see langword="true"/> when this <see cref="ApplicationScene"/> has frame dependent system
+        /// of a T type; otherwise <see langword="false"/>.</returns>
         public bool HasFrameDependentSystem<T>() where T : EntitySystemBase {
             Type type = typeof(T);
             return FrameDependentSystems.Any(x => x.GetType() == type);
         }
 
+        /// <summary>
+        /// Disposes this <see cref="ApplicationScene"/>.
+        /// </summary>
         public void Dispose() {
             if (isDisposed.Exchange(true))
                 return;
@@ -86,6 +104,9 @@ namespace NoiseEngine {
             cameras.Remove(renderCamera);
         }
 
+        /// <summary>
+        /// This method is executed when <see cref="Dispose"/> is called.
+        /// </summary>
         protected virtual void OnDispose() {
         }
 

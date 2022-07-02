@@ -56,8 +56,7 @@ namespace NoiseEngine {
         /// <summary>
         /// Creates simple default <see cref="Application"/>.
         /// </summary>
-        /// <param name="cameraEntity"><see cref="Entity"/> with <see cref="Camera"/>.</param>
-        /// <param name="title">Title of <see cref="Application"/>.
+        /// <param name="applicationName">Application name of <see cref="Application"/>.
         /// By default this will be the name of the entry assembly.</param>
         /// <param name="visibleLogs">Defines what logs will be processed by the handlers.</param>
         /// <returns>New instance of <see cref="Application"/>.</returns>
