@@ -10,7 +10,7 @@ namespace NoiseEngine.Components {
 
         [Obsolete($"Do not create this component. No {nameof(Entity)} should have this component.", true)]
         public NotUsedComponent() {
-            throw new NotImplementedException();
+            throw new InvalidOperationException();
         }
 
     }
