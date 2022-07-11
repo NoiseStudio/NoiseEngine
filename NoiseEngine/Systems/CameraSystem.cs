@@ -2,17 +2,17 @@
 using NoiseEngine.Jobs;
 using NoiseEngine.Rendering;
 
-namespace NoiseEngine.Systems {
-    public class CameraSystem : EntitySystem<TransformComponent, CameraComponent> {
+namespace NoiseEngine.Systems;
 
-        protected override void OnUpdateEntity(Entity entity, TransformComponent transform, CameraComponent camera) {
-            Camera? c = camera.RenderCamera.Camera;
-            if (c is null)
-                return;
+public class CameraSystem : EntitySystem<TransformComponent, CameraComponent> {
 
-            c.Position = transform.Position;
-            c.Rotation = transform.Rotation;
-        }
+    protected override void OnUpdateEntity(Entity entity, TransformComponent transform, CameraComponent camera) {
+        Camera? c = camera.RenderCamera.Camera;
+        if (c is null)
+            return;
 
+        c.Position = transform.Position;
+        c.Rotation = transform.Rotation;
     }
+
 }

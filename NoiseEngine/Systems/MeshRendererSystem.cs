@@ -2,25 +2,25 @@
 using NoiseEngine.Jobs;
 using NoiseEngine.Rendering;
 
-namespace NoiseEngine.Systems {
-    public class MeshRendererSystem : EntitySystem<TransformComponent, MeshRendererComponent, MaterialComponent> {
+namespace NoiseEngine.Systems;
 
-        public CommandBuffer CommandBuffer { get; }
+public class MeshRendererSystem : EntitySystem<TransformComponent, MeshRendererComponent, MaterialComponent> {
 
-        public MeshRendererSystem(GraphicsDevice graphicsDevice, Camera camera) {
-            CommandBuffer = new CommandBuffer(graphicsDevice, camera);
-        }
+    public CommandBuffer CommandBuffer { get; }
 
-        protected override void OnUpdateEntity(
-            Entity entity, TransformComponent transform, MeshRendererComponent meshRenderer, MaterialComponent material
-        ) {
-            CommandBuffer.DrawMesh(meshRenderer.Mesh, material.Material, transform.Matrix);
-        }
-
-        protected override void OnLateUpdate() {
-            CommandBuffer.Execute();
-            CommandBuffer.Clear();
-        }
-
+    public MeshRendererSystem(GraphicsDevice graphicsDevice, Camera camera) {
+        CommandBuffer = new CommandBuffer(graphicsDevice, camera);
     }
+
+    protected override void OnUpdateEntity(
+        Entity entity, TransformComponent transform, MeshRendererComponent meshRenderer, MaterialComponent material
+    ) {
+        CommandBuffer.DrawMesh(meshRenderer.Mesh, material.Material, transform.Matrix);
+    }
+
+    protected override void OnLateUpdate() {
+        CommandBuffer.Execute();
+        CommandBuffer.Clear();
+    }
+
 }
