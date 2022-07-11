@@ -1,16 +1,15 @@
 ﻿using NoiseEngine.Diagnostics;
-using Xunit;
 
-namespace NoiseEngine.Tests.Diagnostics {
-    public class MemoryInfoTest {
+namespace NoiseEngine.Tests.Diagnostics;
 
-        [Fact]
-        public void Usage() {
-            Assert.NotEqual(0u, MemoryInfo.TotalPhysicalMemory);
-            Assert.NotEqual(0u, MemoryInfo.AvailablePhysicalMemory);
+public class MemoryInfoTest {
 
-            Assert.True(MemoryInfo.TotalPhysicalMemory > MemoryInfo.AvailablePhysicalMemory);
-        }
+    [Fact]
+    public void Usage() {
+        Assert.NotEqual(0u, MemoryInfo.TotalPhysicalMemory);
+        Assert.NotEqual(0u, MemoryInfo.AvailablePhysicalMemory);
 
+        Assert.True(MemoryInfo.TotalPhysicalMemory > MemoryInfo.AvailablePhysicalMemory);
     }
+
 }

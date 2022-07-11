@@ -4,41 +4,41 @@ using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering;
 using System;
 
-namespace NoiseEngine.Primitives {
-    public class PrimitiveCreator : IDisposable {
+namespace NoiseEngine.Primitives;
 
-        private readonly ApplicationScene scene;
+public class PrimitiveCreator : IDisposable {
 
-        public Shader DefaultShader => Shared.DefaultShader;
-        public Material DefaultMaterial => Shared.DefaultMaterial;
+    private readonly ApplicationScene scene;
 
-        private PrimitiveCreatorShared Shared => scene.Application.PrimitiveShared;
+    public Shader DefaultShader => Shared.DefaultShader;
+    public Material DefaultMaterial => Shared.DefaultMaterial;
 
-        internal PrimitiveCreator(ApplicationScene scene) {
-            this.scene = scene;
-        }
+    private PrimitiveCreatorShared Shared => scene.Application.PrimitiveShared;
 
-        /// <summary>
-        /// Disposes this <see cref="PrimitiveCreator"/>.
-        /// </summary>
-        public void Dispose() {
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Creates primitive cube.
-        /// </summary>
-        /// <param name="position">Position of the cube.</param>
-        /// <param name="rotation">Rotation of the cube.</param>
-        /// <param name="scale">Scale of the cube.</param>
-        /// <returns>Cube <see cref="Entity"/>.</returns>
-        public Entity CreateCube(Float3? position = null, Quaternion? rotation = null, Float3? scale = null) {
-            return scene.EntityWorld.NewEntity(
-                new TransformComponent(position ?? Float3.Zero, rotation ?? Quaternion.Identity, scale ?? Float3.One),
-                new MeshRendererComponent(Shared.CubeMesh),
-                new MaterialComponent(DefaultMaterial)
-            );
-        }
-
+    internal PrimitiveCreator(ApplicationScene scene) {
+        this.scene = scene;
     }
+
+    /// <summary>
+    /// Disposes this <see cref="PrimitiveCreator"/>.
+    /// </summary>
+    public void Dispose() {
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Creates primitive cube.
+    /// </summary>
+    /// <param name="position">Position of the cube.</param>
+    /// <param name="rotation">Rotation of the cube.</param>
+    /// <param name="scale">Scale of the cube.</param>
+    /// <returns>Cube <see cref="Entity"/>.</returns>
+    public Entity CreateCube(Float3? position = null, Quaternion? rotation = null, Float3? scale = null) {
+        return scene.EntityWorld.NewEntity(
+            new TransformComponent(position ?? Float3.Zero, rotation ?? Quaternion.Identity, scale ?? Float3.One),
+            new MeshRendererComponent(Shared.CubeMesh),
+            new MaterialComponent(DefaultMaterial)
+        );
+    }
+
 }
