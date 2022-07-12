@@ -76,6 +76,11 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3<T> operator %(Vector3<T> lhs, T rhs) {
+        return new Vector3<T>(lhs.X % rhs, lhs.Y % rhs, lhs.Z % rhs);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Vector3<T>(T value) {
         return new Vector3<T>(value);
     }
