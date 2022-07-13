@@ -51,9 +51,6 @@
         <Reference Include="NoiseEngine.Serialization">
             <HintPath>../External/NoiseEngine.Serialization.dll</HintPath>
         </Reference>
-        <Reference Include="NoiseEngine.Threading">
-            <HintPath>../External/NoiseEngine.Threading.dll</HintPath>
-        </Reference>
     </ItemGroup>
 
     <Import Project="../NoiseEngine.Shared.xml" />
