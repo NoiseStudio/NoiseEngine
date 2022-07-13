@@ -117,7 +117,7 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     /// </summary>
     /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
-    /// <returns>Result from addition <paramref name="lhs"/> with <paramref name="rhs"/>.</returns>
+    /// <returns>Result of <paramref name="lhs"/> addition with <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator +(Vector3<T> lhs, Vector3<T> rhs) {
         return new Vector3<T>(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z);
@@ -128,7 +128,7 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     /// </summary>
     /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
-    /// <returns>Result from subtraction <paramref name="lhs"/> from <paramref name="rhs"/>.</returns>
+    /// <returns>Result of <paramref name="lhs"/> subtraction from <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator -(Vector3<T> lhs, Vector3<T> rhs) {
         return new Vector3<T>(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z);
@@ -137,8 +137,8 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     /// <summary>
     /// Multiplies <paramref name="lhs"/> by <paramref name="rhs"/>.
     /// </summary>
-    /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
-    /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
+    /// <param name="lhs">Multiplied <see cref="Vector3{T}"/>.</param>
+    /// <param name="rhs">Multiplier of all components.</param>
     /// <returns>Result of <paramref name="lhs"/> multiplication by <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator *(Vector3<T> lhs, T rhs) {
@@ -148,19 +148,19 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     /// <summary>
     /// Divides <paramref name="lhs"/> by <paramref name="rhs"/>.
     /// </summary>
-    /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
-    /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
-    /// <returns>Result from division <paramref name="lhs"/> by <paramref name="rhs"/>.</returns>
+    /// <param name="lhs">Divided <see cref="Vector3{T}"/>.</param>
+    /// <param name="rhs">Divider of all components.</param>
+    /// <returns>Result of <paramref name="lhs"/> division by <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator /(Vector3<T> lhs, T rhs) {
         return new Vector3<T>(lhs.X / rhs, lhs.Y / rhs, lhs.Z / rhs);
     }
 
     /// <summary>
-    /// Returns the remainder of the division.
+    /// Returns the remainder of <paramref name="lhs"/> division by <paramref name="rhs"/>.
     /// </summary>
-    /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
-    /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
+    /// <param name="lhs">Divided <see cref="Vector3{T}"/>.</param>
+    /// <param name="rhs">Divider of all components.</param>
     /// <returns>The remainder of <paramref name="lhs"/> divided-by <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator %(Vector3<T> lhs, T rhs) {
