@@ -6,7 +6,7 @@ namespace NoiseEngine.Tests.Collections;
 
 public class FastListTest {
 
-    private int[] TestArray = { 1, 10, 11, 100, 101, 111, 1000 };
+    private int[] TestArray => new int[] { 1, 10, 11, 100, 101, 111, 1000 };
 
     [Fact]
     public void Indexer() {
@@ -74,7 +74,6 @@ public class FastListTest {
     [Fact]
     public void Insert() {
         List<int> list2 = new List<int>(TestArray);
-        ReadOnlySpan<int> span = list2.ToArray().AsSpan();
         FastList<int> list = new FastList<int>(TestArray);
 
         list2.Insert(4, 2);
