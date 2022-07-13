@@ -6,42 +6,42 @@ namespace NoiseEngine.Mathematics;
 public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
 
     /// <summary>
-    /// Shorthand for writing <see cref="Vector3{T}"/>(T.Zero, T.Zero, T.Zero).
+    /// Shorthand for writing new <see cref="Vector3{T}"/>(T.Zero, T.Zero, T.Zero).
     /// </summary>
     public static Vector3<T> Zero => new Vector3<T>(T.Zero, T.Zero, T.Zero);
 
     /// <summary>
-    /// Shorthand for writing <see cref="Vector3{T}"/>(T.One, T.One, T.One).
+    /// Shorthand for writing new <see cref="Vector3{T}"/>(T.One, T.One, T.One).
     /// </summary>
     public static Vector3<T> One => new Vector3<T>(T.One, T.One, T.One);
 
     /// <summary>
-    /// Shorthand for writing <see cref="Vector3{T}"/>(-T.One, T.Zero, T.Zero).
+    /// Shorthand for writing new <see cref="Vector3{T}"/>(-T.One, T.Zero, T.Zero).
     /// </summary>
     public static Vector3<T> Left => new Vector3<T>(-T.One, T.Zero, T.Zero);
 
     /// <summary>
-    /// Shorthand for writing <see cref="Vector3{T}"/>(T.One, T.Zero, T.Zero).
+    /// Shorthand for writing new <see cref="Vector3{T}"/>(T.One, T.Zero, T.Zero).
     /// </summary>
     public static Vector3<T> Right => new Vector3<T>(T.One, T.Zero, T.Zero);
 
     /// <summary>
-    /// Shorthand for writing <see cref="Vector3{T}"/>(T.Zero, T.One, T.Zero).
+    /// Shorthand for writing new <see cref="Vector3{T}"/>(T.Zero, T.One, T.Zero).
     /// </summary>
     public static Vector3<T> Up => new Vector3<T>(T.Zero, T.One, T.Zero);
 
     /// <summary>
-    /// Shorthand for writing <see cref="Vector3{T}"/>(T.Zero, -T.One, T.Zero).
+    /// Shorthand for writing new <see cref="Vector3{T}"/>(T.Zero, -T.One, T.Zero).
     /// </summary>
     public static Vector3<T> Down => new Vector3<T>(T.Zero, -T.One, T.Zero);
 
     /// <summary>
-    /// Shorthand for writing <see cref="Vector3{T}"/>(T.Zero, T.Zero, T.One).
+    /// Shorthand for writing new <see cref="Vector3{T}"/>(T.Zero, T.Zero, T.One).
     /// </summary>
     public static Vector3<T> Front => new Vector3<T>(T.Zero, T.Zero, T.One);
 
     /// <summary>
-    /// Shorthand for writing <see cref="Vector3{T}"/>(T.Zero, T.Zero, -T.One).
+    /// Shorthand for writing new <see cref="Vector3{T}"/>(T.Zero, T.Zero, -T.One).
     /// </summary>
     public static Vector3<T> Back => new Vector3<T>(T.Zero, T.Zero, -T.One);
 
@@ -65,10 +65,10 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     /// <summary>
-    /// Calculates squared distance of this <see cref="Vector3{T}"/> and <paramref name="rhs"/>.
+    /// Calculates squared distance between this <see cref="Vector3{T}"/> and <paramref name="rhs"/>.
     /// </summary>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
-    /// <returns>Squared distance of this <see cref="Vector3{T}"/> and <paramref name="rhs"/>.</returns>
+    /// <returns>Squared distance between this <see cref="Vector3{T}"/> and <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T DistanceSquared(Vector3<T> rhs) {
         return (this - rhs).MagnitudeSquared();
@@ -79,16 +79,17 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     /// </summary>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
     /// <returns><see cref="Vector3{T}"/> in which every component of this <see cref="Vector3{T}"/>
-    /// is a multiplied by the same component of <paramref name="rhs"/>.</returns>
+    /// is multiplied by the same component of <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Vector3<T> Scale(Vector3<T> rhs) {
         return new Vector3<T>(X * rhs.X, Y * rhs.Y, Z * rhs.Z);
     }
 
     /// <summary>
-    /// Linearly interpolates between <see cref="Vector3{T}"/> and <paramref name="rhs"/>.
+    /// Linearly interpolates between this <see cref="Vector3{T}"/> and <paramref name="rhs"/>.
+    /// This <see cref="Vector3{T}"/> is start value, returned when <paramref name="t"/> = 0.
     /// </summary>
-    /// <param name="rhs">End <see cref="Vector3{T}"/>, returned when <paramref name="t"/> = T.One.</param>
+    /// <param name="rhs">End <see cref="Vector3{T}"/>, returned when <paramref name="t"/> = 1.</param>
     /// <param name="t">Not clamped value used to interpolate between
     /// <see cref="Vector3{T}"/> and <paramref name="rhs"/>.</param>
     /// <returns><see cref="Vector3{T}"/> interpolated value.</returns>
@@ -112,7 +113,7 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     /// <summary>
-    /// Adds <paramref name="lhs"/> with <paramref name="rhs"/>.
+    /// Adds <paramref name="lhs"/> and <paramref name="rhs"/> together to compute their sum.
     /// </summary>
     /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
@@ -123,11 +124,11 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     /// <summary>
-    /// Subtracts <paramref name="lhs"/> with <paramref name="rhs"/>.
+    /// Subtracts <paramref name="lhs"/> from <paramref name="rhs"/>.
     /// </summary>
     /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
-    /// <returns>Result from subtraction <paramref name="lhs"/> with <paramref name="rhs"/>.</returns>
+    /// <returns>Result from subtraction <paramref name="lhs"/> from <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator -(Vector3<T> lhs, Vector3<T> rhs) {
         return new Vector3<T>(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z);
@@ -138,7 +139,7 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     /// </summary>
     /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
-    /// <returns>Result from multiplication <paramref name="lhs"/> by <paramref name="rhs"/>.</returns>
+    /// <returns>Result of <paramref name="lhs"/> multiplication by <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator *(Vector3<T> lhs, T rhs) {
         return new Vector3<T>(lhs.X * rhs, lhs.Y * rhs, lhs.Z * rhs);
@@ -156,7 +157,7 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     /// <summary>
-    /// Return Remainder of <paramref name="lhs"/> divided-by <paramref name="rhs"/>.
+    /// Returns the remainder of the division.
     /// </summary>
     /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>

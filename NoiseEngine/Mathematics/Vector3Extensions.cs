@@ -16,7 +16,7 @@ public static class Vector3Extensions {
     }
 
     /// <summary>
-    /// Normalizes this <paramref name="vector"/>.
+    /// Returns normalized this <paramref name="vector"/>.
     /// </summary>
     /// <param name="vector">This <see cref="Vector3{T}"/>.</param>
     /// <returns>Normalized <paramref name="vector"/>.</returns>
@@ -27,11 +27,11 @@ public static class Vector3Extensions {
     }
 
     /// <summary>
-    /// Calculates distance of <paramref name="lhs"/> and <paramref name="rhs"/>.
+    /// Calculates distance between <paramref name="lhs"/> and <paramref name="rhs"/>.
     /// </summary>
     /// <param name="lhs">First <see cref="Vector3{T}"/>.</param>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
-    /// <returns>Distance of <paramref name="lhs"/> and <paramref name="rhs"/>.</returns>
+    /// <returns>Distance between <paramref name="lhs"/> and <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T Distance<T>(this Vector3<T> lhs, Vector3<T> rhs) where T : INumber<T>, IRootFunctions<T> {
         return T.Sqrt(lhs.DistanceSquared(rhs));
