@@ -24,6 +24,7 @@
 
         <!-- TEMP -->
         <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Threading.dll" DestinationFolder="$(OutputPath)" />
+        <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Collections.dll" DestinationFolder="$(OutputPath)" />
     </Target>
 
 </Project>

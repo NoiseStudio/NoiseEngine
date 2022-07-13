@@ -24,9 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="NoiseEngine.Collections">
-            <HintPath>../External/NoiseEngine.Collections.dll</HintPath>
-        </Reference>
         <Reference Include="NoiseEngine.Common">
             <HintPath>../External/NoiseEngine.Common.dll</HintPath>
         </Reference>
