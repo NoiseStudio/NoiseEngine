@@ -91,8 +91,6 @@ public class Application : IDisposable {
         if (isDisposed.Exchange(true))
             return;
 
-        WaitToEnd();
-
         foreach (ApplicationScene scene in LoadedScenes)
             scene.Dispose();
 

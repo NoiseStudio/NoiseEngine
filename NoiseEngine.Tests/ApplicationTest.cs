@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.DeveloperTools.Components;
 using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Mathematics;
+using System.Threading;
 
 namespace NoiseEngine.Tests;
 
@@ -18,10 +19,13 @@ public class ApplicationTest {
         }
 
         RenderCamera camera = scene.CreateWindow("A lot of X-Cuboids 3090 Ti.");
-        camera.Entity.Add(scene.EntityWorld, new DebugMovementComponent());
-        camera.Scene.AddFrameDependentSystem(new DebugMovementSystem());
+        camera.Entity.Add(scene.EntityWorld, new ApplicationTestSimpleSceneManagerComponent());
+        camera.Scene.AddFrameDependentSystem(new ApplicationTestSimpleSceneManagerSystem(scene));
 
-        application.WaitToEnd();
+        Thread.Sleep(1000);
+
+        if (scene.EntityWorld.HasAnySystem<DebugMovementSystem>())
+            application.WaitToEnd();
     }
 
 }
