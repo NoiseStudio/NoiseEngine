@@ -1,0 +1,25 @@
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '7.x.x'
+        include-prerelease: true
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Run tests
+      run: dotnet test --no-build --verbosity normal
+      env:
+        NOISEENGINE_NO_SUPPORTS: gpu;gui;
