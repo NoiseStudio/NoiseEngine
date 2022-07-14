@@ -1,5 +1,4 @@
-﻿using NoiseEngine.DeveloperTools.Components;
-using NoiseEngine.DeveloperTools.Systems;
+﻿using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Mathematics;
 using System.Threading;
 
@@ -7,7 +6,7 @@ namespace NoiseEngine.Tests;
 
 public class ApplicationTest {
 
-    [Fact]
+    [FactRequire(TestRequirements.Gpu | TestRequirements.Gui)]
     public void SimpleScene() {
         using Application application = Application.Create();
         ApplicationScene scene = new ApplicationScene(application);
