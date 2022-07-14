@@ -29,10 +29,11 @@ internal class ApplicationTestSimpleSceneManagerSystem
     protected override void OnUpdateEntity(
         Entity entity, TransformComponent transform, ApplicationTestSimpleSceneManagerComponent value
     ) {
-        value = value with { Rotation = value.Rotation with {
-            X = Math.Clamp(value.Rotation.X + 0.4f * DeltaTimeF, 0, float.Pi / 2),
-            Y = value.Rotation.Y + 1f * DeltaTimeF
-        } };
+        value = new ApplicationTestSimpleSceneManagerComponent(new Vector3<float>(
+            Math.Clamp(value.Rotation.X + 0.4f * DeltaTimeF, 0, float.Pi / 2),
+            value.Rotation.Y + 1f * DeltaTimeF,
+            0
+        ));
         entity.Set(World, value);
 
         entity.Set(World, transform with {
