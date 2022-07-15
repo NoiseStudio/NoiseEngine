@@ -21,6 +21,9 @@
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
             <_Parameter1>NoiseEngine.Tests</_Parameter1>
         </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>NoiseEngine.Benchmarks</_Parameter1>
+        </AssemblyAttribute>
     </ItemGroup>
 
     <ItemGroup>
@@ -32,9 +35,6 @@
         </Reference>
         <Reference Include="NoiseEngine.InteropServices">
             <HintPath>../External/NoiseEngine.InteropServices.dll</HintPath>
-        </Reference>
-        <Reference Include="NoiseEngine.Jobs">
-            <HintPath>../External/NoiseEngine.Jobs.dll</HintPath>
         </Reference>
         <Reference Include="NoiseEngine.Logging">
             <HintPath>../External/NoiseEngine.Logging.dll</HintPath>
