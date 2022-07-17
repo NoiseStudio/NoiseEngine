@@ -58,15 +58,6 @@ internal class ConcurrentListSegment<T> : IEnumerable<T> {
         return false;
     }
 
-    public bool Contains(T item) {
-        foreach (T? element in this) {
-            if (element is not null && element.Equals(item))
-                return true;
-        }
-
-        return false;
-    }
-
     public IEnumerator<T> GetEnumerator() {
         for (int i = 0; i < nextIndex; i++) {
             ConcurrentListSegmentValue<T> element = items[i];

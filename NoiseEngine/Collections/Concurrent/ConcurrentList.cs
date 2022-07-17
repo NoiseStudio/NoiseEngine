@@ -99,12 +99,10 @@ namespace NoiseEngine.Collections.Concurrent {
         /// <returns><see langword="true"/> if <paramref name="item"/> is found in the <see cref="ConcurrentList{T}"/>;
         /// otherwise, <see langword="false"/>.</returns>
         public bool Contains(T item) {
-            ConcurrentListSegment<T>? segment = head;
-            do {
-                if (segment.Contains(item))
+            foreach (T element in this) {
+                if (element!.Equals(item))
                     return true;
-                segment = segment.Previous;
-            } while (segment is not null);
+            }
 
             return false;
         }
