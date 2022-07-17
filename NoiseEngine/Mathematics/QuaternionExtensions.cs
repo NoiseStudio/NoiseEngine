@@ -39,7 +39,7 @@ public static class QuaternionExtensions {
         if (lhs.Equals(rhs))
             return T.Zero;
 
-        return T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One));
+        return T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One)) * NumberHelper<T>.Two;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -58,7 +58,7 @@ public static class QuaternionExtensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Quaternion<T> Normalize<T>(this Quaternion<T> quaternion) where T : IFloatingPointIeee754<T> {
         T magnitude = T.Sqrt(quaternion.Dot(quaternion));
-        if (magnitude > T.Epsilon)
+        if (magnitude < T.Epsilon)
             return Quaternion<T>.Identity;
 
         return new Quaternion<T>(
