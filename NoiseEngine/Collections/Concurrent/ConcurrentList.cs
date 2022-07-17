@@ -1,78 +1,58 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace NoiseEngine.Collections.Concurrent {
-    public class ConcurrentList<T> : IList<T>, IReadOnlyList<T>, IList {
+    public class ConcurrentList<T> : ICollection<T>, IReadOnlyCollection<T>, ICollection {
 
-        private readonly List<T> list;
-        private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        private const int DefaultCapacity = 4;
 
-        public T this[int index] {
-            get {
-                locker.EnterReadLock();
-                T item;
-                try {
-                    item = list[index];
-                } finally {
-                    locker.ExitReadLock();
-                }
-                return item;
-            }
-            set {
-                locker.EnterWriteLock();
-                try {
-                    list[index] = value;
-                } finally {
-                    locker.ExitWriteLock();
-                }
-            }
-        }
+        private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim();
 
-        public int Count => list.Count;
+        private T[] items;
+        private int count;
+        private int ensureCount;
+        private int newCount;
 
-        public int Capacity {
-            get => list.Capacity;
-            set {
-                locker.EnterWriteLock();
-                try {
-                    list.Capacity = value;
-                } finally {
-                    locker.ExitWriteLock();
-                }
-            }
-        }
+        public int Count => count;
+        private int Capacity => items.Length;
 
-        object? IList.this[int index] {
-            get => this[index];
-            set => this[index] = (T)value!;
-        }
-
-        object ICollection.SyncRoot => ((ICollection)list).SyncRoot;
+        object ICollection.SyncRoot => items.SyncRoot;
         bool ICollection.IsSynchronized => true;
         bool ICollection<T>.IsReadOnly => false;
-        bool IList.IsFixedSize => false;
-        bool IList.IsReadOnly => false;
 
-        public ConcurrentList() {
-            list = new List<T>();
+        public ConcurrentList(int capacity = DefaultCapacity) {
+            items = new T[capacity];
         }
 
-        public ConcurrentList(IEnumerable<T> collection) {
-            list = new List<T>(collection);
+        public ConcurrentList(ICollection<T> items) {
+            this.items = new T[items.Count];
+            items.CopyTo(this.items, 0);
+            count = items.Count;
         }
 
-        public ConcurrentList(int capacity) {
-            list = new List<T>(capacity);
+        public ConcurrentList(ReadOnlySpan<T> items) {
+            this.items = new T[items.Length];
+            items.CopyTo(AsSpan(0, items.Length));
+            count = items.Length;
+        }
+
+        public ConcurrentList(IEnumerable<T> items) {
+            this.items = new T[items.Count()];
+            count = this.items.Length;
+
+            int i = 0;
+            foreach (T item in items)
+                this.items[i++] = item;
+        }
+
+        public ConcurrentList(T[] items) : this((ICollection<T>)items) {
         }
 
         ~ConcurrentList() {
             locker.Dispose();
-        }
-
-        private static bool IsCompatibleObject(object? value) {
-            return (value is T) || (value == null && default(T) == null);
         }
 
         /// <summary>
@@ -80,17 +60,70 @@ namespace NoiseEngine.Collections.Concurrent {
         /// </summary>
         /// <param name="item">Item to add.</param>
         public void Add(T item) {
-            locker.EnterWriteLock();
-            list.Add(item);
-            locker.ExitWriteLock();
+            EnsureCapacity(Interlocked.Increment(ref ensureCount));
+
+            locker.EnterReadLock();
+            items[Interlocked.Increment(ref newCount) - 1] = item;
+            locker.ExitReadLock();
+            Interlocked.Increment(ref count);
+        }
+
+        /// <summary>
+        /// Adds <paramref name="items"/> to the <see cref="ConcurrentList{T}"/>.
+        /// </summary>
+        /// <param name="items">Items to add.</param>
+        public void AddRange(ICollection<T> items) {
+            EnsureCapacity(Interlocked.Add(ref ensureCount, items.Count));
+
+            locker.EnterReadLock();
+            items.CopyTo(this.items, Interlocked.Add(ref newCount, items.Count) - items.Count);
+            locker.ExitReadLock();
+            Interlocked.Add(ref count, items.Count);
+        }
+
+        /// <summary>
+        /// Adds <paramref name="items"/> to the <see cref="ConcurrentList{T}"/>.
+        /// </summary>
+        /// <param name="items">Items to add.</param>
+        public void AddRange(ReadOnlySpan<T> items) {
+            EnsureCapacity(Interlocked.Add(ref ensureCount, items.Length));
+
+            locker.EnterReadLock();
+            items.CopyTo(AsSpan(Interlocked.Add(ref newCount, items.Length) - items.Length, items.Length));
+            locker.ExitReadLock();
+            Interlocked.Add(ref count, items.Length);
+        }
+
+        /// <summary>
+        /// Adds <paramref name="items"/> to the <see cref="ConcurrentList{T}"/>.
+        /// </summary>
+        /// <param name="items">Items to add.</param>
+        public void AddRange(IEnumerable<T> items) {
+            AddRange(items.ToArray());
+        }
+
+        /// <summary>
+        /// Adds <paramref name="items"/> to the <see cref="ConcurrentList{T}"/>.
+        /// </summary>
+        /// <param name="items">Items to add.</param>
+        public void AddRange(T[] items) {
+            AddRange((ICollection<T>)items);
         }
 
         /// <summary>
         /// Removes all elements from the <see cref="ConcurrentList{T}"/>.
         /// </summary>
         public void Clear() {
+            if (count == 0)
+                return;
+
             locker.EnterWriteLock();
-            list.Clear();
+
+            Array.Clear(items, 0, count);
+            count = 0;
+            newCount = 0;
+            ensureCount = 0;
+
             locker.ExitWriteLock();
         }
 
@@ -101,10 +134,12 @@ namespace NoiseEngine.Collections.Concurrent {
         /// <returns><see langword="true"/> if <paramref name="item"/> is found in the <see cref="ConcurrentList{T}"/>;
         /// otherwise, <see langword="false"/>.</returns>
         public bool Contains(T item) {
-            locker.EnterReadLock();
-            bool contains = list.Contains(item);
-            locker.ExitReadLock();
-            return contains;
+            foreach (T i in this) {
+                if (i!.Equals(item))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -115,12 +150,7 @@ namespace NoiseEngine.Collections.Concurrent {
         /// from <see cref="ConcurrentList{T}"/>. The <see cref="Array"/> must have zero-based indexing.</param>
         /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
         public void CopyTo(T[] array, int arrayIndex) {
-            locker.EnterReadLock();
-            try {
-                list.CopyTo(array, arrayIndex);
-            } finally {
-                locker.ExitReadLock();
-            }
+            AsSpan().CopyTo(array.AsSpan(arrayIndex));
         }
 
         /// <summary>
@@ -129,38 +159,12 @@ namespace NoiseEngine.Collections.Concurrent {
         /// <returns>An enumerator that can be used to iterate through the <see cref="ConcurrentList{T}"/>.</returns>
         public IEnumerator<T> GetEnumerator() {
             locker.EnterReadLock();
-            try {
-                for (int i = 0; i < Count; i++)
-                    yield return list[i];
-            } finally {
-                locker.ExitReadLock();
-            }
-        }
-
-        /// <summary>
-        /// Determines the index of a specific <paramref name="item"/> in the <see cref="ConcurrentList{T}"/>.
-        /// </summary>
-        /// <param name="item">The item to locate in the <see cref="ConcurrentList{T}"/>.</param>
-        /// <returns>The index of item if found in the <see cref="ConcurrentList{T}"/>; otherwise, -1.</returns>
-        public int IndexOf(T item) {
-            locker.EnterReadLock();
-            int index = list.IndexOf(item);
+            T[] items = this.items;
+            int count = Count;
             locker.ExitReadLock();
-            return index;
-        }
 
-        /// <summary>
-        /// Inserts an item to the <see cref="ConcurrentList{T}"/> at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
-        /// <param name="item">The item to insert into the <see cref="ConcurrentList{T}"/>.</param>
-        public void Insert(int index, T item) {
-            locker.EnterWriteLock();
-            try {
-                list.Insert(index, item);
-            } finally {
-                locker.ExitWriteLock();
-            }
+            for (int i = 0; i < count; i++)
+                yield return items[i];
         }
 
         /// <summary>
@@ -171,36 +175,35 @@ namespace NoiseEngine.Collections.Concurrent {
         /// otherwise, <see langword="false"/>. This method also returns <see langword="false"/> if item is not found in
         /// the original <see cref="ConcurrentList{T}"/>.</returns>
         public bool Remove(T item) {
-            locker.EnterWriteLock();
-            bool removed = list.Remove(item);
-            locker.ExitWriteLock();
-            return removed;
-        }
+            for (int i = 0; i < count; i++) {
+                if (!items[i]!.Equals(item))
+                    continue;
 
-        /// <summary>
-        /// Removes the <see cref="ConcurrentList{T}"/> item at the specified <paramref name="index"/>.
-        /// </summary>
-        /// <param name="index">The zero-based index of the item to remove.</param>
-        public void RemoveAt(int index) {
-            locker.EnterWriteLock();
-            try {
-                list.RemoveAt(index);
-            } finally {
-                locker.ExitWriteLock();
-            }
-        }
+                locker.EnterWriteLock();
 
-        /// <summary>
-        /// Performs <paramref name="action"/> with exclusive write access to this <see cref="ConcurrentList{T}"/>.
-        /// </summary>
-        /// <param name="action">Performed <see cref="Action"/>.</param>
-        public void WriteWork(Action action) {
-            locker.EnterWriteLock();
-            try {
-                action.Invoke();
-            } finally {
+                if (!items[i]!.Equals(item)) {
+                    for (i = 0; i < count; i++) {
+                        if (items[i]!.Equals(item))
+                            break;
+                    }
+
+                    if (i == count) {
+                        locker.ExitWriteLock();
+                        return false;
+                    }
+                }
+
+                int indexP = i + 1;
+                AsSpan(indexP, count - indexP).CopyTo(AsSpan(i, count - i));
+                items[--count] = default!;
+                ensureCount--;
+                newCount--;
+
                 locker.ExitWriteLock();
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>
@@ -208,56 +211,63 @@ namespace NoiseEngine.Collections.Concurrent {
         /// </summary>
         /// <returns>An array containing copies of the elements of the <see cref="ConcurrentList{T}"/>.</returns>
         public T[] ToArray() {
-            locker.EnterReadLock();
-            T[] result = list.ToArray();
-            locker.ExitReadLock();
+            T[] result = new T[Count];
+            Array.Copy(items, result, result.Length);
             return result;
         }
 
+        /// <summary>
+        /// Creates a new span over this <see cref="ConcurrentList{T}"/>.
+        /// </summary>
+        /// <returns>The span representation of the <see cref="ConcurrentList{T}"/>.</returns>
+        public Span<T> AsSpan() {
+            return items.AsSpan(0, count);
+        }
+
+        /// <summary>
+        /// Creates a new span over a portion of this <see cref="ConcurrentList{T}"/> starting at a specified
+        /// position to the end of the <see cref="ConcurrentList{T}"/>.
+        /// </summary>
+        /// <param name="start">The initial index from which the
+        /// <see cref="ConcurrentList{T}"/> will be converted.</param>
+        /// <returns>The span representation of the <see cref="ConcurrentList{T}"/>.</returns>
+        public Span<T> AsSpan(int start) {
+            return items.AsSpan(start, count - start);
+        }
+
+        /// <summary>
+        /// Creates a new span over a portion of this <see cref="ConcurrentList{T}"/> starting at a specified
+        /// position for a specified length.
+        /// </summary>
+        /// <param name="start">The initial index from which the
+        /// <see cref="ConcurrentList{T}"/> will be converted.</param>
+        /// <param name="length">The number of items in the span.</param>
+        /// <returns>The span representation of the <see cref="ConcurrentList{T}"/>.</returns>
+        public Span<T> AsSpan(int start, int length) {
+            return items.AsSpan(start, length);
+        }
+
+        private void EnsureCapacity(int minCapacity) {
+            if (minCapacity <= Capacity)
+                return;
+
+            locker.EnterWriteLock();
+
+            int newCapacity = Capacity == 0 ? DefaultCapacity : Capacity * 2;
+            if (newCapacity < minCapacity)
+                newCapacity = minCapacity;
+
+            Array.Resize(ref items, newCapacity);
+
+            locker.ExitWriteLock();
+        }
+
         void ICollection.CopyTo(Array array, int index) {
-            locker.EnterReadLock();
-            try {
-                ((ICollection)list).CopyTo(array, index);
-            } finally {
-                locker.ExitReadLock();
-            }
+            items.CopyTo(array, index);
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
             return GetEnumerator();
-        }
-
-        int IList.Add(object? value) {
-            if (!IsCompatibleObject(value))
-                return -1;
-
-            locker.EnterWriteLock();
-            int result = list.Count;
-            list.Add((T)value!);
-            locker.ExitWriteLock();
-            return result;
-        }
-
-        bool IList.Contains(object? value) {
-            if (IsCompatibleObject(value))
-                return Contains((T)value!);
-            return false;
-        }
-
-        int IList.IndexOf(object? value) {
-            if (IsCompatibleObject(value))
-                return IndexOf((T)value!);
-            return -1;
-        }
-
-        void IList.Insert(int index, object? value) {
-            if (IsCompatibleObject(value))
-                Insert(index, (T)value!);
-        }
-
-        void IList.Remove(object? value) {
-            if (IsCompatibleObject(value))
-                Remove((T)value!);
         }
 
     }
