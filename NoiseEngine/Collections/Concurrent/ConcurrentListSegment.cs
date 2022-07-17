@@ -78,4 +78,5 @@ internal class ConcurrentListSegment<T> : IEnumerable<T> {
     IEnumerator IEnumerable.GetEnumerator() {
         return GetEnumerator();
     }
+
 }
