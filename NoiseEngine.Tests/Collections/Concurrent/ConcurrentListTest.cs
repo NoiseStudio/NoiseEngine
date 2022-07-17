@@ -30,18 +30,15 @@ public class ConcurrentListTest {
 
         Parallel.For(0, Environment.ProcessorCount, _ => list.AddRange(TestArray.ToArray().AsSpan()));
 
-        Assert.Equal(testList, list);
+        Assert.Equal(testList.OrderBy(x => x), list.OrderBy(x => x));
     }
 
     [Fact]
     public void Clear() {
         ConcurrentList<int> list = new ConcurrentList<int>();
+        list.Add(4);
 
-        Parallel.ForEach(TestArray, x => {
-            list.Add(x);
-            list.Clear();
-        });
-
+        list.Clear();
         Assert.Empty(list);
     }
 
@@ -94,15 +91,6 @@ public class ConcurrentListTest {
         Parallel.ForEach(chunk, x => list.Remove(x));
 
         Assert.Equal(testList.OrderBy(x => x), list.OrderBy(x => x));
-    }
-
-    [Fact]
-    public void ToArray() {
-        ConcurrentList<int> list = new ConcurrentList<int>();
-
-        Parallel.ForEach(TestArray, list.Add);
-
-        Assert.Equal(TestArray, list.ToArray().OrderBy(x => x));
     }
 
 }

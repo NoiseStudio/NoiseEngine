@@ -7,52 +7,51 @@ using System.Threading;
 namespace NoiseEngine.Collections.Concurrent {
     public class ConcurrentList<T> : ICollection<T>, IReadOnlyCollection<T>, ICollection {
 
-        private const int DefaultCapacity = 4;
+        private const int InitialSegmentCapacity = 32;
+        private const int MaxSegmentCapacity = 1024 * 1024;
 
-        private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim();
+        private ConcurrentListSegment<T> head;
+        private object? syncRoot;
 
-        private T[] items;
-        private int count;
-        private int ensureCount;
-        private int newCount;
+        public int Count {
+            get {
+                int count = 0;
 
-        public int Count => count;
-        private int Capacity => items.Length;
+                ConcurrentListSegment<T>? segment = head;
+                do {
+                    count += segment.Count;
+                    segment = segment.Previous;
+                } while (segment is not null);
 
-        object ICollection.SyncRoot => items.SyncRoot;
+                return count;
+            }
+        }
+
+        object ICollection.SyncRoot {
+            get {
+                Interlocked.CompareExchange(ref syncRoot, new object(), null);
+                return syncRoot;
+            }
+        }
+
         bool ICollection.IsSynchronized => true;
         bool ICollection<T>.IsReadOnly => false;
 
-        public ConcurrentList(int capacity = DefaultCapacity) {
-            items = new T[capacity];
-        }
-
-        public ConcurrentList(ICollection<T> items) {
-            this.items = new T[items.Count];
-            items.CopyTo(this.items, 0);
-            count = items.Count;
-        }
-
-        public ConcurrentList(ReadOnlySpan<T> items) {
-            this.items = new T[items.Length];
-            items.CopyTo(AsSpan(0, items.Length));
-            count = items.Length;
+        public ConcurrentList(int capacity = InitialSegmentCapacity) {
+            head = new ConcurrentListSegment<T>(null, capacity);
         }
 
         public ConcurrentList(IEnumerable<T> items) {
-            this.items = new T[items.Count()];
-            count = this.items.Length;
-
-            int i = 0;
-            foreach (T item in items)
-                this.items[i++] = item;
+            head = new ConcurrentListSegment<T>(null,
+                items.Select(x => new ConcurrentListSegmentValue<T>(x)).ToArray());
         }
 
-        public ConcurrentList(T[] items) : this((ICollection<T>)items) {
-        }
+        public ConcurrentList(ReadOnlySpan<T> items) {
+            ConcurrentListSegmentValue<T>[] result = new ConcurrentListSegmentValue<T>[items.Length];
+            for (int i = 0; i < items.Length; i++)
+                result[i] = new ConcurrentListSegmentValue<T>(items[i]);
 
-        ~ConcurrentList() {
-            locker.Dispose();
+            head = new ConcurrentListSegment<T>(null, result);
         }
 
         /// <summary>
@@ -60,38 +59,11 @@ namespace NoiseEngine.Collections.Concurrent {
         /// </summary>
         /// <param name="item">Item to add.</param>
         public void Add(T item) {
-            EnsureCapacity(Interlocked.Increment(ref ensureCount));
-
-            locker.EnterReadLock();
-            items[Interlocked.Increment(ref newCount) - 1] = item;
-            locker.ExitReadLock();
-            Interlocked.Increment(ref count);
-        }
-
-        /// <summary>
-        /// Adds <paramref name="items"/> to the <see cref="ConcurrentList{T}"/>.
-        /// </summary>
-        /// <param name="items">Items to add.</param>
-        public void AddRange(ICollection<T> items) {
-            EnsureCapacity(Interlocked.Add(ref ensureCount, items.Count));
-
-            locker.EnterReadLock();
-            items.CopyTo(this.items, Interlocked.Add(ref newCount, items.Count) - items.Count);
-            locker.ExitReadLock();
-            Interlocked.Add(ref count, items.Count);
-        }
-
-        /// <summary>
-        /// Adds <paramref name="items"/> to the <see cref="ConcurrentList{T}"/>.
-        /// </summary>
-        /// <param name="items">Items to add.</param>
-        public void AddRange(ReadOnlySpan<T> items) {
-            EnsureCapacity(Interlocked.Add(ref ensureCount, items.Length));
-
-            locker.EnterReadLock();
-            items.CopyTo(AsSpan(Interlocked.Add(ref newCount, items.Length) - items.Length, items.Length));
-            locker.ExitReadLock();
-            Interlocked.Add(ref count, items.Length);
+            ConcurrentListSegment<T>? segment = head;
+            while (!segment.TryAdd(item)) {
+                CreateNextSegmentCompare(segment);
+                segment = head;
+            }
         }
 
         /// <summary>
@@ -99,32 +71,25 @@ namespace NoiseEngine.Collections.Concurrent {
         /// </summary>
         /// <param name="items">Items to add.</param>
         public void AddRange(IEnumerable<T> items) {
-            AddRange(items.ToArray());
+            foreach (T item in items)
+                Add(item);
         }
 
         /// <summary>
         /// Adds <paramref name="items"/> to the <see cref="ConcurrentList{T}"/>.
         /// </summary>
         /// <param name="items">Items to add.</param>
-        public void AddRange(T[] items) {
-            AddRange((ICollection<T>)items);
+        public void AddRange(ReadOnlySpan<T> items) {
+            foreach (T item in items)
+                Add(item);
         }
 
         /// <summary>
         /// Removes all elements from the <see cref="ConcurrentList{T}"/>.
         /// </summary>
         public void Clear() {
-            if (count == 0)
-                return;
-
-            locker.EnterWriteLock();
-
-            Array.Clear(items, 0, count);
-            count = 0;
-            newCount = 0;
-            ensureCount = 0;
-
-            locker.ExitWriteLock();
+            lock (head)
+                head = new ConcurrentListSegment<T>(null, Math.Min(Count, MaxSegmentCapacity));
         }
 
         /// <summary>
@@ -134,10 +99,12 @@ namespace NoiseEngine.Collections.Concurrent {
         /// <returns><see langword="true"/> if <paramref name="item"/> is found in the <see cref="ConcurrentList{T}"/>;
         /// otherwise, <see langword="false"/>.</returns>
         public bool Contains(T item) {
-            foreach (T i in this) {
-                if (i!.Equals(item))
+            ConcurrentListSegment<T>? segment = head;
+            do {
+                if (segment.Contains(item))
                     return true;
-            }
+                segment = segment.Previous;
+            } while (segment is not null);
 
             return false;
         }
@@ -150,7 +117,8 @@ namespace NoiseEngine.Collections.Concurrent {
         /// from <see cref="ConcurrentList{T}"/>. The <see cref="Array"/> must have zero-based indexing.</param>
         /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
         public void CopyTo(T[] array, int arrayIndex) {
-            AsSpan().CopyTo(array.AsSpan(arrayIndex));
+            foreach (T element in this)
+                array[arrayIndex++] = element;
         }
 
         /// <summary>
@@ -158,13 +126,12 @@ namespace NoiseEngine.Collections.Concurrent {
         /// </summary>
         /// <returns>An enumerator that can be used to iterate through the <see cref="ConcurrentList{T}"/>.</returns>
         public IEnumerator<T> GetEnumerator() {
-            locker.EnterReadLock();
-            T[] items = this.items;
-            int count = Count;
-            locker.ExitReadLock();
-
-            for (int i = 0; i < count; i++)
-                yield return items[i];
+            ConcurrentListSegment<T>? segment = head;
+            do {
+                foreach (T element in segment)
+                    yield return element;
+                segment = segment.Previous;
+            } while (segment is not null);
         }
 
         /// <summary>
@@ -175,95 +142,34 @@ namespace NoiseEngine.Collections.Concurrent {
         /// otherwise, <see langword="false"/>. This method also returns <see langword="false"/> if item is not found in
         /// the original <see cref="ConcurrentList{T}"/>.</returns>
         public bool Remove(T item) {
-            for (int i = 0; i < count; i++) {
-                if (!items[i]!.Equals(item))
-                    continue;
+            ConcurrentListSegment<T>? previous = null;
+            ConcurrentListSegment<T>? segment = head;
 
-                locker.EnterWriteLock();
+            do {
+                if (segment.TryRemove(item)) {
+                    if (segment.IsFull && segment.Count == 0 && previous != null)
+                        previous.CompareExchangePrevious(segment.Previous, segment);
 
-                if (!items[i]!.Equals(item)) {
-                    for (i = 0; i < count; i++) {
-                        if (items[i]!.Equals(item))
-                            break;
-                    }
-
-                    if (i == count) {
-                        locker.ExitWriteLock();
-                        return false;
-                    }
+                    return true;
                 }
 
-                int indexP = i + 1;
-                AsSpan(indexP, count - indexP).CopyTo(AsSpan(i, count - i));
-                items[--count] = default!;
-                ensureCount--;
-                newCount--;
-
-                locker.ExitWriteLock();
-                return true;
-            }
+                previous = segment;
+                segment = segment.Previous;
+            } while (segment is not null);
 
             return false;
         }
 
-        /// <summary>
-        /// Copies the elements of the <see cref="ConcurrentList{T}"/> to a new array.
-        /// </summary>
-        /// <returns>An array containing copies of the elements of the <see cref="ConcurrentList{T}"/>.</returns>
-        public T[] ToArray() {
-            T[] result = new T[Count];
-            Array.Copy(items, result, result.Length);
-            return result;
-        }
-
-        /// <summary>
-        /// Creates a new span over this <see cref="ConcurrentList{T}"/>.
-        /// </summary>
-        /// <returns>The span representation of the <see cref="ConcurrentList{T}"/>.</returns>
-        public Span<T> AsSpan() {
-            return items.AsSpan(0, count);
-        }
-
-        /// <summary>
-        /// Creates a new span over a portion of this <see cref="ConcurrentList{T}"/> starting at a specified
-        /// position to the end of the <see cref="ConcurrentList{T}"/>.
-        /// </summary>
-        /// <param name="start">The initial index from which the
-        /// <see cref="ConcurrentList{T}"/> will be converted.</param>
-        /// <returns>The span representation of the <see cref="ConcurrentList{T}"/>.</returns>
-        public Span<T> AsSpan(int start) {
-            return items.AsSpan(start, count - start);
-        }
-
-        /// <summary>
-        /// Creates a new span over a portion of this <see cref="ConcurrentList{T}"/> starting at a specified
-        /// position for a specified length.
-        /// </summary>
-        /// <param name="start">The initial index from which the
-        /// <see cref="ConcurrentList{T}"/> will be converted.</param>
-        /// <param name="length">The number of items in the span.</param>
-        /// <returns>The span representation of the <see cref="ConcurrentList{T}"/>.</returns>
-        public Span<T> AsSpan(int start, int length) {
-            return items.AsSpan(start, length);
-        }
-
-        private void EnsureCapacity(int minCapacity) {
-            if (minCapacity <= Capacity)
-                return;
-
-            locker.EnterWriteLock();
-
-            int newCapacity = Capacity == 0 ? DefaultCapacity : Capacity * 2;
-            if (newCapacity < minCapacity)
-                newCapacity = minCapacity;
-
-            Array.Resize(ref items, newCapacity);
-
-            locker.ExitWriteLock();
+        private void CreateNextSegmentCompare(ConcurrentListSegment<T> comparand) {
+            lock (head) {
+                if (head == comparand)
+                    head = new ConcurrentListSegment<T>(head, Math.Min(head.Capacity * 2, MaxSegmentCapacity));
+            }
         }
 
         void ICollection.CopyTo(Array array, int index) {
-            items.CopyTo(array, index);
+            foreach (T element in this)
+                array.SetValue(element, index++);
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
