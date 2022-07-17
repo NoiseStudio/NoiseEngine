@@ -7,6 +7,9 @@ namespace NoiseEngine.Mathematics;
 [StructLayout(LayoutKind.Sequential)]
 public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumber<T> {
 
+    /// <summary>
+    /// Quaternion that represents not rotated object (with euler angles (0, 0, 0)).
+    /// </summary>
     public static Quaternion<T> Identity => new Quaternion<T>(T.Zero, T.Zero, T.Zero, T.One);
 
     /// <summary>
@@ -19,6 +22,13 @@ public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumbe
         return X * rhs.X + Y * rhs.Y + Z * rhs.Z + W * rhs.W;
     }
 
+    /// <summary>
+    /// Combines <paramref name="lhs"/> with <paramref name="rhs"/>.
+    /// </summary>
+    /// <param name="lhs">First <see cref="Quaternion{T}"/>.</param>
+    /// <param name="rhs">Second <see cref="Quaternion{T}"/>.</param>
+    /// <returns><see cref="Quaternion{T}"/> with combined rotation
+    /// <paramref name="lhs"/> with <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Quaternion<T> operator *(Quaternion<T> lhs, Quaternion<T> rhs) {
         return new Quaternion<T>(
@@ -29,6 +39,12 @@ public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumbe
         );
     }
 
+    /// <summary>
+    /// Rotates <paramref name="point"/> by <paramref name="rotation"/>.
+    /// </summary>
+    /// <param name="rotation"><see cref="Quaternion{T}"/> that <paramref name="point"/> will be rotated by.</param>
+    /// <param name="point">Point that will be rotated.</param>
+    /// <returns>Rotated <paramref name="point"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator *(Quaternion<T> rotation, Vector3<T> point) {
         T x = rotation.X * NumberHelper<T>.Two;

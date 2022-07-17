@@ -5,6 +5,13 @@ namespace NoiseEngine.Mathematics;
 
 public static class Quaternion {
 
+    /// <summary>
+    /// Converts euler angles in radians to <see cref="Quaternion{T}"/>.
+    /// </summary>
+    /// <param name="x">Pitch euler angle.</param>
+    /// <param name="y">Yaw euler angle.</param>
+    /// <param name="z">Roll euler angle.</param>
+    /// <returns><see cref="Quaternion{T}"/> representation of angles.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Quaternion<T> EulerRadians<T>(T x, T y, T z)
         where T : INumber<T>, ITrigonometricFunctions<T>
@@ -24,6 +31,11 @@ public static class Quaternion {
         );
     }
 
+    /// <summary>
+    /// Converts euler angles in radians to <see cref="Quaternion{T}"/>.
+    /// </summary>
+    /// <param name="angles">Euler angle in radians.</param>
+    /// <returns><see cref="Quaternion{T}"/> representation of angles.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Quaternion<T> EulerRadians<T>(Vector3<T> angles)
         where T : INumber<T>, ITrigonometricFunctions<T>
@@ -31,6 +43,13 @@ public static class Quaternion {
         return EulerRadians(angles.X, angles.Y, angles.Z);
     }
 
+    /// <summary>
+    /// Converts euler angles in degrees to <see cref="Quaternion{T}"/>.
+    /// </summary>
+    /// <param name="x">Pitch euler angle.</param>
+    /// <param name="y">Yaw euler angle.</param>
+    /// <param name="z">Roll euler angle.</param>
+    /// <returns><see cref="Quaternion{T}"/> representation of angles.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Quaternion<T> EulerDegrees<T>(T x, T y, T z)
         where T : IFloatingPointIeee754<T>
@@ -42,6 +61,11 @@ public static class Quaternion {
         );
     }
 
+    /// <summary>
+    /// Converts euler angles in degrees to <see cref="Quaternion{T}"/>.
+    /// </summary>
+    /// <param name="angles">Euler angle in degrees.</param>
+    /// <returns><see cref="Quaternion{T}"/> representation of angles.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Quaternion<T> EulerDegrees<T>(Vector3<T> angles)
         where T : IFloatingPointIeee754<T>

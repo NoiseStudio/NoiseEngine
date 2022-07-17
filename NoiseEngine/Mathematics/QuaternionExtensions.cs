@@ -5,6 +5,11 @@ namespace NoiseEngine.Mathematics;
 
 public static class QuaternionExtensions {
 
+    /// <summary>
+    /// Converts <paramref name="quaternion"/> to <see cref="Vector3{T}"/> with euler angles in radians.
+    /// </summary>
+    /// <param name="quaternion"><see cref="Quaternion{T}"/> to convert.</param>
+    /// <returns>Euler angles of <paramref name="quaternion"/> in radians.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> ToEulerRadians<T>(this Quaternion<T> quaternion)
         where T : INumber<T>, ITrigonometricFunctions<T>
@@ -22,6 +27,11 @@ public static class QuaternionExtensions {
         return new Vector3<T>(T.Atan2(t0, t1), T.Asin(t2), T.Atan2(t3, t4));
     }
 
+    /// <summary>
+    /// Converts <paramref name="quaternion"/> to <see cref="Vector3{T}"/> with euler angles in degrees.
+    /// </summary>
+    /// <param name="quaternion"><see cref="Quaternion{T}"/> to convert.</param>
+    /// <returns>Euler angles of <paramref name="quaternion"/> in degrees.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> ToEulerDegress<T>(this Quaternion<T> quaternion) where T : IFloatingPointIeee754<T> {
         Vector3<T> r = quaternion.ToEulerRadians();
@@ -32,6 +42,12 @@ public static class QuaternionExtensions {
         );
     }
 
+    /// <summary>
+    /// Calculates angle in radians between <paramref name="lhs"/> and <paramref name="rhs"/>.
+    /// </summary>
+    /// <param name="lhs">First <see cref="Quaternion{T}"/>.</param>
+    /// <param name="rhs">Second <see cref="Quaternion{T}"/>.</param>
+    /// <returns>Angle in radians between <paramref name="lhs"/> and <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T AngleRadians<T>(this Quaternion<T> lhs, Quaternion<T> rhs)
         where T : INumber<T>, ITrigonometricFunctions<T>
@@ -42,6 +58,12 @@ public static class QuaternionExtensions {
         return T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One)) * NumberHelper<T>.Two;
     }
 
+    /// <summary>
+    /// Calculates angle in degrees between <paramref name="lhs"/> and <paramref name="rhs"/>.
+    /// </summary>
+    /// <param name="lhs">First <see cref="Quaternion{T}"/>.</param>
+    /// <param name="rhs">Second <see cref="Quaternion{T}"/>.</param>
+    /// <returns>Angle in degrees between <paramref name="lhs"/> and <paramref name="rhs"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T AngleDegrees<T>(this Quaternion<T> lhs, Quaternion<T> rhs) where T : IFloatingPointIeee754<T> {
         if (lhs.Equals(rhs))
@@ -51,9 +73,9 @@ public static class QuaternionExtensions {
     }
 
     /// <summary>
-    /// Returns normalized this <paramref name="quaternion"/>.
+    /// Returns normalized <paramref name="quaternion"/>.
     /// </summary>
-    /// <param name="quaternion">This <see cref="Quaternion{T}"/>.</param>
+    /// <param name="quaternion"><see cref="Quaternion{T}"/> to normalize.</param>
     /// <returns>Normalized <paramref name="quaternion"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Quaternion<T> Normalize<T>(this Quaternion<T> quaternion) where T : IFloatingPointIeee754<T> {
