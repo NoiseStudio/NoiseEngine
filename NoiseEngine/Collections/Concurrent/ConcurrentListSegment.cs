@@ -15,7 +15,7 @@ internal class ConcurrentListSegment<T> : IEnumerable<T> {
 
     public int Capacity => items.Length;
     public int Count => count;
-    public bool IsFull => nextIndex >= Capacity;
+    public bool IsFull => nextIndex >= Capacity - 1;
 
     public ConcurrentListSegment<T>? Previous => previous;
 
