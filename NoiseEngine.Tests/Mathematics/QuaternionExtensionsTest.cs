@@ -16,7 +16,7 @@ public class QuaternionExtensionsTest {
     public void ToEulerDegrees() {
         Quaternion<float> a = new Quaternion<float>(0.3122061f, 0.4274071f, 0.3122061f, 0.7889094f);
 
-        Assert.Equal(new Vector3<float>(59.9313854f, 28.647892f, 59.9313854f), a.ToEulerDegress());
+        Assert.Equal(new Vector3<float>(59.9313854f, 28.647892f, 59.9313854f), a.ToEulerDegrees());
     }
 
     [Fact]

@@ -14,15 +14,15 @@ public static class QuaternionExtensions {
     public static Vector3<T> ToEulerRadians<T>(this Quaternion<T> quaternion)
         where T : INumber<T>, ITrigonometricFunctions<T>
     {
-        T t0 = (quaternion.W * quaternion.X + quaternion.Y * quaternion.Z) * NumberHelper<T>.Two;
-        T t1 = T.One - (quaternion.X * quaternion.X + quaternion.Y * quaternion.Y) * NumberHelper<T>.Two;
+        T t0 = (quaternion.W * quaternion.X + quaternion.Y * quaternion.Z) * NumberHelper<T>.Value2;
+        T t1 = T.One - (quaternion.X * quaternion.X + quaternion.Y * quaternion.Y) * NumberHelper<T>.Value2;
 
-        T t2 = (quaternion.W * quaternion.Y - quaternion.Z * quaternion.X) * NumberHelper<T>.Two;
+        T t2 = (quaternion.W * quaternion.Y - quaternion.Z * quaternion.X) * NumberHelper<T>.Value2;
         t2 = T.Min(T.One, t2);
         t2 = t2 < -T.One ? T.One : t2;
 
-        T t3 = (quaternion.W * quaternion.Z + quaternion.X * quaternion.Y) * NumberHelper<T>.Two;
-        T t4 = T.One - (quaternion.Y * quaternion.Y + quaternion.Z * quaternion.Z) * NumberHelper<T>.Two;
+        T t3 = (quaternion.W * quaternion.Z + quaternion.X * quaternion.Y) * NumberHelper<T>.Value2;
+        T t4 = T.One - (quaternion.Y * quaternion.Y + quaternion.Z * quaternion.Z) * NumberHelper<T>.Value2;
 
         return new Vector3<T>(T.Atan2(t0, t1), T.Asin(t2), T.Atan2(t3, t4));
     }
@@ -33,12 +33,12 @@ public static class QuaternionExtensions {
     /// <param name="quaternion"><see cref="Quaternion{T}"/> to convert.</param>
     /// <returns>Euler angles of <paramref name="quaternion"/> in degrees.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector3<T> ToEulerDegress<T>(this Quaternion<T> quaternion) where T : IFloatingPointIeee754<T> {
+    public static Vector3<T> ToEulerDegrees<T>(this Quaternion<T> quaternion) where T : IFloatingPointIeee754<T> {
         Vector3<T> r = quaternion.ToEulerRadians();
         return new Vector3<T>(
-            FloatingPointIeee754Helper.ConvertRadiansToDegress(r.X),
-            FloatingPointIeee754Helper.ConvertRadiansToDegress(r.Y),
-            FloatingPointIeee754Helper.ConvertRadiansToDegress(r.Z)
+            FloatingPointIeee754Helper.ConvertRadiansToDegrees(r.X),
+            FloatingPointIeee754Helper.ConvertRadiansToDegrees(r.Y),
+            FloatingPointIeee754Helper.ConvertRadiansToDegrees(r.Z)
         );
     }
 
@@ -55,7 +55,7 @@ public static class QuaternionExtensions {
         if (lhs.Equals(rhs))
             return T.Zero;
 
-        return T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One)) * NumberHelper<T>.Two;
+        return T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One)) * NumberHelper<T>.Value2;
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public static class QuaternionExtensions {
         if (lhs.Equals(rhs))
             return T.Zero;
 
-        return FloatingPointIeee754Helper.ConvertRadiansToDegress(T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One)));
+        return FloatingPointIeee754Helper.ConvertRadiansToDegrees(T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One)));
     }
 
     /// <summary>

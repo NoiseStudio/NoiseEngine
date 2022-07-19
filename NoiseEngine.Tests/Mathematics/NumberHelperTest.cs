@@ -11,17 +11,17 @@ public class NumberHelperTest {
 
     [Fact]
     public void Two() {
-        Assert.Equal(2, NumberHelper<double>.Two);
+        Assert.Equal(2, NumberHelper<double>.Value2);
     }
 
     [Fact]
     public void Three() {
-        Assert.Equal(3, NumberHelper<double>.Three);
+        Assert.Equal(3, NumberHelper<double>.Value3);
     }
 
     [Fact]
     public void Five() {
-        Assert.Equal(5, NumberHelper<double>.Five);
+        Assert.Equal(5, NumberHelper<double>.Value5);
     }
 
     [Fact]

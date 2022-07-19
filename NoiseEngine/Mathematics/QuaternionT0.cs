@@ -55,9 +55,9 @@ public static class Quaternion {
         where T : IFloatingPointIeee754<T>
     {
         return EulerRadians(
-            FloatingPointIeee754Helper.ConvertDegressToRadians(x),
-            FloatingPointIeee754Helper.ConvertDegressToRadians(y),
-            FloatingPointIeee754Helper.ConvertDegressToRadians(z)
+            FloatingPointIeee754Helper.ConvertDegreesToRadians(x),
+            FloatingPointIeee754Helper.ConvertDegreesToRadians(y),
+            FloatingPointIeee754Helper.ConvertDegreesToRadians(z)
         );
     }
 

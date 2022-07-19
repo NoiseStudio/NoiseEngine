@@ -47,9 +47,9 @@ public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumbe
     /// <returns>Rotated <paramref name="point"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3<T> operator *(Quaternion<T> rotation, Vector3<T> point) {
-        T x = rotation.X * NumberHelper<T>.Two;
-        T y = rotation.Y * NumberHelper<T>.Two;
-        T z = rotation.Z * NumberHelper<T>.Two;
+        T x = rotation.X * NumberHelper<T>.Value2;
+        T y = rotation.Y * NumberHelper<T>.Value2;
+        T z = rotation.Z * NumberHelper<T>.Value2;
         T xx = rotation.X * x;
         T yy = rotation.Y * y;
         T zz = rotation.Z * z;

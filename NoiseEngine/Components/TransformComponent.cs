@@ -51,7 +51,7 @@ public record struct TransformComponent : IEntityComponent {
         this.scale = scale;
 
         // TODO: implement
-        Matrix = Matrix4x4.Translate(new Float3(Position.X, position.Y, position.Z));
+        Matrix = Matrix4x4.Translate(new Float3(position.X, position.Y, position.Z));
         // * Matrix4x4.Rotate(rotation) * Matrix4x4.Scale(scale);
     }
 
