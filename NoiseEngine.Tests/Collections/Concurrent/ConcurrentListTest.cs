@@ -1,41 +1,55 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace NoiseEngine.Tests.Collections.Concurrent;
 
 public class ConcurrentListTest {
 
-    [Fact]
-    public void Indexer() {
-        ConcurrentList<int> list = new ConcurrentList<int>();
-        list.Add(1);
-
-        Assert.Equal(1, list[0]);
-        list[0] = 2;
-        Assert.Equal(2, list[0]);
-    }
+    private IReadOnlyCollection<int> TestArray { get; } =
+        Enumerable.Range(0, Environment.ProcessorCount * 5).ToArray();
 
     [Fact]
     public void Add() {
         ConcurrentList<int> list = new ConcurrentList<int>();
-        list.Add(1);
+
+        Parallel.ForEach(TestArray, list.Add);
+
+        Assert.Equal(TestArray, list.OrderBy(x => x));
+    }
+
+    [Fact]
+    public void AddRangeSpan() {
+        ConcurrentList<int> list = new ConcurrentList<int>();
+        List<int> testList = new List<int>();
+
+        for (int i = 0; i < Environment.ProcessorCount; i++)
+            testList.AddRange(TestArray);
+
+        Parallel.For(0, Environment.ProcessorCount, _ => list.AddRange(TestArray.ToArray().AsSpan()));
+
+        Assert.Equal(testList.OrderBy(x => x), list.OrderBy(x => x));
     }
 
     [Fact]
     public void Clear() {
         ConcurrentList<int> list = new ConcurrentList<int>();
-        list.Add(1);
-        list.Clear();
+        list.Add(4);
 
+        list.Clear();
         Assert.Empty(list);
     }
 
     [Fact]
     public void Contains() {
         ConcurrentList<int> list = new ConcurrentList<int>();
-        list.Add(1);
 
-        Assert.Contains(1, list);
+        Parallel.ForEach(TestArray, x => {
+            list.Add(x);
+            Assert.Contains(x, list);
+        });
     }
 
     [Fact]
@@ -56,11 +70,6 @@ public class ConcurrentListTest {
         list.Add(4);
         list.Add(3);
 
-        Assert.ThrowsAny<Exception>(() => {
-            foreach (int item in list)
-                list.Add(5);
-        });
-
         int sum = 0;
         foreach (int item in list)
             sum += item;
@@ -69,83 +78,19 @@ public class ConcurrentListTest {
     }
 
     [Fact]
-    public void IndexOf() {
-        ConcurrentList<bool> list = new ConcurrentList<bool>();
-        list.Add(true);
-        list.Add(false);
-
-        Assert.Equal(1, list.IndexOf(false));
-    }
-
-    [Fact]
-    public void Insert() {
-        ConcurrentList<bool> list = new ConcurrentList<bool>();
-        list.Add(true);
-        list.Add(true);
-
-        Assert.True(list[0]);
-        Assert.True(list[1]);
-
-        list.Insert(1, false);
-
-        Assert.True(list[0]);
-        Assert.False(list[1]);
-        Assert.True(list[2]);
-        Assert.Equal(3, list.Count);
-    }
-
-    [Fact]
     public void Remove() {
-        ConcurrentList<bool> list = new ConcurrentList<bool>();
-        list.Add(true);
-        list.Add(true);
-
-        Assert.True(list[0]);
-        Assert.True(list[1]);
-
-        list.Remove(true);
-
-        Assert.True(list[0]);
-        Assert.Single(list);
-    }
-
-    [Fact]
-    public void RemoveAt() {
         ConcurrentList<int> list = new ConcurrentList<int>();
-        list.Add(1);
-        list.Add(2);
-        list.Add(3);
 
-        Assert.Equal(1, list[0]);
-        Assert.Equal(2, list[1]);
+        int[] chunk = TestArray.Chunk(TestArray.Count / 2).First();
+        List<int> testList = new List<int>(TestArray);
 
-        list.RemoveAt(1);
+        foreach (int element in chunk)
+            testList.Remove(element);
 
-        Assert.Equal(1, list[0]);
-        Assert.Equal(3, list[1]);
-    }
+        Parallel.ForEach(TestArray, list.Add);
+        Parallel.ForEach(chunk, x => list.Remove(x));
 
-    [Fact]
-    public void WriteWork() {
-        ConcurrentList<int> list = new ConcurrentList<int>();
-        list.WriteWork(() => {
-            list.Add(1);
-            list.Add(35);
-        });
-
-        Assert.Equal(1, list[0]);
-        Assert.Equal(35, list[1]);
-    }
-
-    [Fact]
-    public void ToArray() {
-        ConcurrentList<int> list = new ConcurrentList<int>();
-        int[] items = { 1324, 333 };
-
-        foreach (int item in items)
-            list.Add(item);
-
-        Assert.Equal(items, list.ToArray());
+        Assert.Equal(testList.OrderBy(x => x), list.OrderBy(x => x));
     }
 
 }
