@@ -2,11 +2,15 @@ name: Tests
 
 on:
   pull_request:
-    types: [opened, synchronize, closed]
+    types: [opened, synchronize]
+  push:
+    branches:
+      - master
+      - release-*
+      - dev-*
 
 jobs:
   tests:
-    if: (github.event.action != 'closed') || (github.event.action == 'closed' && github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
 
     steps:
