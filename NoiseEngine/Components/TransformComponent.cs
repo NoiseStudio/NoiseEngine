@@ -6,13 +6,13 @@ namespace NoiseEngine.Components;
 
 public record struct TransformComponent : IEntityComponent {
 
-    private readonly Float3 position;
-    private readonly Quaternion rotation;
-    private readonly Float3 scale;
+    private readonly Vector3<float> position;
+    private readonly Quaternion<float> rotation;
+    private readonly Vector3<float> scale;
 
     public static TransformComponent Default => new TransformComponent();
 
-    public Float3 Position {
+    public Vector3<float> Position {
         get => position;
         init {
             position = value;
@@ -20,7 +20,7 @@ public record struct TransformComponent : IEntityComponent {
         }
     }
 
-    public Quaternion Rotation {
+    public Quaternion<float> Rotation {
         get => rotation;
         init {
             rotation = value;
@@ -28,7 +28,7 @@ public record struct TransformComponent : IEntityComponent {
         }
     }
 
-    public Float3 Scale {
+    public Vector3<float> Scale {
         get => scale;
         init {
             scale = value;
@@ -38,28 +38,31 @@ public record struct TransformComponent : IEntityComponent {
 
     public Matrix4x4 Matrix { get; private init; }
 
-    public Float3 Left => Rotation * Float3.Left;
-    public Float3 Right => Rotation * Float3.Right;
-    public Float3 Up => Rotation * Float3.Up;
-    public Float3 Down => Rotation * Float3.Down;
-    public Float3 Front => Rotation * Float3.Front;
-    public Float3 Back => Rotation * Float3.Back;
+    public Vector3<float> Left => Rotation * Vector3<float>.Left;
+    public Vector3<float> Right => Rotation * Vector3<float>.Right;
+    public Vector3<float> Up => Rotation * Vector3<float>.Up;
+    public Vector3<float> Down => Rotation * Vector3<float>.Down;
+    public Vector3<float> Front => Rotation * Vector3<float>.Front;
+    public Vector3<float> Back => Rotation * Vector3<float>.Back;
 
-    public TransformComponent(Float3 position, Quaternion rotation, Float3 scale) {
+    public TransformComponent(Vector3<float> position, Quaternion<float> rotation, Vector3<float> scale) {
         this.position = position;
         this.rotation = rotation;
         this.scale = scale;
 
-        Matrix = Matrix4x4.Translate(position) * Matrix4x4.Rotate(rotation) * Matrix4x4.Scale(scale);
+        // TODO: implement
+        Matrix = Matrix4x4.Translate(new Float3(position.X, position.Y, position.Z));
+        // * Matrix4x4.Rotate(rotation) * Matrix4x4.Scale(scale);
     }
 
-    public TransformComponent(Float3 position, Quaternion rotation) : this(position, rotation, Float3.One) {
+    public TransformComponent(Vector3<float> position, Quaternion<float> rotation)
+        : this(position, rotation, Vector3<float>.One) {
     }
 
-    public TransformComponent(Float3 position) : this(position, Quaternion.Identity) {
+    public TransformComponent(Vector3<float> position) : this(position, Quaternion<float>.Identity) {
     }
 
-    public TransformComponent() : this(Float3.Zero) {
+    public TransformComponent() : this(Vector3<float>.Zero) {
     }
 
     /// <summary>
@@ -81,7 +84,9 @@ public record struct TransformComponent : IEntityComponent {
     }
 
     private Matrix4x4 CalculateMatrix() {
-        return Matrix4x4.Translate(Position) * Matrix4x4.Rotate(Rotation) * Matrix4x4.Scale(Scale);
+        // TODO: implement
+        return Matrix4x4.Translate(new Float3(Position.X, position.Y, position.Z));
+        // * Matrix4x4.Rotate(Rotation) * Matrix4x4.Scale(Scale);
     }
 
     private bool PrintMembers(StringBuilder builder) {

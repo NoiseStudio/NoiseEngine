@@ -33,7 +33,7 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
 
         Input input = Input.GetInput(window);
 
-        Float3 position = transform.Position;
+        Vector3<float> position = transform.Position;
         bool changePosition = false;
 
         if (input.ScrollOffset.Y != 0) {
@@ -77,7 +77,11 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
                 (float)deltaPosition.X * Sensitivity + movement.MouseRotation.Y
             )
         };
-        Quaternion rotation = Quaternion.FromEulerAngles(movement.MouseRotation);
+        Quaternion<float> rotation = Quaternion.EulerRadians(new Vector3<float>(
+            movement.MouseRotation.X,
+            movement.MouseRotation.Y,
+            0
+        ));
 
         input.CursorPosition = centerPosition;
 

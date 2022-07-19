@@ -66,7 +66,8 @@ public class RenderCamera : IDisposable {
         Camera = camera;
 
         Entity = scene.EntityWorld.NewEntity(
-            new TransformComponent(camera.Position, camera.Rotation),
+            // TODO: implement
+            new TransformComponent(/*camera.Position, camera.Rotation*/),
             new CameraComponent(this)
         );
 

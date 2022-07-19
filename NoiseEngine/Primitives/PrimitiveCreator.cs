@@ -33,9 +33,12 @@ public class PrimitiveCreator : IDisposable {
     /// <param name="rotation">Rotation of the cube.</param>
     /// <param name="scale">Scale of the cube.</param>
     /// <returns>Cube <see cref="Entity"/>.</returns>
-    public Entity CreateCube(Float3? position = null, Quaternion? rotation = null, Float3? scale = null) {
+    public Entity CreateCube(
+        Vector3<float>? position = null, Quaternion<float>? rotation = null, Vector3<float>? scale = null
+    ) {
         return scene.EntityWorld.NewEntity(
-            new TransformComponent(position ?? Float3.Zero, rotation ?? Quaternion.Identity, scale ?? Float3.One),
+            new TransformComponent(
+                position ?? Vector3<float>.Zero, rotation ?? Quaternion<float>.Identity, scale ?? Vector3<float>.One),
             new MeshRendererComponent(Shared.CubeMesh),
             new MaterialComponent(DefaultMaterial)
         );
