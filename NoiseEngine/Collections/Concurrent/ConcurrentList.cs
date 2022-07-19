@@ -30,7 +30,8 @@ public class ConcurrentList<T> : ICollection<T>, IReadOnlyCollection<T>, ICollec
 
     object ICollection.SyncRoot {
         get {
-            Interlocked.CompareExchange(ref syncRoot, new object(), null);
+            if (syncRoot is null)
+                Interlocked.CompareExchange(ref syncRoot, new object(), null);
             return syncRoot;
         }
     }
@@ -60,7 +61,7 @@ public class ConcurrentList<T> : ICollection<T>, IReadOnlyCollection<T>, ICollec
     /// </summary>
     /// <param name="item">Item to add.</param>
     public void Add(T item) {
-        ConcurrentListSegment<T>? segment = head;
+        ConcurrentListSegment<T> segment = head;
         while (!segment.TryAdd(item)) {
             CreateNextSegmentCompare(segment);
             segment = head;

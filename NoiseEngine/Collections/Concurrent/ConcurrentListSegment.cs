@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -45,7 +46,8 @@ internal class ConcurrentListSegment<T> : IEnumerable<T> {
     }
 
     public bool TryRemove(T item) {
-        for (int i = 0; i < nextIndex; i++) {
+        int max = Math.Min(nextIndex, Capacity);
+        for (int i = 0; i < max; i++) {
             ConcurrentListSegmentValue<T> element = items[i];
             if (!element.HasValue || !element.Value!.Equals(item))
                 continue;
@@ -59,7 +61,8 @@ internal class ConcurrentListSegment<T> : IEnumerable<T> {
     }
 
     public IEnumerator<T> GetEnumerator() {
-        for (int i = 0; i < nextIndex; i++) {
+        int max = Math.Min(nextIndex, Capacity);
+        for (int i = 0; i < max; i++) {
             ConcurrentListSegmentValue<T> element = items[i];
             if (element.HasValue)
                 yield return element.Value!;
