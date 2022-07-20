@@ -64,7 +64,7 @@ internal class SingleThreadInvokerWorker : IDisposable {
                     result.autoResetEvent?.Set();
                 }
             } catch (Exception e) {
-                logger?.CriticalError(e);
+                logger?.Fatal(e.ToString());
                 actionAutoResetEvent?.Set();
             }
         }

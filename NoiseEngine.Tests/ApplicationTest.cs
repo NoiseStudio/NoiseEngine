@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Mathematics;
 using System.Threading;
+using NoiseEngine.Logging;
 
 namespace NoiseEngine.Tests;
 
@@ -8,6 +9,12 @@ public class ApplicationTest {
 
     [FactRequire(TestRequirements.Gpu | TestRequirements.Gui)]
     public void SimpleScene() {
+        Log.ReplaceLogger(
+            new LoggerBuilder()
+                .AddSink(new ConsoleLogSink(new ConsoleLogSinkSettings { ThreadNameMaxLength = 10 }))
+                .AddSink(FileLogSink.CreateFromDirectory("logs", new TextWriterLogSinkSettings()))
+                .Build());
+
         using Application application = Application.Create();
         ApplicationScene scene = new ApplicationScene(application);
 
