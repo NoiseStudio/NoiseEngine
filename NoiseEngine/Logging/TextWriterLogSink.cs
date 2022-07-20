@@ -67,6 +67,7 @@ public class TextWriterLogSink : ILogSink {
 
         writer.Write(data.Message);
         writer.WriteLine();
+        writer.Flush();
     }
 
     /// <summary>

@@ -27,7 +27,7 @@ public class Logger : IDisposable {
         LogLevelMask = logLevelMask;
 
         new Thread(Worker) {
-            Name = "Logger Worker"
+            Name = $"{nameof(Logger)} Worker"
         }.Start();
     }
 
