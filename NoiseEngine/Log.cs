@@ -1,22 +1,11 @@
-﻿using NoiseEngine.Logging;
+﻿using System;
+using NoiseEngine.Logging;
 
 namespace NoiseEngine;
 
 public static class Log {
 
-    public static Logger Logger { get; private set; } =
-        new Logger(new ILogSink[] { new ConsoleLogSink(new ConsoleLogSinkSettings()) });
-
-    /// <summary>
-    /// Disposes old logger and replaces it with <paramref name="newLogger"/>.
-    /// </summary>
-    /// <param name="newLogger">New logger to use.</param>
-    public static void ReplaceLogger(Logger newLogger) {
-        lock (Logger) {
-            Logger.Dispose();
-            Logger = newLogger;
-        }
-    }
+    public static Logger Logger { get; } = new Logger(Array.Empty<ILogSink>());
 
     /// <summary>
     /// Logs a debug message.

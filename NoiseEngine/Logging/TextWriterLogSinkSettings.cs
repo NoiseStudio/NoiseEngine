@@ -32,7 +32,7 @@ public record TextWriterLogSinkSettings {
     /// <summary>
     /// If not null every thread name will be padded or truncated to be of this length.
     /// </summary>
-    public int? ThreadNameMaxLength { get; init; } = null;
+    public int? ThreadNameLength { get; init; }
 
     /// <summary>
     /// Asserts that properties have valid values.

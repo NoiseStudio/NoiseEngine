@@ -58,9 +58,9 @@ public class TextWriterLogSink : ILogSink {
             writer.Write('[');
 
             writer.Write(
-                settings.ThreadNameMaxLength is null
+                settings.ThreadNameLength is null
                     ? data.ThreadName
-                    : EnsureLength(data.ThreadName, settings.ThreadNameMaxLength.Value));
+                    : EnsureLength(data.ThreadName, settings.ThreadNameLength.Value));
 
             writer.Write("] ");
         }
