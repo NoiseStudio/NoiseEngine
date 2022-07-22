@@ -26,7 +26,12 @@ public class Logger : IDisposable {
     /// <param name="sinks">Sinks to log to.</param>
     /// <param name="logLevelMask">Allowed log levels.</param>
     public Logger(IEnumerable<ILogSink> sinks, LogLevel logLevelMask = LogLevel.All & ~LogLevel.Trace) {
-        Sinks = new ConcurrentList<ILogSink>(sinks);
+        Sinks = new ConcurrentList<ILogSink>();
+
+        foreach (ILogSink sink in sinks) {
+            Sinks.Add(sink);
+        }
+
         LogLevelMask = logLevelMask;
 
         new Thread(Worker) {
