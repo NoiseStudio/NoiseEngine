@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs;
 using NoiseEngine.Logging;
-using NoiseEngine.Logging.Standard;
 using NoiseEngine.Primitives;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Presentation;
@@ -13,6 +12,8 @@ using System.Reflection;
 using System.Threading;
 
 namespace NoiseEngine;
+
+extern alias OldLogging;
 
 public class Application : IDisposable {
 
@@ -59,19 +60,19 @@ public class Application : IDisposable {
     /// </summary>
     /// <param name="applicationName">Application name of <see cref="Application"/>.
     /// By default this will be the name of the entry assembly.</param>
-    /// <param name="visibleLogs">Defines what logs will be processed by the handlers.</param>
     /// <returns>New instance of <see cref="Application"/>.</returns>
-    public static Application Create(string? applicationName = null, LogType visibleLogs = LogType.AllWithoutTrace) {
+    public static Application Create(string? applicationName = null) {
         applicationName ??= Assembly.GetEntryAssembly()?.GetName().Name!;
 
-        Logger logger = new Logger(visibleLogs);
-        logger.AddHandler(new ConsoleLoggerHandler(new LoggerConfiguration()));
-        logger.AddHandler(FileLoggerHandler.CreateLogFileInDirectory("logs"));
+        OldLogging::NoiseEngine.Logging.Logger oldLogger = new OldLogging::NoiseEngine.Logging.Logger();
 
-        Graphics.Initialize(logger, applicationName, Assembly.GetEntryAssembly()!.GetName().Version!);
+        Graphics.Initialize(
+            oldLogger,
+            applicationName,
+            Assembly.GetEntryAssembly()!.GetName().Version!);
         GraphicsDevice graphicsDevice = new GraphicsDevice(false);
 
-        Application application = new Application(logger, graphicsDevice, new EntitySchedule(), applicationName);
+        Application application = new Application(Log.Logger, graphicsDevice, new EntitySchedule(), applicationName);
         application.simpleCreated = true;
 
         return application;
@@ -101,7 +102,7 @@ public class Application : IDisposable {
             EntitySchedule.Destroy();
 
             Graphics.Terminate();
-            Logger.Terminate();
+            Logger.Dispose();
         }
     }
 

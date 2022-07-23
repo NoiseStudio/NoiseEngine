@@ -96,6 +96,9 @@ public class ApplicationScene : IDisposable {
 
         OnDispose();
 
+        foreach (RenderCamera camera in Cameras)
+            camera.Dispose();
+
         FrameDependentSystems.Clear();
         EntityWorld.Dispose();
         Primitive.Dispose();

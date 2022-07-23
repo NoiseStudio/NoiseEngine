@@ -1,8 +1,10 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Mathematics;
 
+[StructLayout(LayoutKind.Sequential)]
 public readonly record struct Vector4<T>(T X, T Y, T Z, T W) where T : INumber<T> {
 
     /// <summary>
@@ -13,7 +15,7 @@ public readonly record struct Vector4<T>(T X, T Y, T Z, T W) where T : INumber<T
     /// <summary>
     /// Shorthand for writing new <see cref="Vector4{T}"/>(T.One, T.One, T.One, T.One).
     /// </summary>
-    public static Vector4<T> One => new Vector4<T>(T.One, T.One, T.One, T.Zero);
+    public static Vector4<T> One => new Vector4<T>(T.One, T.One, T.One, T.One);
 
     /// <summary>
     /// Shorthand for writing new <see cref="Vector4{T}"/>(-T.One, T.Zero, T.Zero, T.Zero).

@@ -38,7 +38,9 @@ internal class ApplicationTestSimpleSceneManagerSystem
 
         entity.Set(World, transform with {
             Position = transform.Position with { Y = transform.Position.Y + 1f * DeltaTimeF },
-            Rotation = Quaternion.FromEulerAngles(new Float3(value.Rotation.X, value.Rotation.Y, value.Rotation.Z))
+            // TODO: implement
+            //Rotation = Quaternion.EulerDegress<float>(new Vector3<float>(
+            //    value.Rotation.X, value.Rotation.Y, value.Rotation.Z))
         });
 
         if (Window.TryGetFocusedWindow(out Window? focusedWindow)) {

@@ -1,8 +1,10 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Mathematics;
 
+[StructLayout(LayoutKind.Sequential)]
 public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
 
     /// <summary>
