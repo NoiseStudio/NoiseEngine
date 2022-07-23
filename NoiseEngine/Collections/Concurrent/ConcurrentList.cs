@@ -91,7 +91,7 @@ public class ConcurrentList<T> : ICollection<T>, IReadOnlyCollection<T>, ICollec
     /// </summary>
     public void Clear() {
         lock (head)
-            head = new ConcurrentListSegment<T>(null, Math.Min(Count, MaxSegmentCapacity));
+            head = new ConcurrentListSegment<T>(null, Math.Clamp(Count, InitialSegmentCapacity, MaxSegmentCapacity));
     }
 
     /// <summary>
@@ -162,8 +162,10 @@ public class ConcurrentList<T> : ICollection<T>, IReadOnlyCollection<T>, ICollec
 
     private void CreateNextSegmentCompare(ConcurrentListSegment<T> comparand) {
         lock (head) {
-            if (head == comparand)
-                head = new ConcurrentListSegment<T>(head, Math.Min(head.Capacity * 2, MaxSegmentCapacity));
+            if (head == comparand) {
+                head = new ConcurrentListSegment<T>(head, Math.Clamp(
+                    head.Capacity * 2, InitialSegmentCapacity, MaxSegmentCapacity));
+            }
         }
     }
 

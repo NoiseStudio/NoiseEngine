@@ -37,9 +37,6 @@
         <Reference Include="NoiseEngine.InteropServices">
             <HintPath>../External/NoiseEngine.InteropServices.dll</HintPath>
         </Reference>
-        <Reference Include="NoiseEngine.Jobs">
-            <HintPath>../External/NoiseEngine.Jobs.dll</HintPath>
-        </Reference>
         <Reference Include="NoiseEngine.Logging">
             <HintPath>../External/NoiseEngine.Logging.dll</HintPath>
             <Aliases>OldLogging</Aliases>

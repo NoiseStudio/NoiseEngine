@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>NoiseEngine.Jobs</AssemblyName>
+    <RootNamespace>NoiseEngine.Jobs</RootNamespace>
+    <Nullable>enable</Nullable>
+    <Company>Noise Studio</Company>
+    <Product>JobsAg</Product>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>NoiseEngine.Jobs.Tests</_Parameter1>
+    </AssemblyAttribute>
+	<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>NoiseEngine.Jobs.Benchmarks</_Parameter1>
+	</AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NoiseEngine.Threading">
+      <HintPath>../External/NoiseEngine.Threading.dll</HintPath>
+    </Reference>
+    <Reference Include="NoiseEngine.Common">
+      <HintPath>../External/NoiseEngine.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="NoiseEngine.Collections">
+      <HintPath>../External/NoiseEngine.Collections.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
