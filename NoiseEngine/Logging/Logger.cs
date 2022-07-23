@@ -1,27 +1,21 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using NoiseEngine.Collections.Concurrent;
-using NoiseEngine.Threading;
 
 namespace NoiseEngine.Logging;
 
 public class Logger : IDisposable {
 
-    private readonly ConcurrentQueue<LogData> queue = new ConcurrentQueue<LogData>();
-    private readonly AutoResetEvent queueResetEvent = new AutoResetEvent(false);
-
-    private AtomicBool isDisposed = false;
+    private readonly LoggerWorker worker;
 
     /// <summary>
     /// Sinks that this logger writes to. Items in this list are disposed when this object is disposed.
     /// </summary>
-    public ConcurrentList<ILogSink> Sinks { get; }
+    public ConcurrentList<ILogSink> Sinks => worker.Sinks;
 
     public LogLevel LogLevelMask { get; set; }
 
-    public bool IsDisposed => isDisposed;
+    public bool IsDisposed { get; private set; }
 
     /// <summary>
     /// Creates a new logger. The logger takes ownership of provided sinks and disposes them when it is disposed.
@@ -29,20 +23,17 @@ public class Logger : IDisposable {
     /// <param name="sinks">Sinks to log to.</param>
     /// <param name="logLevelMask">Allowed log levels.</param>
     public Logger(IEnumerable<ILogSink> sinks, LogLevel logLevelMask = LogLevel.All & ~LogLevel.Trace) {
-        Sinks = new ConcurrentList<ILogSink>();
+        worker = new LoggerWorker();
 
         foreach (ILogSink sink in sinks) {
             Sinks.Add(sink);
         }
 
         LogLevelMask = logLevelMask;
-
-        new Thread(Worker) {
-            Name = $"{nameof(Logger)} Worker"
-        }.Start();
     }
 
     ~Logger() {
+        Warning("Logger has not been disposed explicitly.");
         ReleaseResources();
     }
 
@@ -73,8 +64,7 @@ public class Logger : IDisposable {
             return;
         }
 
-        queue.Enqueue(data);
-        queueResetEvent.Set();
+        worker.EnqueueLog(data);
     }
 
     /// <summary>
@@ -140,47 +130,17 @@ public class Logger : IDisposable {
     /// subsequent calls do not have that guarantee.
     /// </summary>
     public void Dispose() {
-        if (isDisposed.Exchange(true)) {
+        if (IsDisposed) {
             return;
         }
 
+        IsDisposed = true;
         ReleaseResources();
         GC.SuppressFinalize(this);
     }
 
-    private void Worker() {
-        while (true) {
-            queueResetEvent.WaitOne();
-
-            if (IsDisposed) {
-                queueResetEvent.Dispose();
-                return;
-            }
-
-            DequeueLogs();
-        }
-    }
-
-    private void DequeueLogs() {
-        lock (queue) {
-            while (queue.TryDequeue(out LogData data)) {
-                foreach (ILogSink sink in Sinks) {
-                    sink.Log(data);
-                }
-            }
-        }
-    }
-
-    private void DisposeSinks() {
-        foreach (ILogSink sink in Sinks) {
-            sink.Dispose();
-        }
-    }
-
     private void ReleaseResources() {
-        queueResetEvent.Set();
-        DequeueLogs();
-        DisposeSinks();
+        worker.Dispose();
     }
 
 }

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
 using NoiseEngine.Logging;
 
 namespace NoiseEngine.Tests.Logging;
