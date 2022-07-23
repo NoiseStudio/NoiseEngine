@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using NoiseEngine.Collections.Concurrent;
+using NoiseEngine.Threading;
 
 namespace NoiseEngine.Logging;
 
@@ -11,6 +12,8 @@ public class Logger : IDisposable {
     private readonly ConcurrentQueue<LogData> queue = new ConcurrentQueue<LogData>();
     private readonly AutoResetEvent queueResetEvent = new AutoResetEvent(false);
 
+    private AtomicBool isDisposed = false;
+
     /// <summary>
     /// Sinks that this logger writes to. Items in this list are disposed when this object is disposed.
     /// </summary>
@@ -18,7 +21,7 @@ public class Logger : IDisposable {
 
     public LogLevel LogLevelMask { get; set; }
 
-    public bool IsDisposed { get; private set; }
+    public bool IsDisposed => isDisposed;
 
     /// <summary>
     /// Creates a new logger. The logger takes ownership of provided sinks and disposes them when it is disposed.
@@ -133,41 +136,51 @@ public class Logger : IDisposable {
 
     /// <summary>
     /// Disposes the logger and all the sinks.
-    /// Note that disposing does not happen immediately, so queued logs may still be passed to the sinks.
+    /// First time this method is called it waits for the worker thread to finish,
+    /// subsequent calls do not have that guarantee.
     /// </summary>
     public void Dispose() {
+        if (isDisposed.Exchange(true)) {
+            return;
+        }
+
         ReleaseResources();
         GC.SuppressFinalize(this);
     }
 
     private void Worker() {
-        while (!IsDisposed) {
+        while (true) {
             queueResetEvent.WaitOne();
 
+            if (IsDisposed) {
+                queueResetEvent.Dispose();
+                return;
+            }
+
+            DequeueLogs();
+        }
+    }
+
+    private void DequeueLogs() {
+        lock (queue) {
             while (queue.TryDequeue(out LogData data)) {
                 foreach (ILogSink sink in Sinks) {
                     sink.Log(data);
                 }
             }
         }
+    }
 
+    private void DisposeSinks() {
         foreach (ILogSink sink in Sinks) {
             sink.Dispose();
-        }
-
-        lock (queueResetEvent) {
-            queueResetEvent.Dispose();
         }
     }
 
     private void ReleaseResources() {
-        IsDisposed = true;
-
-        lock (queueResetEvent) {
-            if (!queueResetEvent.SafeWaitHandle.IsClosed) {
-                queueResetEvent.Set();
-            }
-        }
+        queueResetEvent.Set();
+        DequeueLogs();
+        DisposeSinks();
     }
 
 }

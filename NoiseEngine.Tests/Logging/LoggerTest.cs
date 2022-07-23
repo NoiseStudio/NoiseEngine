@@ -26,6 +26,7 @@ public class LoggerTest {
 
         logger.Dispose();
 
+        Assert.Equal(data.Length, mockSink.Logs.Count);
         Assert.Equal(data, mockSink.Logs);
     }
 
