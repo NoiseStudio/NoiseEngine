@@ -23,10 +23,14 @@ internal class ConcurrentListSegment<T> : IEnumerable<T> {
     public ConcurrentListSegment(ConcurrentListSegment<T>? previous, ConcurrentListSegmentValue<T>[] items) {
         this.previous = previous;
         this.items = items;
+
+        nextIndex = items.Length;
+        count = items.Length;
     }
 
-    public ConcurrentListSegment(ConcurrentListSegment<T>? previous, int capacity)
-        : this(previous, new ConcurrentListSegmentValue<T>[capacity]) {
+    public ConcurrentListSegment(ConcurrentListSegment<T>? previous, int capacity) {
+        this.previous = previous;
+        items = new ConcurrentListSegmentValue<T>[capacity];
     }
 
     public void CompareExchangePrevious(ConcurrentListSegment<T>? value, ConcurrentListSegment<T>? comparand) {

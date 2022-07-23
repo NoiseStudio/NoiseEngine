@@ -28,6 +28,20 @@ public class ConcurrentList<T> : ICollection<T>, IReadOnlyCollection<T>, ICollec
         }
     }
 
+    public int Capacity {
+        get {
+            int capacity = 0;
+
+            ConcurrentListSegment<T>? segment = head;
+            do {
+                capacity += segment.Capacity;
+                segment = segment.Previous;
+            } while (segment is not null);
+
+            return capacity;
+        }
+    }
+
     object ICollection.SyncRoot {
         get {
             if (syncRoot is null)
