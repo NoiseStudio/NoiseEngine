@@ -26,5 +26,6 @@ jobs:
       run: dotnet build --no-restore
     - name: Run tests
       run: dotnet test --no-build --verbosity normal
+      timeout-minutes: 1
       env:
         NOISEENGINE_NO_SUPPORTS: gpu;gui;
