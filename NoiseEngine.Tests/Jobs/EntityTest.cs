@@ -1,6 +1,5 @@
-using Xunit;
-using System;
 using NoiseEngine.Jobs;
+using System;
 
 namespace NoiseEngine.Tests.Jobs;
 

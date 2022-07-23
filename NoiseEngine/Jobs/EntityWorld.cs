@@ -264,7 +264,7 @@ public class EntityWorld : IDisposable {
 
     private void AssertIsNotDisposed() {
         if (IsDestroyed)
-            throw new InvalidOperationException($"{ToString} is disposed.");
+            throw new InvalidOperationException($"{ToString()} is disposed.");
     }
 
 }

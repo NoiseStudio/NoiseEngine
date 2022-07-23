@@ -320,7 +320,7 @@ public abstract class EntitySystemBase : IDisposable {
         AssertIsNotDestroyed();
 
         if (Interlocked.Exchange(ref this.world, world) != EntityWorld.Empty)
-            throw new InvalidOperationException($"{ToString} is initialized.");
+            throw new InvalidOperationException($"{ToString()} is initialized.");
 
         if (schedule != null)
             Schedule = schedule;
@@ -457,7 +457,7 @@ public abstract class EntitySystemBase : IDisposable {
     private void AssertCouldExecute() {
         AssertIsNotDestroyed();
         if (!Enabled)
-            throw new InvalidOperationException($"The {ToString} entity system is disabled.");
+            throw new InvalidOperationException($"The {ToString()} entity system is disabled.");
     }
 
     private EntitySchedule GetEntityScheduleOrThrowException() {
