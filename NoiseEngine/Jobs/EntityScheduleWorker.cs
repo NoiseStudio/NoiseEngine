@@ -163,6 +163,9 @@ internal class EntityScheduleWorker : IDisposable {
             EntitySystemBase[] sortedSystems =
                 systems.OrderByDescending(t => executionTime - t.lastExecutionTime).ToArray();
 
+            if (sortedSystems.Length == 0)
+                continue;
+
             bool needToWait = true;
             foreach (EntitySystemBase system in sortedSystems) {
                 double executionTimeDifference = executionTime - system.lastExecutionTime;

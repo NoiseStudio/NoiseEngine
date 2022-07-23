@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Threading;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +13,7 @@ public class EntityWorld : IDisposable {
     private static uint nextId;
 
     private readonly ConcurrentList<EntitySystemBase> systems = new ConcurrentList<EntitySystemBase>();
-    private readonly List<EntityGroup> groups = new List<EntityGroup>();
+    private readonly ConcurrentList<EntityGroup> groups = new ConcurrentList<EntityGroup>();
     private readonly ConcurrentDictionary<int, EntityGroup> idToGroup
         = new ConcurrentDictionary<int, EntityGroup>();
     private readonly ConcurrentDictionary<Entity, EntityGroup> entityToGroup =
@@ -29,10 +28,10 @@ public class EntityWorld : IDisposable {
 
     internal static EntityWorld Empty { get; } = null!;
 
-    internal ComponentsStorage<Entity> ComponentsStorage { get; } = new ComponentsStorage<Entity>();
-
     public uint Id { get; }
     public bool IsDestroyed => isDisposed;
+
+    internal ComponentsStorage<Entity> ComponentsStorage { get; } = new ComponentsStorage<Entity>();
 
     public EntityWorld() {
         Id = Interlocked.Increment(ref nextId);
@@ -145,7 +144,7 @@ public class EntityWorld : IDisposable {
     /// <typeparam name="T">Entity system</typeparam>
     /// <returns><see cref="EntitySystemBase"/></returns>
     public T GetSystem<T>() where T : EntitySystemBase {
-        return (T)typeToSystems[typeof(T)][0]!;
+        return (T)typeToSystems[typeof(T)].First();
     }
 
     /// <summary>
@@ -210,25 +209,19 @@ public class EntityWorld : IDisposable {
     }
 
     internal void RegisterGroupsToQuery(EntityQueryBase query) {
-        query.groups.WriteWork(() => {
-            query.groups.Clear();
-            lock (groups) {
-                for (int i = 0; i < groups.Count; i++)
-                    query.RegisterGroup(groups[i]);
-            }
-        });
+        query.groups.Clear();
+        foreach (EntityGroup group in groups)
+            query.RegisterGroup(group);
     }
 
     internal EntityGroup GetGroupFromComponents(List<Type> components) {
         int hashCode = 0;
-        for (int i = 0; i < components.Count; i++)
-            hashCode ^= components[i].GetHashCode();
+        foreach (Type component in components)
+            hashCode ^= component.GetHashCode();
 
         return idToGroup.GetOrAdd(hashCode, _ => {
             EntityGroup group = new EntityGroup(hashCode, this, components);
-
-            lock (groups)
-                groups.Add(group);
+            groups.Add(group);
 
             foreach (WeakReference<EntityQueryBase> queryReference in queries) {
                 if (queryReference.TryGetTarget(out EntityQueryBase? query))
@@ -240,11 +233,9 @@ public class EntityWorld : IDisposable {
     }
 
     internal EntityGroup GetEntityGroup(Entity entity) {
-        try {
-            return entityToGroup[entity];
-        } catch (KeyNotFoundException) {
-            throw new InvalidOperationException($"{entity} was destroyed.");
-        }
+        if (entityToGroup.TryGetValue(entity, out EntityGroup? group))
+            return group;
+        throw new InvalidOperationException($"{entity} was destroyed.");
     }
 
     internal void SetEntityGroup(Entity entity, EntityGroup group) {

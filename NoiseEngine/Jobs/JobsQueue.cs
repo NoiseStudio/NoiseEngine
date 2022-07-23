@@ -44,9 +44,9 @@ internal class JobsQueue : IDisposable {
         for (int i = 0; i < this.queues.Length; i++) {
             this.queues[i] = new ConcurrentQueue<Job>();
 
-            Thread thread = new Thread(QueueSortThreadWork);
-            thread.Name = $"{nameof(JobsQueue)} sorting thread #{i}";
-            thread.Start(i);
+            new Thread(QueueSortThreadWork) {
+                Name = $"{nameof(JobsQueue)} sorting thread #{i}"
+            }.Start(i);
         }
     }
 
@@ -122,9 +122,8 @@ internal class JobsQueue : IDisposable {
                     continue;
                 }
 
-                if (jobsToDestroy.Remove(job.Id)) {
+                if (jobsToDestroy.Remove(job.Id))
                     continue;
-                }
 
                 bool breaked = false;
                 for (int j = index; j >= 0; j--) {

@@ -1,13 +1,8 @@
 ﻿namespace NoiseEngine.Collections.Concurrent;
 
-internal readonly struct ConcurrentListSegmentValue<T> {
+internal readonly record struct ConcurrentListSegmentValue<T>(T? Value, bool HasValue) {
 
-    public T? Value { get; }
-    public bool HasValue { get; }
-
-    public ConcurrentListSegmentValue(T value) {
-        Value = value;
-        HasValue = true;
+    public ConcurrentListSegmentValue(T value) : this(value, true) {
     }
 
 }

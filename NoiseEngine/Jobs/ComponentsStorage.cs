@@ -17,7 +17,7 @@ internal class ComponentsStorage<TKey> where TKey : notnull {
     }
 
     internal ConcurrentDictionary<TKey, T> AddStorage<T>() {
-        return (ConcurrentDictionary<TKey, T>)storage.GetOrAdd(typeof(T), StorageDictionaryFactory<T>);
+        return (ConcurrentDictionary<TKey, T>)storage.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<TKey, T>());
     }
 
     internal ConcurrentDictionary<TKey, T> GetStorage<T>() {
@@ -64,10 +64,6 @@ internal class ComponentsStorage<TKey> where TKey : notnull {
         object obj = dictionary[key]!;
         dictionary.Remove(key);
         return obj;
-    }
-
-    private IDictionary StorageDictionaryFactory<T>(Type type) {
-        return new ConcurrentDictionary<TKey, T>();
     }
 
 }

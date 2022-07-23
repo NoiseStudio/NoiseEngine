@@ -44,7 +44,7 @@ public abstract class EntityQueryBase {
     }
 
     internal virtual void RegisterGroup(EntityGroup group) {
-        if (filter == null || filter.CompareComponents(group))
+        if (filter is null || filter.CompareComponents(group))
             groups.Add(group);
     }
 

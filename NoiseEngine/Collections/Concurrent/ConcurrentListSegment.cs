@@ -67,9 +67,9 @@ internal class ConcurrentListSegment<T> : IEnumerable<T> {
     public IEnumerator<T> GetEnumerator() {
         int max = Math.Min(nextIndex, Capacity);
         for (int i = 0; i < max; i++) {
-            ConcurrentListSegmentValue<T> element = items[i];
-            if (element.HasValue)
-                yield return element.Value!;
+            (T? value, bool hasValue) = items[i];
+            if (hasValue)
+                yield return value!;
         }
     }
 

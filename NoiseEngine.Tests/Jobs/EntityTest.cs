@@ -87,7 +87,7 @@ public class EntityTest {
         Assert.Contains(entity, group.Entities);
 
         entity.Destroy(world);
-        Assert.Throws<NullReferenceException>(() => entity.Get<TestComponentA>(world));
+        Assert.True(entity.IsDestroyed(world));
 
         Assert.DoesNotContain(entity, group.Entities);
     }

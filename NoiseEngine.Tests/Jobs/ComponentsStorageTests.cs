@@ -85,10 +85,9 @@ public class ComponentsStorageTests {
         };
 
         world.ComponentsStorage.AddComponent(entity, component);
-        Assert.Equal(component.A, ((TestComponentA)world.ComponentsStorage.PopComponent(entity, typeof(TestComponentA))).A);
-        Assert.Throws<NullReferenceException>(() => {
-            world.ComponentsStorage.GetComponent<TestComponentA>(entity);
-        });
+        Assert.Equal(component.A, ((TestComponentA)world.ComponentsStorage.PopComponent(
+            entity, typeof(TestComponentA))).A);
+        Assert.False(entity.Has<TestComponentA>(world));
     }
 
 }
