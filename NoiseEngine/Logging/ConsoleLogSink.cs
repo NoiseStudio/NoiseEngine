@@ -28,4 +28,5 @@ public class ConsoleLogSink : TextWriterLogSink {
     /// </summary>
     public override void Dispose() {
     }
+
 }

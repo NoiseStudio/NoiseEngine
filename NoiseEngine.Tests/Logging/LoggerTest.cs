@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using NoiseEngine.Logging;
 
@@ -6,17 +7,17 @@ namespace NoiseEngine.Tests.Logging;
 
 public class LoggerTest {
 
+    private readonly ImmutableArray<LogData> data = ImmutableArray.Create(
+        new LogData(LogLevel.Debug, "Debug"),
+        new LogData(LogLevel.Trace, "Trace"),
+        new LogData(LogLevel.Info, "Info"),
+        new LogData(LogLevel.Warning, "Warning"),
+        new LogData(LogLevel.Error, "Error"),
+        new LogData(LogLevel.Fatal, "Fatal")
+    );
+
     [Fact]
     public void Log() {
-        LogData[] data = {
-            new LogData(LogLevel.Debug, "Debug"),
-            new LogData(LogLevel.Trace, "Trace"),
-            new LogData(LogLevel.Info, "Info"),
-            new LogData(LogLevel.Warning, "Warning"),
-            new LogData(LogLevel.Error, "Error"),
-            new LogData(LogLevel.Fatal, "Fatal")
-        };
-
         MockLogSink mockSink = new MockLogSink();
 
         using (Logger logger = new Logger(new ILogSink[] { mockSink }, LogLevel.All)) {
@@ -30,15 +31,6 @@ public class LoggerTest {
 
     [Fact]
     public void LevelMask() {
-        LogData[] data = {
-            new LogData(LogLevel.Debug, "Debug"),
-            new LogData(LogLevel.Trace, "Trace"),
-            new LogData(LogLevel.Info, "Info"),
-            new LogData(LogLevel.Warning, "Warning"),
-            new LogData(LogLevel.Error, "Error"),
-            new LogData(LogLevel.Fatal, "Fatal")
-        };
-
         const LogLevel Mask = LogLevel.Debug | LogLevel.Info | LogLevel.Error;
 
         MockLogSink mockSink = new MockLogSink();
