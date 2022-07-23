@@ -12,11 +12,6 @@ public class ConcurrentListTest {
         Enumerable.Range(0, Environment.ProcessorCount * 5).ToArray();
 
     [Fact]
-    public void Constructor() {
-        Assert.Equal(4, new ConcurrentList<int>(4).Capacity);
-    }
-
-    [Fact]
     public void ConstructorIEnumerable() {
         Assert.Equal(TestArray, new ConcurrentList<int>(TestArray.AsEnumerable()).OrderBy(x => x));
     }
