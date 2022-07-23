@@ -69,6 +69,7 @@ internal class LoggerWorker : IDisposable {
         }
 
         lock (queue) {
+            DequeueLogs();
             DisposeSinks();
         }
     }
