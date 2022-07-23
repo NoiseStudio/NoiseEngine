@@ -12,6 +12,17 @@ public class ConcurrentListTest {
         Enumerable.Range(0, Environment.ProcessorCount * 5).ToArray();
 
     [Fact]
+    public void ConstructorIEnumerable() {
+        Assert.Equal(TestArray, new ConcurrentList<int>(TestArray.AsEnumerable()).OrderBy(x => x));
+    }
+
+    [Fact]
+    public void ConstructorReadOnlySpan() {
+        ReadOnlySpan<int> span = stackalloc int[] { 5, 7, 2, -6, 1 };
+        Assert.Equal(span.ToArray().OrderBy(x => x), new ConcurrentList<int>(span).OrderBy(x => x));
+    }
+
+    [Fact]
     public void Add() {
         ConcurrentList<int> list = new ConcurrentList<int>();
 
