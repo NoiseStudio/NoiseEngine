@@ -9,8 +9,8 @@ public class ApplicationTest {
 
     [FactRequire(TestRequirements.Gpu | TestRequirements.Gui)]
     public void SimpleScene() {
-        Log.Logger.Sinks.Add(new ConsoleLogSink(new ConsoleLogSinkSettings { ThreadNameLength = 20 }));
-        Log.Logger.Sinks.Add(FileLogSink.CreateFromDirectory("logs"));
+        Log.Logger.AddSink(new ConsoleLogSink(new ConsoleLogSinkSettings { ThreadNameLength = 20 }));
+        Log.Logger.AddSink(FileLogSink.CreateFromDirectory("logs"));
 
         using Application application = Application.Create();
         ApplicationScene scene = new ApplicationScene(application);

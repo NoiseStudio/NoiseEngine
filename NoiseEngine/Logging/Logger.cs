@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using NoiseEngine.Collections.Concurrent;
 
 namespace NoiseEngine.Logging;
 
@@ -11,7 +10,7 @@ public class Logger : IDisposable {
     /// <summary>
     /// Sinks that this logger writes to. Items in this list are disposed when this object is disposed.
     /// </summary>
-    public ConcurrentList<ILogSink> Sinks => worker.Sinks;
+    public IEnumerable<ILogSink> Sinks => worker.Sinks;
 
     public LogLevel LogLevelMask { get; set; }
 
@@ -26,7 +25,7 @@ public class Logger : IDisposable {
         worker = new LoggerWorker();
 
         foreach (ILogSink sink in sinks) {
-            Sinks.Add(sink);
+            worker.Sinks.Add(sink);
         }
 
         LogLevelMask = logLevelMask;
@@ -45,6 +44,23 @@ public class Logger : IDisposable {
             LogLevel.Warning or
             LogLevel.Error or
             LogLevel.Fatal;
+    }
+
+    /// <summary>
+    /// Adds a sink to this logger. The logger takes ownership of the sink and disposes it when it is disposed.
+    /// </summary>
+    /// <param name="sink">Sink to add.</param>
+    public void AddSink(ILogSink sink) {
+        worker.Sinks.Add(sink);
+    }
+
+    /// <summary>
+    /// Removes a sink from the logger. If removal was successful, caller is responsible for disposing the sink.
+    /// </summary>
+    /// <param name="sink">Sink to remove.</param>
+    /// <returns><see langword="true"/> if sink was removed; otherwise <see langword="false"/>.</returns>
+    public bool RemoveSink(ILogSink sink) {
+        return worker.Sinks.Remove(sink);
     }
 
     /// <summary>
