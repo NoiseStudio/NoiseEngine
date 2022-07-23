@@ -38,6 +38,7 @@
         </Reference>
         <Reference Include="NoiseEngine.Logging">
             <HintPath>../External/NoiseEngine.Logging.dll</HintPath>
+            <Aliases>OldLogging</Aliases>
         </Reference>
         <Reference Include="NoiseEngine.Mathematics">
             <HintPath>../External/NoiseEngine.Mathematics.dll</HintPath>
