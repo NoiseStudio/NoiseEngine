@@ -6,6 +6,7 @@ using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Systems;
 using NoiseEngine.Threading;
 using System;
+using System.Linq;
 
 namespace NoiseEngine;
 
@@ -24,7 +25,7 @@ public class RenderCamera : IDisposable {
         get => thread is not null;
         set {
             if (value) {
-                thread = new RenderCameraThread(Scene, Camera, meshRenderer);
+                thread = new RenderCameraThread(this, meshRenderer);
             } else {
                 thread?.Dispose();
                 thread = null;
@@ -71,8 +72,8 @@ public class RenderCamera : IDisposable {
             new CameraComponent(this)
         );
 
-        meshRenderer = new MeshRendererSystem(Scene.Application.GraphicsDevice, Camera);
-        meshRenderer.Initialize(Scene.EntityWorld, Scene.Application.EntitySchedule);
+        meshRenderer = new MeshRendererSystem(Scene.GraphicsDevice, Camera);
+        meshRenderer.Initialize(Scene.EntityWorld, Application.EntitySchedule);
 
         AutoRender = autoRender;
     }
@@ -97,6 +98,11 @@ public class RenderCamera : IDisposable {
 
         meshRenderer.Dispose();
         RenderTarget.Destroy();
+
+        // Auto exit when all windows are closed.
+        // TODO: move this to Window class.
+        if (Application.Settings.AutoExitWhenAllWindowsAreClosed && Application.Windows.Count() == 0)
+            Application.Exit();
 
         GC.SuppressFinalize(this);
     }

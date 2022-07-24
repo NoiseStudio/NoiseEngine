@@ -1,10 +1,9 @@
-﻿using NoiseEngine.Common;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 
 namespace NoiseEngine.Jobs;
 
-public class EntitySchedule : Destroyable {
+public class EntitySchedule : IDisposable {
 
     private readonly EntityScheduleWorker worker;
 
@@ -20,6 +19,18 @@ public class EntitySchedule : Destroyable {
     /// <exception cref="InvalidOperationException">Error when using zero or negative threads and when the minimum package size is greater than the maximum package size</exception>
     public EntitySchedule(int? threadCount = null, int? maxPackageSize = null, int? minPackageSize = null) {
         worker = new EntityScheduleWorker(threadCount, maxPackageSize, minPackageSize);
+    }
+
+    ~EntitySchedule() {
+        ReleaseResources();
+    }
+
+    /// <summary>
+    /// Disposes this <see cref="EntitySchedule"/>.
+    /// </summary>
+    public void Dispose() {
+        ReleaseResources();
+        GC.SuppressFinalize(this);
     }
 
     internal void AddSystem(EntitySystemBase system) {
@@ -38,7 +49,7 @@ public class EntitySchedule : Destroyable {
         worker.EnqueuePackages(system);
     }
 
-    protected override void ReleaseResources() {
+    private void ReleaseResources() {
         worker.Dispose();
     }
 
