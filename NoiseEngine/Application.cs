@@ -29,7 +29,7 @@ public static class Application {
     internal static ApplicationSettings Settings {
         get {
             if (!isInitialized)
-                Initialize();
+                Initialize(new ApplicationSettings());
             return settings;
         }
     }
@@ -38,13 +38,20 @@ public static class Application {
 
     public static event ApplicationExitHandler? ApplicationExit;
 
-    public static void Initialize() {
-        Initialize(new ApplicationSettings());
-    }
-
+    /// <summary>
+    /// Initializes <see cref="Application"/>.
+    /// </summary>
+    /// <remarks>
+    /// This method is optional and will be called automatically with
+    /// the default <see cref="ApplicationSettings"/> if not used.
+    /// </remarks>
+    /// <param name="settings">Application settings.</param>
+    /// <exception cref="InvalidOperationException"><see cref="Application"/> has been already initialized.</exception>
     public static void Initialize(ApplicationSettings settings) {
         if (isInitialized.Exchange(true))
             throw new InvalidOperationException($"{nameof(Application)} has been already initialized.");
+
+        AppDomain.CurrentDomain.ProcessExit += CurrentDomainOnExit;
 
         if (settings.AddDefaultLoggerSinks) {
             if (!Log.Logger.Sinks.Any(x => typeof(ConsoleLogSink) == x.GetType()))
@@ -53,9 +60,6 @@ public static class Application {
                 Log.Logger.AddSink(FileLogSink.CreateFromDirectory("logs"));
         }
 
-        if (settings.ProcessExitOnApplicationExit)
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomainOnExit;
-
         // Set default values.
         Application.settings = settings with {
             Name = settings.Name ?? Assembly.GetEntryAssembly()?.GetName().Name ?? Environment.ProcessId.ToString(),
@@ -63,6 +67,14 @@ public static class Application {
         };
     }
 
+    /// <summary>
+    /// Disposes <see cref="Application"/> resources and when ProcessExitOnApplicationExit
+    /// setting is <see langword="true"/> ends process with given <paramref name="exitCode"/>.
+    /// </summary>
+    /// <param name="exitCode">
+    /// The exit code to return to the operating system. Use 0 (zero)
+    /// to indicate that the process completed successfully.
+    /// </param>
     public static void Exit(int exitCode = 0) {
         lock (exitLocker) {
             if (isExited)
