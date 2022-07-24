@@ -12,6 +12,7 @@ namespace NoiseEngine;
 
 public class RenderCamera : IDisposable {
 
+    private readonly object locker = new object();
     private readonly MeshRendererSystem meshRenderer;
 
     private RenderCameraThread? thread;
@@ -24,11 +25,16 @@ public class RenderCamera : IDisposable {
     public bool AutoRender {
         get => thread is not null;
         set {
-            if (value) {
-                thread = new RenderCameraThread(this, meshRenderer);
-            } else {
-                thread?.Dispose();
-                thread = null;
+            lock (locker) {
+                if (AutoRender == value)
+                    return;
+
+                if (value) {
+                    thread = new RenderCameraThread(this, meshRenderer);
+                } else {
+                    thread?.Dispose();
+                    thread = null;
+                }
             }
         }
     }
@@ -101,7 +107,7 @@ public class RenderCamera : IDisposable {
 
         // Auto exit when all windows are closed.
         // TODO: move this to Window class.
-        if (Application.Settings.AutoExitWhenAllWindowsAreClosed && Application.Windows.Count() == 0)
+        if (Application.Settings.AutoExitWhenAllWindowsAreClosed && Application.Windows.Any())
             Application.Exit();
 
         GC.SuppressFinalize(this);

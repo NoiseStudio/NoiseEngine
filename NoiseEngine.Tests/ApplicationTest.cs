@@ -8,7 +8,7 @@ public class ApplicationTest {
 
     [FactRequire(TestRequirements.Gpu | TestRequirements.Gui)]
     public void SimpleScene() {
-        Application.Initialize(new ApplicationSettings() {
+        Application.Initialize(new ApplicationSettings {
             ProcessExitOnApplicationExit = false
         });
 

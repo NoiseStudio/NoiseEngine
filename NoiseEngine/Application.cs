@@ -13,8 +13,8 @@ namespace NoiseEngine;
 
 public static class Application {
 
-    private readonly static object exitLocker = new object();
-    private readonly static ConcurrentList<ApplicationScene> loadedScenes = new ConcurrentList<ApplicationScene>();
+    private static readonly object exitLocker = new object();
+    private static readonly ConcurrentList<ApplicationScene> loadedScenes = new ConcurrentList<ApplicationScene>();
 
     private static AtomicBool isInitialized;
     private static bool isExited;
@@ -34,8 +34,15 @@ public static class Application {
         }
     }
 
+    /// <summary>
+    /// Exit handler.
+    /// </summary>
+    /// <param name="exitCode">The exit code to return to the operating system.</param>
     public delegate void ApplicationExitHandler(int exitCode);
 
+    /// <summary>
+    /// This event is executed when <see cref="Exit(int)"/> is called.
+    /// </summary>
     public static event ApplicationExitHandler? ApplicationExit;
 
     /// <summary>

@@ -9,8 +9,9 @@ namespace NoiseEngine;
 
 internal class RenderCameraThread : IDisposable {
 
+    private readonly WeakReference<RenderCamera> renderCamera;
+
     private ManualResetEventSlim? disposedEvent;
-    private WeakReference<RenderCamera> renderCamera;
 
     public bool IsDisposed { get; private set; }
     public ApplicationScene Scene { get; }
