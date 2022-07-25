@@ -59,8 +59,16 @@ public static class Application {
         }
 
         // Set default values.
+        if (settings.Name is null) {
+            Assembly? entryAssembly = Assembly.GetEntryAssembly();
+
+            if (entryAssembly is null)
+                settings = settings with { Name = "Unknown" };
+            else
+                settings = settings with { Name = entryAssembly.GetName().Name ?? entryAssembly.Location };
+        }
+
         Application.settings = settings with {
-            Name = settings.Name ?? Assembly.GetEntryAssembly()?.GetName().Name ?? Environment.ProcessId.ToString(),
             EntitySchedule = settings.EntitySchedule ?? new EntitySchedule()
         };
     }
@@ -105,7 +113,7 @@ public static class Application {
     }
 
     private static void CurrentDomainOnExit(object? sender, EventArgs e) {
-        string info = $"The process was closed without calling {nameof(Application.Exit)} method.";
+        string info = $"The process was closed without calling {nameof(Application)}.{nameof(Exit)} method.";
 
         Log.Fatal(info);
         Log.Logger.Dispose();
