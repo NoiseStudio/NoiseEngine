@@ -18,7 +18,7 @@ public static class Application {
 
     private static AtomicBool isInitialized;
     private static bool isExited;
-    private static ApplicationSettings settings;
+    private static ApplicationSettings? settings;
 
     public static string Name => Settings.Name!;
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
@@ -26,13 +26,8 @@ public static class Application {
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
     public static IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
 
-    internal static ApplicationSettings Settings {
-        get {
-            if (!isInitialized)
-                Initialize(new ApplicationSettings());
-            return settings;
-        }
-    }
+    internal static ApplicationSettings Settings => settings ?? throw new InvalidOperationException(
+        $"{nameof(Application)} has not been initialized with a call to {nameof(Initialize)}.");
 
     /// <summary>
     /// Exit handler.
@@ -48,10 +43,6 @@ public static class Application {
     /// <summary>
     /// Initializes <see cref="Application"/>.
     /// </summary>
-    /// <remarks>
-    /// This method is optional and will be called automatically with
-    /// the default <see cref="ApplicationSettings"/> if not used.
-    /// </remarks>
     /// <param name="settings">Application settings.</param>
     /// <exception cref="InvalidOperationException"><see cref="Application"/> has been already initialized.</exception>
     public static void Initialize(ApplicationSettings settings) {
@@ -100,7 +91,7 @@ public static class Application {
             Log.Logger.Dispose();
 
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomainOnExit;
-            if (settings.ProcessExitOnApplicationExit)
+            if (Settings.ProcessExitOnApplicationExit)
                 Environment.Exit(exitCode);
         }
     }
