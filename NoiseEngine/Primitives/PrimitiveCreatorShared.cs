@@ -42,7 +42,7 @@ internal class PrimitiveCreatorShared : IDisposable {
             }
         ";
 
-    private readonly Application application;
+    private readonly GraphicsDevice graphicsDevice;
 
     private Shader? defaultShader;
     private Material? defaultMaterial;
@@ -51,7 +51,7 @@ internal class PrimitiveCreatorShared : IDisposable {
 
     public Material DefaultMaterial => defaultMaterial ??= new Material(DefaultShader);
     public Shader DefaultShader => defaultShader ??= Shader.FromGlslSource(
-        application.GraphicsDevice,
+        graphicsDevice,
         InPosition3Color3OutColor3GlslVert,
         InColor3GlslFrag,
         "main",
@@ -60,8 +60,8 @@ internal class PrimitiveCreatorShared : IDisposable {
 
     internal Mesh CubeMesh => cubeMesh ?? CreateCubeMesh();
 
-    public PrimitiveCreatorShared(Application application) {
-        this.application = application;
+    public PrimitiveCreatorShared(GraphicsDevice graphicsDevice) {
+        this.graphicsDevice = graphicsDevice;
     }
 
     public void Dispose() {
@@ -71,7 +71,7 @@ internal class PrimitiveCreatorShared : IDisposable {
 
     private Mesh CreateCubeMesh() {
         Interlocked.CompareExchange(ref cubeMesh, new Mesh<VertexPosition3Color3, ushort>(
-            application.GraphicsDevice,
+            graphicsDevice,
             new VertexPosition3Color3[] {
                 // Top
                 new VertexPosition3Color3(new Float3(-0.5f, 0.5f, 0.5f), Float3.Up),

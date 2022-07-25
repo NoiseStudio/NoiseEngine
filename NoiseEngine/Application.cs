@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs;
 using NoiseEngine.Logging;
-using NoiseEngine.Primitives;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Threading;
@@ -9,127 +8,117 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 
 namespace NoiseEngine;
 
-extern alias OldLogging;
+public static class Application {
 
-public class Application : IDisposable {
+    private static readonly object exitLocker = new object();
+    private static readonly ConcurrentList<ApplicationScene> loadedScenes = new ConcurrentList<ApplicationScene>();
 
-    internal RenderCamera? mainWindow;
+    private static AtomicBool isInitialized;
+    private static bool isExited;
+    private static ApplicationSettings? settings;
 
-    private readonly ConcurrentHashSet<ApplicationScene> loadedScenes = new ConcurrentHashSet<ApplicationScene>();
-    private readonly ManualResetEvent applicationEndEvent = new ManualResetEvent(true);
+    public static string Name => Settings.Name!;
+    public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
 
-    private uint activeRenderers;
-    private AtomicBool isDisposed;
-    private bool simpleCreated;
+    public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
+    public static IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
 
-    public EntitySchedule EntitySchedule { get; }
-    public string ApplicationName { get; }
-    public Logger Logger { get; }
-    public GraphicsDevice GraphicsDevice { get; }
+    internal static ApplicationSettings Settings => settings ?? throw new InvalidOperationException(
+        $"{nameof(Application)} has not been initialized with a call to {nameof(Initialize)}.");
 
-    public RenderCamera? MainWindow {
-        get => mainWindow;
-        set => mainWindow = value ?? throw new ArgumentNullException();
-    }
+    /// <summary>
+    /// Exit handler.
+    /// </summary>
+    /// <param name="exitCode">The exit code to return to the operating system.</param>
+    public delegate void ApplicationExitHandler(int exitCode);
 
-    public bool IsDisposed => isDisposed;
-    public IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
-    public IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
+    /// <summary>
+    /// This event is executed when <see cref="Exit(int)"/> is called.
+    /// </summary>
+    public static event ApplicationExitHandler? ApplicationExit;
 
-    internal PrimitiveCreatorShared PrimitiveShared { get; }
+    /// <summary>
+    /// Initializes <see cref="Application"/>.
+    /// </summary>
+    /// <param name="settings">Application settings.</param>
+    /// <exception cref="InvalidOperationException"><see cref="Application"/> has been already initialized.</exception>
+    public static void Initialize(ApplicationSettings settings) {
+        if (isInitialized.Exchange(true))
+            throw new InvalidOperationException($"{nameof(Application)} has been already initialized.");
 
-    public Application(
-        Logger logger, GraphicsDevice graphicsDevice,
-        EntitySchedule entitySchedule, string applicationName
-    ) {
-        Logger = logger;
-        GraphicsDevice = graphicsDevice;
-        ApplicationName = applicationName;
-        PrimitiveShared = new PrimitiveCreatorShared(this);
-        EntitySchedule = entitySchedule;
+        AppDomain.CurrentDomain.ProcessExit += CurrentDomainOnExit;
 
-        Logger.Info($"Created application named: `{ApplicationName}`.");
+        if (settings.AddDefaultLoggerSinks) {
+            if (!Log.Logger.Sinks.Any(x => typeof(ConsoleLogSink) == x.GetType()))
+                Log.Logger.AddSink(new ConsoleLogSink(new ConsoleLogSinkSettings { ThreadNameLength = 20 }));
+            if (!Log.Logger.Sinks.Any(x => typeof(FileLogSink) == x.GetType()))
+                Log.Logger.AddSink(FileLogSink.CreateFromDirectory("logs"));
+        }
+
+        // Set default values.
+        if (settings.Name is null) {
+            Assembly? entryAssembly = Assembly.GetEntryAssembly();
+
+            if (entryAssembly is null)
+                settings = settings with { Name = "Unknown" };
+            else
+                settings = settings with { Name = entryAssembly.GetName().Name ?? entryAssembly.Location };
+        }
+
+        Application.settings = settings with {
+            EntitySchedule = settings.EntitySchedule ?? new EntitySchedule()
+        };
     }
 
     /// <summary>
-    /// Creates simple default <see cref="Application"/>.
+    /// Disposes <see cref="Application"/> resources and when ProcessExitOnApplicationExit
+    /// setting is <see langword="true"/> ends process with given <paramref name="exitCode"/>.
     /// </summary>
-    /// <param name="applicationName">Application name of <see cref="Application"/>.
-    /// By default this will be the name of the entry assembly.</param>
-    /// <returns>New instance of <see cref="Application"/>.</returns>
-    public static Application Create(string? applicationName = null) {
-        applicationName ??= Assembly.GetEntryAssembly()?.GetName().Name!;
+    /// <param name="exitCode">
+    /// The exit code to return to the operating system. Use 0 (zero)
+    /// to indicate that the process completed successfully.
+    /// </param>
+    public static void Exit(int exitCode = 0) {
+        lock (exitLocker) {
+            if (isExited)
+                return;
+            isExited = true;
 
-        OldLogging::NoiseEngine.Logging.Logger oldLogger = new OldLogging::NoiseEngine.Logging.Logger();
+            ApplicationExit?.Invoke(exitCode);
 
-        Graphics.Initialize(
-            oldLogger,
-            applicationName,
-            Assembly.GetEntryAssembly()!.GetName().Version!);
-        GraphicsDevice graphicsDevice = new GraphicsDevice(false);
+            foreach (ApplicationScene scene in LoadedScenes)
+                scene.Dispose();
 
-        Application application = new Application(Log.Logger, graphicsDevice, new EntitySchedule(), applicationName);
-        application.simpleCreated = true;
-
-        return application;
-    }
-
-    /// <summary>
-    /// Blocks the current thread until the <see cref="Application"/> ends work.
-    /// </summary>
-    public void WaitToEnd() {
-        applicationEndEvent.WaitOne();
-    }
-
-    /// <summary>
-    /// Disposes this <see cref="Application"/>.
-    /// </summary>
-    public void Dispose() {
-        if (isDisposed.Exchange(true))
-            return;
-
-        foreach (ApplicationScene scene in LoadedScenes)
-            scene.Dispose();
-
-        PrimitiveShared.Dispose();
-        Logger.Info($"Disposed application named: `{ApplicationName}`.");
-
-        if (simpleCreated) {
-            EntitySchedule.Destroy();
-
+            EntitySchedule.Dispose();
             Graphics.Terminate();
-            Logger.Dispose();
+
+            Log.Info($"{nameof(Application)} exited with code {exitCode}.");
+            Log.Logger.Dispose();
+
+            AppDomain.CurrentDomain.ProcessExit -= CurrentDomainOnExit;
+            if (Settings.ProcessExitOnApplicationExit)
+                Environment.Exit(exitCode);
         }
     }
 
-    /// <summary>
-    /// Returns a string that represents the current object.
-    /// </summary>
-    /// <returns>A string that represents the current object.</returns>
-    public override string ToString() {
-        return $"{nameof(Application)} {{ {nameof(ApplicationName)} = \"{ApplicationName}\" }}";
-    }
-
-    internal void IncrementActiveRenderers() {
-        if (Interlocked.Increment(ref activeRenderers) == 1)
-            applicationEndEvent.Reset();
-    }
-
-    internal void DecrementActiveRenderers() {
-        if (Interlocked.Decrement(ref activeRenderers) == 0)
-            applicationEndEvent.Set();
-    }
-
-    internal void AddSceneToLoaded(ApplicationScene scene) {
+    internal static void AddSceneToLoaded(ApplicationScene scene) {
         loadedScenes.Add(scene);
     }
 
-    internal void RemoveSceneFromLoaded(ApplicationScene scene) {
+    internal static void RemoveSceneFromLoaded(ApplicationScene scene) {
         loadedScenes.Remove(scene);
+    }
+
+    private static void CurrentDomainOnExit(object? sender, EventArgs e) {
+        string info = $"The process was closed without calling {nameof(Application)}.{nameof(Exit)} method.";
+
+        Log.Fatal(info);
+        Log.Logger.Dispose();
+
+        throw new ApplicationException(info);
     }
 
 }

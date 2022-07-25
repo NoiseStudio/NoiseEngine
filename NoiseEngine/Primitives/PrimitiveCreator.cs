@@ -13,10 +13,14 @@ public class PrimitiveCreator : IDisposable {
     public Shader DefaultShader => Shared.DefaultShader;
     public Material DefaultMaterial => Shared.DefaultMaterial;
 
-    private PrimitiveCreatorShared Shared => scene.Application.PrimitiveShared;
+    private PrimitiveCreatorShared Shared { get; }
 
     internal PrimitiveCreator(ApplicationScene scene) {
+        // TODO: remove this. This temporary initializes primitive shared.
+        _ = scene.GraphicsDevice;
+
         this.scene = scene;
+        Shared = ApplicationScene.primitiveShared!;
     }
 
     /// <summary>

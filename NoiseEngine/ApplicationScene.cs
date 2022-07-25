@@ -7,32 +7,49 @@ using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Systems;
 using NoiseEngine.Threading;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
+using System.Reflection;
 
 namespace NoiseEngine;
 
+extern alias OldLogging;
+
 public class ApplicationScene : IDisposable {
 
-    private readonly ConcurrentHashSet<RenderCamera> cameras = new ConcurrentHashSet<RenderCamera>();
+    // TODO: move this to GraphicsDevice
+    #region Move to GraphicsDevice
+    private static readonly object defaultGraphicsDeviceLocker = new object();
+
+    internal static PrimitiveCreatorShared? primitiveShared;
+
+    private static GraphicsDevice? defaultGraphicsDevice;
+    #endregion
+
+    private readonly ConcurrentList<RenderCamera> cameras = new ConcurrentList<RenderCamera>();
 
     private AtomicBool isDisposed;
+    private GraphicsDevice? graphicsDevice;
 
     public EntityWorld EntityWorld { get; } = new EntityWorld();
-    public Application Application { get; }
     public PrimitiveCreator Primitive { get; }
+
+    public GraphicsDevice GraphicsDevice {
+        get {
+            if (graphicsDevice is null)
+                SetDefaultGraphicsDevice();
+            return graphicsDevice!;
+        }
+        init => graphicsDevice = value;
+    }
 
     public bool IsDisposed => isDisposed;
     public IEnumerable<RenderCamera> Cameras => cameras;
 
-    internal ConcurrentBag<EntitySystemBase> FrameDependentSystems { get; } = new ConcurrentBag<EntitySystemBase>();
+    internal ConcurrentList<EntitySystemBase> FrameDependentSystems { get; } = new ConcurrentList<EntitySystemBase>();
 
-    public ApplicationScene(Application application) {
-        Application = application;
+    public ApplicationScene() {
         Primitive = new PrimitiveCreator(this);
-
         Application.AddSceneToLoaded(this);
     }
 
@@ -48,11 +65,11 @@ public class ApplicationScene : IDisposable {
     public RenderCamera CreateWindow(
         string? title = null, uint width = 1280, uint height = 720, bool autoRender = true
     ) {
-        title ??= Application.ApplicationName;
+        title ??= Application.Name;
 
         RenderCamera camera = new RenderCamera(
             this,
-            new Camera(new Window(Application.GraphicsDevice, new UInt2(width, height), title)),
+            new Camera(new Window(GraphicsDevice, new UInt2(width, height), title)),
             autoRender
         );
         cameras.Add(camera);
@@ -60,7 +77,6 @@ public class ApplicationScene : IDisposable {
         if (!HasFrameDependentSystem<CameraSystem>())
             AddFrameDependentSystem(new CameraSystem());
 
-        Interlocked.CompareExchange(ref Application.mainWindow, camera, null);
         return camera;
     }
 
@@ -114,6 +130,23 @@ public class ApplicationScene : IDisposable {
     /// This method is executed when <see cref="Dispose"/> is called.
     /// </summary>
     protected virtual void OnDispose() {
+    }
+
+    private void SetDefaultGraphicsDevice() {
+        if (defaultGraphicsDevice is null) {
+            lock (defaultGraphicsDeviceLocker) {
+                if (defaultGraphicsDevice is null) {
+
+                    OldLogging::NoiseEngine.Logging.Logger oldLogger = new OldLogging::NoiseEngine.Logging.Logger();
+                    Graphics.Initialize(oldLogger, Application.Name, Assembly.GetEntryAssembly()!.GetName().Version!);
+                    defaultGraphicsDevice = new GraphicsDevice(false);
+
+                    primitiveShared = new PrimitiveCreatorShared(defaultGraphicsDevice);
+                }
+            }
+        }
+
+        graphicsDevice = defaultGraphicsDevice;
     }
 
 }
