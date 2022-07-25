@@ -21,6 +21,9 @@ public class FileLogSink : TextWriterLogSink {
     /// <returns>Sink writing to a file.</returns>
     public static FileLogSink CreateFromDirectory(string directory, TextWriterLogSinkSettings? settings = null) {
         settings ??= new TextWriterLogSinkSettings();
+
+        Directory.CreateDirectory(directory);
+
         string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         string path = Path.Combine(directory, $"{timestamp}.log");
         return new FileLogSink(path, settings);
