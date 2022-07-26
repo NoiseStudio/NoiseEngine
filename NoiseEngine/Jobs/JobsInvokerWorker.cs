@@ -14,10 +14,11 @@ public class JobsInvokerWorker : IDisposable {
     private readonly ConcurrentQueue<(Job, JobsWorld)> toInvoke = new ConcurrentQueue<(Job, JobsWorld)>();
     private readonly int threadCount;
 
-    private bool works = true;
     private long waitTime;
     private int toInvokeAutoResetEventRelease;
     private int nextInvokeThreadToSignal;
+
+    public bool IsDisposed { get; private set; }
 
     /// <summary>
     /// Creates new <see cref="JobsInvokerWorker"/>
@@ -53,7 +54,7 @@ public class JobsInvokerWorker : IDisposable {
     /// This <see cref="JobsInvokerWorker"/> will be deactivated and disposed
     /// </summary>
     public void Dispose() {
-        works = false;
+        IsDisposed = true;
     }
 
     internal void InvokeJob(Job job, JobsWorld world) {
@@ -77,7 +78,7 @@ public class JobsInvokerWorker : IDisposable {
     }
 
     private void ToInvokeThreadWork() {
-        while (works) {
+        while (!IsDisposed) {
             Interlocked.Exchange(ref toInvokeAutoResetEventRelease, 0);
             long newWaitTime = long.MaxValue;
 
@@ -91,6 +92,8 @@ public class JobsInvokerWorker : IDisposable {
                 waitTime = 0;
             }
         }
+
+        toInvokeAutoResetEvent.Dispose();
     }
 
     private void InvokeThreadWork(object? threadIdObject) {
@@ -98,13 +101,15 @@ public class JobsInvokerWorker : IDisposable {
 
         AutoResetEvent autoResetEvent = invokeAutoResetEvents[threadId];
 
-        while (works) {
+        while (!IsDisposed) {
             autoResetEvent.WaitOne();
 
             while (toInvoke.TryDequeue(out (Job job, JobsWorld world) jobObject)) {
                 jobObject.job.Invoke(jobObject.world);
             }
         }
+
+        autoResetEvent.Dispose();
     }
 
     private void SignalInvokeThread() {
