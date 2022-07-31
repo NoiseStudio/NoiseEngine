@@ -14,7 +14,7 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void ExecuteMultithread() {
-        using EntityWorld world = Fixture.EmptyEntityWorld;
+        using EntityWorld world = Fixture.CreateEntityWorld();
 
         world.NewEntity(new TestComponentA());
         Entity entity = world.NewEntity(new TestComponentA());
@@ -102,7 +102,7 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void ThreadId() {
-        using EntityWorld world = Fixture.EmptyEntityWorld;
+        using EntityWorld world = Fixture.CreateEntityWorld();
 
         int threadCount = 16;
         for (int i = 1; i <= threadCount; i++) {
@@ -120,7 +120,7 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void Filter() {
-        using EntityWorld world = Fixture.EmptyEntityWorld;
+        using EntityWorld world = Fixture.CreateEntityWorld();
 
         for (int i = 0; i < 16; i++) {
             world.NewEntity();

@@ -14,7 +14,6 @@ public class JobsFixture : IDisposable {
     public JobsWorld JobsWorldFast { get; }
 
     public Entity NextEmptyEntity => EntityWorld.NewEntity();
-    public EntityWorld EmptyEntityWorld => new EntityWorld();
 
     public JobsFixture() {
         EntitySchedule = new EntitySchedule();
@@ -34,6 +33,10 @@ public class JobsFixture : IDisposable {
         JobsInvoker.Dispose();
         JobsWorld.Dispose();
         JobsWorldFast.Dispose();
+    }
+
+    public EntityWorld CreateEntityWorld() {
+        return new EntityWorld();
     }
 
 }

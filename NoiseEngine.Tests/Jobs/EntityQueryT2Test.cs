@@ -13,7 +13,7 @@ public class EntityQueryT2Test {
 
     [Fact]
     public void Foreach() {
-        using EntityWorld world = Fixture.EmptyEntityWorld;
+        using EntityWorld world = Fixture.CreateEntityWorld();
         EntityQuery<TestComponentA, TestComponentB> query =
             new EntityQuery<TestComponentA, TestComponentB>(world);
 

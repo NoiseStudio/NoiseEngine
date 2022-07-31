@@ -13,7 +13,7 @@ public class EntitySystemT1Test {
 
     [Fact]
     public void Execute() {
-        using EntityWorld world = Fixture.EmptyEntityWorld;
+        using EntityWorld world = Fixture.CreateEntityWorld();
 
         world.NewEntity(new TestComponentA());
         Entity entity = world.NewEntity(new TestComponentA());
