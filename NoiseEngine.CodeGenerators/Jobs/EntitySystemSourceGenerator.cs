@@ -23,29 +23,16 @@ namespace NoiseEngine.Jobs;
 
 public abstract class EntitySystem");
 
-            JobsHelper.AddTArguments(tCount, builder);
+            EntityHelper.AppendTArguments(tCount, builder);
 
             builder.Append(" : EntitySystemBase");
 
-            if (tCount > 0) {
-                builder.AppendLine();
-
-                for (int i = 1; i <= tCount; i++) {
-                    builder.Append("    where T");
-                    builder.Append(i);
-                    builder.AppendLine(" : struct, IEntityComponent");
-                }
-            } else {
-                builder.Append(' ');
-            }
-
-            builder.Append('{');
-            builder.AppendLine();
+            EntityHelper.AppendWhereConstraints(tCount, builder);
 
             builder.Append(@"
     internal EntityQuery");
 
-            JobsHelper.AddTArguments(tCount, builder);
+            EntityHelper.AppendTArguments(tCount, builder);
 
             builder.AppendLine("? queryGeneric;");
 
@@ -55,7 +42,7 @@ public abstract class EntitySystem");
 
         foreach (");
 
-            JobsHelper.AddIEnumeratorArguments(tCount, builder);
+            EntityHelper.AppendTuple(tCount, builder);
 
             builder.Append(@" element in queryGeneric!) {
             OnUpdateEntity(element");
@@ -91,7 +78,7 @@ public abstract class EntitySystem");
 
         queryGeneric = new EntityQuery");
 
-            JobsHelper.AddTArguments(tCount, builder);
+            EntityHelper.AppendTArguments(tCount, builder);
 
             builder.Append(@"(world, WritableComponents, Filter);
         query = queryGeneric;

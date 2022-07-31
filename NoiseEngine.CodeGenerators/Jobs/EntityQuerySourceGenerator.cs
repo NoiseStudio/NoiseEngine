@@ -26,28 +26,15 @@ namespace NoiseEngine.Jobs;
 
 public class EntityQuery");
 
-            JobsHelper.AddTArguments(tCount, builder);
+            EntityHelper.AppendTArguments(tCount, builder);
 
             builder.Append(" : EntityQueryBase, IEnumerable<");
 
-            JobsHelper.AddIEnumeratorArguments(tCount, builder);
+            EntityHelper.AppendTuple(tCount, builder);
 
             builder.Append('>');
 
-            if (tCount > 0) {
-                builder.AppendLine();
-
-                for (int i = 1; i <= tCount; i++) {
-                    builder.Append("    where T");
-                    builder.Append(i);
-                    builder.AppendLine(" : struct, IEntityComponent");
-                }
-            } else {
-                builder.Append(' ');
-            }
-
-            builder.Append('{');
-            builder.AppendLine();
+            EntityHelper.AppendWhereConstraints(tCount, builder);
 
             if (tCount > 0) {
                 builder.AppendLine();
@@ -83,7 +70,7 @@ public class EntityQuery");
     /// <returns>An enumerator that can be used to iterate through this <see cref=""EntityQuery""/>.</returns>
     public IEnumerator<");
 
-            JobsHelper.AddIEnumeratorArguments(tCount, builder);
+            EntityHelper.AppendTuple(tCount, builder);
 
             builder.AppendLine("> GetEnumerator() {");
 
