@@ -4,120 +4,121 @@ using System.Collections.Generic;
 
 namespace NoiseEngine.Tests.Jobs;
 
+[Collection(nameof(JobsCollection))]
 public class EntityWorldTest {
+
+    private JobsFixture Fixture { get; }
+
+    public EntityWorldTest(JobsFixture fixture) {
+        Fixture = fixture;
+    }
 
     [Fact]
     public void NewEntity() {
-        EntityWorld world = new EntityWorld();
-        Assert.NotEqual(Entity.Empty, world.NewEntity());
-        Assert.NotEqual(world.NewEntity(), world.NewEntity());
+        Assert.NotEqual(Entity.Empty, Fixture.EntityWorld.NewEntity());
+        Assert.NotEqual(Fixture.EntityWorld.NewEntity(), Fixture.EntityWorld.NewEntity());
     }
 
     [Fact]
     public void NewEntityT1() {
-        EntityWorld world = new EntityWorld();
-
-        Entity entity = world.NewEntity(new TestComponentA());
-        Assert.True(entity.Has<TestComponentA>(world));
+        Entity entity = Fixture.EntityWorld.NewEntity(new TestComponentA());
+        Assert.True(entity.Has<TestComponentA>(Fixture.EntityWorld));
     }
 
     [Fact]
     public void NewEntityT2() {
-        EntityWorld world = new EntityWorld();
-
-        Entity entity = world.NewEntity(new TestComponentA(), new TestComponentB());
-        Assert.True(entity.Has<TestComponentA>(world));
-        Assert.True(entity.Has<TestComponentB>(world));
+        Entity entity = Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
+        Assert.True(entity.Has<TestComponentA>(Fixture.EntityWorld));
+        Assert.True(entity.Has<TestComponentB>(Fixture.EntityWorld));
     }
 
     [Fact]
     public void HasSystem() {
-        EntityWorld world = new EntityWorld();
-        TestSystemB system = new TestSystemB();
+        using TestSystemB system = new TestSystemB();
 
-        Assert.False(world.HasSystem(system));
+        Assert.False(Fixture.EntityWorld.HasSystem(system));
 
-        system.Initialize(world);
-        Assert.True(world.HasSystem(system));
+        system.Initialize(Fixture.EntityWorld);
+        Assert.True(Fixture.EntityWorld.HasSystem(system));
     }
 
     [Fact]
     public void HasAnySystem() {
-        EntityWorld world = new EntityWorld();
-
+        using EntityWorld world = new EntityWorld();
         Assert.False(world.HasAnySystem<TestSystemB>());
 
-        new TestSystemB().Initialize(world);
+        TestSystemB system = new TestSystemB();
+        system.Initialize(world);
+
         Assert.True(world.HasAnySystem<TestSystemB>());
     }
 
     [Fact]
     public void GetSystem() {
-        EntityWorld world = new EntityWorld();
-        TestSystemB system = new TestSystemB();
-        system.Initialize(world);
+        using TestSystemB system = new TestSystemB();
+        system.Initialize(Fixture.EntityWorld);
 
-        Assert.Equal(system, world.GetSystem<TestSystemB>());
+        Assert.Equal(system, Fixture.EntityWorld.GetSystem<TestSystemB>());
     }
 
     [Fact]
     public void GetSystems() {
-        EntityWorld world = new EntityWorld();
-        TestSystemB system = new TestSystemB();
-        system.Initialize(world);
+        using TestSystemB system = new TestSystemB();
+        system.Initialize(Fixture.EntityWorld);
 
-        IReadOnlyList<TestSystemB> systems = world.GetSystems<TestSystemB>();
+        IReadOnlyList<TestSystemB> systems = Fixture.EntityWorld.GetSystems<TestSystemB>();
         Assert.Single(systems);
 
-        Assert.NotStrictEqual(systems, world.GetSystems<TestSystemB>());
+        Assert.NotStrictEqual(systems, Fixture.EntityWorld.GetSystems<TestSystemB>());
     }
 
     [Fact]
     public void GetGroupFromComponents() {
-        EntityWorld world = new EntityWorld();
+        EntityGroup group0 = Fixture.EntityWorld.GetGroupFromComponents(new List<Type>() {
+            typeof(string), typeof(int), typeof(long)
+        });
+        EntityGroup group1 = Fixture.EntityWorld.GetGroupFromComponents(new List<Type>() {
+            typeof(long), typeof(string), typeof(int)
+        });
 
-        EntityGroup group0 = world.GetGroupFromComponents(new List<Type>() { typeof(string), typeof(int), typeof(long) });
-        EntityGroup group1 = world.GetGroupFromComponents(new List<Type>() { typeof(long), typeof(string), typeof(int) });
         Assert.Equal(group0, group1);
 
-        group0 = world.GetGroupFromComponents(new List<Type>());
+        group0 = Fixture.EntityWorld.GetGroupFromComponents(new List<Type>());
         Assert.Equal(0, group0.GetHashCode());
     }
 
     [Fact]
     public void GetEntityGroup() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        EntityGroup groupA = world.GetEntityGroup(entity);
-        Assert.Equal(groupA, world.GetEntityGroup(entity));
+        EntityGroup groupA = Fixture.EntityWorld.GetEntityGroup(entity);
+        Assert.Equal(groupA, Fixture.EntityWorld.GetEntityGroup(entity));
 
-        entity.Add(world, new TestComponentA());
-        EntityGroup groupB = world.GetEntityGroup(entity);
+        entity.Add(Fixture.EntityWorld, new TestComponentA());
+        EntityGroup groupB = Fixture.EntityWorld.GetEntityGroup(entity);
 
         Assert.NotEqual(groupA, groupB);
     }
 
     [Fact]
     public void SetEntityGroup() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        EntityGroup groupA = world.GetEntityGroup(entity);
+        EntityGroup groupA = Fixture.EntityWorld.GetEntityGroup(entity);
 
-        entity.Add(world, new TestComponentA());
-        EntityGroup groupB = world.GetEntityGroup(entity);
+        entity.Add(Fixture.EntityWorld, new TestComponentA());
+        EntityGroup groupB = Fixture.EntityWorld.GetEntityGroup(entity);
 
-        Assert.Equal(groupB, world.GetEntityGroup(entity));
+        Assert.Equal(groupB, Fixture.EntityWorld.GetEntityGroup(entity));
         Assert.NotEqual(groupA, groupB);
 
-        world.SetEntityGroup(entity, groupA);
-        Assert.Equal(groupA, world.GetEntityGroup(entity));
+        Fixture.EntityWorld.SetEntityGroup(entity, groupA);
+        Assert.Equal(groupA, Fixture.EntityWorld.GetEntityGroup(entity));
     }
 
     [Fact]
     public void Destroy() {
-        EntityWorld world = new EntityWorld();
+        using EntityWorld world = new EntityWorld();
 
         for (int i = 0; i < 16; i++)
             world.NewEntity();

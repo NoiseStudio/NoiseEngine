@@ -3,21 +3,27 @@ using System;
 
 namespace NoiseEngine.Tests.Jobs;
 
+[Collection(nameof(JobsCollection))]
 public class EntitySystemBaseTest {
+
+    private JobsFixture Fixture { get; }
+
+    public EntitySystemBaseTest(JobsFixture fixture) {
+        Fixture = fixture;
+    }
 
     [Fact]
     public void ExecuteMultithread() {
-        EntitySchedule schedule = new EntitySchedule();
-        EntityWorld world = new EntityWorld();
+        using EntityWorld world = Fixture.EmptyEntityWorld;
 
         world.NewEntity(new TestComponentA());
         Entity entity = world.NewEntity(new TestComponentA());
         world.NewEntity(new TestComponentA());
 
-        TestSystemB system = new TestSystemB();
+        using TestSystemB system = new TestSystemB();
         Assert.Throws<InvalidOperationException>(() => system.TryExecuteParallelAndWait());
 
-        system.Initialize(world, schedule);
+        system.Initialize(world, Fixture.EntitySchedule);
 
         Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
@@ -33,14 +39,12 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void Enable() {
-        EntityWorld world = new EntityWorld();
+        Fixture.EntityWorld.NewEntity();
+        Fixture.EntityWorld.NewEntity(new TestComponentA());
+        Fixture.EntityWorld.NewEntity(new TestComponentA());
 
-        world.NewEntity();
-        world.NewEntity(new TestComponentA());
-        world.NewEntity(new TestComponentA());
-
-        TestSystemA system = new TestSystemA();
-        system.Initialize(world);
+        using TestSystemA system = new TestSystemA();
+        system.Initialize(Fixture.EntityWorld);
 
         system.TryExecuteAndWait();
 
@@ -53,17 +57,14 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void Dependency() {
-        EntitySchedule schedule = new EntitySchedule();
-        EntityWorld world = new EntityWorld();
+        Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
+        Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
+        Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
 
-        world.NewEntity(new TestComponentA(), new TestComponentB());
-        world.NewEntity(new TestComponentA(), new TestComponentB());
-        world.NewEntity(new TestComponentA(), new TestComponentB());
-
-        TestSystemA systemA = new TestSystemA();
-        TestSystemB systemB = new TestSystemB();
-        systemA.Initialize(world, schedule);
-        systemB.Initialize(world, schedule);
+        using TestSystemA systemA = new TestSystemA();
+        using TestSystemB systemB = new TestSystemB();
+        systemA.Initialize(Fixture.EntityWorld, Fixture.EntitySchedule);
+        systemB.Initialize(Fixture.EntityWorld, Fixture.EntitySchedule);
 
         systemB.TryExecuteAndWait();
         systemB.AddDependency(systemA);
@@ -80,16 +81,14 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void CanExecute() {
-        EntityWorld world = new EntityWorld();
+        Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
+        Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
+        Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
 
-        world.NewEntity(new TestComponentA(), new TestComponentB());
-        world.NewEntity(new TestComponentA(), new TestComponentB());
-        world.NewEntity(new TestComponentA(), new TestComponentB());
-
-        TestSystemA systemA = new TestSystemA();
-        TestSystemB systemB = new TestSystemB();
-        systemA.Initialize(world);
-        systemB.Initialize(world);
+        using TestSystemA systemA = new TestSystemA();
+        using TestSystemB systemB = new TestSystemB();
+        systemA.Initialize(Fixture.EntityWorld);
+        systemB.Initialize(Fixture.EntityWorld);
 
         systemB.TryExecuteAndWait();
         systemB.AddDependency(systemA);
@@ -103,18 +102,17 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void ThreadId() {
-        int threadCount = 16;
-        EntitySchedule schedule = new EntitySchedule();
-        EntityWorld world = new EntityWorld();
+        using EntityWorld world = Fixture.EmptyEntityWorld;
 
+        int threadCount = 16;
         for (int i = 1; i <= threadCount; i++) {
             world.NewEntity(new TestComponentA() {
                 A = 2 * (int)Math.Pow(2, i) + 4
             });
         }
 
-        TestSystemThreadId system = new TestSystemThreadId();
-        system.Initialize(world, schedule);
+        using TestSystemThreadId system = new TestSystemThreadId();
+        system.Initialize(world, Fixture.EntitySchedule);
 
         system.TryExecuteParallelAndWait();
         Assert.Equal(262204 / threadCount, system.AverageTestComponentAAValue);
@@ -122,7 +120,8 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void Filter() {
-        EntityWorld world = new EntityWorld();
+        using EntityWorld world = Fixture.EmptyEntityWorld;
+
         for (int i = 0; i < 16; i++) {
             world.NewEntity();
             world.NewEntity(new TestComponentA());
@@ -130,7 +129,7 @@ public class EntitySystemBaseTest {
             world.NewEntity(new TestComponentA(), new TestComponentB());
         }
 
-        TestSystemCounter system = new TestSystemCounter();
+        using TestSystemCounter system = new TestSystemCounter();
         system.Initialize(world);
 
         system.ExecuteAndWait();
@@ -156,13 +155,11 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void OnTerminate() {
-        EntityWorld world = new EntityWorld();
-
         for (int i = 0; i < 16; i++)
-            world.NewEntity();
+            Fixture.EntityWorld.NewEntity();
 
         TestSystemA system = new TestSystemA();
-        system.Initialize(world);
+        system.Initialize(Fixture.EntityWorld);
 
         system.ExecuteAndWait();
         system.Dispose();
@@ -173,15 +170,13 @@ public class EntitySystemBaseTest {
 
     [Fact]
     public void Initialize() {
-        EntityWorld world = new EntityWorld();
-
         TestSystemB system = new TestSystemB();
 
-        system.Initialize(world);
-        Assert.Throws<InvalidOperationException>(() => system.Initialize(world));
+        system.Initialize(Fixture.EntityWorld);
+        Assert.Throws<InvalidOperationException>(() => system.Initialize(Fixture.EntityWorld));
 
         system.Dispose();
-        Assert.Throws<InvalidOperationException>(() => system.Initialize(world));
+        Assert.Throws<InvalidOperationException>(() => system.Initialize(Fixture.EntityWorld));
     }
 
 }
