@@ -2,23 +2,28 @@ using NoiseEngine.Jobs;
 
 namespace NoiseEngine.Tests.Jobs;
 
+[Collection(nameof(JobsCollection))]
 public class JobTest {
+
+    private JobsFixture Fixture { get; }
+
+    public JobTest(JobsFixture fixture) {
+        Fixture = fixture;
+    }
 
     [Fact]
     public void Destroy() {
-        JobsWorld world = new JobsWorld(new JobsInvoker());
-        Job job = world.EnqueueJob(TestMethod, 5);
-        job.Destroy(world);
+        Job job = Fixture.JobsWorld.EnqueueJob(TestMethod, 5);
+        job.Destroy(Fixture.JobsWorld);
     }
 
     [Fact]
     public void IsInvoked() {
-        JobsWorld world = new JobsWorld(new JobsInvoker());
-        Job job = world.EnqueueJob(TestMethod, 0);
-        Assert.True(job.IsInvoked(world));
+        Job job = Fixture.JobsWorld.EnqueueJob(TestMethod, 0);
+        Assert.True(job.IsInvoked(Fixture.JobsWorld));
 
-        job = world.EnqueueJob(TestMethod, 5);
-        Assert.False(job.IsInvoked(world));
+        job = Fixture.JobsWorld.EnqueueJob(TestMethod, 5);
+        Assert.False(job.IsInvoked(Fixture.JobsWorld));
     }
 
     [Fact]

@@ -2,11 +2,18 @@
 
 namespace NoiseEngine.Tests.Jobs;
 
+[Collection(nameof(JobsCollection))]
 public class EntityQueryT1Test {
+
+    private JobsFixture Fixture { get; }
+
+    public EntityQueryT1Test(JobsFixture fixture) {
+        Fixture = fixture;
+    }
 
     [Fact]
     public void Foreach() {
-        EntityWorld world = new EntityWorld();
+        using EntityWorld world = Fixture.CreateEntityWorld();
         EntityQuery<TestComponentA> query = new EntityQuery<TestComponentA>(world);
 
         world.NewEntity();

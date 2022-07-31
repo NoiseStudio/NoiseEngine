@@ -1,66 +1,53 @@
-﻿using NoiseEngine.Jobs;
-using System.Threading;
+﻿using System.Threading;
 
 namespace NoiseEngine.Tests.Jobs;
 
+[Collection(nameof(JobsCollection))]
 public class JobsWorldTest {
 
     private readonly AutoResetEvent autoResetEvent = new AutoResetEvent(false);
 
-    private int invokeCount = 0;
-    private bool equal = false;
+    private int invokeCount;
+    private bool equal;
+
+    private JobsFixture Fixture { get; }
+
+    public JobsWorldTest(JobsFixture fixture) {
+        Fixture = fixture;
+    }
 
     [Fact]
     public void TestOneJob() {
-        JobsInvoker invoker = new JobsInvoker();
-        JobsWorld world = new JobsWorld(invoker, new uint[] {
-            2, 3, 5, 10
-        });
-        world.EnqueueJob(TestMethod, 15);
-
+        Fixture.JobsWorldFast.EnqueueJob(TestMethod, 15);
         autoResetEvent.WaitOne();
     }
 
     [Fact]
     public void TestThousandJobs() {
-        JobsInvoker invoker = new JobsInvoker();
-        JobsWorld world = new JobsWorld(invoker, new uint[] {
-            2, 3, 5, 10
-        });
-
         for (int i = 0; i < 1000; i++)
-            world.EnqueueJob(TestMethodThousand, 15);
+            Fixture.JobsWorldFast.EnqueueJob(TestMethodThousand, 15);
 
         autoResetEvent.WaitOne();
     }
 
     [Fact]
     public void CreateWithoutQueues() {
-        JobsInvoker invoker = new JobsInvoker();
-        JobsWorld world = new JobsWorld(invoker, new uint[0]);
-        world.EnqueueJob(TestMethodT0, 0);
+        Fixture.JobsWorld.EnqueueJob(TestMethodT0, 0);
     }
 
     [Fact]
     public void CreateWithQueues() {
-        JobsInvoker invoker = new JobsInvoker();
-        JobsWorld world = new JobsWorld(invoker, new uint[] { 1 });
-        world.EnqueueJob(TestMethodT0, 10);
+        Fixture.JobsWorldFast.EnqueueJob(TestMethodT0, 10);
     }
 
     [Fact]
     public void EnqueueJobT0() {
-        JobsInvoker invoker = new JobsInvoker();
-        JobsWorld world = new JobsWorld(invoker);
-        world.EnqueueJob(TestMethodT0, 0);
+        Fixture.JobsWorld.EnqueueJob(TestMethodT0, 0);
     }
 
     [Fact]
     public void EnqueueJobT1() {
-        JobsInvoker invoker = new JobsInvoker();
-        JobsWorld world = new JobsWorld(invoker);
-        world.EnqueueJob(TestMethodT1, 0, "Hello");
-
+        Fixture.JobsWorld.EnqueueJob(TestMethodT1, 0, "Hello");
         autoResetEvent.WaitOne();
         Assert.True(equal);
     }

@@ -28,7 +28,7 @@ public abstract class EntityQueryBase {
 
     public IEnumerable<Entity> Entities => GetEntityEnumerable();
 
-    public EntityQueryBase(
+    protected EntityQueryBase(
         EntityWorld world, IReadOnlyList<Type>? writableComponents = null, IEntityFilter? filter = null
     ) {
         World = world;

@@ -3,19 +3,25 @@ using System;
 
 namespace NoiseEngine.Tests.Jobs;
 
+[Collection(nameof(JobsCollection))]
 public class EntityTest {
+
+    private JobsFixture Fixture { get; }
+
+    public EntityTest(JobsFixture fixture) {
+        Fixture = fixture;
+    }
 
     [Fact]
     public void AddComponent() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        EntityGroup group = world.GetEntityGroup(entity);
+        EntityGroup group = Fixture.EntityWorld.GetEntityGroup(entity);
         Assert.Contains(entity, group.Entities);
 
-        entity.Add(world, new TestComponentA());
+        entity.Add(Fixture.EntityWorld, new TestComponentA());
         Assert.Throws<InvalidOperationException>(() => {
-            entity.Add(world, new TestComponentA());
+            entity.Add(Fixture.EntityWorld, new TestComponentA());
         });
 
         Assert.DoesNotContain(entity, group.Entities);
@@ -23,17 +29,16 @@ public class EntityTest {
 
     [Fact]
     public void RemoveComponent() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        entity.Add(world, new TestComponentA());
+        entity.Add(Fixture.EntityWorld, new TestComponentA());
 
-        EntityGroup group = world.GetEntityGroup(entity);
+        EntityGroup group = Fixture.EntityWorld.GetEntityGroup(entity);
         Assert.Contains(entity, group.Entities);
 
-        entity.Remove<TestComponentA>(world);
+        entity.Remove<TestComponentA>(Fixture.EntityWorld);
         Assert.Throws<InvalidOperationException>(() => {
-            entity.Remove<TestComponentA>(world);
+            entity.Remove<TestComponentA>(Fixture.EntityWorld);
         });
 
         Assert.DoesNotContain(entity, group.Entities);
@@ -41,67 +46,62 @@ public class EntityTest {
 
     [Fact]
     public void HasComponent() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        Assert.False(entity.Has<TestComponentA>(world));
+        Assert.False(entity.Has<TestComponentA>(Fixture.EntityWorld));
 
-        entity.Add(world, new TestComponentA());
-        Assert.True(entity.Has<TestComponentA>(world));
+        entity.Add(Fixture.EntityWorld, new TestComponentA());
+        Assert.True(entity.Has<TestComponentA>(Fixture.EntityWorld));
     }
 
     [Fact]
     public void GetComponent() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        entity.Add(world, new TestComponentA() {
+        entity.Add(Fixture.EntityWorld, new TestComponentA {
             A = 9
         });
 
-        Assert.Equal(9, entity.Get<TestComponentA>(world).A);
+        Assert.Equal(9, entity.Get<TestComponentA>(Fixture.EntityWorld).A);
     }
 
     [Fact]
     public void SetComponent() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        entity.Add(world, new TestComponentA());
-        entity.Set(world, new TestComponentA() {
+        entity.Add(Fixture.EntityWorld, new TestComponentA());
+        entity.Set(Fixture.EntityWorld, new TestComponentA {
             A = 6
         });
-        Assert.Equal(6, entity.Get<TestComponentA>(world).A);
+        Assert.Equal(6, entity.Get<TestComponentA>(Fixture.EntityWorld).A);
     }
 
     [Fact]
     public void Destroy() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        entity.Add(world, new TestComponentA());
-        entity.Get<TestComponentA>(world);
+        entity.Add(Fixture.EntityWorld, new TestComponentA());
+        entity.Get<TestComponentA>(Fixture.EntityWorld);
 
-        EntityGroup group = world.GetEntityGroup(entity);
+        EntityGroup group = Fixture.EntityWorld.GetEntityGroup(entity);
         Assert.Contains(entity, group.Entities);
 
-        entity.Destroy(world);
-        Assert.True(entity.IsDestroyed(world));
+        entity.Destroy(Fixture.EntityWorld);
+        Assert.True(entity.IsDestroyed(Fixture.EntityWorld));
 
         Assert.DoesNotContain(entity, group.Entities);
     }
 
     [Fact]
     public void IsDestroyed() {
-        EntityWorld world = new EntityWorld();
-        Entity entity = world.NewEntity();
+        Entity entity = Fixture.EntityWorld.NewEntity();
 
-        entity.Add(world, new TestComponentA());
-        entity.Get<TestComponentA>(world);
+        entity.Add(Fixture.EntityWorld, new TestComponentA());
+        entity.Get<TestComponentA>(Fixture.EntityWorld);
 
-        Assert.False(entity.IsDestroyed(world));
-        entity.Destroy(world);
-        Assert.True(entity.IsDestroyed(world));
+        Assert.False(entity.IsDestroyed(Fixture.EntityWorld));
+        entity.Destroy(Fixture.EntityWorld);
+        Assert.True(entity.IsDestroyed(Fixture.EntityWorld));
     }
 
     [Fact]

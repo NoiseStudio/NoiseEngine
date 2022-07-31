@@ -16,16 +16,13 @@ internal class JobsQueue : IDisposable {
     private readonly JobsWorld world;
     private readonly JobsInvoker invoker;
 
-    private bool works = true;
-
     public bool IsDisposed { get; private set; }
 
     public JobsQueue(JobsWorld world, JobsInvoker invoker, uint[]? queues = null) {
         this.world = world;
         this.invoker = invoker;
-        works = true;
 
-        if (queues == null) {
+        if (queues is null) {
             // Default queues
             queues = new uint[] {
                 5_000, // 5 seconds
@@ -50,19 +47,10 @@ internal class JobsQueue : IDisposable {
         }
     }
 
-    ~JobsQueue() {
-        Abort();
-    }
-
     public void Dispose() {
-        lock (this) {
-            if (IsDisposed)
-                return;
+        IsDisposed = true;
+        invoker.RemoveJobsQueue(this);
 
-            IsDisposed = true;
-        }
-
-        Abort();
         GC.SuppressFinalize(this);
     }
 
@@ -108,7 +96,7 @@ internal class JobsQueue : IDisposable {
         int waitTime = (int)Math.Max(gap - 1, 1);
         Queue<Job> jobs = new Queue<Job>();
 
-        while (works) {
+        while (!IsDisposed) {
             while (queue.TryDequeue(out Job job))
                 jobs.Enqueue(job);
 
@@ -149,11 +137,6 @@ internal class JobsQueue : IDisposable {
         } else {
             invoker.InvokeJob(job, world);
         }
-    }
-
-    private void Abort() {
-        works = false;
-        invoker.RemoveJobsQueue(this);
     }
 
 }

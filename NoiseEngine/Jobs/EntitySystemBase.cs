@@ -317,7 +317,7 @@ public abstract class EntitySystemBase : IDisposable {
     }
 
     internal virtual void InternalInitialize(EntityWorld world, EntitySchedule? schedule) {
-        AssertIsNotDestroyed();
+        AssertIsNotDisposed();
 
         if (Interlocked.Exchange(ref this.world, world) != EntityWorld.Empty)
             throw new InvalidOperationException($"{ToString()} is initialized.");
@@ -400,9 +400,9 @@ public abstract class EntitySystemBase : IDisposable {
         return true;
     }
 
-    internal void AssertIsNotDestroyed() {
+    internal void AssertIsNotDisposed() {
         if (isDisposed)
-            throw new InvalidOperationException($"The {ToString()} entity system is destroyed.");
+            throw new InvalidOperationException($"The {ToString()} entity system is disposed.");
     }
 
     /// <summary>
@@ -455,7 +455,7 @@ public abstract class EntitySystemBase : IDisposable {
     }
 
     private void AssertCouldExecute() {
-        AssertIsNotDestroyed();
+        AssertIsNotDisposed();
         if (!Enabled)
             throw new InvalidOperationException($"The {ToString()} entity system is disabled.");
     }

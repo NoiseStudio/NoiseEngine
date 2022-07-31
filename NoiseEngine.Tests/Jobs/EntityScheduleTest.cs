@@ -1,21 +1,24 @@
-﻿using NoiseEngine.Jobs;
-using System.Threading;
+﻿using System.Threading;
 
 namespace NoiseEngine.Tests.Jobs;
 
+[Collection(nameof(JobsCollection))]
 public class EntityScheduleTest {
+
+    private JobsFixture Fixture { get; }
+
+    public EntityScheduleTest(JobsFixture fixture) {
+        Fixture = fixture;
+    }
 
     [Fact]
     public void Test1() {
-        EntitySchedule schedule = new EntitySchedule();
-        EntityWorld world = new EntityWorld();
-
-        TestSystemScheduleA system = new TestSystemScheduleA();
-        system.Initialize(world, schedule, 100);
+        using TestSystemScheduleA system = new TestSystemScheduleA();
+        system.Initialize(Fixture.EntityWorld, Fixture.EntitySchedule, 100);
 
         int entities = 1024;
         for (int i = 0; i < entities; i++)
-            world.NewEntity(new TestComponentA(), new TestComponentB());
+            Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
         while (system.UpdateEntityCount < entities)
             continue;
 
@@ -27,7 +30,7 @@ public class EntityScheduleTest {
         Assert.True(system.UsedLateUpdate);
 
         for (int i = 0; i < entities; i++)
-            world.NewEntity(new TestComponentA(), new TestComponentB());
+            Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
         while (system.UpdateEntityCount < entities * 2)
             continue;
 

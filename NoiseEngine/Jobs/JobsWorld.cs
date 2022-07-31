@@ -3,14 +3,16 @@ using System.Threading;
 
 namespace NoiseEngine.Jobs;
 
-public class JobsWorld {
+public class JobsWorld : IDisposable {
 
     internal readonly JobsQueue queue;
 
     private readonly JobTime startTime;
     private readonly double startRealTime;
 
-    private ulong nextJobId = 1;
+    private ulong nextJobId;
+
+    public bool IsDisposed => queue.IsDisposed;
 
     public JobTime WorldTime {
         get {
@@ -37,6 +39,13 @@ public class JobsWorld {
 
         startRealTime = Time.UtcMilliseconds;
         queue = new JobsQueue(this, invoker, queues);
+    }
+
+    /// <summary>
+    /// Disposes this <see cref="JobsWorld"/>.
+    /// </summary>
+    public void Dispose() {
+        queue.Dispose();
     }
 
     /// <summary>

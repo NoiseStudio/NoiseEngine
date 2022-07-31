@@ -2,17 +2,24 @@
 
 namespace NoiseEngine.Tests.Jobs;
 
+[Collection(nameof(JobsCollection))]
 public class EntitySystemT1Test {
+
+    private JobsFixture Fixture { get; }
+
+    public EntitySystemT1Test(JobsFixture fixture) {
+        Fixture = fixture;
+    }
 
     [Fact]
     public void Execute() {
-        EntityWorld world = new EntityWorld();
+        using EntityWorld world = Fixture.CreateEntityWorld();
 
         world.NewEntity(new TestComponentA());
         Entity entity = world.NewEntity(new TestComponentA());
         world.NewEntity(new TestComponentA());
 
-        TestSystemB system = new TestSystemB();
+        using TestSystemB system = new TestSystemB();
         system.Initialize(world);
 
         Assert.Equal(0, entity.Get<TestComponentA>(world).A);
