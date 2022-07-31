@@ -26,23 +26,11 @@ namespace NoiseEngine.Jobs;
 
 public class EntityQuery");
 
-            if (tCount > 0) {
-                builder.Append('<');
-
-                for (int i = 1; i <= tCount; i++) {
-                    builder.Append('T');
-                    builder.Append(i);
-
-                    if (i < tCount)
-                        builder.Append(", ");
-                }
-
-                builder.Append('>');
-            }
+            JobsHelper.AddTArguments(tCount, builder);
 
             builder.Append(" : EntityQueryBase, IEnumerable<");
 
-            AddIEnumeratorArguments(tCount, builder);
+            JobsHelper.AddIEnumeratorArguments(tCount, builder);
 
             builder.Append('>');
 
@@ -95,7 +83,7 @@ public class EntityQuery");
     /// <returns>An enumerator that can be used to iterate through this <see cref=""EntityQuery""/>.</returns>
     public IEnumerator<");
 
-            AddIEnumeratorArguments(tCount, builder);
+            JobsHelper.AddIEnumeratorArguments(tCount, builder);
 
             builder.AppendLine("> GetEnumerator() {");
 
@@ -160,28 +148,6 @@ public class EntityQuery");
 ");
 
             return builder.ToString();
-        }
-
-        private void AddIEnumeratorArguments(int tCount, StringBuilder builder) {
-            if (tCount == 0) {
-                builder.Append("Entity");
-                return;
-            }
-
-            builder.Append("(Entity entity, ");
-
-            for (int i = 1; i <= tCount; i++) {
-                builder.Append('T');
-                builder.Append(i);
-
-                builder.Append(" component");
-                builder.Append(i);
-
-                if (i < tCount)
-                    builder.Append(", ");
-            }
-
-            builder.Append(")");
         }
 
     }
