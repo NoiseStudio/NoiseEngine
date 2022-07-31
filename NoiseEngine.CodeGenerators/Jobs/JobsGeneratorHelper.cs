@@ -1,9 +1,28 @@
 ﻿using System.Text;
 
 namespace NoiseEngine.CodeGenerators.Jobs {
-    internal static class EntityHelper {
+    internal static class JobsGeneratorHelper {
 
-        public static void AppendTuple(int tCount, StringBuilder builder) {
+        public const int ArgumentsCount = 8;
+
+        public static void AppendTArguments(int tCount, StringBuilder builder) {
+            if (tCount == 0)
+                return;
+
+            builder.Append('<');
+
+            for (int i = 1; i <= tCount; i++) {
+                builder.Append('T');
+                builder.Append(i);
+
+                if (i < tCount)
+                    builder.Append(", ");
+            }
+
+            builder.Append('>');
+        }
+
+        public static void AppendEntityTuple(int tCount, StringBuilder builder) {
             if (tCount == 0) {
                 builder.Append("Entity");
                 return;
@@ -25,24 +44,7 @@ namespace NoiseEngine.CodeGenerators.Jobs {
             builder.Append(")");
         }
 
-        public static void AppendTArguments(int tCount, StringBuilder builder) {
-            if (tCount == 0)
-                return;
-
-            builder.Append('<');
-
-            for (int i = 1; i <= tCount; i++) {
-                builder.Append('T');
-                builder.Append(i);
-
-                if (i < tCount)
-                    builder.Append(", ");
-            }
-
-            builder.Append('>');
-        }
-
-        public static void AppendWhereConstraints(int tCount, StringBuilder builder, int indentation = 1) {
+        public static void AppendEntityWhereConstraints(int tCount, StringBuilder builder, int indentation = 1) {
             if (tCount == 0) {
                 builder.AppendLine(" {");
                 return;

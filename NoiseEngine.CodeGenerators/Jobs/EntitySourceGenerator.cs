@@ -16,7 +16,7 @@ namespace NoiseEngine.Jobs;
 public readonly partial struct Entity {
 ");
 
-            for (int i = 1; i <= 8; i++) {
+            for (int i = 1; i <= JobsGeneratorHelper.ArgumentsCount; i++) {
                 for (int j = 1; j <= i; j++) {
                     Generate(i, j, builder, false);
                     Generate(i, j, builder, true);
@@ -58,19 +58,19 @@ public readonly partial struct Entity {
     /// <param name=""component"">New component.</param>
     public void Set");
 
-            EntityHelper.AppendTArguments(tCount, builder);
+            JobsGeneratorHelper.AppendTArguments(tCount, builder);
 
             builder.Append('(');
             builder.Append(typeName);
 
-            EntityHelper.AppendTArguments(tCount, builder);
+            JobsGeneratorHelper.AppendTArguments(tCount, builder);
             builder.Append(' ');
             builder.Append(paramName);
             builder.Append(", T");
             builder.Append(selectedT);
             builder.Append(" component)");
 
-            EntityHelper.AppendWhereConstraints(tCount, builder, 2);
+            JobsGeneratorHelper.AppendEntityWhereConstraints(tCount, builder, 2);
 
             if (isSystem)
                 builder.AppendLine("        Set(system.queryGeneric!, component);");

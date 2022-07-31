@@ -1,9 +1,6 @@
-﻿using System;
-using System.Threading;
+﻿namespace NoiseEngine.Jobs;
 
-namespace NoiseEngine.Jobs;
-
-public class JobsWorld : IDisposable {
+public partial class JobsWorld : IDisposable {
 
     internal readonly JobsQueue queue;
 
@@ -22,9 +19,6 @@ public class JobsWorld : IDisposable {
     }
 
     internal ComponentsStorage<Job> ComponentsStorage { get; } = new ComponentsStorage<Job>();
-
-    public delegate void JobT0();
-    public delegate void JobT1<T>(T argument0);
 
     /// <summary>
     /// Creates new <see cref="JobsWorld"/>
@@ -46,35 +40,6 @@ public class JobsWorld : IDisposable {
     /// </summary>
     public void Dispose() {
         queue.Dispose();
-    }
-
-    /// <summary>
-    /// Creates new <see cref="Job"/> in this <see cref="JobsWorld"/>
-    /// </summary>
-    /// <param name="toExecute">The method that will be executed</param>
-    /// <param name="relativeExecutionTime">Relative waiting time in milliseconds to <see cref="Job"/> execution</param>
-    /// <returns><see cref="Job"/></returns>
-    public Job EnqueueJob(JobT0 toExecute, uint relativeExecutionTime) {
-        Job job = EnqueueJobWorker(toExecute, relativeExecutionTime);
-        AddNewJobToQueue(job);
-        return job;
-    }
-
-    /// <summary>
-    /// Creates new <see cref="Job"/> in this <see cref="JobsWorld"/>
-    /// </summary>
-    /// <typeparam name="T">First argument type</typeparam>
-    /// <param name="toExecute">The method that will be executed</param>
-    /// <param name="relativeExecutionTime">Relative waiting time in milliseconds to <see cref="Job"/> execution</param>
-    /// <param name="argument0">First argument</param>
-    /// <returns><see cref="Job"/></returns>
-    public Job EnqueueJob<T>(JobT1<T> toExecute, uint relativeExecutionTime, T argument0) {
-        Job job = EnqueueJobWorker(toExecute, relativeExecutionTime);
-
-        ComponentsStorage.AddComponent(job, argument0);
-
-        AddNewJobToQueue(job);
-        return job;
     }
 
     private Job EnqueueJobWorker(Delegate toExecute, uint relativeExecutionTime) {

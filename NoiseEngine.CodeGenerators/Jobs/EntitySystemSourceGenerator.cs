@@ -7,7 +7,7 @@ namespace NoiseEngine.CodeGenerators.Jobs {
     public class EntitySystemSourceGenerator : ISourceGenerator {
 
         public void Execute(GeneratorExecutionContext context) {
-            for (int i = 0; i <= 8; i++)
+            for (int i = 0; i <= JobsGeneratorHelper.ArgumentsCount; i++)
                 context.AddSource($"EntitySystemT{i}.generated.cs", SourceText.From(Generate(i), Encoding.UTF8));
         }
 
@@ -23,16 +23,16 @@ namespace NoiseEngine.Jobs;
 
 public abstract class EntitySystem");
 
-            EntityHelper.AppendTArguments(tCount, builder);
+            JobsGeneratorHelper.AppendTArguments(tCount, builder);
 
             builder.Append(" : EntitySystemBase");
 
-            EntityHelper.AppendWhereConstraints(tCount, builder);
+            JobsGeneratorHelper.AppendEntityWhereConstraints(tCount, builder);
 
             builder.Append(@"
     internal EntityQuery");
 
-            EntityHelper.AppendTArguments(tCount, builder);
+            JobsGeneratorHelper.AppendTArguments(tCount, builder);
 
             builder.AppendLine("? queryGeneric;");
 
@@ -42,7 +42,7 @@ public abstract class EntitySystem");
 
         foreach (");
 
-            EntityHelper.AppendTuple(tCount, builder);
+            JobsGeneratorHelper.AppendEntityTuple(tCount, builder);
 
             builder.Append(@" element in queryGeneric!) {
             OnUpdateEntity(element");
@@ -78,7 +78,7 @@ public abstract class EntitySystem");
 
         queryGeneric = new EntityQuery");
 
-            EntityHelper.AppendTArguments(tCount, builder);
+            JobsGeneratorHelper.AppendTArguments(tCount, builder);
 
             builder.Append(@"(world, WritableComponents, Filter);
         query = queryGeneric;

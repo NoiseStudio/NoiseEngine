@@ -16,7 +16,7 @@ namespace NoiseEngine.Jobs;
 public partial class EntityWorld {
 ");
 
-            for (int i = 0; i <= 8; i++)
+            for (int i = 0; i <= JobsGeneratorHelper.ArgumentsCount; i++)
                 Generate(i, builder);
 
             builder.AppendLine();
@@ -51,7 +51,7 @@ public partial class EntityWorld {
             builder.Append(@"    /// <returns><see cref=""Entity""/>.</returns>
     public Entity NewEntity");
 
-            EntityHelper.AppendTArguments(tCount, builder);
+            JobsGeneratorHelper.AppendTArguments(tCount, builder);
 
             builder.Append('(');
 
@@ -67,7 +67,7 @@ public partial class EntityWorld {
 
             builder.Append(')');
 
-            EntityHelper.AppendWhereConstraints(tCount, builder, 2);
+            JobsGeneratorHelper.AppendEntityWhereConstraints(tCount, builder, 2);
 
             builder.AppendLine("        Entity entity = NewEntityWorker();");
 

@@ -7,7 +7,7 @@ namespace NoiseEngine.CodeGenerators.Jobs {
     public class EntityQuerySourceGenerator : ISourceGenerator {
 
         public void Execute(GeneratorExecutionContext context) {
-            for (int i = 0; i <= 8; i++)
+            for (int i = 0; i <= JobsGeneratorHelper.ArgumentsCount; i++)
                 context.AddSource($"EntityQueryT{i}.generated.cs", SourceText.From(Generate(i), Encoding.UTF8));
         }
 
@@ -26,15 +26,15 @@ namespace NoiseEngine.Jobs;
 
 public class EntityQuery");
 
-            EntityHelper.AppendTArguments(tCount, builder);
+            JobsGeneratorHelper.AppendTArguments(tCount, builder);
 
             builder.Append(" : EntityQueryBase, IEnumerable<");
 
-            EntityHelper.AppendTuple(tCount, builder);
+            JobsGeneratorHelper.AppendEntityTuple(tCount, builder);
 
             builder.Append('>');
 
-            EntityHelper.AppendWhereConstraints(tCount, builder);
+            JobsGeneratorHelper.AppendEntityWhereConstraints(tCount, builder);
 
             if (tCount > 0) {
                 builder.AppendLine();
@@ -70,7 +70,7 @@ public class EntityQuery");
     /// <returns>An enumerator that can be used to iterate through this <see cref=""EntityQuery""/>.</returns>
     public IEnumerator<");
 
-            EntityHelper.AppendTuple(tCount, builder);
+            JobsGeneratorHelper.AppendEntityTuple(tCount, builder);
 
             builder.AppendLine("> GetEnumerator() {");
 
