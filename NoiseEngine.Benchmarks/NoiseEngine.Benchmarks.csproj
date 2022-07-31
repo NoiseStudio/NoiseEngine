@@ -6,8 +6,9 @@
         <LangVersion>preview</LangVersion>
         <AssemblyName>NoiseEngine.Benchmarks</AssemblyName>
         <RootNamespace>NoiseEngine.Benchmarks</RootNamespace>
-        <Nullable>enable</Nullable>
         <Company>Noise Studio</Company>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
