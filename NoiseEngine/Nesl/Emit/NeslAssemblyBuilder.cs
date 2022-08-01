@@ -1,20 +1,16 @@
-﻿using NoiseEngine.Nesl.CompilerTools;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace NoiseEngine.Nesl.Emit;
 
 public class NeslAssemblyBuilder : NeslAssembly {
 
-    private readonly ConcurrentDictionary<NeslMethod, LocalMethodId> localMethodIds =
-        new ConcurrentDictionary<NeslMethod, LocalMethodId>();
+    private readonly Dictionary<ulong, NeslMethod> idToMethod = new Dictionary<ulong, NeslMethod>();
+    private readonly Dictionary<NeslMethod, ulong> methodToId = new Dictionary<NeslMethod, ulong>();
 
     private readonly ConcurrentDictionary<string, NeslTypeBuilder> types =
         new ConcurrentDictionary<string, NeslTypeBuilder>();
-
-    private ulong latestLocalMethodId;
 
     public override IEnumerable<NeslType> Types => types.Values;
 
@@ -52,8 +48,20 @@ public class NeslAssemblyBuilder : NeslAssembly {
         return type;
     }
 
-    internal LocalMethodId GetLocalMethodId(NeslMethod method) {
-        return localMethodIds.GetOrAdd(method, _ => new LocalMethodId(Interlocked.Increment(ref latestLocalMethodId)));
+    internal ulong GetLocalMethodId(NeslMethod method) {
+        lock (idToMethod) {
+            if (!methodToId.TryGetValue(method, out ulong id)) {
+                id = (ulong)idToMethod.Count;
+                idToMethod.Add(id, method);
+                methodToId.Add(method, id);
+            }
+
+            return id;
+        }
+    }
+
+    internal override NeslMethod GetMethod(ulong localMethodId) {
+        return idToMethod[localMethodId];
     }
 
 }

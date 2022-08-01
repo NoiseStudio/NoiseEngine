@@ -17,6 +17,10 @@ internal readonly struct Instruction {
         this.container = container;
     }
 
+    public float ReadFloat32() {
+        return BinaryPrimitives.ReadSingleBigEndian(GetTail());
+    }
+
     public ulong ReadUInt64() {
         return BinaryPrimitives.ReadUInt64BigEndian(GetTail());
     }

@@ -6,6 +6,15 @@ public enum OpCode : ushort {
     [OpCodeValidation(typeof(float))]
     LoadFloat32,
 
+    [OpCodeValidation]
+    Add,
+    [OpCodeValidation]
+    Sub,
+    [OpCodeValidation]
+    Mul,
+    [OpCodeValidation]
+    Div,
+
     [OpCodeValidation(typeof(NeslMethod))]
     Call,
     [OpCodeValidation]

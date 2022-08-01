@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using NoiseEngine.Nesl.CompilerTools.Attributes;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 
 namespace NoiseEngine.Nesl.CompilerTools;
 
@@ -10,8 +14,10 @@ internal class CilCompiler {
     private readonly AssemblyBuilder assembly;
     private readonly ModuleBuilder module;
 
-    private readonly Dictionary<NeslType, TypeBuilder> types = new Dictionary<NeslType, TypeBuilder>();
-    private readonly Dictionary<NeslMethod, MethodBuilder> methods = new Dictionary<NeslMethod, MethodBuilder>();
+    private readonly ConcurrentDictionary<NeslType, Lazy<TypeBuilder>> types =
+        new ConcurrentDictionary<NeslType, Lazy<TypeBuilder>>();
+    private readonly ConcurrentDictionary<NeslMethod, Lazy<MethodBuilder>> methods =
+        new ConcurrentDictionary<NeslMethod, Lazy<MethodBuilder>>();
 
     public NeslAssembly NeslAssembly { get; }
 
@@ -27,34 +33,88 @@ internal class CilCompiler {
     }
 
     public Assembly Compile() {
-        foreach (NeslMethod neslMethod in NeslAssembly.Types.SelectMany(x => x.Methods))
-            GetCilMethod(neslMethod);
+        Parallel.ForEach(NeslAssembly.Types.SelectMany(x => x.Methods), x => GetCilMethod(x));
+        Parallel.ForEach(NeslAssembly.Types, x => GetCilType(x).CreateType());
 
         return assembly;
     }
 
     private TypeBuilder GetCilType(NeslType neslType) {
-        if (!types.TryGetValue(neslType, out TypeBuilder? type)) {
-            type = module.DefineType(neslType.FullName, neslType.Attributes.GetCilAttributes());
-            types.Add(neslType, type);
+        return types.GetOrAdd(neslType, _ => new Lazy<TypeBuilder>(
+            () => module.DefineType(neslType.FullName, neslType.Attributes.GetCilAttributes())
+        )).Value;
+    }
+
+    private Type GetCilTypeOutput(NeslType neslType) {
+        PlatformDependentTypeRepresentationNeslAttribute? platformDependentTypeRepresentation =
+            (PlatformDependentTypeRepresentationNeslAttribute?)neslType.CustomAttributes.FirstOrDefault(
+                x => x.GetType() == typeof(PlatformDependentTypeRepresentationNeslAttribute)
+            );
+
+        if (platformDependentTypeRepresentation is not null) {
+            if (platformDependentTypeRepresentation.CilTargetName is null)
+                throw new InvalidOperationException();
+
+            Type? type = typeof(Type).Assembly.GetType(platformDependentTypeRepresentation.CilTargetName);
+            if (type is null)
+                throw new InvalidOperationException();
+
+            return type;
         }
 
-        return type;
+        return GetCilType(neslType);
     }
 
     private MethodBuilder GetCilMethod(NeslMethod neslMethod) {
-        if (!methods.TryGetValue(neslMethod, out MethodBuilder? method)) {
+        return methods.GetOrAdd(neslMethod, _ => new Lazy<MethodBuilder>(() => {
             TypeBuilder type = GetCilType(neslMethod.Type);
 
-            method = type.DefineMethod(
+            MethodBuilder method = type.DefineMethod(
                 neslMethod.Name,
                 neslMethod.Attributes.GetCilAttributes(),
-                neslMethod.ReturnType is null ? GetCilType(neslMethod.ReturnType!) : null,
-                neslMethod.ParameterTypes.Count > 0 ? neslMethod.ParameterTypes.Select(GetCilType).ToArray() : null
+                neslMethod.ReturnType is not null ? GetCilTypeOutput(neslMethod.ReturnType!) : null,
+                neslMethod.ParameterTypes.Count > 0 ?
+                    neslMethod.ParameterTypes.Select(GetCilTypeOutput).ToArray() : null
             );
-        }
 
-        return method;
+            CompileCode(neslMethod.GetInstructions(), method.GetILGenerator());
+
+            return method;
+        })).Value;
+    }
+
+    private void CompileCode(IEnumerable<Instruction> instructions, ILGenerator generator) {
+        foreach (Instruction instruction in instructions) {
+            switch (instruction.OpCode) {
+
+                case Emit.OpCode.LoadFloat32:
+                    generator.Emit(OpCodes.Ldc_R4, instruction.ReadFloat32());
+                    break;
+
+                case Emit.OpCode.Add:
+                    generator.Emit(OpCodes.Add);
+                    break;
+                case Emit.OpCode.Sub:
+                    generator.Emit(OpCodes.Sub);
+                    break;
+                case Emit.OpCode.Mul:
+                    generator.Emit(OpCodes.Mul);
+                    break;
+                case Emit.OpCode.Div:
+                    generator.Emit(OpCodes.Div);
+                    break;
+
+                case Emit.OpCode.Call:
+                    generator.Emit(OpCodes.Call, GetCilMethod(NeslAssembly.GetMethod(instruction.ReadUInt64())));
+                    break;
+                case Emit.OpCode.Return:
+                    generator.Emit(OpCodes.Ret);
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
     }
 
 }

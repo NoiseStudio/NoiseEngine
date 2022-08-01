@@ -42,6 +42,19 @@ public class IlGenerator : IlContainer {
     /// </summary>
     /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
     /// <param name="argument1">First argument.</param>
+    public void Emit(OpCode opCode, ulong argument1) {
+        EmitWorker(opCode, typeof(ulong));
+
+        Span<byte> bytes = stackalloc byte[sizeof(ulong)];
+        BinaryPrimitives.WriteUInt64BigEndian(bytes, argument1);
+        tail.AddRange(bytes);
+    }
+
+    /// <summary>
+    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
+    /// </summary>
+    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
+    /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, float argument1) {
         EmitWorker(opCode, typeof(float));
 
@@ -59,7 +72,7 @@ public class IlGenerator : IlContainer {
         EmitWorker(opCode, typeof(NeslMethod));
 
         Span<byte> bytes = stackalloc byte[sizeof(ulong)];
-        assembly.GetLocalMethodId(argument1).WriteBytes(bytes);
+        BinaryPrimitives.WriteUInt64BigEndian(bytes, assembly.GetLocalMethodId(argument1));
         tail.AddRange(bytes);
     }
 
