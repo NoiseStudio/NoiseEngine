@@ -11,6 +11,9 @@ namespace NoiseEngine.CodeGenerators.Jobs {
 
 #nullable enable
 
+using System;
+using System.Collections.Generic;
+
 namespace NoiseEngine.Jobs;
 
 public partial class EntityWorld {
@@ -23,7 +26,7 @@ public partial class EntityWorld {
             builder.Append('}');
             builder.AppendLine();
 
-            context.AddSource($"EntityWorld.generated.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
+            context.AddSource("EntityWorld.generated.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
         }
 
         public void Initialize(GeneratorInitializationContext context) {

@@ -8,7 +8,6 @@
         <Company>Noise Studio</Company>
         <Product>NoiseEngine</Product>
         <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
         <NoWarn>1591</NoWarn>

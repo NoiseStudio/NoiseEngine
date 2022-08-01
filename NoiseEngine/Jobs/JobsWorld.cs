@@ -1,4 +1,7 @@
-﻿namespace NoiseEngine.Jobs;
+﻿using System;
+using System.Threading;
+
+namespace NoiseEngine.Jobs;
 
 public partial class JobsWorld : IDisposable {
 
@@ -21,11 +24,11 @@ public partial class JobsWorld : IDisposable {
     internal ComponentsStorage<Job> ComponentsStorage { get; } = new ComponentsStorage<Job>();
 
     /// <summary>
-    /// Creates new <see cref="JobsWorld"/>
+    /// Creates new <see cref="JobsWorld"/>.
     /// </summary>
-    /// <param name="queues">Job queues gaps (affect Jobs performance when default queue is used null)</param>
-    /// <param name="invoker"><see cref="JobsInvoker"/> invoking <see cref="Job"/>s assigned to this world</param>
-    /// <param name="startTime">World time, useful for saving (when null time 0 is used)</param>
+    /// <param name="invoker"><see cref="JobsInvoker"/> invoking <see cref="Job"/>s assigned to this world.</param>
+    /// <param name="queues">Job queues gaps (affect Jobs performance when default queue is used null).</param>
+    /// <param name="startTime">World time, useful for saving (when null time 0 is used).</param>
     public JobsWorld(JobsInvoker invoker, uint[]? queues = null, JobTime? startTime = null) {
         if (startTime == null)
             startTime = JobTime.Zero;
@@ -40,6 +43,7 @@ public partial class JobsWorld : IDisposable {
     /// </summary>
     public void Dispose() {
         queue.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     private Job EnqueueJobWorker(Delegate toExecute, uint relativeExecutionTime) {

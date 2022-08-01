@@ -1,4 +1,7 @@
-﻿namespace NoiseEngine.Jobs;
+﻿using System;
+using System.Collections.Generic;
+
+namespace NoiseEngine.Jobs;
 
 public readonly partial struct Entity : IEquatable<Entity> {
 
