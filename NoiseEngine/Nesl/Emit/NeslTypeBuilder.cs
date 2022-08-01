@@ -11,7 +11,7 @@ public class NeslTypeBuilder : NeslType {
 
     public override IEnumerable<NeslMethod> Methods => methods.Values;
 
-    internal NeslTypeBuilder(string fullName) : base(fullName) {
+    internal NeslTypeBuilder(NeslAssemblyBuilder assembly, string fullName) : base(assembly, fullName) {
     }
 
     /// <summary>
@@ -22,8 +22,8 @@ public class NeslTypeBuilder : NeslType {
     /// <exception cref="ArgumentException">
     /// <see cref="NeslMethod"/> with this <paramref name="name"/> already exists in this type.
     /// </exception>
-    public NeslMethodBuilder DefineType(string name) {
-        NeslMethodBuilder method = new NeslMethodBuilder(name);
+    public NeslMethodBuilder DefineMethod(string name) {
+        NeslMethodBuilder method = new NeslMethodBuilder(this, name);
 
         if (!methods.TryAdd(name, method)) {
             throw new ArgumentException($"{nameof(NeslMethod)} named `{name}` already exists in `{Name}` type.",

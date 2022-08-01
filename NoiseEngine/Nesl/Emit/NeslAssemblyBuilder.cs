@@ -1,13 +1,20 @@
-﻿using System;
+﻿using NoiseEngine.Nesl.Runtime;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace NoiseEngine.Nesl.Emit;
 
 public class NeslAssemblyBuilder : NeslAssembly {
 
+    private readonly ConcurrentDictionary<NeslMethod, LocalMethodId> localMethodIds =
+        new ConcurrentDictionary<NeslMethod, LocalMethodId>();
+
     private readonly ConcurrentDictionary<string, NeslTypeBuilder> types =
         new ConcurrentDictionary<string, NeslTypeBuilder>();
+
+    private ulong latestLocalMethodId;
 
     public override IEnumerable<NeslType> Types => types.Values;
 
@@ -32,7 +39,7 @@ public class NeslAssemblyBuilder : NeslAssembly {
     /// <see cref="NeslType"/> with this <paramref name="fullName"/> already exists in this assembly.
     /// </exception>
     public NeslTypeBuilder DefineType(string fullName) {
-        NeslTypeBuilder type = new NeslTypeBuilder(fullName);
+        NeslTypeBuilder type = new NeslTypeBuilder(this, fullName);
 
         if (!types.TryAdd(fullName, type)) {
             throw new ArgumentException($"{nameof(NeslType)} named `{fullName}` already exists in `{Name}` assembly.",
@@ -40,6 +47,10 @@ public class NeslAssemblyBuilder : NeslAssembly {
         }
 
         return type;
+    }
+
+    internal LocalMethodId GetLocalMethodId(NeslMethod method) {
+        return localMethodIds.GetOrAdd(method, _ => new LocalMethodId(Interlocked.Increment(ref latestLocalMethodId)));
     }
 
 }

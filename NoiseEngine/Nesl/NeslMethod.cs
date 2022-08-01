@@ -1,11 +1,24 @@
-﻿namespace NoiseEngine.Nesl;
+﻿using NoiseEngine.Nesl.Runtime;
+using System.Collections.Generic;
+
+namespace NoiseEngine.Nesl;
 
 public abstract class NeslMethod {
 
-    public string Name { get; }
+    public abstract IEnumerable<NeslAttribute> Attributes { get; }
 
-    protected NeslMethod(string name) {
-       Name = name;
+    protected abstract IlContainer IlContainer { get; }
+
+    public string Name { get; }
+    public NeslType Type { get; }
+
+    protected NeslMethod(NeslType type, string name) {
+        Type = type;
+        Name = name;
+    }
+
+    internal IEnumerable<Instruction> GetInstructions() {
+        return IlContainer.GetInstructions();
     }
 
 }
