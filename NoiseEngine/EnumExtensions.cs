@@ -5,7 +5,7 @@ namespace NoiseEngine;
 
 internal static class EnumExtensions {
 
-    public static T GetAttribute<T>(this Enum value) where T : Attribute {
+    public static T GetCustomAttribute<T>(this Enum value) where T : Attribute {
         Type type = value.GetType();
         MemberInfo[] memberInfo = type.GetMember(value.ToString());
         object[] attributes = memberInfo[0].GetCustomAttributes(typeof(T), false);

@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace NoiseEngine.Nesl.Runtime;
+namespace NoiseEngine.Nesl.CompilerTools;
 
 public abstract class IlContainer {
 

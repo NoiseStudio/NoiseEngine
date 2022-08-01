@@ -1,5 +1,5 @@
 ﻿using NoiseEngine.Nesl.Emit;
-using NoiseEngine.Nesl.Runtime.Attributes;
+using NoiseEngine.Nesl.CompilerTools.Attributes;
 
 namespace NoiseEngine.Tests.Nesl;
 
@@ -12,9 +12,10 @@ public class Test {
 
         // Default
         NeslTypeBuilder float32 = assembly.DefineType("System.Float32");
+        float32.AddCustomAttribute(new PlatformDependentTypeRepresentationNeslAttribute("System.Single", null));
 
         NeslMethodBuilder float32Add = float32.DefineMethod("+op_Add");
-        float32Add.AddAttribute(new PlatformDependentNeslAttribute(null, null));
+        float32Add.AddAttribute(new PlatformDependentMethodNeslAttribute(null, null));
 
         // Shader
         NeslTypeBuilder shader = assembly.DefineType("Shader");

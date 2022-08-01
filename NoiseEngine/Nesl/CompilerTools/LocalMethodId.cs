@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 
-namespace NoiseEngine.Nesl.Runtime;
+namespace NoiseEngine.Nesl.CompilerTools;
 
 internal readonly record struct LocalMethodId(ulong Id) {
 

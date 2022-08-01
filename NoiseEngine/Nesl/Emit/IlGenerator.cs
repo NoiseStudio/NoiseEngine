@@ -1,5 +1,5 @@
 ﻿using NoiseEngine.Collections;
-using NoiseEngine.Nesl.Runtime;
+using NoiseEngine.Nesl.CompilerTools;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -73,7 +73,7 @@ public class IlGenerator : IlContainer {
     }
 
     private void AssertTail(OpCode opCode, params Type[] expectedTail) {
-        if (!opCode.GetAttribute<OpCodeValidationAttribute>().Tail.SequenceEqual(expectedTail))
+        if (!opCode.GetCustomAttribute<OpCodeValidationAttribute>().Tail.SequenceEqual(expectedTail))
             throw new InvalidOperationException($"{opCode} does not support given arguments.");
     }
 

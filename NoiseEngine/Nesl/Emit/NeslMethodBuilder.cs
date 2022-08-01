@@ -1,4 +1,4 @@
-﻿using NoiseEngine.Nesl.Runtime;
+﻿using NoiseEngine.Nesl.CompilerTools;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -10,16 +10,18 @@ public class NeslMethodBuilder : NeslMethod {
 
     public IlGenerator IlGenerator { get; }
 
-    public override IEnumerable<NeslAttribute> Attributes => attributes;
+    public override IEnumerable<NeslAttribute> CustomAttributes => attributes;
 
     protected override IlContainer IlContainer => IlGenerator;
 
-    internal NeslMethodBuilder(NeslTypeBuilder type, string name) : base(type, name) {
+    internal NeslMethodBuilder(
+        NeslTypeBuilder type, string name, MethodAttributes attributes, NeslType? returnType, NeslType[] parameterTypes
+    ) : base(type, name, attributes, returnType, parameterTypes) {
         IlGenerator = new IlGenerator((NeslAssemblyBuilder)type.Assembly);
     }
 
     /// <summary>
-    /// Adds <paramref name="attribute"/> to this <see cref="NeslAssemblyBuilder"/>.
+    /// Adds <paramref name="attribute"/> to this <see cref="NeslMethodBuilder"/>.
     /// </summary>
     /// <param name="attribute"><see cref="NeslAttribute"/>.</param>
     public void AddAttribute(NeslAttribute attribute) {

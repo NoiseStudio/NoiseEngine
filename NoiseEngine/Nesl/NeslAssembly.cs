@@ -6,9 +6,9 @@ public abstract class NeslAssembly {
 
     public abstract IEnumerable<NeslType> Types { get; }
 
-    public NeslAssemblyName? Name { get; }
+    public string Name { get; }
 
-    protected NeslAssembly(NeslAssemblyName? name) {
+    protected NeslAssembly(string name) {
         Name = name;
     }
 
