@@ -95,9 +95,19 @@ public class FastList<T> : IList<T>, IReadOnlyList<T>, IList {
     /// Adds <paramref name="items"/> to the <see cref="FastList{T}"/>.
     /// </summary>
     /// <param name="items">Items to add.</param>
-    public void AddRange(ICollection<T>[] items) {
-        EnsureCapacity(count + items.Length);
+    public void AddRange(ICollection<T> items) {
+        EnsureCapacity(count + items.Count);
         items.CopyTo(this.items, count);
+        count += items.Count;
+    }
+
+    /// <summary>
+    /// Adds <paramref name="items"/> to the <see cref="FastList{T}"/>.
+    /// </summary>
+    /// <param name="items">Items to add.</param>
+    public void AddRange(ReadOnlySpan<T> items) {
+        EnsureCapacity(count + items.Length);
+        items.CopyTo(this.items.AsSpan(count, items.Length));
         count += items.Length;
     }
 
@@ -105,10 +115,8 @@ public class FastList<T> : IList<T>, IReadOnlyList<T>, IList {
     /// Adds <paramref name="items"/> to the <see cref="FastList{T}"/>.
     /// </summary>
     /// <param name="items">Items to add.</param>
-    public void AddRange(Span<T> items) {
-        EnsureCapacity(count + items.Length);
-        items.CopyTo(this.items.AsSpan(count, items.Length));
-        count += items.Length;
+    public void AddRange(T[] items) {
+        AddRange((ICollection<T>)items);
     }
 
     /// <summary>

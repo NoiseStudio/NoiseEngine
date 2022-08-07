@@ -46,9 +46,6 @@
         <Reference Include="NoiseEngine.Rendering">
             <HintPath>../External/NoiseEngine.Rendering.dll</HintPath>
         </Reference>
-        <Reference Include="NoiseEngine.Serialization">
-            <HintPath>../External/NoiseEngine.Serialization.dll</HintPath>
-        </Reference>
     </ItemGroup>
 
     <Import Project="../NoiseEngine.Shared.xml" />
