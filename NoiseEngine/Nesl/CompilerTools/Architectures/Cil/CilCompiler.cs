@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
 
-namespace NoiseEngine.Nesl.CompilerTools;
+namespace NoiseEngine.Nesl.CompilerTools.Architectures.Cil;
 
 internal class CilCompiler {
 

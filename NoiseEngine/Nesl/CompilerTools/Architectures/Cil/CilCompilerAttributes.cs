@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace NoiseEngine.Nesl.CompilerTools;
+namespace NoiseEngine.Nesl.CompilerTools.Architectures.Cil;
 
 internal static class CilCompilerAttributes {
 

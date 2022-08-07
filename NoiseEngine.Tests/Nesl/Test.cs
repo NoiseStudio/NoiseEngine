@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Nesl;
-using NoiseEngine.Nesl.CompilerTools;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.Cil;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using System;
@@ -33,7 +32,7 @@ public class Test {
         NeslMethodBuilder main = shader.DefineMethod("Main", BuiltInTypes.Float32);
         il = main.IlGenerator;
 
-        il.Emit(OpCode.LoadArg, (byte)0);
+        il.Emit(OpCode.LoadArg, 0);
         il.Emit(OpCode.LoadField, buffer);
         il.Emit(OpCode.LoadUInt32, 5u);
         il.Emit(OpCode.LoadFloat32, 18.64f);
@@ -56,6 +55,7 @@ public class Test {
         Assert.Equal(12, (float)methodInfo.Invoke(obj, null)!);
 
         float[] b = (float[])fieldInfo.GetValue(obj)!;
+        Assert.Equal(18.64f, b[5]);
     }
 
 }
