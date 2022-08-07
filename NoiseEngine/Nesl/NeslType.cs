@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using NoiseEngine.Nesl.Emit.Attributes;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace NoiseEngine.Nesl;
 
@@ -6,20 +9,24 @@ public abstract class NeslType {
 
     private const char Delimiter = '.';
 
-    public abstract IEnumerable<NeslAttribute> CustomAttributes { get; }
+    public abstract IEnumerable<NeslAttribute> Attributes { get; }
+    public abstract IEnumerable<NeslField> Fields { get; }
     public abstract IEnumerable<NeslMethod> Methods { get; }
 
     public NeslAssembly Assembly { get; }
     public string FullName { get; }
-    public TypeAttributes Attributes { get; }
 
     public string Name => FullName.Substring(FullName.LastIndexOf(Delimiter));
     public string Namespace => FullName.Substring(0, FullName.LastIndexOf(Delimiter));
 
-    protected NeslType(NeslAssembly assembly, string fullName, TypeAttributes attributes) {
+    public bool IsClass => !IsValueType;
+    public bool IsValueType => Attributes.HasAnyAttribute(nameof(ValueTypeAttribute));
+
+    protected NeslType(NeslAssembly assembly, string fullName) {
         Assembly = assembly;
         FullName = fullName;
-        Attributes = attributes;
     }
+
+    internal abstract NeslField GetField(uint localFieldId);
 
 }

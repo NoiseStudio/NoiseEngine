@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 
-namespace NoiseEngine.Nesl.CompilerTools.Attributes;
+namespace NoiseEngine.Nesl.Emit.Attributes;
 
-public class PlatformDependentMethodNeslAttribute : NeslAttribute {
+public class PlatformDependentMethodAttribute {
 
     internal IReadOnlyList<byte>? CilDefinition { get; }
     internal IReadOnlyList<byte>? SpirVDefinition { get; }
 
-    public PlatformDependentMethodNeslAttribute(byte[]? cilDefiniton, byte[]? spirVDefinition) {
+    public PlatformDependentMethodAttribute(byte[]? cilDefiniton, byte[]? spirVDefinition) {
         CilDefinition = cilDefiniton;
         SpirVDefinition = spirVDefinition;
     }

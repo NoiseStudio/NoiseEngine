@@ -1,6 +1,6 @@
 ﻿using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.CompilerTools;
-using NoiseEngine.Nesl.CompilerTools.Attributes;
+using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using System;
 
@@ -14,8 +14,8 @@ public class Test {
         NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(TestMethod));
 
         // Default
-        NeslTypeBuilder float32 = assembly.DefineType("System.Float32", TypeAttributes.Public);
-        float32.AddCustomAttribute(new PlatformDependentTypeRepresentationNeslAttribute("System.Single", null));
+        /*NeslTypeBuilder float32 = assembly.DefineType("System.Float32", TypeAttributes.Public);
+        float32.AddCustomAttribute(new PlatformDependentTypeRepresentationAttribute("System.Single", null));
 
         NeslMethodBuilder getNumber = float32.DefineMethod(
             "GetNumber", MethodAttributes.Public | MethodAttributes.Static, float32);
@@ -23,26 +23,39 @@ public class Test {
         il = getNumber.IlGenerator;
 
         il.Emit(OpCode.LoadFloat32, 20f);
-        il.Emit(OpCode.Return);
+        il.Emit(OpCode.Return);*/
 
         // Shader
         NeslTypeBuilder shader = assembly.DefineType("Shader");
 
-        NeslMethodBuilder main = shader.DefineMethod("Main", MethodAttributes.Public, float32);
+        NeslFieldBuilder buffer = shader.DefineField("buffer", Buffers.ReadWriteBuffer);
+
+        NeslMethodBuilder main = shader.DefineMethod("Main", BuiltInTypes.Float32);
         il = main.IlGenerator;
 
-        il.Emit(OpCode.LoadFloat32, 8f);
-        il.Emit(OpCode.Call, getNumber);
-        il.Emit(OpCode.Add);
+        il.Emit(OpCode.LoadArg, (byte)0);
+        il.Emit(OpCode.LoadField, buffer);
+        il.Emit(OpCode.LoadUInt32, 5u);
+        il.Emit(OpCode.LoadFloat32, 18.64f);
+        il.Emit(OpCode.SetElement, BuiltInTypes.Float32);
+
+        il.Emit(OpCode.LoadFloat32, 12f);
         il.Emit(OpCode.Return);
 
         // Compile
         CilCompiler compiler = new CilCompiler(assembly);
 
         Type type = compiler.Compile().GetType(shader.FullName)!;
-        System.Reflection.MethodInfo methodInfo = type.GetMethod(main.Name)!;
+        System.Reflection.MethodInfo methodInfo =
+            type.GetMethod(main.Name, (System.Reflection.BindingFlags)int.MaxValue)!;
+        System.Reflection.FieldInfo fieldInfo = type.GetField("buffer")!;
 
-        Assert.Equal(5, (float)methodInfo.Invoke(Activator.CreateInstance(type), null)!);
+        object obj = Activator.CreateInstance(type)!;
+        fieldInfo.SetValue(obj, new float[16]);
+
+        Assert.Equal(12, (float)methodInfo.Invoke(obj, null)!);
+
+        float[] b = (float[])fieldInfo.GetValue(obj)!;
     }
 
 }

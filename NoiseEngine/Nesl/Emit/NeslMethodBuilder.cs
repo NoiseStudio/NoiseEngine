@@ -10,14 +10,13 @@ public class NeslMethodBuilder : NeslMethod {
 
     public IlGenerator IlGenerator { get; }
 
-    public override IEnumerable<NeslAttribute> CustomAttributes => attributes;
+    public override IEnumerable<NeslAttribute> Attributes => attributes;
 
     protected override IlContainer IlContainer => IlGenerator;
 
-    internal NeslMethodBuilder(
-        NeslTypeBuilder type, string name, MethodAttributes attributes, NeslType? returnType, NeslType[] parameterTypes
-    ) : base(type, name, attributes, returnType, parameterTypes) {
-        IlGenerator = new IlGenerator((NeslAssemblyBuilder)type.Assembly);
+    internal NeslMethodBuilder(NeslTypeBuilder type, string name, NeslType? returnType, NeslType[] parameterTypes)
+        : base(type, name, returnType, parameterTypes) {
+        IlGenerator = new IlGenerator((NeslAssemblyBuilder)type.Assembly, this);
     }
 
     /// <summary>

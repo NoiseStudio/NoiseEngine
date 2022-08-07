@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.Emit;
 
-[AttributeUsage(AttributeTargets.Field)]
+[AttributeUsage(System.AttributeTargets.Field)]
 internal class OpCodeValidationAttribute : Attribute {
 
     public IReadOnlyList<Type> Tail { get; }

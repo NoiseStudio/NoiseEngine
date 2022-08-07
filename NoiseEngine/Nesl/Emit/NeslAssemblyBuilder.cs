@@ -6,6 +6,9 @@ namespace NoiseEngine.Nesl.Emit;
 
 public class NeslAssemblyBuilder : NeslAssembly {
 
+    private readonly Dictionary<ulong, NeslType> idToType = new Dictionary<ulong, NeslType>();
+    private readonly Dictionary<NeslType, ulong> typeToId = new Dictionary<NeslType, ulong>();
+
     private readonly Dictionary<ulong, NeslMethod> idToMethod = new Dictionary<ulong, NeslMethod>();
     private readonly Dictionary<NeslMethod, ulong> methodToId = new Dictionary<NeslMethod, ulong>();
 
@@ -30,15 +33,12 @@ public class NeslAssemblyBuilder : NeslAssembly {
     /// Creates new <see cref="NeslTypeBuilder"/> in this assembly.
     /// </summary>
     /// <param name="fullName">Name preceded by namespace.</param>
-    /// <param name="attributes"><see cref="TypeAttributes"/> of new type.</param>
     /// <returns>New <see cref="NeslTypeBuilder"/>.</returns>
     /// <exception cref="ArgumentException">
     /// <see cref="NeslType"/> with this <paramref name="fullName"/> already exists in this assembly.
     /// </exception>
-    public NeslTypeBuilder DefineType(
-        string fullName, TypeAttributes attributes = TypeAttributes.Public | TypeAttributes.Class
-    ) {
-        NeslTypeBuilder type = new NeslTypeBuilder(this, fullName, attributes);
+    public NeslTypeBuilder DefineType(string fullName) {
+        NeslTypeBuilder type = new NeslTypeBuilder(this, fullName);
 
         if (!types.TryAdd(fullName, type)) {
             throw new ArgumentException($"{nameof(NeslType)} named `{fullName}` already exists in `{Name}` assembly.",
@@ -46,6 +46,18 @@ public class NeslAssemblyBuilder : NeslAssembly {
         }
 
         return type;
+    }
+
+    internal ulong GetLocalTypeId(NeslType type) {
+        lock (idToType) {
+            if (!typeToId.TryGetValue(type, out ulong id)) {
+                id = (ulong)idToType.Count;
+                idToType.Add(id, type);
+                typeToId.Add(type, id);
+            }
+
+            return id;
+        }
     }
 
     internal ulong GetLocalMethodId(NeslMethod method) {
@@ -58,6 +70,10 @@ public class NeslAssemblyBuilder : NeslAssembly {
 
             return id;
         }
+    }
+
+    internal override NeslType GetType(ulong localTypeId) {
+        return idToType[localTypeId];
     }
 
     internal override NeslMethod GetMethod(ulong localMethodId) {

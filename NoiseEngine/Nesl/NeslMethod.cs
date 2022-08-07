@@ -1,26 +1,26 @@
 ﻿using NoiseEngine.Nesl.CompilerTools;
+using NoiseEngine.Nesl.Emit.Attributes;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NoiseEngine.Nesl;
 
 public abstract class NeslMethod {
 
-    public abstract IEnumerable<NeslAttribute> CustomAttributes { get; }
+    public abstract IEnumerable<NeslAttribute> Attributes { get; }
 
     protected abstract IlContainer IlContainer { get; }
 
     public NeslType Type { get; }
     public string Name { get; }
-    public MethodAttributes Attributes { get; }
     public NeslType? ReturnType { get; }
     public IReadOnlyList<NeslType> ParameterTypes { get; }
 
-    protected NeslMethod(
-        NeslType type, string name, MethodAttributes attributes, NeslType? returnType, NeslType[] parameterTypes
-    ) {
+    public bool IsStatic => Attributes.HasAnyAttribute(nameof(StaticAttribute));
+
+    protected NeslMethod(NeslType type, string name, NeslType? returnType, NeslType[] parameterTypes) {
         Type = type;
         Name = name;
-        Attributes = attributes;
         ReturnType = returnType;
         ParameterTypes = parameterTypes;
     }

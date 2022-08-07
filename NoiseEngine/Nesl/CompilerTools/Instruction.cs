@@ -21,6 +21,14 @@ internal readonly struct Instruction {
         return BinaryPrimitives.ReadSingleBigEndian(GetTail());
     }
 
+    public byte ReadUInt8() {
+        return GetTail()[0];
+    }
+
+    public uint ReadUInt32() {
+        return BinaryPrimitives.ReadUInt32BigEndian(GetTail());
+    }
+
     public ulong ReadUInt64() {
         return BinaryPrimitives.ReadUInt64BigEndian(GetTail());
     }
