@@ -1,7 +1,9 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.Cil;
+using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using System;
+using System.IO;
 
 namespace NoiseEngine.Tests.Nesl;
 
@@ -56,6 +58,22 @@ public class Test {
 
         float[] b = (float[])fieldInfo.GetValue(obj)!;
         Assert.Equal(18.64f, b[5]);
+    }
+
+    [Fact]
+    public void TestSpirV() {
+        IlGenerator? il;
+        NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(TestSpirV));
+
+        NeslTypeBuilder shader = assembly.DefineType("Shader");
+
+        NeslMethodBuilder main = shader.DefineMethod("Main");
+        il = main.IlGenerator;
+
+        il.Emit(OpCode.Return);
+
+        // Compile
+        File.WriteAllBytes($"{nameof(TestSpirV)}.spv", new SpirVCompiler(assembly).Compile());
     }
 
 }
