@@ -43,7 +43,6 @@ public partial class JobsWorld : IDisposable {
     /// </summary>
     public void Dispose() {
         queue.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     private Job EnqueueJobWorker(Delegate toExecute, uint relativeExecutionTime) {
