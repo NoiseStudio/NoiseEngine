@@ -13,6 +13,8 @@ internal class SpirVCompiler {
 
     private readonly ConcurrentDictionary<NeslType, Lazy<SpirVType>> types =
         new ConcurrentDictionary<NeslType, Lazy<SpirVType>>();
+    private readonly ConcurrentDictionary<NeslField, Lazy<SpirVVariable>> variables =
+        new ConcurrentDictionary<NeslField, Lazy<SpirVVariable>>();
     private readonly ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>> functions =
         new ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>>();
 
@@ -20,6 +22,7 @@ internal class SpirVCompiler {
 
     public NeslAssembly NeslAssembly { get; }
 
+    public SpirVJit Jit { get; }
     public SpirVBuiltInTypes BuiltInTypes { get; }
 
     public SpirVGenerator Header { get; }
@@ -28,6 +31,7 @@ internal class SpirVCompiler {
     public SpirVCompiler(NeslAssembly neslAssembly) {
         NeslAssembly = neslAssembly;
 
+        Jit = new SpirVJit(this);
         BuiltInTypes = new SpirVBuiltInTypes(this);
 
         Header = new SpirVGenerator(this);
@@ -38,7 +42,11 @@ internal class SpirVCompiler {
         Header.Emit(SpirVOpCode.OpCapability, (uint)Capability.Shader);
         Header.Emit(SpirVOpCode.OpMemoryModel, (uint)AddressingModel.Logical, (uint)MemoryModel.Glsl450);
 
+        Header.Emit(SpirVOpCode.OpEntryPoint, (uint)ExecutionModel.Fragment, new SpirVId(1), "main");
+        Header.Emit(SpirVOpCode.OpExecutionMode, new SpirVId(1), (uint)ExecutionMode.OriginLowerLeft);
+
         Parallel.ForEach(NeslAssembly.Types.SelectMany(x => x.Methods), x => GetSpirVFunction(x));
+        Parallel.ForEach(NeslAssembly.Types.SelectMany(x => x.Fields), x => GetSpirVVariable(x));
 
         SpirVGenerator generator = new SpirVGenerator(this);
         FirstWords(generator);
@@ -57,6 +65,11 @@ internal class SpirVCompiler {
 
     internal SpirVId GetNextId() {
         return new SpirVId(Interlocked.Increment(ref nextId));
+    }
+
+    internal SpirVVariable GetSpirVVariable(NeslField neslField) {
+        return variables.GetOrAdd(neslField,
+            _ => new Lazy<SpirVVariable>(() => new SpirVVariable(this, neslField))).Value;
     }
 
     internal SpirVType GetSpirVType(NeslType? neslType) {

@@ -19,6 +19,11 @@ internal class SpirVFunction {
         BeginFunction();
     }
 
+    internal void Construct(SpirVGenerator generator) {
+        generator.Writer.WriteBytes(SpirVGenerator.Writer.AsSpan());
+        generator.Emit(SpirVOpCode.OpFunctionEnd);
+    }
+
     private void BeginFunction() {
         SpirVType returnType = Compiler.GetSpirVType(NeslMethod.ReturnType);
         SpirVType functionType = Compiler.BuiltInTypes.GetOpTypeFunction(returnType);
@@ -26,12 +31,9 @@ internal class SpirVFunction {
         // TODO: implement function control.
         SpirVGenerator.Emit(SpirVOpCode.OpFunction, returnType.Id, Id, 0, functionType.Id);
 
-        SpirVGenerator.Emit(SpirVOpCode.OpLabel, Compiler.GetNextId().RawId);
-    }
+        SpirVGenerator.Emit(SpirVOpCode.OpLabel, Compiler.GetNextId());
 
-    internal void Construct(SpirVGenerator generator) {
-        generator.Writer.WriteBytes(SpirVGenerator.Writer.AsSpan());
-        generator.Emit(SpirVOpCode.OpFunctionEnd);
+        Compiler.Jit.CompileCode(NeslMethod.GetInstructions(), NeslMethod, SpirVGenerator);
     }
 
 }

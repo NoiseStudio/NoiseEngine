@@ -1,6 +1,10 @@
-﻿namespace NoiseEngine.Nesl;
+﻿using System.Collections.Generic;
+
+namespace NoiseEngine.Nesl;
 
 public abstract class NeslField {
+
+    public abstract IEnumerable<NeslAttribute> Attributes { get; }
 
     public NeslType ParentType { get; }
     public string Name { get; }

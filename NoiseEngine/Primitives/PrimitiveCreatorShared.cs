@@ -50,7 +50,7 @@ internal class PrimitiveCreatorShared : IDisposable {
     private Mesh? cubeMesh;
 
     public Material DefaultMaterial => defaultMaterial ??= new Material(DefaultShader);
-    public Shader DefaultShader => defaultShader ??= Shader.FromGlslSource(
+    public Shader DefaultShader => defaultShader ??= /*Nesl.NeslPrimitiveTest.CreateShader(graphicsDevice, InPosition3Color3OutColor3GlslVert);*/Shader.FromGlslSource(
         graphicsDevice,
         InPosition3Color3OutColor3GlslVert,
         InColor3GlslFrag,

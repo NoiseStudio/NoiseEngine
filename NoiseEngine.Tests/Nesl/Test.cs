@@ -2,6 +2,8 @@
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes;
+using NoiseEngine.Rendering;
 using System;
 using System.IO;
 
@@ -67,6 +69,8 @@ public class Test {
 
         NeslTypeBuilder shader = assembly.DefineType("Shader");
 
+        NeslFieldBuilder a = shader.DefineField("a", BuiltInTypes.Float32);
+
         NeslMethodBuilder main = shader.DefineMethod("Main");
         il = main.IlGenerator;
 
@@ -74,6 +78,21 @@ public class Test {
 
         // Compile
         File.WriteAllBytes($"{nameof(TestSpirV)}.spv", new SpirVCompiler(assembly).Compile());
+    }
+
+    [Fact]
+    public void TestGlsl() {
+        const string InColor3GlslFrag = @"
+            #version 450
+            layout(location = 0) in vec3 inColor;
+            layout(location = 0) out vec4 outColor;
+            void main() {
+                outColor = vec4(inColor, 1.0);
+            }
+        ";
+
+        File.WriteAllBytes($"{nameof(TestGlsl)}.spv",
+            ShaderCompiler.CompileGlsl(InColor3GlslFrag, ShaderStage.Fragment));
     }
 
 }

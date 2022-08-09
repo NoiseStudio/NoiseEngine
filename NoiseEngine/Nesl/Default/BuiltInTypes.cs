@@ -14,7 +14,7 @@ internal static class BuiltInTypes {
     private static NeslType CreateFloat32() {
         NeslTypeBuilder type = Manager.AssemblyBuilder.DefineType($"{Manager.AssemblyBuilder.Name}.Float32");
         type.AddAttribute(ValueTypeAttribute.Create());
-        type.AddAttribute(PlatformDependentTypeRepresentationAttribute.Create("System.Single", null));
+        type.AddAttribute(PlatformDependentTypeRepresentationAttribute.Create("System.Single", "OpTypeFloat32"));
         type.AddAttribute(SizeAttribute.Create(32));
 
         return type;

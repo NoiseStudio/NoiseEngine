@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -21,6 +22,9 @@ internal class SpirVBuiltInTypes {
             case nameof(SpirVOpCode.OpTypeVoid):
                 type = GetOpTypeVoid();
                 return true;
+            case $"{nameof(SpirVOpCode.OpTypeFloat)}32":
+                type = GetOpTypeFloat(32);
+                return true;
             default:
                 type = null;
                 return false;
@@ -35,6 +39,27 @@ internal class SpirVBuiltInTypes {
                     Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypeVoid, id);
                     return new SpirVType(Compiler, id);
                 }
+        })).Value;
+    }
+
+    public SpirVType GetOpTypeFloat(ulong size) {
+        return types.GetOrAdd(new ComparableArray(new object[] { SpirVOpCode.OpTypeFloat, size }),
+            _ => new Lazy<SpirVType>(() => {
+                lock (Compiler.TypesAndVariables) {
+                    SpirVId id = Compiler.GetNextId();
+                    Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypeFloat, id, (uint)size);
+                    return new SpirVType(Compiler, id);
+                }
+            })).Value;
+    }
+
+    public SpirVType GetOpTypePointer(StorageClass storageClass, SpirVType type) {
+        return types.GetOrAdd(new ComparableArray(new object[] { storageClass, type }), _ => new Lazy<SpirVType>(() => {
+            lock (Compiler.TypesAndVariables) {
+                SpirVId id = Compiler.GetNextId();
+                Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypePointer, id, (uint)storageClass, type.Id);
+                return new SpirVType(Compiler, id);
+            }
         })).Value;
     }
 
