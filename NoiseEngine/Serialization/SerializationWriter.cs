@@ -9,8 +9,8 @@ public class SerializationWriter : IReadOnlyList<byte> {
 
     private readonly SerializationWriterDelegation delegation;
 
-    public bool IsBigEndian { get; }
-    public bool IsLittleEndian => !IsBigEndian;
+    public bool IsLittleEndian { get; }
+    public bool IsBigEndian => !IsLittleEndian;
 
     public int Count => delegation.Data.Count;
 
@@ -19,13 +19,13 @@ public class SerializationWriter : IReadOnlyList<byte> {
         set => delegation.Data[index] = value;
     }
 
-    public SerializationWriter(bool bigEndian = true) {
-        IsBigEndian = bigEndian;
+    public SerializationWriter(bool isLittleEndian = true) {
+        IsLittleEndian = isLittleEndian;
 
-        if (bigEndian)
-            delegation = new SerializationWriterDelegationBigEndian();
+        if (isLittleEndian)
+            delegation = new SerializationWriterDelegationLittleEndian();
         else
-            throw new NotImplementedException("Little endian is currently not supported.");
+            delegation = new SerializationWriterDelegationBigEndian();
     }
 
     /// <summary>
@@ -155,6 +155,14 @@ public class SerializationWriter : IReadOnlyList<byte> {
     /// <param name="obj"><see cref="double"/> value.</param>
     public void WriteFloat64(double obj) {
         delegation.WriteFloat64(obj);
+    }
+
+    /// <summary>
+    /// Copies the bytes of the <see cref="SerializationWriter"/> to a new array.
+    /// </summary>
+    /// <returns>An array containing copies of the bytes of the <see cref="SerializationWriter"/>.</returns>
+    public byte[] ToArray() {
+        return delegation.Data.ToArray();
     }
 
     /// <summary>
