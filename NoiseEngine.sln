@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# 
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine", "NoiseEngine/NoiseEngine.csproj", "{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32714.290
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine", "NoiseEngine/NoiseEngine.csproj", "{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Tests", "NoiseEngine.Tests/NoiseEngine.Tests.csproj", "{BBFBF8C3-000C-4B63-9704-44CD338E31FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Tests", "NoiseEngine.Tests/NoiseEngine.Tests.csproj", "{BBFBF8C3-000C-4B63-9704-44CD338E31FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Benchmarks", "NoiseEngine.Benchmarks/NoiseEngine.Benchmarks.csproj", "{93B82DAA-2ABE-45F1-A20E-D2CE885A738A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Benchmarks", "NoiseEngine.Benchmarks/NoiseEngine.Benchmarks.csproj", "{93B82DAA-2ABE-45F1-A20E-D2CE885A738A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.CodeGenerators", "NoiseEngine.CodeGenerators/NoiseEngine.CodeGenerators.csproj", "{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,5 +29,15 @@ Global
 		{93B82DAA-2ABE-45F1-A20E-D2CE885A738A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93B82DAA-2ABE-45F1-A20E-D2CE885A738A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93B82DAA-2ABE-45F1-A20E-D2CE885A738A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BE45CD14-B758-4A78-A64D-779D9408AE7E}
 	EndGlobalSection
 EndGlobal

@@ -6,8 +6,8 @@
         <IsPackable>false</IsPackable>
         <AssemblyName>NoiseEngine.Tests</AssemblyName>
         <RootNamespace>NoiseEngine.Tests</RootNamespace>
-        <Nullable>enable</Nullable>
         <Company>Noise Studio</Company>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
