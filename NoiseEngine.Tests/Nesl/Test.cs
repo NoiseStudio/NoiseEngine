@@ -70,7 +70,7 @@ public class Test {
         }).GetCode());
     }
 
-    [Fact]
+    [FactRequire(TestRequirements.Gpu)]
     public void TestGlsl() {
         const string InColor3GlslFrag = @"
             #version 450
