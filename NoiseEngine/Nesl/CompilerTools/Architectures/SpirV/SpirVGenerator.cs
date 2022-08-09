@@ -17,18 +17,6 @@ internal class SpirVGenerator {
         Compiler = compiler;
     }
 
-    private static List<byte> StringToLiteralStringBytes(string obj) {
-        List<byte> result = new List<byte>(Encoding.UTF8.GetBytes(obj));
-
-        result.Add(0); // null termination
-
-        int count = (sizeof(uint) - result.Count % sizeof(uint)) % sizeof(uint);
-        for (int i = 0; i < count; i++)
-            result.Add(0);
-
-        return result;
-    }
-
     public void Emit(SpirVOpCode opCode) {
         EmitWorker(opCode, 1);
     }
@@ -44,13 +32,12 @@ internal class SpirVGenerator {
         Writer.WriteUInt32(argument2);
     }
 
-    public void Emit(SpirVOpCode opCode, uint argument1, SpirVId argument2, string argument3) {
-        List<byte> bytes = StringToLiteralStringBytes(argument3);
-        EmitWorker(opCode, (ushort)(3 + (bytes.Count / 4)), typeof(uint), typeof(SpirVId), typeof(string));
+    public void Emit(SpirVOpCode opCode, uint argument1, SpirVId argument2, SpirVLiteral argument3) {
+        EmitWorker(opCode, (ushort)(3 + argument3.WordCount), typeof(uint), typeof(SpirVId), typeof(SpirVLiteral));
 
         Writer.WriteUInt32(argument1);
         Writer.WriteUInt32(argument2.RawId);
-        Writer.WriteBytes(bytes);
+        Writer.WriteBytes(argument3.Bytes);
     }
 
     public void Emit(SpirVOpCode opCode, SpirVId argument1) {

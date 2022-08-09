@@ -21,7 +21,7 @@ internal static class NeslPrimitiveTest {
         il.Emit(OpCode.Return);
 
         // Compile
-        Code = new SpirVCompiler(assembly).Compile();
+        Code = null!;//new SpirVCompiler(assembly).Compile();
     }
 
     internal static Shader CreateShader(GraphicsDevice graphicsDevice, string vertexShader) {

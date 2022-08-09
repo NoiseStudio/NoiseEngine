@@ -1,5 +1,7 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Architectures.Cil;
+﻿using NoiseEngine.Nesl;
+using NoiseEngine.Nesl.CompilerTools.Architectures.Cil;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
+using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
@@ -69,13 +71,15 @@ public class Test {
 
         NeslTypeBuilder shader = assembly.DefineType("Shader");
 
-        NeslMethodBuilder main = shader.DefineMethod("Main", BuiltInTypes.Float32, BuiltInTypes.Float32);
+        NeslMethodBuilder main = shader.DefineMethod("Fragment", BuiltInTypes.Float32, BuiltInTypes.Float32);
         il = main.IlGenerator;
 
         il.Emit(OpCode.Return);
 
         // Compile
-        File.WriteAllBytes($"{nameof(TestSpirV)}.spv", new SpirVCompiler(assembly).Compile());
+        File.WriteAllBytes($"{nameof(TestSpirV)}.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
+            new NeslEntryPoint(main, ExecutionModel.Fragment)
+        }));
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools;
 using NoiseEngine.Nesl.Emit.Attributes;
+using System;
 using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl;
@@ -16,6 +17,7 @@ public abstract class NeslMethod {
     public string Name { get; }
     public NeslType? ReturnType { get; }
     public IReadOnlyList<NeslType> ParameterTypes { get; }
+    public Guid Guid { get; }
 
     public bool IsStatic => Attributes.HasAnyAttribute(nameof(StaticAttribute));
 
@@ -24,6 +26,8 @@ public abstract class NeslMethod {
         Name = name;
         ReturnType = returnType;
         ParameterTypes = parameterTypes;
+
+        Guid = Guid.NewGuid();
     }
 
     internal IEnumerable<Instruction> GetInstructions() {

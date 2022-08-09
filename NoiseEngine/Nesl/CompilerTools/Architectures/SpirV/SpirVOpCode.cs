@@ -28,6 +28,10 @@ internal enum SpirVOpCode : ushort {
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(uint))]
     OpVariable = 59,
 
+    [OpCodeValidation(typeof(SpirVId), typeof(uint))]
+    [OpCodeValidationOptional(typeof(SpirVLiteral))]
+    OpDecorate = 71,
+
     [OpCodeValidation(typeof(SpirVId))]
     OpLabel = 248,
     [OpCodeValidation]
