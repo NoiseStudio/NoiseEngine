@@ -4,7 +4,6 @@ using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
-using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Rendering;
 using System;
 using System.IO;
@@ -14,23 +13,10 @@ namespace NoiseEngine.Tests.Nesl;
 public class Test {
 
     [Fact]
-    public void TestMethod() {
+    public void TestCil() {
         IlGenerator? il;
-        NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(TestMethod));
+        NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(TestCil));
 
-        // Default
-        /*NeslTypeBuilder float32 = assembly.DefineType("System.Float32", TypeAttributes.Public);
-        float32.AddCustomAttribute(new PlatformDependentTypeRepresentationAttribute("System.Single", null));
-
-        NeslMethodBuilder getNumber = float32.DefineMethod(
-            "GetNumber", MethodAttributes.Public | MethodAttributes.Static, float32);
-        //float32Add.AddAttribute(new PlatformDependentMethodNeslAttribute(null, null));
-        il = getNumber.IlGenerator;
-
-        il.Emit(OpCode.LoadFloat32, 20f);
-        il.Emit(OpCode.Return);*/
-
-        // Shader
         NeslTypeBuilder shader = assembly.DefineType("Shader");
 
         NeslFieldBuilder buffer = shader.DefineField("buffer", Buffers.ReadWriteBuffer);
@@ -47,7 +33,7 @@ public class Test {
         il.Emit(OpCode.LoadFloat32, 12f);
         il.Emit(OpCode.Return);
 
-        // Compile
+        // Compile and run.
         CilCompiler compiler = new CilCompiler(assembly);
 
         Type type = compiler.Compile().GetType(shader.FullName)!;
@@ -76,7 +62,7 @@ public class Test {
 
         il.Emit(OpCode.Return);
 
-        // Compile
+        // Compile.
         File.WriteAllBytes($"{nameof(TestSpirV)}.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(main, ExecutionModel.Fragment)
         }).GetCode());
@@ -93,6 +79,7 @@ public class Test {
             }
         ";
 
+        // Compile.
         File.WriteAllBytes($"{nameof(TestGlsl)}.spv",
             ShaderCompiler.CompileGlsl(InColor3GlslFrag, ShaderStage.Fragment));
     }

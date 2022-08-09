@@ -1,9 +1,7 @@
-﻿using NoiseEngine.Collections;
-using NoiseEngine.Nesl.CompilerTools;
+﻿using NoiseEngine.Nesl.CompilerTools;
+using NoiseEngine.Serialization;
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace NoiseEngine.Nesl.Emit;
 
@@ -12,7 +10,7 @@ public class IlGenerator : IlContainer {
     private readonly NeslAssemblyBuilder assembly;
     private readonly NeslMethodBuilder method;
     private readonly List<(OpCode opCode, uint tailIndex)> rawInstructions = new List<(OpCode, uint)>();
-    private readonly FastList<byte> tail = new FastList<byte>();
+    private readonly SerializationWriter tail = new SerializationWriter();
 
     protected override IEnumerable<(OpCode opCode, uint tailIndex)> RawInstructions => rawInstructions;
 
@@ -36,7 +34,7 @@ public class IlGenerator : IlContainer {
     /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, byte argument1) {
         EmitWorker(opCode, typeof(byte));
-        tail.Add(argument1);
+        tail.WriteUInt8(argument1);
     }
 
     /// <summary>
@@ -46,10 +44,7 @@ public class IlGenerator : IlContainer {
     /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, uint argument1) {
         EmitWorker(opCode, typeof(uint));
-
-        Span<byte> bytes = stackalloc byte[sizeof(uint)];
-        BinaryPrimitives.WriteUInt32LittleEndian(bytes, argument1);
-        tail.AddRange(bytes);
+        tail.WriteUInt32(argument1);
     }
 
     /// <summary>
@@ -59,10 +54,7 @@ public class IlGenerator : IlContainer {
     /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, ulong argument1) {
         EmitWorker(opCode, typeof(ulong));
-
-        Span<byte> bytes = stackalloc byte[sizeof(ulong)];
-        BinaryPrimitives.WriteUInt64LittleEndian(bytes, argument1);
-        tail.AddRange(bytes);
+        tail.WriteUInt64(argument1);
     }
 
     /// <summary>
@@ -72,10 +64,7 @@ public class IlGenerator : IlContainer {
     /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, float argument1) {
         EmitWorker(opCode, typeof(float));
-
-        Span<byte> bytes = stackalloc byte[sizeof(float)];
-        BinaryPrimitives.WriteSingleLittleEndian(bytes, argument1);
-        tail.AddRange(bytes);
+        tail.WriteFloat32(argument1);
     }
 
     /// <summary>
@@ -85,10 +74,7 @@ public class IlGenerator : IlContainer {
     /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, NeslType argument1) {
         EmitWorker(opCode, typeof(NeslType));
-
-        Span<byte> bytes = stackalloc byte[sizeof(ulong)];
-        BinaryPrimitives.WriteUInt64LittleEndian(bytes, assembly.GetLocalTypeId(argument1));
-        tail.AddRange(bytes);
+        tail.WriteUInt64(assembly.GetLocalTypeId(argument1));
     }
 
     /// <summary>
@@ -98,10 +84,7 @@ public class IlGenerator : IlContainer {
     /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, NeslField argument1) {
         EmitWorker(opCode, typeof(NeslField));
-
-        Span<byte> bytes = stackalloc byte[sizeof(uint)];
-        BinaryPrimitives.WriteUInt32LittleEndian(bytes, ((NeslTypeBuilder)method.Type).GetLocalFieldId(argument1));
-        tail.AddRange(bytes);
+        tail.WriteUInt64(((NeslTypeBuilder)method.Type).GetLocalFieldId(argument1));
     }
 
     /// <summary>
@@ -111,10 +94,7 @@ public class IlGenerator : IlContainer {
     /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, NeslMethod argument1) {
         EmitWorker(opCode, typeof(NeslMethod));
-
-        Span<byte> bytes = stackalloc byte[sizeof(ulong)];
-        BinaryPrimitives.WriteUInt64LittleEndian(bytes, assembly.GetLocalMethodId(argument1));
-        tail.AddRange(bytes);
+        tail.WriteUInt64(assembly.GetLocalMethodId(argument1));
     }
 
     internal override ReadOnlySpan<byte> GetTail(int start) {
@@ -122,13 +102,8 @@ public class IlGenerator : IlContainer {
     }
 
     private void EmitWorker(OpCode opCode, params Type[] expectedTail) {
-        AssertTail(opCode, expectedTail);
+        OpCodeValidationAttribute.AssertTail(opCode, expectedTail);
         Emit(opCode);
-    }
-
-    private void AssertTail(OpCode opCode, params Type[] expectedTail) {
-        if (!opCode.GetCustomAttribute<OpCodeValidationAttribute>().Tail.SequenceEqual(expectedTail))
-            throw new InvalidOperationException($"{opCode} does not support given arguments.");
     }
 
 }
