@@ -9,7 +9,7 @@ internal static class AttributeHelper {
 
     public static void WriteBytes(FastList<byte> buffer, byte[]? array) {
         Span<byte> span = stackalloc byte[sizeof(int)];
-        BinaryPrimitives.WriteInt32BigEndian(span, array is not null ? array.Length : -1);
+        BinaryPrimitives.WriteInt32LittleEndian(span, array is not null ? array.Length : -1);
 
         buffer.AddRange(span);
 
@@ -18,7 +18,7 @@ internal static class AttributeHelper {
     }
 
     public static ReadOnlySpan<byte> ReadBytes(ReadOnlySpan<byte> span) {
-        int length = BinaryPrimitives.ReadInt32BigEndian(span);
+        int length = BinaryPrimitives.ReadInt32LittleEndian(span);
 
         if (length == -1)
             return null;
@@ -35,7 +35,7 @@ internal static class AttributeHelper {
     }
 
     public static ReadOnlySpan<byte> JumpToNextBytes(ReadOnlySpan<byte> span) {
-        int length = BinaryPrimitives.ReadInt32BigEndian(span);
+        int length = BinaryPrimitives.ReadInt32LittleEndian(span);
 
         int start = sizeof(int);
         if (length > 0)

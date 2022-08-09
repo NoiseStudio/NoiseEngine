@@ -48,7 +48,7 @@ public class IlGenerator : IlContainer {
         EmitWorker(opCode, typeof(uint));
 
         Span<byte> bytes = stackalloc byte[sizeof(uint)];
-        BinaryPrimitives.WriteUInt32BigEndian(bytes, argument1);
+        BinaryPrimitives.WriteUInt32LittleEndian(bytes, argument1);
         tail.AddRange(bytes);
     }
 
@@ -61,7 +61,7 @@ public class IlGenerator : IlContainer {
         EmitWorker(opCode, typeof(ulong));
 
         Span<byte> bytes = stackalloc byte[sizeof(ulong)];
-        BinaryPrimitives.WriteUInt64BigEndian(bytes, argument1);
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes, argument1);
         tail.AddRange(bytes);
     }
 
@@ -74,7 +74,7 @@ public class IlGenerator : IlContainer {
         EmitWorker(opCode, typeof(float));
 
         Span<byte> bytes = stackalloc byte[sizeof(float)];
-        BinaryPrimitives.WriteSingleBigEndian(bytes, argument1);
+        BinaryPrimitives.WriteSingleLittleEndian(bytes, argument1);
         tail.AddRange(bytes);
     }
 
@@ -87,7 +87,7 @@ public class IlGenerator : IlContainer {
         EmitWorker(opCode, typeof(NeslType));
 
         Span<byte> bytes = stackalloc byte[sizeof(ulong)];
-        BinaryPrimitives.WriteUInt64BigEndian(bytes, assembly.GetLocalTypeId(argument1));
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes, assembly.GetLocalTypeId(argument1));
         tail.AddRange(bytes);
     }
 
@@ -100,7 +100,7 @@ public class IlGenerator : IlContainer {
         EmitWorker(opCode, typeof(NeslField));
 
         Span<byte> bytes = stackalloc byte[sizeof(uint)];
-        BinaryPrimitives.WriteUInt32BigEndian(bytes, ((NeslTypeBuilder)method.Type).GetLocalFieldId(argument1));
+        BinaryPrimitives.WriteUInt32LittleEndian(bytes, ((NeslTypeBuilder)method.Type).GetLocalFieldId(argument1));
         tail.AddRange(bytes);
     }
 
@@ -113,7 +113,7 @@ public class IlGenerator : IlContainer {
         EmitWorker(opCode, typeof(NeslMethod));
 
         Span<byte> bytes = stackalloc byte[sizeof(ulong)];
-        BinaryPrimitives.WriteUInt64BigEndian(bytes, assembly.GetLocalMethodId(argument1));
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes, assembly.GetLocalMethodId(argument1));
         tail.AddRange(bytes);
     }
 

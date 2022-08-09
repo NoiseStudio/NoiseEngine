@@ -118,8 +118,8 @@ internal class SpirVGenerator {
     private void EmitWorker(SpirVOpCode opCode, ushort wordCount, params Type[] expectedTail) {
         OpCodeValidationAttribute.AssertTail(opCode, expectedTail);
 
-        Writer.WriteUInt16(wordCount);
         Writer.WriteUInt16((ushort)opCode);
+        Writer.WriteUInt16(wordCount);
     }
 
 }

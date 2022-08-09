@@ -18,7 +18,7 @@ internal readonly struct Instruction {
     }
 
     public float ReadFloat32() {
-        return BinaryPrimitives.ReadSingleBigEndian(GetTail());
+        return BinaryPrimitives.ReadSingleLittleEndian(GetTail());
     }
 
     public byte ReadUInt8() {
@@ -26,11 +26,11 @@ internal readonly struct Instruction {
     }
 
     public uint ReadUInt32() {
-        return BinaryPrimitives.ReadUInt32BigEndian(GetTail());
+        return BinaryPrimitives.ReadUInt32LittleEndian(GetTail());
     }
 
     public ulong ReadUInt64() {
-        return BinaryPrimitives.ReadUInt64BigEndian(GetTail());
+        return BinaryPrimitives.ReadUInt64LittleEndian(GetTail());
     }
 
     private ReadOnlySpan<byte> GetTail() {

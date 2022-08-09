@@ -131,7 +131,7 @@ internal class SpirVCompiler {
             lazy.Value.Construct(generator);
 
         // Set bound.
-        BinaryPrimitives.WriteUInt32BigEndian(generator.Writer.AsSpan(12), GetNextId().RawId);
+        BinaryPrimitives.WriteUInt32LittleEndian(generator.Writer.AsSpan(12), GetNextId().RawId);
 
         ResultBuilder.Code = generator.Writer.AsSpan().ToArray();
     }

@@ -9,7 +9,7 @@ public class SizeAttribute : NeslAttribute {
     private const string ExpectedFullName = nameof(SizeAttribute);
     private const AttributeTargets ExpectedTargets = AttributeTargets.Type | AttributeTargets.Field;
 
-    public ulong Size => BinaryPrimitives.ReadUInt64BigEndian(Bytes.AsSpan());
+    public ulong Size => BinaryPrimitives.ReadUInt64LittleEndian(Bytes.AsSpan());
 
     /// <summary>
     /// Creates new <see cref="SizeAttribute"/>.
@@ -18,7 +18,7 @@ public class SizeAttribute : NeslAttribute {
     /// <returns><see cref="SizeAttribute"/> with given parameters.</returns>
     public static SizeAttribute Create(ulong size) {
         byte[] bytes = new byte[sizeof(ulong)];
-        BinaryPrimitives.WriteUInt64BigEndian(bytes, size);
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes, size);
 
         return new SizeAttribute {
             FullName = ExpectedFullName,
