@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.Cil;
 
-internal static class CilCompilerAttributes {
+internal static class CilAttributes {
 
     public static TypeAttributes GetAttributes(NeslType neslType) {
         TypeAttributes result = 0;

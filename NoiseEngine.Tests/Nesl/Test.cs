@@ -34,9 +34,11 @@ public class Test {
         il.Emit(OpCode.Return);
 
         // Compile and run.
-        CilCompiler compiler = new CilCompiler(assembly);
+        CilCompilationResult compilationResult = CilCompiler.Compile(new NeslEntryPoint[] {
+            new NeslEntryPoint(main, ExecutionModel.Fragment)
+        });
 
-        Type type = compiler.Compile().GetType(shader.FullName)!;
+        Type type = compilationResult.Assembly.GetType(shader.FullName)!;
         System.Reflection.MethodInfo methodInfo =
             type.GetMethod(main.Name, (System.Reflection.BindingFlags)int.MaxValue)!;
         System.Reflection.FieldInfo fieldInfo = type.GetField("buffer")!;

@@ -19,6 +19,8 @@ public abstract class NeslMethod {
     public IReadOnlyList<NeslType> ParameterTypes { get; }
     public Guid Guid { get; }
 
+    public NeslAssembly Assembly => Type.Assembly;
+
     public bool IsStatic => Attributes.HasAnyAttribute(nameof(StaticAttribute));
 
     protected NeslMethod(NeslType type, string name, NeslType? returnType, NeslType[] parameterTypes) {
