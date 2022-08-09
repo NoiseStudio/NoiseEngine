@@ -69,9 +69,7 @@ public class Test {
 
         NeslTypeBuilder shader = assembly.DefineType("Shader");
 
-        NeslFieldBuilder a = shader.DefineField("a", BuiltInTypes.Float32);
-
-        NeslMethodBuilder main = shader.DefineMethod("Main");
+        NeslMethodBuilder main = shader.DefineMethod("Main", BuiltInTypes.Float32, BuiltInTypes.Float32);
         il = main.IlGenerator;
 
         il.Emit(OpCode.Return);

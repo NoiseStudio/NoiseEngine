@@ -1,13 +1,14 @@
 ﻿using NoiseEngine.Nesl.CompilerTools;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace NoiseEngine.Nesl;
 
 public abstract class NeslMethod {
 
     public abstract IEnumerable<NeslAttribute> Attributes { get; }
+    public abstract IEnumerable<NeslAttribute> ReturnValueAttributes { get; }
+    public abstract IReadOnlyList<IEnumerable<NeslAttribute>> ParameterAttributes { get; }
 
     protected abstract IlContainer IlContainer { get; }
 
