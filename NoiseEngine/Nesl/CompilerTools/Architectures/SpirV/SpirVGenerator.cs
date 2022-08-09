@@ -1,9 +1,7 @@
 ﻿using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Serialization;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -37,7 +35,23 @@ internal class SpirVGenerator {
 
         Writer.WriteUInt32(argument1);
         Writer.WriteUInt32(argument2.RawId);
-        Writer.WriteBytes(argument3.Bytes);
+        Writer.WriteBytes(argument3.Bytes.ToArray());
+    }
+
+    public void Emit(
+        SpirVOpCode opCode, uint argument1, SpirVId argument2, SpirVLiteral argument3, SpirVId[] argument4
+    ) {
+        EmitWorker(
+            opCode, (ushort)(3 + argument3.WordCount + argument4.Length),
+            typeof(uint), typeof(SpirVId), typeof(SpirVLiteral), typeof(SpirVId[])
+        );
+
+        Writer.WriteUInt32(argument1);
+        Writer.WriteUInt32(argument2.RawId);
+        Writer.WriteBytes(argument3.Bytes.ToArray());
+
+        foreach (SpirVId id in argument4)
+            Writer.WriteUInt32(id.RawId);
     }
 
     public void Emit(SpirVOpCode opCode, SpirVId argument1) {
@@ -51,11 +65,25 @@ internal class SpirVGenerator {
         Writer.WriteUInt32(argument2);
     }
 
+    public void Emit(SpirVOpCode opCode, SpirVId argument1, uint argument2, SpirVLiteral argument3) {
+        EmitWorker(opCode, (ushort)(3 + argument3.WordCount), typeof(SpirVId), typeof(uint), typeof(SpirVLiteral));
+
+        Writer.WriteUInt32(argument1.RawId);
+        Writer.WriteUInt32(argument2);
+        Writer.WriteBytes(argument3.Bytes.ToArray());
+    }
+
     public void Emit(SpirVOpCode opCode, SpirVId argument1, uint argument2, SpirVId argument3) {
         EmitWorker(opCode, 4, typeof(SpirVId), typeof(uint), typeof(SpirVId));
         Writer.WriteUInt32(argument1.RawId);
         Writer.WriteUInt32(argument2);
         Writer.WriteUInt32(argument3.RawId);
+    }
+
+    public void Emit(SpirVOpCode opCode, SpirVId argument1, SpirVLiteral argument2) {
+        EmitWorker(opCode, (ushort)(2 + argument2.WordCount), typeof(SpirVId), typeof(SpirVLiteral));
+        Writer.WriteUInt32(argument1.RawId);
+        Writer.WriteBytes(argument2.Bytes.ToArray());
     }
 
     public void Emit(SpirVOpCode opCode, SpirVId argument1, SpirVId argument2) {
@@ -71,6 +99,14 @@ internal class SpirVGenerator {
         Writer.WriteUInt32(argument3);
     }
 
+    public void Emit(SpirVOpCode opCode, SpirVId argument1, SpirVId argument2, SpirVLiteral argument3) {
+        EmitWorker(opCode, (ushort)(3 + argument3.WordCount), typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral));
+
+        Writer.WriteUInt32(argument1.RawId);
+        Writer.WriteUInt32(argument2.RawId);
+        Writer.WriteBytes(argument3.Bytes.ToArray());
+    }
+
     public void Emit(SpirVOpCode opCode, SpirVId argument1, SpirVId argument2, uint argument3, SpirVId argument4) {
         EmitWorker(opCode, 5, typeof(SpirVId), typeof(SpirVId), typeof(uint), typeof(SpirVId));
         Writer.WriteUInt32(argument1.RawId);
@@ -80,15 +116,10 @@ internal class SpirVGenerator {
     }
 
     private void EmitWorker(SpirVOpCode opCode, ushort wordCount, params Type[] expectedTail) {
-        AssertTail(opCode, expectedTail);
+        OpCodeValidationAttribute.AssertTail(opCode, expectedTail);
 
         Writer.WriteUInt16(wordCount);
         Writer.WriteUInt16((ushort)opCode);
-    }
-
-    private void AssertTail(SpirVOpCode opCode, params Type[] expectedTail) {
-        if (!opCode.GetCustomAttribute<OpCodeValidationAttribute>().Tail.SequenceEqual(expectedTail))
-            throw new InvalidOperationException($"{opCode} does not support given arguments.");
     }
 
 }

@@ -71,7 +71,7 @@ public class Test {
 
         NeslTypeBuilder shader = assembly.DefineType("Shader");
 
-        NeslMethodBuilder main = shader.DefineMethod("Fragment", BuiltInTypes.Float32, BuiltInTypes.Float32);
+        NeslMethodBuilder main = shader.DefineMethod("Fragment", Vectors.Vector4, Vectors.Vector3);
         il = main.IlGenerator;
 
         il.Emit(OpCode.Return);
@@ -79,7 +79,7 @@ public class Test {
         // Compile
         File.WriteAllBytes($"{nameof(TestSpirV)}.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(main, ExecutionModel.Fragment)
-        }));
+        }).GetCode());
     }
 
     [Fact]

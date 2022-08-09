@@ -20,37 +20,52 @@ internal class SpirVCompiler {
     private readonly ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>> functions =
         new ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>>();
 
+    private readonly ConcurrentBag<SpirVVariable> allVariables = new ConcurrentBag<SpirVVariable>();
+
     private uint nextId;
 
     internal IEnumerable<NeslEntryPoint> EntryPoints { get; }
 
+    internal SpirVCompilationResultBuilder ResultBuilder { get; }
     internal SpirVJit Jit { get; }
     internal SpirVBuiltInTypes BuiltInTypes { get; }
 
     internal SpirVGenerator Header { get; }
+    internal SpirVGenerator Annotations { get; }
     internal SpirVGenerator TypesAndVariables { get; }
 
     private SpirVCompiler(IEnumerable<NeslEntryPoint> entryPoints) {
         EntryPoints = entryPoints;
 
+        ResultBuilder = new SpirVCompilationResultBuilder();
         Jit = new SpirVJit(this);
         BuiltInTypes = new SpirVBuiltInTypes(this);
 
         Header = new SpirVGenerator(this);
+        Annotations = new SpirVGenerator(this);
         TypesAndVariables = new SpirVGenerator(this);
     }
 
-    public static byte[] Compile(IEnumerable<NeslEntryPoint> entryPoints) {
-        return new SpirVCompiler(entryPoints).CompileWorker();
+    public static SpirVCompilationResult Compile(IEnumerable<NeslEntryPoint> entryPoints) {
+        SpirVCompiler compiler = new SpirVCompiler(entryPoints);
+        compiler.CompileWorker();
+        return compiler.ResultBuilder.Build();
     }
 
     internal SpirVId GetNextId() {
         return new SpirVId(Interlocked.Increment(ref nextId));
     }
 
+    internal void AddVariable(SpirVVariable variable) {
+        allVariables.Add(variable);
+    }
+
     internal SpirVVariable GetSpirVVariable(NeslField neslField) {
-        return variables.GetOrAdd(neslField,
-            _ => new Lazy<SpirVVariable>(() => new SpirVVariable(this, neslField))).Value;
+        return variables.GetOrAdd(neslField, _ => new Lazy<SpirVVariable>(() => {
+            SpirVVariable variable = new SpirVVariable(this, neslField);
+            AddVariable(variable);
+            return variable;
+        })).Value;
     }
 
     internal SpirVType GetSpirVType(NeslType? neslType) {
@@ -65,7 +80,7 @@ internal class SpirVCompiler {
                 if (name is null)
                     throw new InvalidOperationException();
 
-                if (!BuiltInTypes.TryGetTypeByName(name, out SpirVType? type))
+                if (!BuiltInTypes.TryGetTypeByName(neslType, name, out SpirVType? type))
                     throw new InvalidOperationException();
                 return type;
             }
@@ -84,7 +99,7 @@ internal class SpirVCompiler {
         return entryPoint != default;
     }
 
-    private byte[] CompileWorker() {
+    private void CompileWorker() {
         Header.Emit(SpirVOpCode.OpCapability, (uint)Capability.Shader);
         Header.Emit(SpirVOpCode.OpMemoryModel, (uint)AddressingModel.Logical, (uint)MemoryModel.Glsl450);
 
@@ -96,11 +111,12 @@ internal class SpirVCompiler {
 
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,
-                function.Id, entryPoint.Method.Guid.ToString()
+                function.Id, entryPoint.Method.Guid.ToString().ToSpirVLiteral(),
+                allVariables.OrderBy(x => x.StorageClass).Select(x => x.Id).ToArray()
             );
 
             // TODO: add support for another execution modes.
-            Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginLowerLeft);
+            Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
         }
 
         // Construct result.
@@ -108,6 +124,7 @@ internal class SpirVCompiler {
         FirstWords(generator);
 
         generator.Writer.WriteBytes(Header.Writer.AsSpan());
+        generator.Writer.WriteBytes(Annotations.Writer.AsSpan());
         generator.Writer.WriteBytes(TypesAndVariables.Writer.AsSpan());
 
         foreach (Lazy<SpirVFunction> lazy in functions.Values)
@@ -116,7 +133,7 @@ internal class SpirVCompiler {
         // Set bound.
         BinaryPrimitives.WriteUInt32BigEndian(generator.Writer.AsSpan(12), GetNextId().RawId);
 
-        return generator.Writer.AsSpan().ToArray();
+        ResultBuilder.Code = generator.Writer.AsSpan().ToArray();
     }
 
     /// <summary>
@@ -124,7 +141,7 @@ internal class SpirVCompiler {
     /// </summary>
     private void FirstWords(SpirVGenerator generator) {
         generator.Writer.WriteUInt32(0x07230203); // Magic number.
-        generator.Writer.WriteUInt32(0x00010200); // Version number.
+        generator.Writer.WriteUInt32(0x00010300); // Version number.
         generator.Writer.WriteUInt32(0x1ec5712d); // Generator's magic number.
         generator.Writer.WriteUInt32(0x0); // Bound space.
         generator.Writer.WriteUInt32(0x0);

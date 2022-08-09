@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.Emit;
 
 [AttributeUsage(System.AttributeTargets.Field)]
-internal class OpCodeValidationOptionalAttribute : OpCodeValidationAttribute {
+internal class OpCodeValidationOptionalAttribute : Attribute {
 
-    public OpCodeValidationOptionalAttribute(params Type[] tail) : base(tail) {
+    public IReadOnlyList<Type> Tail { get; }
+
+    public OpCodeValidationOptionalAttribute(params Type[] tail) {
+        Tail = tail;
     }
 
 }

@@ -28,19 +28,42 @@ internal class SpirVFunction {
     }
 
     private void BeginFunction() {
+        SpirVType returnType;
+
         if (Compiler.TryGetEntryPoint(NeslMethod, out NeslEntryPoint entryPoint)) {
             if (entryPoint.ExecutionModel == ExecutionModel.Fragment) {
-                if (NeslMethod.ReturnType is not null)
-                    new SpirVVariable(Compiler, NeslMethod.ReturnType, StorageClass.Output);
+                if (NeslMethod.ReturnType is not null) {
+                    SpirVVariable variable = new SpirVVariable(Compiler, NeslMethod.ReturnType, StorageClass.Output);
+                    Compiler.AddVariable(variable);
 
-                foreach (NeslType parameterType in NeslMethod.ParameterTypes)
-                    new SpirVVariable(Compiler, parameterType, StorageClass.Input);
+                    lock (Compiler.Annotations) {
+                        Compiler.Annotations.Emit(
+                            SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location, 0u.ToSpirVLiteral()
+                        );
+                    }
+                }
+
+                uint location = 0;
+                foreach (NeslType parameterType in NeslMethod.ParameterTypes) {
+                    SpirVVariable variable = new SpirVVariable(Compiler, parameterType, StorageClass.Input);
+                    Compiler.AddVariable(variable);
+
+                    lock (Compiler.Annotations) {
+                        Compiler.Annotations.Emit(
+                            SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location,
+                            location++.ToSpirVLiteral()
+                        );
+                    }
+                }
+
+                returnType = Compiler.BuiltInTypes.GetOpTypeVoid();
             } else {
                 throw new NotImplementedException();
             }
+        } else {
+            returnType = Compiler.GetSpirVType(NeslMethod.ReturnType);
         }
 
-        SpirVType returnType = Compiler.GetSpirVType(NeslMethod.ReturnType);
         SpirVType functionType = Compiler.BuiltInTypes.GetOpTypeFunction(returnType);
 
         // TODO: implement function control.

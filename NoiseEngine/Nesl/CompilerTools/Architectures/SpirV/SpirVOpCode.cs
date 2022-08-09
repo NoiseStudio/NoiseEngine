@@ -5,7 +5,8 @@ namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 internal enum SpirVOpCode : ushort {
     [OpCodeValidation(typeof(uint), typeof(uint))]
     OpMemoryModel = 14,
-    [OpCodeValidation(typeof(uint), typeof(SpirVId), typeof(string))]
+    [OpCodeValidation(typeof(uint), typeof(SpirVId), typeof(SpirVLiteral))]
+    [OpCodeValidationOptional(typeof(SpirVId[]))]
     OpEntryPoint = 15,
     [OpCodeValidation(typeof(SpirVId), typeof(uint))]
     OpExecutionMode = 16,
@@ -14,8 +15,10 @@ internal enum SpirVOpCode : ushort {
 
     [OpCodeValidation(typeof(SpirVId))]
     OpTypeVoid = 19,
-    [OpCodeValidation(typeof(SpirVId), typeof(uint))]
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVLiteral))]
     OpTypeFloat = 22,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral))]
+    OpTypeVector = 23,
     [OpCodeValidation(typeof(SpirVId), typeof(uint), typeof(SpirVId))]
     OpTypePointer = 32,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId))]
