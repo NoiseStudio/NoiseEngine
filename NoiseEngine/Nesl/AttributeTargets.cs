@@ -4,15 +4,13 @@ namespace NoiseEngine.Nesl;
 
 [Flags]
 public enum AttributeTargets : uint {
-    Class = 1 << 0,
-    Struct = 1 << 1,
+    Type = 1 << 0,
 
-    Field = 1 << 2,
+    Field = 1 << 1,
 
-    Method = 1 << 3,
-    Parameter = 1 << 4,
-    ReturnValue = 1 << 5,
+    Method = 1 << 2,
+    Parameter = 1 << 3,
+    ReturnValue = 1 << 4,
 
-    Type = Class | Struct,
     All = uint.MaxValue
 }

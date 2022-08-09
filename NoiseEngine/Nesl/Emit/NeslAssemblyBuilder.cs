@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Collections.Concurrent;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -12,9 +13,12 @@ public class NeslAssemblyBuilder : NeslAssembly {
     private readonly Dictionary<ulong, NeslMethod> idToMethod = new Dictionary<ulong, NeslMethod>();
     private readonly Dictionary<NeslMethod, ulong> methodToId = new Dictionary<NeslMethod, ulong>();
 
+    private readonly ConcurrentHashSet<NeslAssembly> dependencies =
+        new ConcurrentHashSet<NeslAssembly>();
     private readonly ConcurrentDictionary<string, NeslTypeBuilder> types =
         new ConcurrentDictionary<string, NeslTypeBuilder>();
 
+    public override IEnumerable<NeslAssembly> Dependencies => dependencies;
     public override IEnumerable<NeslType> Types => types.Values;
 
     private NeslAssemblyBuilder(string name) : base(name) {

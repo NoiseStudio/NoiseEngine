@@ -1,6 +1,6 @@
 ﻿namespace NoiseEngine.Nesl;
 
-internal class NormalNeslAttribute : NeslAttribute {
+internal class SerializedNeslAttribute : NeslAttribute {
 
     /// <summary>
     /// Asserts that properties have valid values.

@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+﻿using NoiseEngine.Collections;
+using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,8 +9,8 @@ namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
 internal class SpirVBuiltInTypes {
 
-    private readonly ConcurrentDictionary<ComparableArray, Lazy<SpirVType>> types =
-        new ConcurrentDictionary<ComparableArray, Lazy<SpirVType>>();
+    private readonly ConcurrentDictionary<ComparableArray<object>, Lazy<SpirVType>> types =
+        new ConcurrentDictionary<ComparableArray<object>, Lazy<SpirVType>>();
 
     public SpirVCompiler Compiler { get; }
 
@@ -37,7 +38,7 @@ internal class SpirVBuiltInTypes {
     }
 
     public SpirVType GetOpTypeVoid() {
-        return types.GetOrAdd(new ComparableArray(new object[] { SpirVOpCode.OpTypeVoid }),
+        return types.GetOrAdd(new ComparableArray<object>(new object[] { SpirVOpCode.OpTypeVoid }),
             _ => new Lazy<SpirVType>(() => {
                 lock (Compiler.TypesAndVariables) {
                     SpirVId id = Compiler.GetNextId();
@@ -48,7 +49,7 @@ internal class SpirVBuiltInTypes {
     }
 
     public SpirVType GetOpTypeFloat(ulong size) {
-        return types.GetOrAdd(new ComparableArray(new object[] { SpirVOpCode.OpTypeFloat, size }),
+        return types.GetOrAdd(new ComparableArray<object>(new object[] { SpirVOpCode.OpTypeFloat, size }),
             _ => new Lazy<SpirVType>(() => {
                 lock (Compiler.TypesAndVariables) {
                     SpirVId id = Compiler.GetNextId();
@@ -59,7 +60,7 @@ internal class SpirVBuiltInTypes {
     }
 
     public SpirVType GetOpTypeVector(NeslType neslType, uint size) {
-        return types.GetOrAdd(new ComparableArray(new object[] { SpirVOpCode.OpTypeVector, neslType, size }),
+        return types.GetOrAdd(new ComparableArray<object>(new object[] { SpirVOpCode.OpTypeVector, neslType, size }),
             _ => new Lazy<SpirVType>(() => {
                 lock (Compiler.TypesAndVariables) {
                     SpirVId id = Compiler.GetNextId();
@@ -75,12 +76,13 @@ internal class SpirVBuiltInTypes {
     }
 
     public SpirVType GetOpTypePointer(StorageClass storageClass, SpirVType type) {
-        return types.GetOrAdd(new ComparableArray(new object[] { storageClass, type }), _ => new Lazy<SpirVType>(() => {
-            lock (Compiler.TypesAndVariables) {
-                SpirVId id = Compiler.GetNextId();
-                Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypePointer, id, (uint)storageClass, type.Id);
-                return new SpirVType(Compiler, id);
-            }
+        return types.GetOrAdd(new ComparableArray<object>(new object[] { storageClass, type }),
+            _ => new Lazy<SpirVType>(() => {
+                lock (Compiler.TypesAndVariables) {
+                    SpirVId id = Compiler.GetNextId();
+                    Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypePointer, id, (uint)storageClass, type.Id);
+                    return new SpirVType(Compiler, id);
+                }
         })).Value;
     }
 
@@ -92,7 +94,7 @@ internal class SpirVBuiltInTypes {
         foreach (SpirVType type in parameters)
             throw new NotImplementedException(); //objects.Add(id);
 
-        return types.GetOrAdd(new ComparableArray(objects.ToArray()), _ => new Lazy<SpirVType>(() => {
+        return types.GetOrAdd(new ComparableArray<object>(objects.ToArray()), _ => new Lazy<SpirVType>(() => {
             lock (Compiler.TypesAndVariables) {
                 SpirVId id = Compiler.GetNextId();
                 Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypeFunction, id, returnType.Id);

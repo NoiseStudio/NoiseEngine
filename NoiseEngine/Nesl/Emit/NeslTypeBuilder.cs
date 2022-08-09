@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Collections;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -12,8 +13,8 @@ public class NeslTypeBuilder : NeslType {
     private readonly ConcurrentBag<NeslAttribute> attributes = new ConcurrentBag<NeslAttribute>();
     private readonly ConcurrentDictionary<string, NeslFieldBuilder> fields =
         new ConcurrentDictionary<string, NeslFieldBuilder>();
-    private readonly ConcurrentDictionary<string, NeslMethodBuilder> methods =
-        new ConcurrentDictionary<string, NeslMethodBuilder>();
+    private readonly ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder> methods =
+        new ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder>();
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
     public override IEnumerable<NeslField> Fields => fields.Values;
@@ -55,7 +56,7 @@ public class NeslTypeBuilder : NeslType {
     public NeslMethodBuilder DefineMethod(string name, NeslType? returnType = null, params NeslType[] parameterTypes) {
         NeslMethodBuilder method = new NeslMethodBuilder(this, name, returnType, parameterTypes);
 
-        if (!methods.TryAdd(name, method)) {
+        if (!methods.TryAdd(new NeslMethodIdentifier(name, new ComparableArray<NeslType>(parameterTypes)), method)) {
             throw new ArgumentException($"{nameof(NeslMethod)} named `{name}` already exists in `{Name}` type.",
                 nameof(name));
         }
@@ -67,7 +68,15 @@ public class NeslTypeBuilder : NeslType {
     /// Adds <paramref name="attribute"/> to this <see cref="NeslTypeBuilder"/>.
     /// </summary>
     /// <param name="attribute"><see cref="NeslAttribute"/>.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Given <paramref name="attribute"/> cannot be assigned to this target.
+    /// </exception>
     public void AddAttribute(NeslAttribute attribute) {
+        if (!attribute.Targets.HasFlag(AttributeTargets.Type)) {
+            throw new InvalidOperationException(
+                $"The `{attribute}` attribute cannot be assigned to a type.");
+        }
+
         attributes.Add(attribute);
     }
 

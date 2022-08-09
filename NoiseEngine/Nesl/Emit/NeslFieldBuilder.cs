@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.Emit;
@@ -18,6 +19,11 @@ public class NeslFieldBuilder : NeslField {
     /// </summary>
     /// <param name="attribute"><see cref="NeslAttribute"/>.</param>
     public void AddAttribute(NeslAttribute attribute) {
+        if (!attribute.Targets.HasFlag(AttributeTargets.Field)) {
+            throw new InvalidOperationException(
+                $"The `{attribute}` attribute cannot be assigned to a field.");
+        }
+
         attributes.Add(attribute);
     }
 

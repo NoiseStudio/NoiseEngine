@@ -4,7 +4,7 @@ namespace NoiseEngine.Nesl.Emit.Attributes;
 
 public class ValueTypeAttribute : NeslAttribute {
 
-    private const string ExpectedFullName = nameof(ValueType);
+    private const string ExpectedFullName = nameof(ValueTypeAttribute);
     private const AttributeTargets ExpectedTargets = AttributeTargets.Type;
 
     /// <summary>

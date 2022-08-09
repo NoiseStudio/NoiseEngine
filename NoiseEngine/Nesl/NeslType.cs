@@ -1,7 +1,5 @@
 ﻿using NoiseEngine.Nesl.Emit.Attributes;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 namespace NoiseEngine.Nesl;
 
@@ -16,7 +14,7 @@ public abstract class NeslType {
     public NeslAssembly Assembly { get; }
     public string FullName { get; }
 
-    public string Name => FullName.Substring(FullName.LastIndexOf(Delimiter));
+    public string Name => FullName.Substring(FullName.LastIndexOf(Delimiter) + 1);
     public string Namespace => FullName.Substring(0, FullName.LastIndexOf(Delimiter));
 
     public bool IsClass => !IsValueType;

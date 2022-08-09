@@ -22,7 +22,7 @@ public abstract class NeslAttribute {
     /// <param name="bytes">Bytes of attribute tail.</param>
     /// <returns><see cref="NeslAttribute"/> with given parameters.</returns>
     public static NeslAttribute Create(string fullName, AttributeTargets targets, byte[] bytes) {
-        return new NormalNeslAttribute {
+        return new SerializedNeslAttribute {
             FullName = fullName,
             Targets = targets,
             Bytes = bytes.ToImmutableArray()

@@ -106,6 +106,7 @@ internal class SpirVCompiler {
         // Generate entry points.
         Parallel.ForEach(EntryPoints, x => GetSpirVFunction(x.Method));
 
+        // Emit OpEntryPoint.
         foreach (NeslEntryPoint entryPoint in EntryPoints) {
             SpirVFunction function = GetSpirVFunction(entryPoint.Method);
 
@@ -116,6 +117,13 @@ internal class SpirVCompiler {
             );
 
             // TODO: add support for another execution modes.
+            Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
+        }
+
+        // Emit OpExecutionMode.
+        foreach (NeslEntryPoint entryPoint in EntryPoints) {
+            SpirVFunction function = GetSpirVFunction(entryPoint.Method);
+
             Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
         }
 
@@ -133,7 +141,7 @@ internal class SpirVCompiler {
         // Set bound.
         BinaryPrimitives.WriteUInt32LittleEndian(generator.Writer.AsSpan(12), GetNextId().RawId);
 
-        ResultBuilder.Code = generator.Writer.AsSpan().ToArray();
+        ResultBuilder.Code = generator.Writer.ToArray();
     }
 
     /// <summary>
