@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace NoiseEngine.Nesl;
 
@@ -15,8 +14,7 @@ public abstract class NeslAssembly {
     }
 
     /// <summary>
-    /// Finds <see cref="NeslType"/> with given <paramref name="fullName"/>
-    /// in this <see cref="NeslAssembly"/> and their dependencies.
+    /// Finds <see cref="NeslType"/> with given <paramref name="fullName"/> in this <see cref="NeslAssembly"/>.
     /// </summary>
     /// <param name="fullName">Full name of the searched <see cref="NeslType"/>.</param>
     /// <returns><see cref="NeslType"/> when type was found, <see langword="null"/> when not.</returns>
@@ -24,13 +22,6 @@ public abstract class NeslAssembly {
         foreach (NeslType type in Types) {
             if (type.FullName == fullName)
                 return type;
-        }
-
-        foreach (NeslAssembly dependency in Dependencies.OrderBy(x => x.Name)) {
-            foreach (NeslType type in dependency.Types) {
-                if (type.FullName == fullName)
-                    return type;
-            }
         }
 
         return null;
