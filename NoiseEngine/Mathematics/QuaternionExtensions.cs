@@ -24,7 +24,9 @@ public static class QuaternionExtensions {
         T t3 = (quaternion.W * quaternion.Z + quaternion.X * quaternion.Y) * NumberHelper<T>.Value2;
         T t4 = T.One - (quaternion.Y * quaternion.Y + quaternion.Z * quaternion.Z) * NumberHelper<T>.Value2;
 
-        return new Vector3<T>(T.Atan2(t0, t1), T.Asin(t2), T.Atan2(t3, t4));
+        return new Vector3<T>(
+            TrigonometricFunctionsHelper.Atan2(t0, t1),T.Asin(t2), TrigonometricFunctionsHelper.Atan2(t3, t4)
+        );
     }
 
     /// <summary>
