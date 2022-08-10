@@ -33,12 +33,16 @@ internal class OpCodeValidationAttribute : Attribute {
             if (optional.Tail.Count != expectedTail.Length - tail.Count)
                 continue;
 
+            bool isBreaked = false;
             for (int i = 0; i < optional.Tail.Count; i++) {
-                if (optional.Tail[i] != expectedTail[i + tail.Count])
-                    continue;
+                if (optional.Tail[i] != expectedTail[i + tail.Count]) {
+                    isBreaked = true;
+                    break;
+                }
             }
 
-            return;
+            if (!isBreaked)
+                return;
         }
 
         AssertTailThrow(opCode);

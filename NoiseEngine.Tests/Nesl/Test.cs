@@ -14,7 +14,6 @@ public class Test {
 
     [Fact]
     public void TestCil() {
-        IlGenerator? il;
         NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(TestCil));
 
         NeslTypeBuilder shader = assembly.DefineType("Shader");
@@ -22,7 +21,7 @@ public class Test {
         NeslFieldBuilder buffer = shader.DefineField("buffer", Buffers.ReadWriteBuffer);
 
         NeslMethodBuilder main = shader.DefineMethod("Main", BuiltInTypes.Float32);
-        il = main.IlGenerator;
+        IlGenerator il = main.IlGenerator;
 
         il.Emit(OpCode.LoadArg, 0);
         il.Emit(OpCode.LoadField, buffer);
@@ -54,13 +53,12 @@ public class Test {
 
     [Fact]
     public void TestSpirV() {
-        IlGenerator? il;
         NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(TestSpirV));
 
         NeslTypeBuilder shader = assembly.DefineType("Shader");
 
         NeslMethodBuilder main = shader.DefineMethod("Fragment", Vectors.Vector4, Vectors.Vector3);
-        il = main.IlGenerator;
+        IlGenerator il = main.IlGenerator;
 
         il.Emit(OpCode.Return);
 

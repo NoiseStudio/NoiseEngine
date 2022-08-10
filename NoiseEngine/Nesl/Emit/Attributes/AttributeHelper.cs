@@ -9,7 +9,7 @@ internal static class AttributeHelper {
 
     public static void WriteBytes(FastList<byte> buffer, byte[]? array) {
         Span<byte> span = stackalloc byte[sizeof(int)];
-        BinaryPrimitives.WriteInt32LittleEndian(span, array is not null ? array.Length : -1);
+        BinaryPrimitives.WriteInt32LittleEndian(span, array?.Length ?? -1);
 
         buffer.AddRange(span);
 

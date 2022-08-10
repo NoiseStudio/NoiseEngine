@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Collections;
+using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl;
 
-internal readonly record struct NeslMethodIdentifier(string Name, ComparableArray<NeslType> ParameterTypes);
+internal readonly record struct NeslMethodIdentifier(string Name, ComparableReadOnlyList<NeslType> ParameterTypes);

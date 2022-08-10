@@ -12,5 +12,5 @@ public enum AttributeTargets : uint {
     Parameter = 1 << 3,
     ReturnValue = 1 << 4,
 
-    All = uint.MaxValue
+    All = Type | Field | Method | Parameter | ReturnValue
 }

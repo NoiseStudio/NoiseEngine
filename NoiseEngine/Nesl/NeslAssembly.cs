@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace NoiseEngine.Nesl;
 
@@ -25,7 +26,7 @@ public abstract class NeslAssembly {
                 return type;
         }
 
-        foreach (NeslAssembly dependency in Dependencies) {
+        foreach (NeslAssembly dependency in Dependencies.OrderBy(x => x.Name)) {
             foreach (NeslType type in dependency.Types) {
                 if (type.FullName == fullName)
                     return type;
