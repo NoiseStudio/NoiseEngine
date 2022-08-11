@@ -10,7 +10,7 @@ public class PlatformDependentTypeRepresentationAttributeTest {
     public void Create(string? cilTargetName, string? spirVTargetName) {
         PlatformDependentTypeRepresentationAttribute attribute =
             PlatformDependentTypeRepresentationAttribute.Create(cilTargetName, spirVTargetName);
-        attribute.CheckIsValid();
+        attribute.AssertValid();
 
         Assert.Equal(cilTargetName, attribute.CilTargetName);
         Assert.Equal(spirVTargetName, attribute.SpirVTargetName);

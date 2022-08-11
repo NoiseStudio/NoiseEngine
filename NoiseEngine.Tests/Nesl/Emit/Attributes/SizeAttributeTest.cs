@@ -8,7 +8,7 @@ public class SizeAttributeTest {
     [InlineData(68)]
     public void Create(ulong size) {
         SizeAttribute attribute = SizeAttribute.Create(size);
-        attribute.CheckIsValid();
+        attribute.AssertValid();
         Assert.Equal(size, attribute.Size);
     }
 

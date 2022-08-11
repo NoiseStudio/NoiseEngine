@@ -7,7 +7,7 @@ public class InAttributeTest {
     [Fact]
     public void Create() {
         InAttribute attribute = InAttribute.Create();
-        attribute.CheckIsValid();
+        attribute.AssertValid();
     }
 
 }
