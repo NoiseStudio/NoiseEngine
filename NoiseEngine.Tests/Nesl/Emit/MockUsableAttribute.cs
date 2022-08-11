@@ -14,10 +14,10 @@ internal class MockUsableAttribute : NeslAttribute {
         };
     }
 
-    public override void AssertValid() {
-        AssertValidFullName(ExpectedFullName);
-        AssertValidTargets(ExpectedTargets);
-        AssertValidBytesLength(-1);
+    public override bool CheckIsValid() {
+        return CheckIfValidFullName(ExpectedFullName) &&
+            CheckIfValidTargets(ExpectedTargets) &&
+            CheckIfValidBytesLength(-1);
     }
 
 }

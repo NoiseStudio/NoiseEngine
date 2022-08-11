@@ -7,7 +7,7 @@ public class OutAttributeTest {
     [Fact]
     public void Create() {
         OutAttribute attribute = OutAttribute.Create();
-        attribute.AssertValid();
+        attribute.CheckIsValid();
     }
 
 }

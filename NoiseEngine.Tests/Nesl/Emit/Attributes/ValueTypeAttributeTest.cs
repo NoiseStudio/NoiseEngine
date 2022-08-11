@@ -7,7 +7,7 @@ public class ValueTypeAttributeTest {
     [Fact]
     public void Create() {
         ValueTypeAttribute attribute = ValueTypeAttribute.Create();
-        attribute.AssertValid();
+        attribute.CheckIsValid();
     }
 
 }

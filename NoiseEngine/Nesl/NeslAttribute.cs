@@ -30,10 +30,21 @@ public abstract class NeslAttribute {
     }
 
     /// <summary>
+    /// Checks if that properties have valid values.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when attribute properties are valid; otherwise <see langword="false"/>.
+    /// </returns>
+    public abstract bool CheckIsValid();
+
+    /// <summary>
     /// Asserts that properties have valid values.
     /// </summary>
     /// <exception cref="InvalidOperationException">Not all properties have valid values.</exception>
-    public abstract void AssertValid();
+    public void AssertValid() {
+        if (!CheckIsValid())
+            throw new InvalidOperationException("A different attribute properties was expected.");
+    }
 
     /// <summary>
     /// Casts this <see cref="NeslAttribute"/> to <typeparamref name="T"/>.
@@ -78,50 +89,46 @@ public abstract class NeslAttribute {
             Bytes = Bytes
         };
 
-        try {
-            obj.AssertValid();
-        } catch (InvalidOperationException) {
-            attribute = null;
-            return false;
+        if (obj.CheckIsValid()) {
+            attribute = obj;
+            return true;
         }
 
-        attribute = obj;
-        return true;
+        attribute = null;
+        return false;
     }
 
     /// <summary>
-    /// Asserts that <see cref="FullName"/> property have valid value.
+    /// Checks if that <see cref="FullName"/> property have valid value.
     /// </summary>
     /// <param name="expectedFullName">Expected full name value.</param>
-    /// <exception cref="InvalidOperationException">Invalid <see cref="FullName"/> property value.</exception>
-    protected void AssertValidFullName(string expectedFullName) {
-        if (expectedFullName != FullName)
-            throw new InvalidOperationException("A different attribute full name was expected.");
+    /// <returns>
+    /// <see langword="true"/> when attribute full name is valid; otherwise <see langword="false"/>.
+    /// </returns>
+    protected bool CheckIfValidFullName(string expectedFullName) {
+        return expectedFullName == FullName;
     }
 
     /// <summary>
-    /// Asserts that <see cref="Targets"/> property have valid value.
+    /// Checks if that <see cref="Targets"/> property have valid value.
     /// </summary>
     /// <param name="expectedTargets">Expected targets value.</param>
-    /// <exception cref="InvalidOperationException">Invalid <see cref="Targets"/> property value.</exception>
-    protected void AssertValidTargets(AttributeTargets expectedTargets) {
-        if (expectedTargets != Targets)
-            throw new InvalidOperationException("A different attribute targets was expected.");
+    /// /// <returns>
+    /// <see langword="true"/> when attribute targets is valid; otherwise <see langword="false"/>.
+    /// </returns>
+    protected bool CheckIfValidTargets(AttributeTargets expectedTargets) {
+        return expectedTargets == Targets;
     }
 
     /// <summary>
-    /// Asserts that <see cref="Bytes"/> property have valid value.
+    /// Checks if that <see cref="Bytes"/> property have valid value.
     /// </summary>
     /// <param name="expectedLength">Expected length of <see cref="Bytes"/> property.</param>
-    /// <exception cref="InvalidOperationException">Invalid <see cref="Bytes"/> property value.</exception>
-    protected void AssertValidBytesLength(int expectedLength) {
-        if (expectedLength == -1 && Bytes.IsDefault)
-            return;
-
-        if (Bytes.Length == expectedLength)
-            return;
-
-        throw new InvalidOperationException("A different attribute bytes length was expected.");
+    /// /// <returns>
+    /// <see langword="true"/> when attribute has valid <see cref="Bytes"/> length; otherwise <see langword="false"/>.
+    /// </returns>
+    protected bool CheckIfValidBytesLength(int expectedLength) {
+        return (expectedLength == -1 && Bytes.IsDefault) || (Bytes.Length == expectedLength);
     }
 
 }

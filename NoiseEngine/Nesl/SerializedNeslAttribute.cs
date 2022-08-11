@@ -3,9 +3,13 @@
 internal class SerializedNeslAttribute : NeslAttribute {
 
     /// <summary>
-    /// Asserts that properties have valid values.
+    /// Checks if that properties have valid values.
     /// </summary>
-    public override void AssertValid() {
+    /// <returns>
+    /// <see langword="true"/> when attribute properties are valid; otherwise <see langword="false"/>.
+    /// </returns>
+    public override bool CheckIsValid() {
+        return true;
     }
 
 }

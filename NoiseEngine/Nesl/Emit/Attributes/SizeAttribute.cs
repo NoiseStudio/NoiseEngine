@@ -1,5 +1,4 @@
-﻿using System;
-using System.Buffers.Binary;
+﻿using System.Buffers.Binary;
 using System.Collections.Immutable;
 
 namespace NoiseEngine.Nesl.Emit.Attributes;
@@ -28,13 +27,15 @@ public class SizeAttribute : NeslAttribute {
     }
 
     /// <summary>
-    /// Asserts that properties have valid values.
+    /// Checks if that properties have valid values.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Not all properties have valid values.</exception>
-    public override void AssertValid() {
-        AssertValidFullName(ExpectedFullName);
-        AssertValidTargets(ExpectedTargets);
-        AssertValidBytesLength(sizeof(ulong));
+    /// <returns>
+    /// <see langword="true"/> when attribute properties are valid; otherwise <see langword="false"/>.
+    /// </returns>
+    public override bool CheckIsValid() {
+        return CheckIfValidFullName(ExpectedFullName) &&
+            CheckIfValidTargets(ExpectedTargets) &&
+            CheckIfValidBytesLength(sizeof(ulong));
     }
 
 }

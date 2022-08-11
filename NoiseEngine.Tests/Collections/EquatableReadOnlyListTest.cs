@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NoiseEngine.Tests.Collections;
 
-public class ComparableReadOnlyListTest {
+public class EquatableReadOnlyListTest {
 
     private readonly object mockObject = new object();
 
@@ -14,11 +14,11 @@ public class ComparableReadOnlyListTest {
 
         Assert.NotSame(arrayA, arrayB);
 
-        Dictionary<ComparableReadOnlyList<object>, int> dictionary =
-            new Dictionary<ComparableReadOnlyList<object>, int>();
+        Dictionary<EquatableReadOnlyList<object>, int> dictionary =
+            new Dictionary<EquatableReadOnlyList<object>, int>();
 
-        dictionary[new ComparableReadOnlyList<object>(arrayA)] = 7;
-        dictionary[new ComparableReadOnlyList<object>(arrayB)] = 11;
+        dictionary[new EquatableReadOnlyList<object>(arrayA)] = 7;
+        dictionary[new EquatableReadOnlyList<object>(arrayB)] = 11;
 
         Assert.Single(dictionary);
     }
@@ -26,7 +26,7 @@ public class ComparableReadOnlyListTest {
     [Fact]
     public void GetEnumerator() {
         object[] array = GetNewTestArray();
-        Assert.Equal(array, new ComparableReadOnlyList<object>(array));
+        Assert.Equal(array, new EquatableReadOnlyList<object>(array));
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class ComparableReadOnlyListTest {
 
         Assert.NotSame(arrayA, arrayB);
 
-        Assert.Equal(new ComparableReadOnlyList<object>(arrayA), new ComparableReadOnlyList<object>(arrayB));
+        Assert.Equal(new EquatableReadOnlyList<object>(arrayA), new EquatableReadOnlyList<object>(arrayB));
     }
 
     [Fact]
@@ -46,9 +46,9 @@ public class ComparableReadOnlyListTest {
 
         Assert.NotSame(arrayA, arrayB);
 
-        ComparableReadOnlyList<object> comparableArray = new ComparableReadOnlyList<object>(arrayA);
+        EquatableReadOnlyList<object> comparableArray = new EquatableReadOnlyList<object>(arrayA);
 
-        Assert.True(comparableArray.Equals((object)new ComparableReadOnlyList<object>(arrayB)));
+        Assert.True(comparableArray.Equals((object)new EquatableReadOnlyList<object>(arrayB)));
         Assert.False(comparableArray.Equals(null));
         Assert.False(comparableArray!.Equals(54));
     }

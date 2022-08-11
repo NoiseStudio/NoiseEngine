@@ -57,7 +57,7 @@ public class NeslTypeBuilder : NeslType {
         NeslMethodBuilder method = new NeslMethodBuilder(this, name, returnType, parameterTypes);
 
         if (!methods.TryAdd(
-            new NeslMethodIdentifier(name, new ComparableReadOnlyList<NeslType>(parameterTypes)), method)
+            new NeslMethodIdentifier(name, new EquatableReadOnlyList<NeslType>(parameterTypes)), method)
         ) {
             throw new ArgumentException($"{nameof(NeslMethod)} named `{name}` already exists in `{Name}` type.",
                 nameof(name));
