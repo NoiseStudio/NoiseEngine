@@ -75,6 +75,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
         SerializedNeslType type = new SerializedNeslType(Assembly, FullName, Attributes.ToImmutableArray());
 
+        // Create fields.
         Dictionary<uint, NeslField> idToField = new Dictionary<uint, NeslField>();
         Dictionary<NeslField, uint> fieldToId = new Dictionary<NeslField, uint>();
 
