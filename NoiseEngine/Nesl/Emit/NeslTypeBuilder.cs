@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NoiseEngine.Nesl.Emit;
 
@@ -11,16 +12,42 @@ public class NeslTypeBuilder : NeslType {
     private readonly Dictionary<NeslField, uint> fieldToId = new Dictionary<NeslField, uint>();
 
     private readonly ConcurrentBag<NeslAttribute> attributes = new ConcurrentBag<NeslAttribute>();
+    private readonly List<NeslGenericTypeParameterBuilder> genericTypeParameters =
+        new List<NeslGenericTypeParameterBuilder>();
     private readonly ConcurrentDictionary<string, NeslFieldBuilder> fields =
         new ConcurrentDictionary<string, NeslFieldBuilder>();
     private readonly ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder> methods =
         new ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder>();
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
+    public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => genericTypeParameters;
     public override IEnumerable<NeslField> Fields => fields.Values;
     public override IEnumerable<NeslMethod> Methods => methods.Values;
 
     internal NeslTypeBuilder(NeslAssemblyBuilder assembly, string fullName) : base(assembly, fullName) {
+    }
+
+    /// <summary>
+    /// Adds new <see cref="NeslGenericTypeParameterBuilder"/> in this type.
+    /// </summary>
+    /// <param name="name">Name of new <see cref="NeslGenericTypeParameterBuilder"/>.</param>
+    /// <returns>New <see cref="NeslGenericTypeParameterBuilder"/>.</returns>
+    /// <exception cref="ArgumentException">
+    /// <see cref="NeslGenericTypeParameter"/> with this <paramref name="name"/> already exists in this type.
+    /// </exception>
+    public NeslGenericTypeParameterBuilder DefineGenericTypeParameter(string name) {
+        lock (genericTypeParameters) {
+            if (genericTypeParameters.Any(x => x.Name == name)) {
+                throw new ArgumentException(
+                    $"{nameof(NeslGenericTypeParameter)} named `{name}` already exists in `{Name}` type.",
+                    nameof(name)
+                );
+            }
+
+            NeslGenericTypeParameterBuilder genericTypeParameter = new NeslGenericTypeParameterBuilder(this, name);
+            genericTypeParameters.Add(genericTypeParameter);
+            return genericTypeParameter;
+        }
     }
 
     /// <summary>
@@ -30,13 +57,13 @@ public class NeslTypeBuilder : NeslType {
     /// <param name="fieldType"><see cref="NeslType"/> of new field.</param>
     /// <returns>New <see cref="NeslFieldBuilder"/>.</returns>
     /// <exception cref="ArgumentException">
-    /// <see cref="NeslMethod"/> with this <paramref name="name"/> already exists in this type.
+    /// <see cref="NeslField"/> with this <paramref name="name"/> already exists in this type.
     /// </exception>
     public NeslFieldBuilder DefineField(string name, NeslType fieldType) {
         NeslFieldBuilder field = new NeslFieldBuilder(this, name, fieldType);
 
         if (!fields.TryAdd(name, field)) {
-            throw new ArgumentException($"{nameof(NeslMethod)} named `{name}` already exists in `{Name}` type.",
+            throw new ArgumentException($"{nameof(NeslField)} named `{name}` already exists in `{Name}` type.",
                 nameof(name));
         }
 
@@ -51,7 +78,8 @@ public class NeslTypeBuilder : NeslType {
     /// <param name="parameterTypes"><see cref="NeslType"/> parameters of new method.</param>
     /// <returns>New <see cref="NeslMethodBuilder"/>.</returns>
     /// <exception cref="ArgumentException">
-    /// <see cref="NeslMethod"/> with this <paramref name="name"/> already exists in this type.
+    /// <see cref="NeslMethod"/> with this <paramref name="name"/> and
+    /// <paramref name="parameterTypes"/> already exists in this type.
     /// </exception>
     public NeslMethodBuilder DefineMethod(string name, NeslType? returnType = null, params NeslType[] parameterTypes) {
         NeslMethodBuilder method = new NeslMethodBuilder(this, name, returnType, parameterTypes);
@@ -59,8 +87,10 @@ public class NeslTypeBuilder : NeslType {
         if (!methods.TryAdd(
             new NeslMethodIdentifier(name, new EquatableReadOnlyList<NeslType>(parameterTypes)), method)
         ) {
-            throw new ArgumentException($"{nameof(NeslMethod)} named `{name}` already exists in `{Name}` type.",
-                nameof(name));
+            throw new ArgumentException(
+                $"{nameof(NeslMethod)} named `{name}` with given parameter types already exists in `{Name}` type.",
+                nameof(name)
+            );
         }
 
         return method;
