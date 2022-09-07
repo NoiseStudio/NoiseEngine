@@ -52,7 +52,7 @@ public class NeslAssemblyBuilder : NeslAssembly {
         return type;
     }
 
-    internal ulong GetLocalTypeId(NeslType type) {
+    internal override ulong GetLocalTypeId(NeslType type) {
         lock (idToType) {
             if (!typeToId.TryGetValue(type, out ulong id)) {
                 id = (ulong)idToType.Count;
@@ -64,7 +64,7 @@ public class NeslAssemblyBuilder : NeslAssembly {
         }
     }
 
-    internal ulong GetLocalMethodId(NeslMethod method) {
+    internal override ulong GetLocalMethodId(NeslMethod method) {
         lock (idToMethod) {
             if (!methodToId.TryGetValue(method, out ulong id)) {
                 id = (ulong)idToMethod.Count;

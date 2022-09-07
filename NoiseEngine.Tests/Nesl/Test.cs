@@ -18,7 +18,7 @@ public class Test {
 
         NeslTypeBuilder shader = assembly.DefineType("Shader");
 
-        NeslFieldBuilder buffer = shader.DefineField("buffer", Buffers.ReadWriteBuffer);
+        NeslFieldBuilder buffer = shader.DefineField("buffer", Buffers.GetReadWriteBuffer(BuiltInTypes.Float32));
 
         NeslMethodBuilder main = shader.DefineMethod("Main", BuiltInTypes.Float32);
         IlGenerator il = main.IlGenerator;

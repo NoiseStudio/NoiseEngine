@@ -36,4 +36,8 @@ public abstract class NeslMethod {
         return IlContainer.GetInstructions();
     }
 
+    internal IlContainer GetIlContainer() {
+        return IlContainer;
+    }
+
 }

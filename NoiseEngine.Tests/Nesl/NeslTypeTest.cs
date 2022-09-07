@@ -29,12 +29,22 @@ public class NeslTypeTest {
     [Fact]
     public void MakeGeneric() {
         const string FieldName = "Field";
+        const string MethodName = "Method";
 
         // Create generic type definition.
         NeslTypeBuilder genericType = TestEmitHelper.NewType();
         NeslGenericTypeParameterBuilder genericTypeParameter = genericType.DefineGenericTypeParameter("T");
 
         NeslField genericField = genericType.DefineField(FieldName, genericTypeParameter);
+
+        NeslMethodBuilder genericMethod =
+            genericType.DefineMethod(MethodName, null, Buffers.GetReadWriteBuffer(genericTypeParameter));
+        IlGenerator il = genericMethod.IlGenerator;
+
+        il.Emit(OpCode.LoadArg, (byte)0);
+        il.Emit(OpCode.LoadUInt32, 0u);
+        il.Emit(OpCode.SetElement, genericTypeParameter);
+        il.Emit(OpCode.Return);
 
         // Construct final type.
         NeslType genericParameterType = BuiltInTypes.Float32;
@@ -44,6 +54,7 @@ public class NeslTypeTest {
             genericType.MakeGeneric(genericParameterType, genericParameterType));
 
         NeslType type = genericType.MakeGeneric(genericParameterType);
+        Assert.Equal(type, genericType.MakeGeneric(genericParameterType));
 
         // Check fields.
         NeslField? field = type.GetField(FieldName);
@@ -53,6 +64,19 @@ public class NeslTypeTest {
         Assert.Equal(genericField.Attributes.OrderBy(x => x.FullName), field!.Attributes.OrderBy(x => x.FullName));
         Assert.Equal(type, field.ParentType);
         Assert.Equal(genericParameterType, field.FieldType);
+
+        // Check methods.
+        NeslMethod? method = type.GetMethod(MethodName);
+
+        Assert.NotNull(method);
+        Assert.Equal(genericMethod.Name, method!.Name);
+        Assert.Null(method!.ReturnType);
+        Assert.Equal(genericMethod.Attributes.OrderBy(x => x.FullName),
+            method!.Attributes.OrderBy(x => x.FullName));
+        Assert.Equal(genericMethod.ReturnValueAttributes.OrderBy(x => x.FullName),
+            method!.ReturnValueAttributes.OrderBy(x => x.FullName));
+        Assert.Equal(genericMethod.ParameterAttributes.Select(x => x.OrderBy(x => x.FullName)),
+            method!.ParameterAttributes.Select(x => x.OrderBy(x => x.FullName)));
     }
 
 }

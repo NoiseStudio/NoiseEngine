@@ -1,15 +1,21 @@
-﻿using NoiseEngine.Nesl.Emit.Attributes;
+﻿using NoiseEngine.Collections;
+using NoiseEngine.Nesl.CompilerTools.Generics;
+using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Nesl.Serialization;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 
 namespace NoiseEngine.Nesl;
 
 public abstract class NeslType : INeslGenericTypeParameterOwner {
 
     private const char Delimiter = '.';
+
+    private ConcurrentDictionary<NeslType[], Lazy<NeslType>>? genericMakedTypes;
 
     public abstract IEnumerable<NeslAttribute> Attributes { get; }
     public abstract IEnumerable<NeslGenericTypeParameter> GenericTypeParameters { get; }
@@ -26,18 +32,23 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     public bool IsClass => !IsValueType;
     public bool IsValueType => Attributes.HasAnyAttribute(nameof(ValueTypeAttribute));
 
+    private ConcurrentDictionary<NeslType[], Lazy<NeslType>> GenericMakedTypes {
+        get {
+            if (genericMakedTypes is null) {
+                Interlocked.CompareExchange(
+                    ref genericMakedTypes,
+                    new ConcurrentDictionary<NeslType[], Lazy<NeslType>>(new ReadOnlyListEqualityComparer<NeslType>()),
+                    null
+                );
+            }
+
+            return genericMakedTypes;
+        }
+    }
+
     protected NeslType(NeslAssembly assembly, string fullName) {
         Assembly = assembly;
         FullName = fullName;
-    }
-
-    /// <summary>
-    /// Finds <see cref="NeslField"/> with given <paramref name="name"/> in this <see cref="NeslType"/>.
-    /// </summary>
-    /// <param name="name">Name of the searched <see cref="NeslField"/>.</param>
-    /// <returns><see cref="NeslField"/> when type was found, <see langword="null"/> when not.</returns>
-    public NeslField? GetField(string name) {
-        return Fields.FirstOrDefault(x => x.Name == name);
     }
 
     /// <summary>
@@ -51,7 +62,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     /// The number of given <paramref name="typeArguments"/> does not match
     /// the defined number of generic type parameters.
     /// </exception>
-    public NeslType MakeGeneric(params NeslType[] typeArguments) {
+    public virtual NeslType MakeGeneric(params NeslType[] typeArguments) {
         if (!IsGeneric)
             throw new InvalidOperationException($"Type {Name} is not generic.");
 
@@ -62,45 +73,99 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
                 "defined number of generic type parameters.");
         }
 
-        Dictionary<NeslGenericTypeParameter, NeslType> dictionary =
-            new Dictionary<NeslGenericTypeParameter, NeslType>();
+        return GenericMakedTypes.GetOrAdd(typeArguments, _ => new Lazy<NeslType>(() => {
+            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
+                new Dictionary<NeslGenericTypeParameter, NeslType>();
 
-        int i = 0;
-        foreach (NeslGenericTypeParameter genericTypeParameter in GenericTypeParameters) {
-            genericTypeParameter.AssertConstraints(typeArguments[i]);
-            dictionary.Add(genericTypeParameter, typeArguments[i]);
+            bool hasGenericTypeArguments = false;
 
-            i++;
-        }
+            int i = 0;
+            foreach (NeslGenericTypeParameter genericTypeParameter in GenericTypeParameters) {
+                NeslType typeArgument = typeArguments[i++];
 
-        SerializedNeslType type = new SerializedNeslType(Assembly, FullName, Attributes.ToImmutableArray());
+                genericTypeParameter.AssertConstraints(typeArgument);
+                targetTypes.Add(genericTypeParameter, typeArgument);
 
-        // Create fields.
-        Dictionary<uint, NeslField> idToField = new Dictionary<uint, NeslField>();
-        Dictionary<NeslField, uint> fieldToId = new Dictionary<NeslField, uint>();
-
-        List<NeslField> fields = new List<NeslField>();
-        foreach (NeslField field in Fields) {
-            NeslField newField;
-
-            if (field.FieldType is NeslGenericTypeParameter genericTypeParameter) {
-                newField = new SerializedNeslField(type, field.Name, dictionary[genericTypeParameter],
-                    field.Attributes.ToImmutableArray());
-            } else {
-                newField = new SerializedNeslField(type, field.Name, field.FieldType,
-                    field.Attributes.ToImmutableArray());
+                hasGenericTypeArguments |= typeArgument is NeslGenericTypeParameter;
             }
 
-            fields.Add(newField);
+            // Create not fully generic maked type.
+            if (hasGenericTypeArguments)
+                return new NotFullyGenericMakedNeslType(this, typeArguments.ToImmutableArray());
 
-            uint id = (uint)idToField.Count;
-            idToField.Add(id, field);
-            fieldToId.Add(field, id);
-        }
+            // Create fully generic maked type.
+            SerializedNeslType type = new SerializedNeslType(
+                Assembly, FullName, GenericHelper.RemoveGenericsFromAttributes(Attributes, targetTypes)
+            );
 
-        type.SetFields(fields.ToImmutableArray(), idToField.ToImmutableDictionary());
+            // Create fields.
+            Dictionary<uint, NeslField> idToField = new Dictionary<uint, NeslField>();
+            Dictionary<NeslField, uint> fieldToId = new Dictionary<NeslField, uint>();
 
-        return type;
+            List<NeslField> fields = new List<NeslField>();
+            foreach (NeslField field in Fields) {
+                fields.Add(new SerializedNeslField(
+                    type, field.Name, GenericHelper.GetFinalType(field.FieldType, targetTypes),
+                    GenericHelper.RemoveGenericsFromAttributes(field.Attributes, targetTypes)
+                ));
+
+                uint id = (uint)idToField.Count;
+                idToField.Add(id, field);
+                fieldToId.Add(field, id);
+            }
+
+            type.SetFields(fields.ToImmutableArray(), idToField.ToImmutableDictionary());
+
+            // Create methods.
+            List<NeslMethod> methods = new List<NeslMethod>();
+
+            foreach (NeslMethod method in Methods) {
+                // Return and parameter types.
+                NeslType? methodReturnType = method.ReturnType;
+                if (methodReturnType is not null)
+                    methodReturnType = GenericHelper.GetFinalType(methodReturnType, targetTypes);
+
+                NeslType[] methodParameterTypes = new NeslType[method.ParameterTypes.Count];
+
+                i = 0;
+                foreach (NeslType parameterType in method.ParameterTypes)
+                    methodParameterTypes[i++] = GenericHelper.GetFinalType(parameterType, targetTypes);
+
+                // Construct new method.
+                methods.Add(new SerializedNeslMethod(
+                    type,
+                    method.Name,
+                    methodReturnType,
+                    methodParameterTypes,
+                    GenericHelper.RemoveGenericsFromAttributes(method.Attributes, targetTypes),
+                    GenericHelper.RemoveGenericsFromAttributes(method.ReturnValueAttributes, targetTypes),
+                    method.ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
+                    GenericIlGenerator.RemoveGenerics(method, targetTypes)
+                ));
+            }
+
+            type.SetMethods(methods.ToImmutableArray());
+
+            return type;
+        })).Value;
+    }
+
+    /// <summary>
+    /// Finds <see cref="NeslField"/> with given <paramref name="name"/> in this <see cref="NeslType"/>.
+    /// </summary>
+    /// <param name="name">Name of the searched <see cref="NeslField"/>.</param>
+    /// <returns><see cref="NeslField"/> when type was found, <see langword="null"/> when not.</returns>
+    public NeslField? GetField(string name) {
+        return Fields.FirstOrDefault(x => x.Name == name);
+    }
+
+    /// <summary>
+    /// Finds <see cref="NeslMethod"/> with given <paramref name="name"/> in this <see cref="NeslType"/>.
+    /// </summary>
+    /// <param name="name">Name of the searched <see cref="NeslMethod"/>.</param>
+    /// <returns><see cref="NeslMethod"/> when type was found, <see langword="null"/> when not.</returns>
+    public NeslMethod? GetMethod(string name) {
+        return Methods.FirstOrDefault(x => x.Name == name);
     }
 
     internal abstract NeslField GetField(uint localFieldId);
