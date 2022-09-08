@@ -168,6 +168,14 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         return Methods.FirstOrDefault(x => x.Name == name);
     }
 
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString() {
+        return FullName;
+    }
+
     internal abstract NeslField GetField(uint localFieldId);
 
 }

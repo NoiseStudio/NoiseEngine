@@ -20,6 +20,7 @@ public abstract class NeslMethod {
     public Guid Guid { get; }
 
     public NeslAssembly Assembly => Type.Assembly;
+    public string FullName => $"{Type.FullName}::{Name}";
 
     public bool IsStatic => Attributes.HasAnyAttribute(nameof(StaticAttribute));
 
@@ -30,6 +31,14 @@ public abstract class NeslMethod {
         ParameterTypes = parameterTypes;
 
         Guid = Guid.NewGuid();
+    }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString() {
+        return FullName;
     }
 
     internal IEnumerable<Instruction> GetInstructions() {
