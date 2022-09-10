@@ -158,6 +158,13 @@ public class SerializationWriter : IReadOnlyList<byte> {
     }
 
     /// <summary>
+    /// Clears this <see cref="SerializationWriter"/>.
+    /// </summary>
+    public void Clear() {
+        delegation.Data.Clear();
+    }
+
+    /// <summary>
     /// Copies the bytes of the <see cref="SerializationWriter"/> to a new array.
     /// </summary>
     /// <returns>An array containing copies of the bytes of the <see cref="SerializationWriter"/>.</returns>
