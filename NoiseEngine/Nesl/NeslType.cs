@@ -92,7 +92,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
             // Create not fully generic maked type.
             if (hasGenericTypeArguments)
-                return new NotFullyGenericMakedNeslType(this, typeArguments.ToImmutableArray());
+                return new NotFullyConstructedGenericNeslType(this, typeArguments.ToImmutableArray());
 
             // Create fully generic maked type.
             SerializedNeslType type = new SerializedNeslType(
@@ -122,7 +122,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
             foreach (NeslMethod method in Methods) {
                 if (method.IsGeneric) {
-                    methods.Add(new GenericNeslMethodInGenericMakedNeslType(type, method, targetTypes));
+                    methods.Add(new GenericNeslMethodInConstructedGenericNeslType(type, method, targetTypes));
                     continue;
                 }
 

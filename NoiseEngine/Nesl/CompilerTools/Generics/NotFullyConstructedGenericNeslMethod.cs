@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace NoiseEngine.Nesl.CompilerTools.Generics;
 
-internal class GenericNeslMethodInGenericMakedNeslType : NeslMethod {
+internal class NotFullyConstructedGenericNeslMethod : NeslMethod {
 
     public NeslMethod ParentMethod { get; }
-    public IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> TypeTargetTypes { get; }
+    public ImmutableArray<NeslType> TypeArguments { get; }
 
     public override IEnumerable<NeslAttribute> Attributes => ParentMethod.Attributes;
     public override IEnumerable<NeslAttribute> ReturnValueAttributes => ParentMethod.ReturnValueAttributes;
@@ -15,15 +16,15 @@ internal class GenericNeslMethodInGenericMakedNeslType : NeslMethod {
 
     protected override IlContainer IlContainer => ParentMethod.GetIlContainer();
 
-    public GenericNeslMethodInGenericMakedNeslType(
-        NeslType type, NeslMethod parentMethod, IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> typeTargetTypes
-    ) : base(type, parentMethod.Name, parentMethod.ReturnType, parentMethod.ParameterTypes.ToArray()) {
+    public NotFullyConstructedGenericNeslMethod(NeslMethod parentMethod, ImmutableArray<NeslType> typeArguments) : base(
+        parentMethod.Type, parentMethod.Name, parentMethod.ReturnType, Array.Empty<NeslType>()
+    ) {
         ParentMethod = parentMethod;
-        TypeTargetTypes = typeTargetTypes;
+        TypeArguments = typeArguments;
     }
 
     public override NeslMethod MakeGeneric(params NeslType[] typeArguments) {
-        return MakeGenericWorker(typeArguments, TypeTargetTypes);
+        return ParentMethod.MakeGeneric(typeArguments);
     }
 
 }

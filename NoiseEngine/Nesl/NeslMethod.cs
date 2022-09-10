@@ -130,7 +130,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
 
             // Create not fully generic constructed type.
             if (hasGenericTypeArguments)
-                return new NotFullyGenericMakedNeslMethod(this, typeArguments.ToImmutableArray());
+                return new NotFullyConstructedGenericNeslMethod(this, typeArguments.ToImmutableArray());
 
             if (genericReflectedTypeTargetTypes is not null) {
                 foreach ((NeslGenericTypeParameter key, NeslType value) in genericReflectedTypeTargetTypes)

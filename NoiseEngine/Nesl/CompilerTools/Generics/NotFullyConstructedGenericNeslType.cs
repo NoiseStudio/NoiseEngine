@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 
 namespace NoiseEngine.Nesl.CompilerTools.Generics;
 
-internal class NotFullyGenericMakedNeslType : NeslType {
+internal class NotFullyConstructedGenericNeslType : NeslType {
 
     public NeslType ParentType { get; }
     public ImmutableArray<NeslType> TypeArguments { get; }
@@ -14,7 +14,7 @@ internal class NotFullyGenericMakedNeslType : NeslType {
     public override IEnumerable<NeslField> Fields => ParentType.Fields;
     public override IEnumerable<NeslMethod> Methods => ParentType.Methods;
 
-    public NotFullyGenericMakedNeslType(NeslType parentType, ImmutableArray<NeslType> typeArguments) : base(
+    public NotFullyConstructedGenericNeslType(NeslType parentType, ImmutableArray<NeslType> typeArguments) : base(
         parentType.Assembly, parentType.FullName
     ) {
         ParentType = parentType;
