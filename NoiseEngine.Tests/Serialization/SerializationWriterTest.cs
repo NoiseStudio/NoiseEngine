@@ -6,8 +6,8 @@ namespace NoiseEngine.Tests.Serialization;
 
 public class SerializationWriterTest {
 
-    protected SerializationWriter LittleEndian = new SerializationWriter(true);
-    protected SerializationWriter BigEndian = new SerializationWriter(false);
+    private static SerializationWriter littleEndian = new SerializationWriter(true);
+    private static SerializationWriter bigEndian = new SerializationWriter(false);
 
     [Theory]
     [InlineData(new byte[] { 5, 8, 23, 5 }, true)]
@@ -170,15 +170,15 @@ public class SerializationWriterTest {
     }
 
     private void TestWriter(Action<SerializationWriter> test) {
-        LittleEndian.Clear();
-        test(LittleEndian);
+        littleEndian.Clear();
+        test(littleEndian);
 
-        BigEndian.Clear();
-        test(BigEndian);
+        bigEndian.Clear();
+        test(bigEndian);
     }
 
     private SerializationWriter GetWriter(bool isLittleEndian) {
-        SerializationWriter writer = isLittleEndian ? LittleEndian : BigEndian;
+        SerializationWriter writer = isLittleEndian ? littleEndian : bigEndian;
         writer.Clear();
         return writer;
     }

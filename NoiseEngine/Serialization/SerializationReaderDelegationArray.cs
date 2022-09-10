@@ -15,7 +15,7 @@ internal abstract class SerializationReaderDelegationArray : SerializationReader
     }
 
     public override void ReadBytes(Span<byte> bytes) {
-        data.CopyTo(bytes);
+        data.AsSpan(Reader.Position, bytes.Length).CopyTo(bytes);
     }
 
     public override byte[] ToArray() {
@@ -23,7 +23,8 @@ internal abstract class SerializationReaderDelegationArray : SerializationReader
     }
 
     public override IEnumerator<byte> GetEnumerator() {
-        return (IEnumerator<byte>)data.GetEnumerator();
+        foreach (byte b in data)
+            yield return b;
     }
 
     protected ReadOnlySpan<byte> ReadAndMovePosition(int size) {

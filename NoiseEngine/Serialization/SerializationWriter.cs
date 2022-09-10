@@ -57,8 +57,9 @@ public class SerializationWriter : IReadOnlyList<byte> {
     /// </summary>
     /// <param name="obj"><see cref="string"/> value.</param>
     public void WriteString(string obj) {
-        WriteInt32(obj.Length);
-        delegation.Data.AddRange(Encoding.UTF8.GetBytes(obj));
+        byte[] bytes = Encoding.UTF8.GetBytes(obj);
+        WriteInt32(bytes.Length);
+        delegation.Data.AddRange(bytes);
     }
 
     /// <summary>
