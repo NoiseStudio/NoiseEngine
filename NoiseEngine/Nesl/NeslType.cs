@@ -52,7 +52,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     }
 
     /// <summary>
-    /// Creates final <see cref="NeslType"/> with given <paramref name="typeArguments"/>
+    /// Constructs <see cref="NeslType"/> with given <paramref name="typeArguments"/>
     /// from this generic <see cref="NeslType"/>.
     /// </summary>
     /// <param name="typeArguments"><see cref="NeslType"/>s which replaces generic type parameters.</param>
@@ -70,7 +70,8 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
             throw new ArgumentOutOfRangeException(
                 nameof(typeArguments),
                 $"The number of given {nameof(typeArguments)} does not match the " +
-                "defined number of generic type parameters.");
+                "defined number of generic type parameters."
+            );
         }
 
         return GenericMakedTypes.GetOrAdd(typeArguments, _ => new Lazy<NeslType>(() => {
@@ -120,6 +121,11 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
             List<NeslMethod> methods = new List<NeslMethod>();
 
             foreach (NeslMethod method in Methods) {
+                if (method.IsGeneric) {
+                    methods.Add(new GenericNeslMethodInGenericMakedNeslType(type, method, targetTypes));
+                    continue;
+                }
+
                 // Return and parameter types.
                 NeslType? methodReturnType = method.ReturnType;
                 if (methodReturnType is not null)
@@ -140,6 +146,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
                     GenericHelper.RemoveGenericsFromAttributes(method.Attributes, targetTypes),
                     GenericHelper.RemoveGenericsFromAttributes(method.ReturnValueAttributes, targetTypes),
                     method.ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
+                    method.GenericTypeParameters.ToImmutableArray(),
                     GenericIlGenerator.RemoveGenerics(method, targetTypes)
                 ));
             }

@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Collections;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +27,7 @@ public class NeslTypeBuilder : NeslType {
     }
 
     /// <summary>
-    /// Adds new <see cref="NeslGenericTypeParameterBuilder"/> in this type.
+    /// Adds new <see cref="NeslGenericTypeParameterBuilder"/> to this <see cref="NeslType"/>.
     /// </summary>
     /// <param name="name">Name of new <see cref="NeslGenericTypeParameterBuilder"/>.</param>
     /// <returns>New <see cref="NeslGenericTypeParameterBuilder"/>.</returns>
@@ -77,22 +76,13 @@ public class NeslTypeBuilder : NeslType {
     /// <param name="returnType"><see cref="NeslType"/> returned from new method.</param>
     /// <param name="parameterTypes"><see cref="NeslType"/> parameters of new method.</param>
     /// <returns>New <see cref="NeslMethodBuilder"/>.</returns>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// <see cref="NeslMethod"/> with this <paramref name="name"/> and
     /// <paramref name="parameterTypes"/> already exists in this type.
     /// </exception>
     public NeslMethodBuilder DefineMethod(string name, NeslType? returnType = null, params NeslType[] parameterTypes) {
         NeslMethodBuilder method = new NeslMethodBuilder(this, name, returnType, parameterTypes);
-
-        if (!methods.TryAdd(
-            new NeslMethodIdentifier(name, new EquatableReadOnlyList<NeslType>(parameterTypes)), method)
-        ) {
-            throw new ArgumentException(
-                $"{nameof(NeslMethod)} named `{name}` with given parameter types already exists in `{Name}` type.",
-                nameof(name)
-            );
-        }
-
+        AddMethodToCollection(method);
         return method;
     }
 
@@ -112,6 +102,17 @@ public class NeslTypeBuilder : NeslType {
         attributes.Add(attribute);
     }
 
+    internal void ReplaceMethodIdentifier(NeslMethodIdentifier lastIdentifier, NeslMethodBuilder method) {
+        if (!methods.TryRemove(lastIdentifier, out _)) {
+            throw new ArgumentException(
+                $"{nameof(NeslMethod)} with given identifier does not exists in `{Name}` type.",
+                nameof(lastIdentifier)
+            );
+        }
+
+        AddMethodToCollection(method);
+    }
+
     internal uint GetLocalFieldId(NeslField field) {
         lock (idToField) {
             if (!fieldToId.TryGetValue(field, out uint id)) {
@@ -126,6 +127,15 @@ public class NeslTypeBuilder : NeslType {
 
     internal override NeslField GetField(uint localFieldId) {
         return idToField[localFieldId];
+    }
+
+    private void AddMethodToCollection(NeslMethodBuilder method) {
+        if (methods.TryAdd(method.Identifier, method))
+            return;
+
+        throw new InvalidOperationException(
+            $"{nameof(NeslMethod)} named `{method.Name}` with given parameter types already exists in `{Name}` type."
+        );
     }
 
 }

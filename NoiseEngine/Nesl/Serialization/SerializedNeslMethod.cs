@@ -10,17 +10,20 @@ internal class SerializedNeslMethod : NeslMethod {
     public override IEnumerable<NeslAttribute> Attributes { get; }
     public override IEnumerable<NeslAttribute> ReturnValueAttributes { get; }
     public override IReadOnlyList<IEnumerable<NeslAttribute>> ParameterAttributes { get; }
+    public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters { get; }
 
     protected override IlContainer IlContainer { get; }
 
     public SerializedNeslMethod(
         NeslType type, string name, NeslType? returnType, NeslType[] parameterTypes,
         ImmutableArray<NeslAttribute> attributes, ImmutableArray<NeslAttribute> returnValueAttributes,
-        IEnumerable<ImmutableArray<NeslAttribute>> parameterAttributes, IlContainer ilContainer
+        IEnumerable<ImmutableArray<NeslAttribute>> parameterAttributes,
+        ImmutableArray<NeslGenericTypeParameter> genericTypeParameters, IlContainer ilContainer
     ) : base(type, name, returnType, parameterTypes) {
         Attributes = attributes;
         ReturnValueAttributes = returnValueAttributes;
         ParameterAttributes = parameterAttributes.Select(x => (IEnumerable<NeslAttribute>)x).ToImmutableArray();
+        GenericTypeParameters = genericTypeParameters;
         IlContainer = ilContainer;
     }
 

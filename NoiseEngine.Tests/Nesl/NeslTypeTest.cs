@@ -56,12 +56,16 @@ public class NeslTypeTest {
         NeslType type = genericType.MakeGeneric(genericParameterType);
         Assert.Equal(type, genericType.MakeGeneric(genericParameterType));
 
+        // Check properties.
+        Assert.False(type.IsGeneric);
+        Assert.Equal(genericType.Name, type.Name);
+
         // Check fields.
         NeslField? field = type.GetField(FieldName);
 
         Assert.NotNull(field);
         Assert.Equal(genericField.Name, field!.Name);
-        Assert.Equal(genericField.Attributes.OrderBy(x => x.FullName), field!.Attributes.OrderBy(x => x.FullName));
+        Assert.Equal(genericField.Attributes.Count(), field!.Attributes.Count());
         Assert.Equal(type, field.ParentType);
         Assert.Equal(genericParameterType, field.FieldType);
 
@@ -71,12 +75,10 @@ public class NeslTypeTest {
         Assert.NotNull(method);
         Assert.Equal(genericMethod.Name, method!.Name);
         Assert.Null(method!.ReturnType);
-        Assert.Equal(genericMethod.Attributes.OrderBy(x => x.FullName),
-            method!.Attributes.OrderBy(x => x.FullName));
-        Assert.Equal(genericMethod.ReturnValueAttributes.OrderBy(x => x.FullName),
-            method!.ReturnValueAttributes.OrderBy(x => x.FullName));
-        Assert.Equal(genericMethod.ParameterAttributes.Select(x => x.OrderBy(x => x.FullName)),
-            method!.ParameterAttributes.Select(x => x.OrderBy(x => x.FullName)));
+        Assert.Equal(genericMethod.Attributes.Count(), method!.Attributes.Count());
+        Assert.Equal(genericMethod.ReturnValueAttributes.Count(), method!.ReturnValueAttributes.Count());
+        Assert.Equal(genericMethod.ParameterAttributes.Select(x => x.Count()),
+            method!.ParameterAttributes.Select(x => x.Count()));
     }
 
 }

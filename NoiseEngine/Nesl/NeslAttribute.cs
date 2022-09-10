@@ -105,7 +105,7 @@ public abstract class NeslAttribute {
     ) {
         return RemoveGenerics(targetTypes);
     }
-    
+
     /// <summary>
     /// Removes generics from this <see cref="NeslAttribute"/> with given <paramref name="targetTypes"/>.
     /// </summary>
