@@ -26,7 +26,10 @@ internal class NotFullyConstructedGenericNeslType : NeslType {
     }
 
     internal override NeslField GetField(uint localFieldId) {
-        throw new NotImplementedException();
+        throw new InvalidOperationException(
+            "This type is not fully constructed generic type. " +
+            "Construct final type by invoking MakeGeneric method and use the return type."
+        );
     }
 
 }

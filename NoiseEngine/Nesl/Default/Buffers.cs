@@ -6,7 +6,7 @@ namespace NoiseEngine.Nesl.Default;
 
 internal static class Buffers {
 
-    private readonly static NeslType readWriteBuffer;
+    private static readonly NeslType readWriteBuffer;
 
     static Buffers() {
         readWriteBuffer = CreateReadWriteBuffer();

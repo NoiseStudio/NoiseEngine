@@ -85,17 +85,17 @@ public class NeslMethodBuilder : NeslMethod {
         NeslMethodIdentifier lastIdentifier = Identifier;
         ParameterTypes = parameterTypes;
 
-        if (parameterTypes.Length != parameterAttributes.Length) {
+        int oldLength = parameterAttributes.Length;
+        if (parameterTypes.Length != oldLength) {
             Array.Resize(ref parameterAttributes, parameterTypes.Length);
 
-            for (int i = 0; i < parameterAttributes.Length; i++) {
-                ConcurrentBag<NeslAttribute>? bag = parameterAttributes[i];
-                if (bag is null)
-                    parameterAttributes[i] = new ConcurrentBag<NeslAttribute>();
-                else
-                    bag.Clear();
-            }
+            for (int i = oldLength; i < parameterAttributes.Length; i++)
+                parameterAttributes[i] = new ConcurrentBag<NeslAttribute>();
         }
+
+        int max = Math.Min(oldLength, parameterAttributes.Length);
+        for (int i = 0; i < max; i++)
+            parameterAttributes[i].Clear();
 
         Type.ReplaceMethodIdentifier(lastIdentifier, this);
     }

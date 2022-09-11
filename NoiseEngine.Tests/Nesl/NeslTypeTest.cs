@@ -65,7 +65,7 @@ public class NeslTypeTest {
 
         Assert.NotNull(field);
         Assert.Equal(genericField.Name, field!.Name);
-        Assert.Equal(genericField.Attributes.Count(), field!.Attributes.Count());
+        Assert.Equal(genericField.Attributes.Count(), field.Attributes.Count());
         Assert.Equal(type, field.ParentType);
         Assert.Equal(genericParameterType, field.FieldType);
 
@@ -74,11 +74,11 @@ public class NeslTypeTest {
 
         Assert.NotNull(method);
         Assert.Equal(genericMethod.Name, method!.Name);
-        Assert.Null(method!.ReturnType);
-        Assert.Equal(genericMethod.Attributes.Count(), method!.Attributes.Count());
-        Assert.Equal(genericMethod.ReturnValueAttributes.Count(), method!.ReturnValueAttributes.Count());
+        Assert.Null(method.ReturnType);
+        Assert.Equal(genericMethod.Attributes.Count(), method.Attributes.Count());
+        Assert.Equal(genericMethod.ReturnValueAttributes.Count(), method.ReturnValueAttributes.Count());
         Assert.Equal(genericMethod.ParameterAttributes.Select(x => x.Count()),
-            method!.ParameterAttributes.Select(x => x.Count()));
+            method.ParameterAttributes.Select(x => x.Count()));
     }
 
 }

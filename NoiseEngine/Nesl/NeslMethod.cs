@@ -157,7 +157,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
                 GenericHelper.RemoveGenericsFromAttributes(Attributes, targetTypes),
                 GenericHelper.RemoveGenericsFromAttributes(ReturnValueAttributes, targetTypes),
                 ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
-                ImmutableArray.Create<NeslGenericTypeParameter>(),
+                Array.Empty<NeslGenericTypeParameter>(),
                 GenericIlGenerator.RemoveGenerics(this, targetTypes)
             );
         })).Value;

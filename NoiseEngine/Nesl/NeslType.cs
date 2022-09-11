@@ -101,7 +101,6 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
             // Create fields.
             Dictionary<uint, NeslField> idToField = new Dictionary<uint, NeslField>();
-            Dictionary<NeslField, uint> fieldToId = new Dictionary<NeslField, uint>();
 
             List<NeslField> fields = new List<NeslField>();
             foreach (NeslField field in Fields) {
@@ -112,10 +111,9 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
                 uint id = (uint)idToField.Count;
                 idToField.Add(id, field);
-                fieldToId.Add(field, id);
             }
 
-            type.SetFields(fields.ToImmutableArray(), idToField.ToImmutableDictionary());
+            type.SetFields(fields.ToArray(), idToField.ToImmutableDictionary());
 
             // Create methods.
             List<NeslMethod> methods = new List<NeslMethod>();
@@ -146,12 +144,12 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
                     GenericHelper.RemoveGenericsFromAttributes(method.Attributes, targetTypes),
                     GenericHelper.RemoveGenericsFromAttributes(method.ReturnValueAttributes, targetTypes),
                     method.ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
-                    method.GenericTypeParameters.ToImmutableArray(),
+                    method.GenericTypeParameters.ToArray(),
                     GenericIlGenerator.RemoveGenerics(method, targetTypes)
                 ));
             }
 
-            type.SetMethods(methods.ToImmutableArray());
+            type.SetMethods(methods.ToArray());
 
             return type;
         })).Value;

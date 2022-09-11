@@ -16,13 +16,13 @@ internal class SerializedNeslMethod : NeslMethod {
 
     public SerializedNeslMethod(
         NeslType type, string name, NeslType? returnType, NeslType[] parameterTypes,
-        ImmutableArray<NeslAttribute> attributes, ImmutableArray<NeslAttribute> returnValueAttributes,
-        IEnumerable<ImmutableArray<NeslAttribute>> parameterAttributes,
-        ImmutableArray<NeslGenericTypeParameter> genericTypeParameters, IlContainer ilContainer
+        NeslAttribute[] attributes, NeslAttribute[] returnValueAttributes,
+        IEnumerable<IEnumerable<NeslAttribute>> parameterAttributes,
+        NeslGenericTypeParameter[] genericTypeParameters, IlContainer ilContainer
     ) : base(type, name, returnType, parameterTypes) {
         Attributes = attributes;
         ReturnValueAttributes = returnValueAttributes;
-        ParameterAttributes = parameterAttributes.Select(x => (IEnumerable<NeslAttribute>)x).ToImmutableArray();
+        ParameterAttributes = parameterAttributes.ToArray();
         GenericTypeParameters = genericTypeParameters;
         IlContainer = ilContainer;
     }

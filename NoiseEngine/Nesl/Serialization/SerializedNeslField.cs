@@ -8,7 +8,7 @@ internal class SerializedNeslField : NeslField {
     public override IEnumerable<NeslAttribute> Attributes { get; }
 
     public SerializedNeslField(
-        NeslType parentType, string name, NeslType fieldType, ImmutableArray<NeslAttribute> attributes
+        NeslType parentType, string name, NeslType fieldType, NeslAttribute[] attributes
     ) : base(parentType, name, fieldType) {
         Attributes = attributes;
     }

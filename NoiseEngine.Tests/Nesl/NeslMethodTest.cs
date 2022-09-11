@@ -82,10 +82,10 @@ public class NeslMethodTest {
         Assert.False(method.IsGeneric);
         Assert.Equal(genericMethod.Name, method.Name);
         Assert.Equal(genericMethod.Type, method.Type);
-        Assert.Equal(genericMethod.Attributes.Count(), method!.Attributes.Count());
-        Assert.Equal(genericMethod.ReturnValueAttributes.Count(), method!.ReturnValueAttributes.Count());
+        Assert.Equal(genericMethod.Attributes.Count(), method.Attributes.Count());
+        Assert.Equal(genericMethod.ReturnValueAttributes.Count(), method.ReturnValueAttributes.Count());
         Assert.Equal(genericMethod.ParameterAttributes.Select(x => x.Count()),
-            method!.ParameterAttributes.Select(x => x.Count()));
+            method.ParameterAttributes.Select(x => x.Count()));
     }
 
 }

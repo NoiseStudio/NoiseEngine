@@ -22,10 +22,10 @@ internal static class GenericHelper {
         }
     }
 
-    public static ImmutableArray<NeslAttribute> RemoveGenericsFromAttributes(
+    public static NeslAttribute[] RemoveGenericsFromAttributes(
         IEnumerable<NeslAttribute> attributes, IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
-        return attributes.Select(x => x.RemoveGenericsInternal(targetTypes)).ToImmutableArray();
+        return attributes.Select(x => x.RemoveGenericsInternal(targetTypes)).ToArray();
     }
 
 }

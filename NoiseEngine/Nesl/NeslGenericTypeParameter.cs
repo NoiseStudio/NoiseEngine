@@ -18,23 +18,19 @@ public abstract class NeslGenericTypeParameter : NeslType {
         Owner = owner;
     }
 
-    internal void AssertConstraints(NeslType type) {
+    private static Exception NewStillGenericException() {
+        return new InvalidOperationException(
+            $"This type is {nameof(NeslGenericTypeParameter)}. " +
+            "Construct final type by invoking MakeGeneric method on owner and use the return type."
+        );
     }
 
-    internal void AssertUsedOwner(INeslGenericTypeParameterOwner usedOwner) {
-        if (Owner != usedOwner)
-            throw new InvalidOperationException($"{nameof(NeslGenericTypeParameter)} has been used out of scope.");
+    internal void AssertConstraints(NeslType type) {
+        // TODO: add constraints.
     }
 
     internal override NeslField GetField(uint localFieldId) {
         throw NewStillGenericException();
-    }
-
-    private Exception NewStillGenericException() {
-        return new InvalidOperationException(
-            $"This type is {nameof(NeslGenericTypeParameter)}. " +
-            "Construct final type by invoking MakeGeneric method on owner before use."
-        );
     }
 
 }
