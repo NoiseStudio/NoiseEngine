@@ -1,4 +1,4 @@
-﻿namespace NoiseEngine.Nesl;
+﻿namespace NoiseEngine.Nesl.Serialization;
 
 internal class SerializedNeslAttribute : NeslAttribute {
 

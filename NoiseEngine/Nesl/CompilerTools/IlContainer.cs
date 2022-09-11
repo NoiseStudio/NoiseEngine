@@ -15,4 +15,8 @@ public abstract class IlContainer {
             yield return new Instruction(opCode, tailIndex, this);
     }
 
+    internal IEnumerable<(OpCode opCode, uint tailIndex)> GetRawInstructions() {
+        return RawInstructions;
+    }
+
 }

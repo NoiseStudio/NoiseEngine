@@ -6,15 +6,21 @@ namespace NoiseEngine.Nesl.Default;
 
 internal static class Buffers {
 
-    public static NeslType ReadWriteBuffer { get; }
+    private static readonly NeslType readWriteBuffer;
 
     static Buffers() {
-        ReadWriteBuffer = CreateReadWriteBuffer();
+        readWriteBuffer = CreateReadWriteBuffer();
+    }
+
+    public static NeslType GetReadWriteBuffer(NeslType type) {
+        return readWriteBuffer.MakeGeneric(type);
     }
 
     private static NeslType CreateReadWriteBuffer() {
-        NeslTypeBuilder type = Manager.AssemblyBuilder.DefineType($"{Manager.AssemblyBuilder.Name}.ReadWriteBuffer");
-        type.AddAttribute(PlatformDependentTypeRepresentationAttribute.Create("System.Single[]", null));
+        NeslTypeBuilder type = Manager.AssemblyBuilder.DefineType($"{Manager.AssemblyBuilder.Name}.ReadWriteBuffer`1");
+        NeslGenericTypeParameterBuilder genericTypeParameter = type.DefineGenericTypeParameter("T");
+        type.AddAttribute(PlatformDependentTypeRepresentationAttribute.Create(
+            $"{{{genericTypeParameter.Name}}}[]", null));
         type.AddAttribute(SizeAttribute.Create((uint)Marshal.SizeOf<nuint>() * 8));
 
         return type;

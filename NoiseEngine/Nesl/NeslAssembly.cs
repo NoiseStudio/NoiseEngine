@@ -27,6 +27,8 @@ public abstract class NeslAssembly {
         return null;
     }
 
+    internal abstract ulong GetLocalTypeId(NeslType type);
+    internal abstract ulong GetLocalMethodId(NeslMethod method);
     internal abstract NeslType GetType(ulong localTypeId);
     internal abstract NeslMethod GetMethod(ulong localMethodId);
 

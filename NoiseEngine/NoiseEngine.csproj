@@ -30,8 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../NoiseEngine.CodeGenerators/NoiseEngine.CodeGenerators.csproj"
-            OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="../NoiseEngine.CodeGenerators/NoiseEngine.CodeGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

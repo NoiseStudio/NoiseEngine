@@ -28,14 +28,14 @@ public class NeslTypeBuilderTest {
         NeslTypeBuilder type = TestEmitHelper.NewType();
 
         type.DefineMethod(MethodNameA);
-        Assert.Throws<ArgumentException>(() => type.DefineMethod(MethodNameA));
-        Assert.Throws<ArgumentException>(() => type.DefineMethod(MethodNameA, BuiltInTypes.Float32));
+        Assert.Throws<InvalidOperationException>(() => type.DefineMethod(MethodNameA));
+        Assert.Throws<InvalidOperationException>(() => type.DefineMethod(MethodNameA, BuiltInTypes.Float32));
 
         type.DefineMethod(MethodNameA, null, BuiltInTypes.Float32);
-        Assert.Throws<ArgumentException>(() => type.DefineMethod(MethodNameA, null, BuiltInTypes.Float32));
+        Assert.Throws<InvalidOperationException>(() => type.DefineMethod(MethodNameA, null, BuiltInTypes.Float32));
 
         type.DefineMethod(MethodNameA, null, BuiltInTypes.Float64);
-        Assert.Throws<ArgumentException>(() => type.DefineMethod(MethodNameA, null, BuiltInTypes.Float64));
+        Assert.Throws<InvalidOperationException>(() => type.DefineMethod(MethodNameA, null, BuiltInTypes.Float64));
 
         type.DefineMethod(MethodNameB);
     }

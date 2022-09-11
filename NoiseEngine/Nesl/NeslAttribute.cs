@@ -1,4 +1,6 @@
-﻿using System;
+﻿using NoiseEngine.Nesl.Serialization;
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
@@ -96,6 +98,25 @@ public abstract class NeslAttribute {
 
         attribute = null;
         return false;
+    }
+
+    internal NeslAttribute RemoveGenericsInternal(
+        IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+    ) {
+        return RemoveGenerics(targetTypes);
+    }
+
+    /// <summary>
+    /// Removes generics from this <see cref="NeslAttribute"/> with given <paramref name="targetTypes"/>.
+    /// </summary>
+    /// <param name="targetTypes">
+    /// <see cref="IReadOnlyDictionary{TKey, TValue}"/> where TKey is original generic type and TValue is target type.
+    /// </param>
+    /// <returns>Returns new or this <see cref="NeslAttribute"/> without generics.</returns>
+    protected virtual NeslAttribute RemoveGenerics(
+        IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+    ) {
+        return this;
     }
 
     /// <summary>
