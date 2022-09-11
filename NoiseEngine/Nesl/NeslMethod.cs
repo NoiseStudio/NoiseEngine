@@ -133,8 +133,10 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
                 return new NotFullyConstructedGenericNeslMethod(this, typeArguments.ToImmutableArray());
 
             if (genericReflectedTypeTargetTypes is not null) {
-                foreach ((NeslGenericTypeParameter key, NeslType value) in genericReflectedTypeTargetTypes)
-                    targetTypes.Add(key, value);
+                foreach ((NeslGenericTypeParameter key, NeslType value) in genericReflectedTypeTargetTypes) {
+                    if (!targetTypes.Keys.Select(x => x.Name).Contains(key.Name))
+                        targetTypes.Add(key, value);
+                }
             }
 
             // Return and parameter types.
