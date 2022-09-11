@@ -170,7 +170,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     /// <param name="name">Name of the searched <see cref="NeslMethod"/>.</param>
     /// <returns><see cref="NeslMethod"/> when type was found, <see langword="null"/> when not.</returns>
     public NeslMethod? GetMethod(string name) {
-        return Methods.Where(x => x.Name == name).OrderBy(x => x.Guid).FirstOrDefault();
+        return Methods.Where(x => x.Name == name).MinBy(x => x.Guid);
     }
 
     /// <summary>

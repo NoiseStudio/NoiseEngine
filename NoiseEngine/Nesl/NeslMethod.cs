@@ -134,7 +134,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
 
             if (genericReflectedTypeTargetTypes is not null) {
                 foreach ((NeslGenericTypeParameter key, NeslType value) in genericReflectedTypeTargetTypes) {
-                    if (!targetTypes.Keys.Select(x => x.Name).Contains(key.Name))
+                    if (!targetTypes.Keys.All(x => x.Name == key.Name))
                         targetTypes.Add(key, value);
                 }
             }
