@@ -9,6 +9,7 @@
         <Product>NoiseEngine</Product>
         <Nullable>enable</Nullable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
         <NoWarn>1591</NoWarn>
 
