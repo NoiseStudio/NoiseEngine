@@ -12,6 +12,17 @@
         <OSLibPrefix>lib</OSLibPrefix>
     </PropertyGroup>
 
+    <!-- CompileNative -->
+    <PropertyGroup Condition="$(Configuration) == 'Debug'">
+        <CargoReleaseFlag />
+        <CargoBuildPath>target/debug</CargoBuildPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(Configuration) == 'Release'">
+        <CargoReleaseFlag>--release</CargoReleaseFlag>
+        <CargoBuildPath>target/release</CargoBuildPath>
+    </PropertyGroup>
+
     <!-- External libraries -->
     <PropertyGroup>
         <ExternalPath>../External</ExternalPath>
@@ -25,6 +36,13 @@
         <!-- TEMP -->
         <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Threading.dll" DestinationFolder="$(OutputPath)" />
         <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Collections.dll" DestinationFolder="$(OutputPath)" />
+    </Target>
+
+    <Target Name="CompileNative" BeforeTargets="AfterBuild">
+        <Exec WorkingDirectory="../NoiseEngine.Native/" Command="cargo build $(CargoReleaseFlag)" />
+        <Copy
+            SourceFiles="../NoiseEngine.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_native.$(OSLibExt)"
+            DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
     </Target>
 
 </Project>
