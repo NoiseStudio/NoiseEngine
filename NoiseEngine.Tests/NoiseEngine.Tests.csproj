@@ -8,6 +8,7 @@
         <RootNamespace>NoiseEngine.Tests</RootNamespace>
         <Company>Noise Studio</Company>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -50,5 +51,10 @@
     </ItemGroup>
 
     <Import Project="../NoiseEngine.Shared.xml" />
+
+    <Target Name="CompileTestsNative" BeforeTargets="AfterBuild">
+        <Exec WorkingDirectory="../NoiseEngine.Tests.Native/" Command="cargo build $(CargoReleaseFlag)" />
+        <Copy SourceFiles="../NoiseEngine.Tests.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_tests_native.$(OSLibExt)" DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Tests.Native.$(OSLibExt)" />
+    </Target>
 
 </Project>
