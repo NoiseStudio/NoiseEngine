@@ -15,12 +15,12 @@ impl<'a, T> Into<&'a [T]> for InteropReadOnlySpan<T> {
     }
 }
 
-impl<'a, T> From<&'a [T]> for InteropReadOnlySpan<T> {
-    fn from(src: &'a [T]) -> InteropReadOnlySpan<T> {
+impl<'a, T> Into<InteropReadOnlySpan<T>> for &'a [T] {
+    fn into(self) -> InteropReadOnlySpan<T> {
         InteropReadOnlySpan {
             phantom: PhantomData,
-            reference: src.as_ptr(),
-            length: src.len() as i32
+            reference: self.as_ptr(),
+            length: self.len() as i32
         }
     }
 }

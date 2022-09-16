@@ -6,16 +6,16 @@ namespace NoiseEngine.Interop;
 [StructLayout(LayoutKind.Sequential)]
 internal readonly unsafe ref struct InteropReadOnlySpan<T> where T : unmanaged {
 
-    private readonly void* reference;
+    private readonly T* reference;
     private readonly int length;
 
-    public InteropReadOnlySpan(void* reference, int length) {
+    public InteropReadOnlySpan(T* reference, int length) {
         this.reference = reference;
         this.length = length;
     }
 
     public InteropReadOnlySpan(ReadOnlySpan<T> span) {
-        fixed (void* reference = &MemoryMarshal.GetReference(span))
+        fixed (T* reference = &MemoryMarshal.GetReference(span))
             this.reference = reference;
         length = span.Length;
     }
