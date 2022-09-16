@@ -1,8 +1,7 @@
-use std::{marker::PhantomData, slice};
+use std::slice;
 
 #[repr(C)]
 pub struct InteropReadOnlySpan<T> {
-    phantom: PhantomData<T>,
     reference: *const T,
     length: i32,
 }
@@ -18,7 +17,6 @@ impl<'a, T> Into<&'a [T]> for InteropReadOnlySpan<T> {
 impl<'a, T> Into<InteropReadOnlySpan<T>> for &'a [T] {
     fn into(self) -> InteropReadOnlySpan<T> {
         InteropReadOnlySpan {
-            phantom: PhantomData,
             reference: self.as_ptr(),
             length: self.len() as i32
         }

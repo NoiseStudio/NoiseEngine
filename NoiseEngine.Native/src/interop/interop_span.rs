@@ -1,8 +1,7 @@
-use std::{marker::PhantomData, slice};
+use std::slice;
 
 #[repr(C)]
 pub struct InteropSpan<T> {
-    phantom: PhantomData<T>,
     reference: *mut T,
     length: i32,
 }
@@ -26,7 +25,6 @@ impl<'a, T> Into<&'a [T]> for InteropSpan<T> {
 impl<'a, T> Into<InteropSpan<T>> for &'a mut [T] {
     fn into(self) -> InteropSpan<T> {
         InteropSpan {
-            phantom: PhantomData,
             reference: self.as_mut_ptr(),
             length: self.len() as i32
         }
