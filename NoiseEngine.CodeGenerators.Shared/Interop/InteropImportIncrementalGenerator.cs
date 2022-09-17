@@ -24,7 +24,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         ) {
             InteropMarshal marshal = (InteropMarshal)Activator.CreateInstance(type)
                 ?? throw new NullReferenceException();
-            marshalls.Add(marshal.MarshallingType, marshal);
+            marshalls.Add(marshal.MarshalingType, marshal);
         }
     }
 
@@ -176,11 +176,11 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             }
 
             marshal.SetGenericRawString(genericRawString);
-            string a = marshal.Marshall(parameter.Identifier.ValueText, out string marshaledParameterName);
+            string a = marshal.Marshal(parameter.Identifier.ValueText, out string marshaledParameterName);
             marshal.SetGenericRawString(string.Empty);
 
             parameters.Add(new MarshalParameter(
-                marshaledParameterName, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
+                marshaledParameterName, CombineWithGenerics(marshal.UnmarshalingType, genericRawString)
             ));
 
             if (marshal.IsAdvanced)
@@ -205,11 +205,11 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             }
 
             marshal.SetGenericRawString(genericRawString);
-            outputBody.AppendLine(marshal.Unmarshall(b, out string unmarshaledParamterName));
+            outputBody.AppendLine(marshal.Unmarshal(b, out string unmarshaledParameterName));
             marshal.SetGenericRawString(string.Empty);
 
             outputs.Add(new MarshalOutput(
-                unmarshaledParamterName, b, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
+                unmarshaledParameterName, b, CombineWithGenerics(marshal.UnmarshalingType, genericRawString)
             ));
         }
     }
@@ -278,7 +278,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
     ) {
         builder.AppendIndentation(3).Append(dllImport).AppendLine();
         builder.AppendIndentation(3).Append("static extern unsafe ");
-        builder.Append(outputs[0].UnmarshalledType);
+        builder.Append(outputs[0].UnmarshaledType);
         builder.Append(" __PInvoke(");
 
         int i = 0;
@@ -299,16 +299,16 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         for (int i = 1; i < outputs.Count; i++) {
             MarshalOutput returnInfo = outputs[i];
 
-            builder.Append(returnInfo.UnmarshalledParameterName);
+            builder.Append(returnInfo.UnmarshaledParameterName);
             builder.Append(" = ");
-            builder.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
+            builder.Append(returnInfo.MarshaledParameterName).Append(';').AppendLine();
         }
 
         if (returnTypeIsNotVoid) {
             MarshalOutput returnInfo = outputs[0];
 
             builder.AppendIndentation(3).Append("return ");
-            builder.Append(returnInfo.UnmarshalledParameterName).Append(';').AppendLine();
+            builder.Append(returnInfo.UnmarshaledParameterName).Append(';').AppendLine();
         }
     }
 
@@ -319,7 +319,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
 
         if (returnTypeIsNotVoid) {
             MarshalOutput returnInfo = outputs[0];
-            body.Append(returnInfo.MarshalledParameterName).Append(" = ");
+            body.Append(returnInfo.MarshaledParameterName).Append(" = ");
         }
 
         body.Append("__PInvoke(");
@@ -343,8 +343,8 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         if (returnTypeIsNotVoid) {
             MarshalOutput returnInfo = outputs[0];
 
-            body.AppendIndentation(3).Append(returnInfo.UnmarshalledType).Append(' ');
-            body.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
+            body.AppendIndentation(3).Append(returnInfo.UnmarshaledType).Append(' ');
+            body.Append(returnInfo.MarshaledParameterName).Append(';').AppendLine();
         }
 
         builder.Append(body);

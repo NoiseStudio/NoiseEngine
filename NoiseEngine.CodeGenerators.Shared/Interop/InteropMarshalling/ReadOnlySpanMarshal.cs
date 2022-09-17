@@ -2,13 +2,13 @@
 
 internal class ReadOnlySpanMarshal : InteropMarshal {
 
-    public override string MarshallingType => "System.ReadOnlySpan";
-    public override string UnmarshallingType => "NoiseEngine.Interop.InteropMarshalling.InteropReadOnlySpan";
+    public override string MarshalingType => "System.ReadOnlySpan";
+    public override string UnmarshalingType => "NoiseEngine.Interop.InteropMarshalling.InteropReadOnlySpan";
     public override bool IsAdvanced => true;
 
-    public override string Marshall(string unmarshaledParameterName, out string marshaledParameterName) {
+    public override string Marshal(string unmarshaledParameterName, out string marshaledParameterName) {
         marshaledParameterName = CreateUniqueVariableName();
-        string finalType = $"{UnmarshallingType}<{GenericRawString}>";
+        string finalType = $"{UnmarshalingType}<{GenericRawString}>";
         string a = CreateUniqueVariableName();
 
         return @$"
@@ -20,9 +20,9 @@ internal class ReadOnlySpanMarshal : InteropMarshal {
         ";
     }
 
-    public override string Unmarshall(string marshaledParameterName, out string unmarshaledParamterName) {
-        unmarshaledParamterName = CreateUniqueVariableName();
-        return $"{MarshallingType}<{GenericRawString}> {unmarshaledParamterName} " +
+    public override string Unmarshal(string marshaledParameterName, out string unmarshaledParameterName) {
+        unmarshaledParameterName = CreateUniqueVariableName();
+        return $"{MarshalingType}<{GenericRawString}> {unmarshaledParameterName} " +
             $"= {marshaledParameterName}.AsSpan();";
     }
 
