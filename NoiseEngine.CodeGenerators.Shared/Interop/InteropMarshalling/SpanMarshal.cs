@@ -2,28 +2,28 @@
 
 internal class SpanMarshal : InteropMarshal {
 
-    public override string MarshalingType => "System.Span";
-    public override string UnmarshalingType => "NoiseEngine.Interop.InteropMarshalling.InteropSpan";
+    public override string MarshallingType => "System.Span";
+    public override string UnmarshallingType => "NoiseEngine.Interop.InteropMarshalling.InteropSpan";
     public override bool IsAdvanced => true;
 
-    public override string Marshal(string unmarshaledParameterName, out string marshaledParameterName) {
-        marshaledParameterName = CreateUniqueVariableName();
-        string finalType = $"{UnmarshalingType}<{GenericRawString}>";
+    public override string Marshal(string unmarshalledParameterName, out string marshalledParameterName) {
+        marshalledParameterName = CreateUniqueVariableName();
+        string finalType = $"{UnmarshallingType}<{GenericRawString}>";
         string a = CreateUniqueVariableName();
 
         return @$"
-            fixed ({GenericRawString}* {a} = {unmarshaledParameterName}) {{
-                {finalType} {marshaledParameterName} = new {finalType}({a}, {unmarshaledParameterName}.Length);
+            fixed ({GenericRawString}* {a} = {unmarshalledParameterName}) {{
+                {finalType} {marshalledParameterName} = new {finalType}({a}, {unmarshalledParameterName}.Length);
 
                 {MarshalContinuation}
             }}
         ";
     }
 
-    public override string Unmarshal(string marshaledParameterName, out string unmarshaledParameterName) {
-        unmarshaledParameterName = CreateUniqueVariableName();
-        return $"{MarshalingType}<{GenericRawString}> {unmarshaledParameterName} " +
-            $"= {marshaledParameterName}.AsSpan();";
+    public override string Unmarshal(string marshalledParameterName, out string unmarshalledParameterName) {
+        unmarshalledParameterName = CreateUniqueVariableName();
+        return $"{MarshallingType}<{GenericRawString}> {unmarshalledParameterName} " +
+            $"= {marshalledParameterName}.AsSpan();";
     }
 
 }

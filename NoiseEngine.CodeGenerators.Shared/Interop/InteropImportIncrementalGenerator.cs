@@ -15,7 +15,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
     private const string DllName = "NoiseEngine.Native";
     private const string AttributeFullName = "NoiseEngine.Interop.InteropImportAttribute";
 
-    private static readonly Dictionary<string, InteropMarshal> marshalls = new Dictionary<string, InteropMarshal>();
+    private static readonly Dictionary<string, InteropMarshal> marshals = new Dictionary<string, InteropMarshal>();
 
     static InteropImportIncrementalGenerator() {
         foreach (
@@ -24,7 +24,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         ) {
             InteropMarshal marshal = (InteropMarshal)Activator.CreateInstance(type)
                 ?? throw new NullReferenceException();
-            marshalls.Add(marshal.MarshalingType, marshal);
+            marshals.Add(marshal.MarshallingType, marshal);
         }
     }
 
@@ -170,17 +170,17 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             string typeFullName = parameter.Type!.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
             string typeName = SplitWithGenerics(typeFullName, out string genericRawString);
 
-            if (!marshalls.TryGetValue(typeName, out InteropMarshal? marshal)) {
+            if (!marshals.TryGetValue(typeName, out InteropMarshal? marshal)) {
                 parameters.Add(new MarshalParameter(parameter.Identifier.ValueText, typeFullName));
                 continue;
             }
 
             marshal.SetGenericRawString(genericRawString);
-            string a = marshal.Marshal(parameter.Identifier.ValueText, out string marshaledParameterName);
+            string a = marshal.Marshal(parameter.Identifier.ValueText, out string marshalledParameterName);
             marshal.SetGenericRawString(string.Empty);
 
             parameters.Add(new MarshalParameter(
-                marshaledParameterName, CombineWithGenerics(marshal.UnmarshalingType, genericRawString)
+                marshalledParameterName, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
             ));
 
             if (marshal.IsAdvanced)
@@ -199,17 +199,17 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             string typeName = SplitWithGenerics(typeFullName, out string genericRawString);
 
             string b = InteropMarshal.CreateUniqueVariableName();
-            if (!marshalls.TryGetValue(typeName, out InteropMarshal? marshal)) {
+            if (!marshals.TryGetValue(typeName, out InteropMarshal? marshal)) {
                 outputs.Add(new MarshalOutput(b, b, typeFullName));
                 continue;
             }
 
             marshal.SetGenericRawString(genericRawString);
-            outputBody.AppendLine(marshal.Unmarshal(b, out string unmarshaledParameterName));
+            outputBody.AppendLine(marshal.Unmarshal(b, out string unmarshalledParameterName));
             marshal.SetGenericRawString(string.Empty);
 
             outputs.Add(new MarshalOutput(
-                unmarshaledParameterName, b, CombineWithGenerics(marshal.UnmarshalingType, genericRawString)
+                unmarshalledParameterName, b, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
             ));
         }
     }
@@ -278,7 +278,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
     ) {
         builder.AppendIndentation(3).Append(dllImport).AppendLine();
         builder.AppendIndentation(3).Append("static extern unsafe ");
-        builder.Append(outputs[0].UnmarshaledType);
+        builder.Append(outputs[0].UnmarshalledType);
         builder.Append(" __PInvoke(");
 
         int i = 0;
@@ -299,16 +299,16 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         for (int i = 1; i < outputs.Count; i++) {
             MarshalOutput returnInfo = outputs[i];
 
-            builder.Append(returnInfo.UnmarshaledParameterName);
+            builder.Append(returnInfo.UnmarshalledParameterName);
             builder.Append(" = ");
-            builder.Append(returnInfo.MarshaledParameterName).Append(';').AppendLine();
+            builder.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
         }
 
         if (returnTypeIsNotVoid) {
             MarshalOutput returnInfo = outputs[0];
 
             builder.AppendIndentation(3).Append("return ");
-            builder.Append(returnInfo.UnmarshaledParameterName).Append(';').AppendLine();
+            builder.Append(returnInfo.UnmarshalledParameterName).Append(';').AppendLine();
         }
     }
 
@@ -319,7 +319,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
 
         if (returnTypeIsNotVoid) {
             MarshalOutput returnInfo = outputs[0];
-            body.Append(returnInfo.MarshaledParameterName).Append(" = ");
+            body.Append(returnInfo.MarshalledParameterName).Append(" = ");
         }
 
         body.Append("__PInvoke(");
@@ -343,8 +343,8 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         if (returnTypeIsNotVoid) {
             MarshalOutput returnInfo = outputs[0];
 
-            body.AppendIndentation(3).Append(returnInfo.UnmarshaledType).Append(' ');
-            body.Append(returnInfo.MarshaledParameterName).Append(';').AppendLine();
+            body.AppendIndentation(3).Append(returnInfo.UnmarshalledType).Append(' ');
+            body.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
         }
 
         builder.Append(body);

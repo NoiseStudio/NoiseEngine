@@ -2,14 +2,14 @@
 
 internal readonly struct MarshalOutput {
 
-    public string UnmarshaledParameterName { get; }
-    public string MarshaledParameterName { get; }
-    public string UnmarshaledType { get; }
+    public string UnmarshalledParameterName { get; }
+    public string MarshalledParameterName { get; }
+    public string UnmarshalledType { get; }
 
-    public MarshalOutput(string unmarshaledParameterName, string marshaledParameterName, string unmarshaledType) {
-        UnmarshaledParameterName = unmarshaledParameterName;
-        MarshaledParameterName = marshaledParameterName;
-        UnmarshaledType = unmarshaledType;
+    public MarshalOutput(string unmarshalledParameterName, string marshalledParameterName, string unmarshalledType) {
+        UnmarshalledParameterName = unmarshalledParameterName;
+        MarshalledParameterName = marshalledParameterName;
+        UnmarshalledType = unmarshalledType;
     }
 
 }
