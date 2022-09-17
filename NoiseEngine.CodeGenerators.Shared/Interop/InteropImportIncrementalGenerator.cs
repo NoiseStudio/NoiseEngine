@@ -20,9 +20,10 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
     static InteropImportIncrementalGenerator() {
         foreach (
             Type type in typeof(InteropImportIncrementalGenerator).Assembly.GetTypes()
-            .Where(x => typeof(InteropMarshal).IsAssignableFrom(x) && x != typeof(InteropMarshal))
+            .Where(x => typeof(InteropMarshal).IsAssignableFrom(x) && !x.IsAbstract)
         ) {
-            InteropMarshal marshal = (InteropMarshal)Activator.CreateInstance(type)!;
+            InteropMarshal marshal = (InteropMarshal)Activator.CreateInstance(type)
+                ?? throw new NullReferenceException();
             marshalls.Add(marshal.MarshallingType, marshal);
         }
     }
@@ -53,7 +54,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
                     builder.Append(additional).Append(' ');
                 has = true;
             } else {
-                has |= modifier.ValueText == additional;
+                has = has || modifier.ValueText == additional;
             }
 
             builder.Append(modifier.ValueText).Append(' ');
@@ -88,7 +89,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         IncrementalValueProvider<(Compilation, ImmutableArray<(MethodDeclarationSyntax, AttributeSyntax)>)>
             compilationAndMethods = context.CompilationProvider.Combine(methods.Collect());
 
-        context.RegisterSourceOutput(compilationAndMethods, (context, source) => {
+        context.RegisterSourceOutput(compilationAndMethods, (ctx, source) => {
             if (source.Item2.IsDefaultOrEmpty)
                 return;
 
@@ -99,7 +100,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             foreach ((MethodDeclarationSyntax method, AttributeSyntax attribute) in source.Item2)
                 GenerateExtension(builder, source.Item1, method, attribute);
 
-            context.AddSource("RustImport.generated.cs", builder.ToString());
+            ctx.AddSource("InteropImport.generated.cs", builder.ToString());
         });
     }
 
@@ -143,16 +144,16 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
 
             string b = InteropMarshal.CreateUniqueVariableName();
             if (!marshalls.TryGetValue(typeName, out InteropMarshal? marshal)) {
-                outputs.Add(new MarshalOutput(b, b, typeFullName, typeFullName));
+                outputs.Add(new MarshalOutput(b, b, typeFullName));
                 continue;
             }
 
             marshal.SetGenericRawString(genericRawString);
-            outputBody.AppendLine(marshal.Unmarshall(b, out string unmarshalledParamterName));
+            outputBody.AppendLine(marshal.Unmarshall(b, out string unmarshaledParamterName));
             marshal.SetGenericRawString(string.Empty);
 
             outputs.Add(new MarshalOutput(
-                unmarshalledParamterName, b, CombineWithGenerics(marshal.UnmarshallingType, genericRawString), typeFullName
+                unmarshaledParamterName, b, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
             ));
         }
 

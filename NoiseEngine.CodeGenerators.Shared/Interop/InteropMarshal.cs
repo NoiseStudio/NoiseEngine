@@ -8,12 +8,12 @@ internal abstract class InteropMarshal {
 
     public abstract string MarshallingType { get; }
     public abstract string UnmarshallingType { get; }
-    public virtual bool IsAdvanced { get; }
+    public virtual bool IsAdvanced { get; } = false;
 
     public string GenericRawString { get; private set; } = string.Empty;
 
-    public abstract string Marshall(string unmarshalledParameterName, out string marshalledParameterName);
-    public abstract string Unmarshall(string marshalledParameterName, out string unmarshalledParamterName);
+    public abstract string Marshall(string unmarshaledParameterName, out string marshaledParameterName);
+    public abstract string Unmarshall(string marshaledParameterName, out string unmarshaledParamterName);
 
     internal void SetGenericRawString(string genericRawString) {
         GenericRawString = genericRawString;

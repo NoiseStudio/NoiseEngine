@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace NoiseEngine.CodeGenerators;
+namespace NoiseEngine.CodeGenerators.Shared;
 
 internal static class StringBuilderExtensions {
 
