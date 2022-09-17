@@ -2,6 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>preview</LangVersion>
+        <Nullable>enable</Nullable>
         <AssemblyName>NoiseEngine.CodeGenerators</AssemblyName>
         <RootNamespace>NoiseEngine.CodeGenerators</RootNamespace>
         <Company>Noise Studio</Company>

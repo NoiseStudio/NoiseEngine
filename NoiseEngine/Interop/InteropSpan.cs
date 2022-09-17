@@ -15,6 +15,11 @@ internal readonly unsafe ref struct InteropSpan<T> where T : unmanaged {
         length = span.Length;
     }
 
+    public InteropSpan(T* reference, int length) {
+        this.reference = reference;
+        this.length = length;
+    }
+
     public static implicit operator InteropSpan<T>(Span<T> span) {
         return new InteropSpan<T>(span);
     }
