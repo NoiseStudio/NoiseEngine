@@ -2,27 +2,27 @@
 
 internal class SpanMarshal : InteropMarshal {
 
-    public override string MarshalledType => "System.Span";
-    public override string UnmarshalledType => "NoiseEngine.Interop.InteropSpan";
+    public override string MarshallingType => "System.Span";
+    public override string UnmarshallingType => "NoiseEngine.Interop.InteropSpan";
     public override bool IsAdvanced => true;
 
-    public override string Marshall(string parameterName, out string newParameterName) {
-        newParameterName = CreateUniqueVariableName();
-        string finalType = $"{UnmarshalledType}<{GenericRawString}>";
+    public override string Marshall(string unmarshalledParameterName, out string marshalledParameterName) {
+        marshalledParameterName = CreateUniqueVariableName();
+        string finalType = $"{UnmarshallingType}<{GenericRawString}>";
         string a = CreateUniqueVariableName();
 
         return @$"
-            fixed ({GenericRawString}* {a} = {parameterName}) {{
-                {finalType} {newParameterName} = new {finalType}({a}, {parameterName}.Length);
+            fixed ({GenericRawString}* {a} = {unmarshalledParameterName}) {{
+                {finalType} {marshalledParameterName} = new {finalType}({a}, {unmarshalledParameterName}.Length);
 
                 {MarshalContinuation}
             }}
         ";
     }
 
-    public override string Unmarshall(string parameterName, out string newParameterName) {
-        newParameterName = CreateUniqueVariableName();
-        return $"{MarshalledType}<{GenericRawString}> {newParameterName} = {parameterName};";
+    public override string Unmarshall(string marshalledParameterName, out string unmarshalledParamterName) {
+        unmarshalledParamterName = CreateUniqueVariableName();
+        return $"{MarshallingType}<{GenericRawString}> {unmarshalledParamterName} = {marshalledParameterName};";
     }
 
 }

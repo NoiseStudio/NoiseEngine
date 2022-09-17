@@ -6,14 +6,14 @@ internal abstract class InteropMarshal {
 
     internal const string MarshalContinuation = "/*<<< Marshal-Continuation >>>*/";
 
-    public abstract string MarshalledType { get; }
-    public abstract string UnmarshalledType { get; }
+    public abstract string MarshallingType { get; }
+    public abstract string UnmarshallingType { get; }
     public virtual bool IsAdvanced { get; }
 
     public string GenericRawString { get; private set; } = string.Empty;
 
-    public abstract string Marshall(string parameterName, out string newParameterName);
-    public abstract string Unmarshall(string parameterName, out string newParameterName);
+    public abstract string Marshall(string unmarshalledParameterName, out string marshalledParameterName);
+    public abstract string Unmarshall(string marshalledParameterName, out string unmarshalledParamterName);
 
     internal void SetGenericRawString(string genericRawString) {
         GenericRawString = genericRawString;

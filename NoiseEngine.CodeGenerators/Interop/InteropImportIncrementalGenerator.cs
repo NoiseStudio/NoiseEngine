@@ -23,7 +23,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             .Where(x => typeof(InteropMarshal).IsAssignableFrom(x) && x != typeof(InteropMarshal))
         ) {
             InteropMarshal marshal = (InteropMarshal)Activator.CreateInstance(type)!;
-            marshalls.Add(marshal.MarshalledType, marshal);
+            marshalls.Add(marshal.MarshallingType, marshal);
         }
     }
 
@@ -123,11 +123,11 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             }
 
             marshal.SetGenericRawString(genericRawString);
-            string a = marshal.Marshall(parameter.Identifier.ValueText, out string newParameterName);
+            string a = marshal.Marshall(parameter.Identifier.ValueText, out string marshalledParameterName);
             marshal.SetGenericRawString(string.Empty);
 
             parameters.Add(new MarshalParameter(
-                newParameterName, CombineWithGenerics(marshal.UnmarshalledType, genericRawString)
+                marshalledParameterName, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
             ));
 
             if (marshal.IsAdvanced)
@@ -148,11 +148,11 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             }
 
             marshal.SetGenericRawString(genericRawString);
-            outputBody.AppendLine(marshal.Unmarshall(b, out string newParameterName));
+            outputBody.AppendLine(marshal.Unmarshall(b, out string unmarshalledParamterName));
             marshal.SetGenericRawString(string.Empty);
 
             outputs.Add(new MarshalOutput(
-                b, newParameterName, CombineWithGenerics(marshal.UnmarshalledType, genericRawString), typeFullName
+                unmarshalledParamterName, b, CombineWithGenerics(marshal.UnmarshallingType, genericRawString), typeFullName
             ));
         }
 
@@ -245,7 +245,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
                 MarshalOutput returnInfo = outputs[0];
 
                 body.AppendIndentation(3).Append(returnInfo.UnmarshalledType).Append(' ');
-                body.Append(returnInfo.UnmarshalledParameterName).Append(';').AppendLine();
+                body.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
             }
 
             builder.Append(body);
@@ -255,7 +255,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
 
             if (returnTypeIsNotVoid) {
                 MarshalOutput returnInfo = outputs[0];
-                body.Append(returnInfo.UnmarshalledParameterName).Append(" = ");
+                body.Append(returnInfo.MarshalledParameterName).Append(" = ");
             }
 
             body.Append("__PInvoke(");
@@ -278,16 +278,16 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             for (i = 1; i < outputs.Count; i++) {
                 MarshalOutput returnInfo = outputs[i];
 
-                builder.Append(returnInfo.MarshalledParameterName);
+                builder.Append(returnInfo.UnmarshalledParameterName);
                 builder.Append(" = ");
-                builder.Append(returnInfo.UnmarshalledParameterName).Append(';').AppendLine();
+                builder.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
             }
 
             if (returnTypeIsNotVoid) {
                 MarshalOutput returnInfo = outputs[0];
 
                 builder.AppendIndentation(3).Append("return ");
-                builder.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
+                builder.Append(returnInfo.UnmarshalledParameterName).Append(';').AppendLine();
             }
 
             builder.AppendIndentation(2).Append('}').AppendLine();
