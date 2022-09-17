@@ -39,24 +39,24 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
         return fullName.Substring(0, index);
     }
 
-    private static void AddModifiers(StringBuilder builder, SyntaxTokenList modifiers) {
+    private static void AddModifiers(StringBuilder builder, SyntaxTokenList modifiers, string? additional) {
         const string Partial = "partial";
-        const string Unsafe = "unsafe";
 
-        bool hasUnsafe = false;
+        bool has = false;
         foreach (SyntaxToken modifier in modifiers) {
-            if (modifier.ValueText == Partial && !hasUnsafe) {
-                builder.Append(Unsafe).Append(' ');
-                hasUnsafe = true;
+            if (modifier.ValueText == Partial && !has) {
+                if (additional is not null)
+                    builder.Append(additional).Append(' ');
+                has = true;
             } else {
-                hasUnsafe |= modifier.ValueText == Unsafe;
+                has |= modifier.ValueText == additional;
             }
 
             builder.Append(modifier.ValueText).Append(' ');
         }
 
-        if (!hasUnsafe)
-            builder.Append(Unsafe).Append(' ');
+        if (!has && additional is not null)
+            builder.Append(additional).Append(' ');
     }
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
@@ -102,52 +102,6 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
     private void GenerateExtension(
         StringBuilder builder, Compilation compilation, MethodDeclarationSyntax method, AttributeSyntax attribute
     ) {
-        // Namespace declaration.
-        builder.Append("namespace ").Append(method.ParentNodes()
-            .OfType<FileScopedNamespaceDeclarationSyntax>().First().Name.GetText()).AppendLine(" {");
-
-        // Type declaration.
-        TypeDeclarationSyntax type = method.ParentNodes().OfType<TypeDeclarationSyntax>().First();
-
-        builder.AppendIndentation();
-        AddModifiers(builder, type.Modifiers);
-
-        if (type is ClassDeclarationSyntax)
-            builder.Append("class ");
-        else if (type is StructDeclarationSyntax)
-            builder.Append("struct ");
-        else if (type is InterfaceDeclarationSyntax)
-            builder.Append("interface ");
-        else if (type is RecordDeclarationSyntax)
-            builder.Append("record ");
-        else
-            builder.Append("record struct ");
-
-        builder.Append(type.Identifier.Text).AppendLine(" {");
-
-        // Method declaration.
-        int attributeIndex = builder.Length - 1;
-
-        builder.AppendIndentation(2);
-        foreach (SyntaxToken modifier in method.Modifiers)
-            builder.Append(modifier.ValueText).Append(' ');
-
-        string returnTypeName = method.ReturnType.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
-        builder.Append(returnTypeName).Append(' ');
-        builder.Append(method.Identifier.ValueText);
-        builder.Append('(');
-
-        foreach (ParameterSyntax parameter in method.ParameterList.Parameters) {
-            builder.Append(parameter.Type!.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString()).Append(' ');
-            builder.Append(parameter.Identifier.ValueText);
-            builder.Append(", ");
-        }
-
-        if (method.ParameterList.Parameters.Count > 0)
-            builder.Remove(builder.Length - 2, 2);
-
-        builder.Append(')');
-
         // Create method body.
         StringBuilder body = new StringBuilder();
         StringBuilder advancedBody = new StringBuilder(RustMarshaller.MarshallingContinuation);
@@ -202,6 +156,53 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
             outputs.Add((b, newParameterName, finalType));
         }
 
+        bool hasBody = body.Length > 0 || advancedBody.ToString() != RustMarshaller.MarshallingContinuation;
+
+        // Namespace declaration.
+        builder.Append("namespace ").Append(method.ParentNodes()
+            .OfType<FileScopedNamespaceDeclarationSyntax>().First().Name.GetText()).AppendLine(" {");
+
+        // Type declaration.
+        TypeDeclarationSyntax type = method.ParentNodes().OfType<TypeDeclarationSyntax>().First();
+
+        builder.AppendIndentation();
+        AddModifiers(builder, type.Modifiers, "unsafe");
+
+        if (type is ClassDeclarationSyntax)
+            builder.Append("class ");
+        else if (type is StructDeclarationSyntax)
+            builder.Append("struct ");
+        else if (type is InterfaceDeclarationSyntax)
+            builder.Append("interface ");
+        else if (type is RecordDeclarationSyntax)
+            builder.Append("record ");
+        else
+            builder.Append("record struct ");
+
+        builder.Append(type.Identifier.Text).AppendLine(" {");
+
+        // Method declaration.
+        int attributeIndex = builder.Length - 1;
+
+        builder.AppendIndentation(2);
+        AddModifiers(builder, method.Modifiers, hasBody ? null : "extern");
+
+        string returnTypeName = method.ReturnType.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
+        builder.Append(returnTypeName).Append(' ');
+        builder.Append(method.Identifier.ValueText);
+        builder.Append('(');
+
+        foreach (ParameterSyntax parameter in method.ParameterList.Parameters) {
+            builder.Append(parameter.Type!.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString()).Append(' ');
+            builder.Append(parameter.Identifier.ValueText);
+            builder.Append(", ");
+        }
+
+        if (method.ParameterList.Parameters.Count > 0)
+            builder.Remove(builder.Length - 2, 2);
+
+        builder.Append(')');
+
         // Create DllImportAttribute.
         StringBuilder dllImport = new StringBuilder("[System.Runtime.InteropServices.DllImportAttribute(");
         dllImport.Append(attribute.ArgumentList!.Arguments.Count == 2 ?
@@ -211,7 +212,7 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
         dllImport.Append(", ExactSpelling = true)]");
 
         // Construct final method body.
-        if (body.Length > 0 || advancedBody.ToString() != RustMarshaller.MarshallingContinuation) {
+        if (hasBody) {
             builder.AppendLine(" {");
 
             // Create __PInvoke method.
