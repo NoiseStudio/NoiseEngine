@@ -114,6 +114,58 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         List<MarshalParameter> parameters = new List<MarshalParameter>();
         List<MarshalOutput> outputs = new List<MarshalOutput>();
 
+        MarshalParameters(compilation, method, parameters, body, advancedBody);
+        MarshalOutputs(compilation, method, outputs, outputBody);
+        bool hasBody = body.Length > 0 || advancedBody.ToString() != InteropMarshal.MarshalContinuation;
+
+        // Namespace and type declaration.
+        GenerateNamespaceWithType(builder, method);
+
+        // Method declaration.
+        int attributeIndex = builder.Length - 1;
+        GenerateMethod(builder, compilation, method, hasBody, out string returnTypeName);
+
+        // Create DllImportAttribute.
+        StringBuilder dllImport = GenerateDllImportAttribute(attribute);
+
+        // Construct final method body.
+        if (hasBody) {
+            builder.AppendLine(" {");
+
+            // Create __PInvoke method.
+            GeneratePInvoke(builder, dllImport, parameters, outputs);
+
+            // Append body.
+            builder.Append(body).AppendLine();
+            bool returnTypeIsNotVoid = returnTypeName != "void";
+
+            // Declare output variables.
+            GenerateOutputVariables(builder, body, outputs, returnTypeIsNotVoid);
+
+            // Add PInvoke execution.
+            GeneratePInvokeExecution(body, parameters, outputs, returnTypeIsNotVoid);
+
+            advancedBody.Replace(InteropMarshal.MarshalContinuation, body.ToString());
+            builder.Append(advancedBody).AppendLine();
+            builder.Append(outputBody);
+
+            // Collect output.
+            GenerateOutputCollector(builder, outputs, returnTypeIsNotVoid);
+
+            builder.AppendIndentation(2).Append('}').AppendLine();
+        } else {
+            builder.Insert(attributeIndex, GeneratorConstants.Indentation + GeneratorConstants.Indentation + dllImport);
+            builder.Append(';').AppendLine();
+        }
+
+        builder.AppendIndentation().Append('}').AppendLine();
+        builder.AppendLine("}");
+    }
+
+    private void MarshalParameters(
+        Compilation compilation, MethodDeclarationSyntax method, List<MarshalParameter> parameters,
+        StringBuilder body, StringBuilder advancedBody
+    ) {
         foreach (ParameterSyntax parameter in method.ParameterList.Parameters) {
             string typeFullName = parameter.Type!.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
             string typeName = SplitWithGenerics(typeFullName, out string genericRawString);
@@ -124,11 +176,11 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             }
 
             marshal.SetGenericRawString(genericRawString);
-            string a = marshal.Marshall(parameter.Identifier.ValueText, out string marshalledParameterName);
+            string a = marshal.Marshall(parameter.Identifier.ValueText, out string marshaledParameterName);
             marshal.SetGenericRawString(string.Empty);
 
             parameters.Add(new MarshalParameter(
-                marshalledParameterName, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
+                marshaledParameterName, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
             ));
 
             if (marshal.IsAdvanced)
@@ -136,7 +188,11 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             else
                 body.AppendLine(a);
         }
+    }
 
+    private void MarshalOutputs(
+        Compilation compilation, MethodDeclarationSyntax method, List<MarshalOutput> outputs, StringBuilder outputBody
+    ) {
         // TODO: add out values.
         foreach (TypeSyntax typeSyntax in new TypeSyntax[] { method.ReturnType }) {
             string typeFullName = typeSyntax.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
@@ -156,10 +212,9 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
                 unmarshaledParamterName, b, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
             ));
         }
+    }
 
-        bool hasBody = body.Length > 0 || advancedBody.ToString() != InteropMarshal.MarshalContinuation;
-
-        // Namespace declaration.
+    private void GenerateNamespaceWithType(StringBuilder builder, MethodDeclarationSyntax method) {
         builder.Append("namespace ").Append(method.ParentNodes()
             .OfType<FileScopedNamespaceDeclarationSyntax>().First().Name.GetText()).AppendLine(" {");
 
@@ -181,14 +236,16 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             builder.Append("record struct ");
 
         builder.Append(type.Identifier.Text).AppendLine(" {");
+    }
 
-        // Method declaration.
-        int attributeIndex = builder.Length - 1;
-
+    private void GenerateMethod(
+        StringBuilder builder, Compilation compilation, MethodDeclarationSyntax method,
+        bool hasBody, out string returnTypeName
+    ) {
         builder.AppendIndentation(2);
         AddModifiers(builder, method.Modifiers, hasBody ? null : "extern");
 
-        string returnTypeName = method.ReturnType.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
+        returnTypeName = method.ReturnType.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
         builder.Append(returnTypeName).Append(' ');
         builder.Append(method.Identifier.ValueText);
         builder.Append('(');
@@ -203,8 +260,9 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             builder.Remove(builder.Length - 2, 2);
 
         builder.Append(')');
+    }
 
-        // Create DllImportAttribute.
+    private StringBuilder GenerateDllImportAttribute(AttributeSyntax attribute) {
         StringBuilder dllImport = new StringBuilder("[System.Runtime.InteropServices.DllImportAttribute(");
         dllImport.Append(attribute.ArgumentList!.Arguments.Count == 2 ?
             attribute.ArgumentList.Arguments[1] : $"\"{DllName}\"");
@@ -212,93 +270,84 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         dllImport.Append(attribute.ArgumentList.Arguments[0]);
         dllImport.Append(", ExactSpelling = true)]");
 
-        // Construct final method body.
-        if (hasBody) {
-            builder.AppendLine(" {");
+        return dllImport;
+    }
 
-            // Create __PInvoke method.
-            builder.AppendIndentation(3).Append(dllImport).AppendLine();
-            builder.AppendIndentation(3).Append("static extern unsafe ");
-            builder.Append(outputs[0].UnmarshalledType);
-            builder.Append(" __PInvoke(");
+    private void GeneratePInvoke(
+        StringBuilder builder, StringBuilder dllImport, List<MarshalParameter> parameters, List<MarshalOutput> outputs
+    ) {
+        builder.AppendIndentation(3).Append(dllImport).AppendLine();
+        builder.AppendIndentation(3).Append("static extern unsafe ");
+        builder.Append(outputs[0].UnmarshalledType);
+        builder.Append(" __PInvoke(");
 
-            int i = 0;
-            foreach (MarshalParameter parameter in parameters) {
-                builder.Append(parameter.MarshalledType);
-                builder.Append(" v");
-                builder.Append(i++);
-                builder.Append(", ");
-            }
-
-            if (parameters.Count > 0)
-                builder.Remove(builder.Length - 2, 2);
-
-            builder.AppendLine(");");
-
-            // Append body.
-            builder.Append(body).AppendLine();
-
-            // Declare output variables.
-            body.Clear();
-
-            bool returnTypeIsNotVoid = returnTypeName != "void";
-            if (returnTypeIsNotVoid) {
-                MarshalOutput returnInfo = outputs[0];
-
-                body.AppendIndentation(3).Append(returnInfo.UnmarshalledType).Append(' ');
-                body.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
-            }
-
-            builder.Append(body);
-
-            // Add PInvoke execution.
-            body.Clear();
-
-            if (returnTypeIsNotVoid) {
-                MarshalOutput returnInfo = outputs[0];
-                body.Append(returnInfo.MarshalledParameterName).Append(" = ");
-            }
-
-            body.Append("__PInvoke(");
-
-            foreach (MarshalParameter parameter in parameters) {
-                body.Append(parameter.MarshalledParameterName);
-                body.Append(", ");
-            }
-
-            if (parameters.Count > 0)
-                body.Remove(body.Length - 2, 2);
-
-            body.Append(");");
-
-            advancedBody.Replace(InteropMarshal.MarshalContinuation, body.ToString());
-            builder.Append(advancedBody).AppendLine();
-            builder.Append(outputBody);
-
-            // Collect output.
-            for (i = 1; i < outputs.Count; i++) {
-                MarshalOutput returnInfo = outputs[i];
-
-                builder.Append(returnInfo.UnmarshalledParameterName);
-                builder.Append(" = ");
-                builder.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
-            }
-
-            if (returnTypeIsNotVoid) {
-                MarshalOutput returnInfo = outputs[0];
-
-                builder.AppendIndentation(3).Append("return ");
-                builder.Append(returnInfo.UnmarshalledParameterName).Append(';').AppendLine();
-            }
-
-            builder.AppendIndentation(2).Append('}').AppendLine();
-        } else {
-            builder.Insert(attributeIndex, GeneratorConstants.Indentation + GeneratorConstants.Indentation + dllImport);
-            builder.Append(';').AppendLine();
+        int i = 0;
+        foreach (MarshalParameter parameter in parameters) {
+            builder.Append(parameter.MarshalledType);
+            builder.Append(" v");
+            builder.Append(i++);
+            builder.Append(", ");
         }
 
-        builder.AppendIndentation().Append('}').AppendLine();
-        builder.AppendLine("}");
+        if (parameters.Count > 0)
+            builder.Remove(builder.Length - 2, 2);
+
+        builder.AppendLine(");");
+    }
+
+    private void GenerateOutputCollector(StringBuilder builder, List<MarshalOutput> outputs, bool returnTypeIsNotVoid) {
+        for (int i = 1; i < outputs.Count; i++) {
+            MarshalOutput returnInfo = outputs[i];
+
+            builder.Append(returnInfo.UnmarshalledParameterName);
+            builder.Append(" = ");
+            builder.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
+        }
+
+        if (returnTypeIsNotVoid) {
+            MarshalOutput returnInfo = outputs[0];
+
+            builder.AppendIndentation(3).Append("return ");
+            builder.Append(returnInfo.UnmarshalledParameterName).Append(';').AppendLine();
+        }
+    }
+
+    private void GeneratePInvokeExecution(
+        StringBuilder body, List<MarshalParameter> parameters, List<MarshalOutput> outputs, bool returnTypeIsNotVoid
+    ) {
+        body.Clear();
+
+        if (returnTypeIsNotVoid) {
+            MarshalOutput returnInfo = outputs[0];
+            body.Append(returnInfo.MarshalledParameterName).Append(" = ");
+        }
+
+        body.Append("__PInvoke(");
+
+        foreach (MarshalParameter parameter in parameters) {
+            body.Append(parameter.MarshalledParameterName);
+            body.Append(", ");
+        }
+
+        if (parameters.Count > 0)
+            body.Remove(body.Length - 2, 2);
+
+        body.Append(");");
+    }
+
+    private void GenerateOutputVariables(
+        StringBuilder builder, StringBuilder body, List<MarshalOutput> outputs, bool returnTypeIsNotVoid
+    ) {
+        body.Clear();
+
+        if (returnTypeIsNotVoid) {
+            MarshalOutput returnInfo = outputs[0];
+
+            body.AppendIndentation(3).Append(returnInfo.UnmarshalledType).Append(' ');
+            body.Append(returnInfo.MarshalledParameterName).Append(';').AppendLine();
+        }
+
+        builder.Append(body);
     }
 
 }

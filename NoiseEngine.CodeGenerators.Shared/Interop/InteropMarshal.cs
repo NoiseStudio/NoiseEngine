@@ -8,7 +8,7 @@ internal abstract class InteropMarshal {
 
     public abstract string MarshallingType { get; }
     public abstract string UnmarshallingType { get; }
-    public virtual bool IsAdvanced { get; } = false;
+    public virtual bool IsAdvanced => false;
 
     public string GenericRawString { get; private set; } = string.Empty;
 
