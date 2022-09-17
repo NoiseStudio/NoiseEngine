@@ -1,4 +1,4 @@
-﻿namespace NoiseEngine.CodeGenerators.Interop;
+﻿namespace NoiseEngine.CodeGenerators.Shared.Interop;
 
 internal readonly struct MarshalParameter {
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NoiseEngine.CodeGenerators.Interop;
+namespace NoiseEngine.CodeGenerators.Shared.Interop;
 
 internal abstract class InteropMarshal {
 

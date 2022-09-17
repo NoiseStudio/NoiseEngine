@@ -1,9 +1,9 @@
-﻿namespace NoiseEngine.CodeGenerators.Interop.InteropMarshalling;
+﻿namespace NoiseEngine.CodeGenerators.Shared.Interop.InteropMarshalling;
 
 internal class SpanMarshal : InteropMarshal {
 
     public override string MarshallingType => "System.Span";
-    public override string UnmarshallingType => "NoiseEngine.Interop.InteropSpan";
+    public override string UnmarshallingType => "NoiseEngine.Interop.InteropMarshalling.InteropSpan";
     public override bool IsAdvanced => true;
 
     public override string Marshall(string unmarshalledParameterName, out string marshalledParameterName) {
@@ -22,7 +22,8 @@ internal class SpanMarshal : InteropMarshal {
 
     public override string Unmarshall(string marshalledParameterName, out string unmarshalledParamterName) {
         unmarshalledParamterName = CreateUniqueVariableName();
-        return $"{MarshallingType}<{GenericRawString}> {unmarshalledParamterName} = {marshalledParameterName};";
+        return $"{MarshallingType}<{GenericRawString}> {unmarshalledParamterName} " +
+            $"= {marshalledParameterName}.AsSpan();";
     }
 
 }
