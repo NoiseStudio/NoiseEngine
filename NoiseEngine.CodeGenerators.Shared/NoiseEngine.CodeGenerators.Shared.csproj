@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
-        <AssemblyName>NoiseEngine.CodeGenerators</AssemblyName>
-        <RootNamespace>NoiseEngine.CodeGenerators</RootNamespace>
+        <AssemblyName>NoiseEngine.CodeGenerators.Shared</AssemblyName>
+        <RootNamespace>NoiseEngine.CodeGenerators.Shared</RootNamespace>
         <Company>Noise Studio</Company>
     </PropertyGroup>
 

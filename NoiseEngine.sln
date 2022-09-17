@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Tests", "NoiseE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Benchmarks", "NoiseEngine.Benchmarks/NoiseEngine.Benchmarks.csproj", "{93B82DAA-2ABE-45F1-A20E-D2CE885A738A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.CodeGenerators", "NoiseEngine.CodeGenerators/NoiseEngine.CodeGenerators.csproj", "{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.CodeGenerators", "NoiseEngine.CodeGenerators/NoiseEngine.CodeGenerators.csproj", "{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.CodeGenerators.Shared", "NoiseEngine.CodeGenerators.Shared/NoiseEngine.CodeGenerators.Shared.csproj", "{B3052F7F-C58E-413C-8E90-64A296D67A06}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3052F7F-C58E-413C-8E90-64A296D67A06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3052F7F-C58E-413C-8E90-64A296D67A06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3052F7F-C58E-413C-8E90-64A296D67A06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3052F7F-C58E-413C-8E90-64A296D67A06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
