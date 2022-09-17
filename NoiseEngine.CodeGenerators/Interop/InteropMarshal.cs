@@ -2,9 +2,9 @@
 
 namespace NoiseEngine.CodeGenerators.Interop;
 
-internal abstract class RustMarshaller {
+internal abstract class InteropMarshal {
 
-    internal const string MarshallingContinuation = "/*<<< Marshaling-Continuation >>>*/";
+    internal const string MarshalContinuation = "/*<<< Marshal-Continuation >>>*/";
 
     public abstract string MarshalledType { get; }
     public abstract string UnmarshalledType { get; }

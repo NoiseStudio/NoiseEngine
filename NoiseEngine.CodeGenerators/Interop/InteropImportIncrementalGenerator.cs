@@ -10,20 +10,20 @@ using System.Text;
 namespace NoiseEngine.CodeGenerators.Interop;
 
 [Generator]
-public class RustImportIncrementalGenerator : IIncrementalGenerator {
+public class InteropImportIncrementalGenerator : IIncrementalGenerator {
 
     private const string DllName = "NoiseEngine.Native";
-    private const string AttributeFullName = "NoiseEngine.Interop.RustImportAttribute";
+    private const string AttributeFullName = "NoiseEngine.Interop.InteropImportAttribute";
 
-    private static readonly Dictionary<string, RustMarshaller> marshallers = new Dictionary<string, RustMarshaller>();
+    private static readonly Dictionary<string, InteropMarshal> marshalls = new Dictionary<string, InteropMarshal>();
 
-    static RustImportIncrementalGenerator() {
+    static InteropImportIncrementalGenerator() {
         foreach (
-            Type type in typeof(RustImportIncrementalGenerator).Assembly.GetTypes()
-            .Where(x => typeof(RustMarshaller).IsAssignableFrom(x) && x != typeof(RustMarshaller))
+            Type type in typeof(InteropImportIncrementalGenerator).Assembly.GetTypes()
+            .Where(x => typeof(InteropMarshal).IsAssignableFrom(x) && x != typeof(InteropMarshal))
         ) {
-            RustMarshaller marshaller = (RustMarshaller)Activator.CreateInstance(type);
-            marshallers.Add(marshaller.MarshalledType, marshaller);
+            InteropMarshal marshal = (InteropMarshal)Activator.CreateInstance(type);
+            marshalls.Add(marshal.MarshalledType, marshal);
         }
     }
 
@@ -104,7 +104,7 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
     ) {
         // Create method body.
         StringBuilder body = new StringBuilder();
-        StringBuilder advancedBody = new StringBuilder(RustMarshaller.MarshallingContinuation);
+        StringBuilder advancedBody = new StringBuilder(InteropMarshal.MarshalContinuation);
         StringBuilder outputBody = new StringBuilder();
         List<(string, string)> parameters = new List<(string, string)>();
         List<(string, string, string)> outputs = new List<(string, string, string)>();
@@ -113,23 +113,23 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
             string typeFullName = parameter.Type!.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
             string typeName = SplitWithGenerics(typeFullName, out string genericRawString);
 
-            if (!marshallers.TryGetValue(typeName, out RustMarshaller marshaller)) {
+            if (!marshalls.TryGetValue(typeName, out InteropMarshal marshal)) {
                 parameters.Add((parameter.Identifier.ValueText, typeFullName));
                 continue;
             }
 
-            marshaller.SetGenericRawString(genericRawString);
-            string a = marshaller.Marshall(parameter.Identifier.ValueText, out string newParameterName);
-            marshaller.SetGenericRawString(string.Empty);
+            marshal.SetGenericRawString(genericRawString);
+            string a = marshal.Marshall(parameter.Identifier.ValueText, out string newParameterName);
+            marshal.SetGenericRawString(string.Empty);
 
-            string finalType = marshaller.MarshalledType;
+            string finalType = marshal.MarshalledType;
             if (genericRawString.Length > 0)
                 finalType += $"<{genericRawString}>";
 
             parameters.Add((newParameterName, finalType));
 
-            if (marshaller.IsAdvanced)
-                advancedBody.Replace(RustMarshaller.MarshallingContinuation, a);
+            if (marshal.IsAdvanced)
+                advancedBody.Replace(InteropMarshal.MarshalContinuation, a);
             else
                 body.AppendLine(a);
         }
@@ -139,24 +139,24 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
             string typeFullName = typeSyntax.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
             string typeName = SplitWithGenerics(typeFullName, out string genericRawString);
 
-            string b = RustMarshaller.CreateUniqueVariableName();
-            if (!marshallers.TryGetValue(typeName, out RustMarshaller marshaller)) {
+            string b = InteropMarshal.CreateUniqueVariableName();
+            if (!marshalls.TryGetValue(typeName, out InteropMarshal marshal)) {
                 outputs.Add((b, b, typeFullName));
                 continue;
             }
 
-            marshaller.SetGenericRawString(genericRawString);
-            outputBody.AppendLine(marshaller.Unmarshall(b, out string newParameterName));
-            marshaller.SetGenericRawString(string.Empty);
+            marshal.SetGenericRawString(genericRawString);
+            outputBody.AppendLine(marshal.Unmarshall(b, out string newParameterName));
+            marshal.SetGenericRawString(string.Empty);
 
-            string finalType = marshaller.UnmarshalledType;
+            string finalType = marshal.UnmarshalledType;
             if (genericRawString.Length > 0)
                 finalType += $"<{genericRawString}>";
 
             outputs.Add((b, newParameterName, finalType));
         }
 
-        bool hasBody = body.Length > 0 || advancedBody.ToString() != RustMarshaller.MarshallingContinuation;
+        bool hasBody = body.Length > 0 || advancedBody.ToString() != InteropMarshal.MarshalContinuation;
 
         // Namespace declaration.
         builder.Append("namespace ").Append(method.ParentNodes()
@@ -270,7 +270,7 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
 
             body.Append(");");
 
-            advancedBody.Replace(RustMarshaller.MarshallingContinuation, body.ToString());
+            advancedBody.Replace(InteropMarshal.MarshalContinuation, body.ToString());
             builder.Append(advancedBody).AppendLine();
             builder.Append(outputBody);
 
@@ -293,7 +293,7 @@ public class RustImportIncrementalGenerator : IIncrementalGenerator {
             builder.AppendIndentation(2).Append('}').AppendLine();
         } else {
             builder.Insert(attributeIndex, GeneratorConstants.Indentation + GeneratorConstants.Indentation + dllImport);
-            builder.Append(';');
+            builder.Append(';').AppendLine();
         }
 
         builder.AppendIndentation().Append('}').AppendLine();

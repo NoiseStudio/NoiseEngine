@@ -1,6 +1,6 @@
-﻿namespace NoiseEngine.CodeGenerators.Interop.RustMarshalling;
+﻿namespace NoiseEngine.CodeGenerators.Interop.InteropMarshalling;
 
-internal class SpanMarshaller : RustMarshaller {
+internal class SpanMarshal : InteropMarshal {
 
     public override string MarshalledType => "System.Span";
     public override string UnmarshalledType => "NoiseEngine.Interop.InteropSpan";
@@ -15,7 +15,7 @@ internal class SpanMarshaller : RustMarshaller {
             fixed ({GenericRawString}* {a} = {parameterName}) {{
                 {finalType} {newParameterName} = new {finalType}({a}, {parameterName}.Length);
 
-                {MarshallingContinuation}
+                {MarshalContinuation}
             }}
         ";
     }
