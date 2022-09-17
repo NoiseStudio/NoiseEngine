@@ -233,7 +233,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         else if (type is RecordDeclarationSyntax)
             builder.Append("record ");
         else
-            builder.Append("record struct ");
+            throw new NotImplementedException();
 
         builder.Append(type.Identifier.Text).AppendLine(" {");
     }
