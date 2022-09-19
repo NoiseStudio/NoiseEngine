@@ -42,6 +42,8 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
         }
     }
 
+    int IReadOnlyCollection<T>.Count => Length;
+
     /// <summary>
     /// Throws <see cref="InvalidOperationException"/>.
     /// </summary>
@@ -142,8 +144,6 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
             yield return this[i];
         }
     }
-
-    int IReadOnlyCollection<T>.Count => Length;
 
     IEnumerator IEnumerable.GetEnumerator() {
         return GetEnumerator();
