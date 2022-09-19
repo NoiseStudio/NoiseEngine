@@ -7,20 +7,20 @@ pub struct InteropReadOnlySpan<'a, T> {
     phantom_data: PhantomData<&'a T>
 }
 
-impl<'a, T> Into<&'a [T]> for InteropReadOnlySpan<'a, T> {
-    fn into(self) -> &'a [T] {
+impl<'a, T> From<InteropReadOnlySpan<'a, T>> for &'a [T] {
+    fn from(span: InteropReadOnlySpan<'a, T>) -> Self {
         unsafe {
-            slice::from_raw_parts(self.reference, self.length as usize)
+            slice::from_raw_parts(span.reference, span.length as usize)
         }
     }
 }
 
-impl<'a, T> Into<InteropReadOnlySpan<'a, T>> for &'a [T] {
-    fn into(self) -> InteropReadOnlySpan<'a, T> {
+impl<'a, T> From<&'a [T]> for InteropReadOnlySpan<'a, T> {
+    fn from(slice: &'a [T]) -> Self {
         InteropReadOnlySpan {
-            reference: self.as_ptr(),
-            length: self.len() as i32,
-            phantom_data: PhantomData,
+            reference: slice.as_ptr(),
+            length: slice.len() as i32,
+            phantom_data: PhantomData
         }
     }
 }
