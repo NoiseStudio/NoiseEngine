@@ -169,9 +169,10 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         foreach (ParameterSyntax parameter in method.ParameterList.Parameters) {
             string typeFullName = parameter.Type!.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
             string typeName = SplitWithGenerics(typeFullName, out string genericRawString);
+            bool isIn = parameter.Modifiers.Any(x => x.IsKind(SyntaxKind.InKeyword));
 
             if (!marshals.TryGetValue(typeName, out InteropMarshal? marshal)) {
-                parameters.Add(new MarshalParameter(parameter.Identifier.ValueText, typeFullName));
+                parameters.Add(new MarshalParameter(parameter.Identifier.ValueText, typeFullName, isIn));
                 continue;
             }
 
@@ -180,7 +181,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
             marshal.SetGenericRawString(string.Empty);
 
             parameters.Add(new MarshalParameter(
-                marshalledParameterName, CombineWithGenerics(marshal.UnmarshallingType, genericRawString)
+                marshalledParameterName, CombineWithGenerics(marshal.UnmarshallingType, genericRawString), isIn
             ));
 
             if (marshal.IsAdvanced)
@@ -251,6 +252,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         builder.Append('(');
 
         foreach (ParameterSyntax parameter in method.ParameterList.Parameters) {
+            builder.Append(parameter.Modifiers.Any(x => x.IsKind(SyntaxKind.InKeyword)) ? "in " : string.Empty);
             builder.Append(parameter.Type!.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString()).Append(' ');
             builder.Append(parameter.Identifier.ValueText);
             builder.Append(", ");
@@ -283,6 +285,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
 
         int i = 0;
         foreach (MarshalParameter parameter in parameters) {
+            builder.Append(parameter.IsIn ? "in " : string.Empty);
             builder.Append(parameter.MarshalledType);
             builder.Append(" v");
             builder.Append(i++);
@@ -325,6 +328,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         body.Append("__PInvoke(");
 
         foreach (MarshalParameter parameter in parameters) {
+            body.Append(parameter.IsIn ? "in " : string.Empty);
             body.Append(parameter.MarshalledParameterName);
             body.Append(", ");
         }
