@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Interop;
@@ -141,8 +142,13 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// <returns>An enumerator that can be used to iterate through the collection.</returns>
     public IEnumerator<T> GetEnumerator() {
         for (int i = 0; i < Length; i++) {
-            yield return this[i];
+            yield return GetWithoutChecks(i);
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe T GetWithoutChecks(int index) {
+        return *(pointer + index);
     }
 
     IEnumerator IEnumerable.GetEnumerator() {
