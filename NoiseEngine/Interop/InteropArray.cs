@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Interop;
@@ -7,7 +9,7 @@ namespace NoiseEngine.Interop;
 /// Unmanaged memory buffer used for passing data to and from the native library.
 /// </summary>
 /// <typeparam name="T">Type of the element.</typeparam>
-public struct InteropArray<T> : IDisposable where T : unmanaged {
+public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanaged {
 
     private unsafe T* pointer;
 
@@ -88,10 +90,10 @@ public struct InteropArray<T> : IDisposable where T : unmanaged {
     /// </summary>
     /// <param name="start">Start index of the span.</param>
     /// <returns>Span with the view of the memory held by this object.</returns>
-    /// <throws cref="IndexOutOfRangeException"><paramref name="start"/> is out of range.</throws>
+    /// <throws cref="ArgumentOutOfRangeException"><paramref name="start"/> is out of range.</throws>
     public unsafe Span<T> AsSpan(int start) {
         if (start < 0 || start > Length) {
-            throw new IndexOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(start));
         }
 
         return new Span<T>(pointer + start, Length - start);
@@ -104,12 +106,16 @@ public struct InteropArray<T> : IDisposable where T : unmanaged {
     /// <param name="start">Start index of the span.</param>
     /// <param name="length">Lenght of the span.</param>
     /// <returns>Span with the view of the memory held by this object.</returns>
-    /// <throws cref="IndexOutOfRangeException">
+    /// <throws cref="ArgumentOutOfRangeException">
     /// <paramref name="start"/> is out of range or <paramref name="length"/> is invalid.
     /// </throws>
     public unsafe Span<T> AsSpan(int start, int length) {
-        if (start < 0 || start > Length || length < 0 || length > Length - start) {
-            throw new IndexOutOfRangeException();
+        if (start < 0 || start > Length) {
+            throw new ArgumentOutOfRangeException(nameof(start));
+        }
+
+        if (length < 0 || length > Length - start) {
+            throw new ArgumentOutOfRangeException(nameof(length));
         }
 
         return new Span<T>(pointer + start, length);
@@ -125,6 +131,22 @@ public struct InteropArray<T> : IDisposable where T : unmanaged {
         Marshal.FreeHGlobal((IntPtr)pointer);
         pointer = null;
         Length = -1;
+    }
+
+    /// <summary>
+    /// Returns an enumerator that iterates through the collection.
+    /// </summary>
+    /// <returns>An enumerator that can be used to iterate through the collection.</returns>
+    public IEnumerator<T> GetEnumerator() {
+        for (int i = 0; i < Length; i++) {
+            yield return this[i];
+        }
+    }
+
+    int IReadOnlyCollection<T>.Count => Length;
+
+    IEnumerator IEnumerable.GetEnumerator() {
+        return GetEnumerator();
     }
 
 }
