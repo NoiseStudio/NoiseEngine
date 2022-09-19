@@ -148,7 +148,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe T GetWithoutChecks(int index) {
-        return *(pointer + index);
+        return pointer[index];
     }
 
     IEnumerator IEnumerable.GetEnumerator() {
