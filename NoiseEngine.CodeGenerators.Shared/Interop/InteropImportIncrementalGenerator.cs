@@ -328,7 +328,6 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
         body.Append("__PInvoke(");
 
         foreach (MarshalParameter parameter in parameters) {
-            body.Append(parameter.IsIn ? "in " : string.Empty);
             body.Append(parameter.MarshalledParameterName);
             body.Append(", ");
         }

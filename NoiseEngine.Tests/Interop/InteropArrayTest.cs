@@ -50,4 +50,34 @@ public partial class InteropArrayTest {
         Assert.Equal(value, interopData[index]);
     }
 
+    [Theory]
+    [InlineData(42)]
+    public void CreateFromLength(int length) {
+        using InteropArray<int> array = new InteropArray<int>(length);
+        Assert.Equal(length, array.Length);
+    }
+
+    [Theory]
+    [InlineData(new int[] { 1, 2 })]
+    public void CreateFromArray(int[] data) {
+        using InteropArray<int> array = new InteropArray<int>(data);
+        Assert.Equal(data, array.AsSpan().ToArray());
+    }
+
+    [Theory]
+    [InlineData(new int[] { 1, 2 })]
+    public void CreateFromSpan(int[] data) {
+        using InteropArray<int> array = new InteropArray<int>(data.AsSpan());
+        Assert.Equal(data, array.AsSpan().ToArray());
+    }
+
+    [Theory]
+    [InlineData(new int[] { 1, 2, 3, 4 }, 1, 2)]
+    public void AsSpan(int[] data, int start, int length) {
+        using InteropArray<int> array = new InteropArray<int>(data);
+        Span<int> span = array.AsSpan(start, length);
+
+        Assert.Equal(data.AsSpan(start, length).ToArray(), span.ToArray());
+    }
+
 }
