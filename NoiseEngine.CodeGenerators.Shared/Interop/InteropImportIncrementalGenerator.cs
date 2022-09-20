@@ -41,7 +41,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
     }
 
     private static string CombineWithGenerics(string name, string genericRawString) {
-        return $"{name}<{genericRawString}>";
+        return string.IsNullOrEmpty(genericRawString) ? name : $"{name}<{genericRawString}>";
     }
 
     private static void AddModifiers(StringBuilder builder, SyntaxTokenList modifiers, string? additional) {
