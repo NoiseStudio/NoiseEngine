@@ -7,27 +7,27 @@ pub struct InteropSpan<'a, T> {
     phantom_data: PhantomData<&'a mut T>,
 }
 
-impl<'a, T> Into<&'a mut [T]> for InteropSpan<'a, T> {
-    fn into(self) -> &'a mut[T] {
+impl<'a, T> From<InteropSpan<'a, T>> for &'a mut [T] {
+    fn from(span: InteropSpan<'a, T>) -> Self {
         unsafe {
-            slice::from_raw_parts_mut(self.reference, self.length as usize)
+            slice::from_raw_parts_mut(span.reference, span.length as usize)
         }
     }
 }
 
-impl<'a, T> Into<&'a [T]> for InteropSpan<'a, T> {
-    fn into(self) -> &'a [T] {
+impl<'a, T> From<InteropSpan<'a, T>> for &'a [T] {
+    fn from(span: InteropSpan<'a, T>) -> Self {
         unsafe {
-            slice::from_raw_parts(self.reference, self.length as usize)
+            slice::from_raw_parts(span.reference, span.length as usize)
         }
     }
 }
 
-impl<'a, T> Into<InteropSpan<'a, T>> for &'a mut [T] {
-    fn into(self) -> InteropSpan<'a, T> {
+impl<'a, T> From<&'a mut [T]> for InteropSpan<'a, T> {
+    fn from(slice: &'a mut [T]) -> Self {
         InteropSpan {
-            reference: self.as_mut_ptr(),
-            length: self.len() as i32,
+            reference: slice.as_mut_ptr(),
+            length: slice.len() as i32,
             phantom_data: PhantomData,
         }
     }
