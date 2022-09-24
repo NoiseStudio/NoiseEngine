@@ -1,5 +1,7 @@
 use std::{mem, slice};
 
+use super::interop_allocator::{self, InteropAllocator};
+
 #[repr(C)]
 pub struct InteropArray<T> {
     ptr: *mut T,
@@ -8,9 +10,12 @@ pub struct InteropArray<T> {
 
 impl<T> InteropArray<T> {
     pub fn new(length: i32) -> InteropArray<T> {
-        let mut vec = Vec::<T>::with_capacity(length as usize);
-        let ptr = vec.as_mut_ptr();
-        mem::forget(vec);
+        let size = (length as usize) * mem::size_of::<T>();
+        let ptr;
+
+        unsafe {
+            ptr = interop_allocator::alloc(size) as *mut T;
+        }
 
         InteropArray {
             ptr,
@@ -21,16 +26,16 @@ impl<T> InteropArray<T> {
 
 impl<T> Drop for InteropArray<T> {
     fn drop(&mut self) {
-        unsafe {
-            if !self.ptr.is_null() {
-                Vec::from_raw_parts(self.ptr, self.length as usize, self.length as usize);
+        if !self.ptr.is_null() {
+            unsafe {
+                interop_allocator::dealloc(self.ptr as *mut u8);
             }
         }
     }
 }
 
-impl<T> From<Vec<T>> for InteropArray<T> {
-    fn from(mut vec: Vec<T>) -> InteropArray<T> {
+impl<T> From<Vec<T, InteropAllocator>> for InteropArray<T> {
+    fn from(mut vec: Vec<T, InteropAllocator>) -> InteropArray<T> {
         vec.shrink_to_fit();
         let ptr = vec.as_mut_ptr();
         let length = vec.len() as i32;
@@ -43,18 +48,14 @@ impl<T> From<Vec<T>> for InteropArray<T> {
     }
 }
 
-impl<T: Clone> From<&[T]> for InteropArray<T> {
-    fn from(slice: &[T]) -> InteropArray<T> {
-        slice.to_vec().into()
-    }
-}
-
-impl<T> From<InteropArray<T>> for Vec<T> {
-    fn from(array: InteropArray<T>) -> Vec<T> {
+impl<T> From<InteropArray<T>> for Vec<T, InteropAllocator> {
+    fn from(array: InteropArray<T>) -> Vec<T, InteropAllocator> {
         let vec;
-
+        
         unsafe {
-            vec = Vec::from_raw_parts(array.ptr, array.length as usize, array.length as usize);
+            vec = Vec::from_raw_parts_in(
+                array.ptr, array.length as usize, array.length as usize, InteropAllocator
+            );
         }
 
         mem::forget(array);

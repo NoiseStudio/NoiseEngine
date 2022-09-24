@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NoiseEngine": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
