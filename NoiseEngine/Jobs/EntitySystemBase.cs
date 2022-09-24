@@ -14,6 +14,7 @@ public abstract class EntitySystemBase : IDisposable {
     internal double cycleTimeWithDelta;
     internal uint cyclesCount;
 
+    private readonly object workLocker = new object();
     private readonly ManualResetEvent workResetEvent = new ManualResetEvent(true);
     private readonly ConcurrentList<EntitySystemBase> dependencies = new ConcurrentList<EntitySystemBase>();
     private readonly Dictionary<EntitySystemBase, uint> dependenciesCyclesCount = new Dictionary<EntitySystemBase, uint>();
@@ -297,7 +298,7 @@ public abstract class EntitySystemBase : IDisposable {
     /// </summary>
     /// <param name="world"><see cref="EntityWorld"/> to initialize.</param>
     /// <param name="schedule"><see cref="EntitySchedule"/> managing this <see cref="EntitySystem"/>.</param>
-    /// <param name="cycleTime">Duration in miliseconds of the system execution cycle by schedule.
+    /// <param name="cycleTime">Duration in milliseconds of the system execution cycle by schedule.
     /// When null, the schedule is not used.</param>
     /// <exception cref="InvalidOperationException"><see cref="EntityWorld"/> already contains
     /// this <see cref="EntitySystemBase"/>.</exception>
@@ -365,18 +366,20 @@ public abstract class EntitySystemBase : IDisposable {
     }
 
     internal void OrderWork() {
-        if (Interlocked.Increment(ref ongoingWork) == 1) {
-            workResetEvent.Reset();
-            isWorking = true;
-        }
+        if (Interlocked.Increment(ref ongoingWork) != 1)
+            return;
+
+        isWorking = true;
+        TryResetWorkResetEvent();
     }
 
     internal void ReleaseWork() {
-        if (Interlocked.Decrement(ref ongoingWork) == 0) {
-            InternalLateUpdate();
-            workResetEvent.Set();
-            isWorking = false;
-        }
+        if (Interlocked.Decrement(ref ongoingWork) != 0)
+            return;
+
+        InternalLateUpdate();
+        isWorking = false;
+        TrySetWorkResetEvent();
     }
 
     internal bool CheckIfCanExecuteAndOrderWork() {
@@ -385,13 +388,15 @@ public abstract class EntitySystemBase : IDisposable {
 
         foreach (EntitySystemBase system in dependencies) {
             if (system.IsWorking || system.cyclesCount == dependenciesCyclesCount[system]) {
-                isWorking.Exchange(false);
+                isWorking = false;
+                TrySetWorkResetEvent();
                 return false;
             }
         }
         foreach (EntitySystemBase system in blockadeDependencies) {
             if (system.IsWorking) {
-                isWorking.Exchange(false);
+                isWorking = false;
+                TrySetWorkResetEvent();
                 return false;
             }
         }
@@ -465,6 +470,20 @@ public abstract class EntitySystemBase : IDisposable {
         if (schedule == null)
             throw new InvalidOperationException($"{nameof(EntitySchedule)} assigned to this {ToString()} is null.");
         return schedule;
+    }
+
+    private void TryResetWorkResetEvent() {
+        lock (workLocker) {
+            if (isWorking)
+                workResetEvent.Reset();
+        }
+    }
+
+    private void TrySetWorkResetEvent() {
+        lock (workLocker) {
+            if (!isWorking)
+                workResetEvent.Set();
+        }
     }
 
 }
