@@ -1,5 +1,7 @@
 use std::{mem, slice};
 
+use super::interop_allocator;
+
 #[repr(C)]
 pub struct InteropArray<T> {
     ptr: *mut T,
@@ -8,9 +10,12 @@ pub struct InteropArray<T> {
 
 impl<T> InteropArray<T> {
     pub fn new(length: i32) -> InteropArray<T> {
-        let mut vec = Vec::<T>::with_capacity(length as usize);
-        let ptr = vec.as_mut_ptr();
-        mem::forget(vec);
+        let size = (length as usize) * mem::size_of::<T>();
+        let ptr;
+
+        unsafe {
+            ptr = interop_allocator::alloc(size) as *mut T;
+        }
 
         InteropArray {
             ptr,
@@ -21,9 +26,9 @@ impl<T> InteropArray<T> {
 
 impl<T> Drop for InteropArray<T> {
     fn drop(&mut self) {
-        unsafe {
-            if !self.ptr.is_null() {
-                Vec::from_raw_parts(self.ptr, self.length as usize, self.length as usize);
+        if !self.ptr.is_null() {
+            unsafe {
+                interop_allocator::dealloc(self.ptr as *mut u8);
             }
         }
     }
@@ -40,12 +45,6 @@ impl<T> From<Vec<T>> for InteropArray<T> {
             ptr: ptr as *mut T,
             length,
         }
-    }
-}
-
-impl<T: Clone> From<&[T]> for InteropArray<T> {
-    fn from(slice: &[T]) -> InteropArray<T> {
-        slice.to_vec().into()
     }
 }
 

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NoiseEngine.Interop;
+using System;
 using System.Linq;
-using NoiseEngine.Interop;
 
 namespace NoiseEngine.Tests.Interop;
 
@@ -27,7 +27,7 @@ public partial class InteropArrayTest {
     }
 
     [Theory]
-    [InlineData(new int[] {1, 2})]
+    [InlineData(new int[] { 1, 2 })]
     public void UnmanagedDestroy(int[] array) {
         InteropArray<int> interopArray = new InteropArray<int>(array);
         InteropUnmanagedDestroy(interopArray);
