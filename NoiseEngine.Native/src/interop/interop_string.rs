@@ -26,8 +26,10 @@ impl From<String> for InteropString {
 
 impl From<InteropString> for String {
     fn from(interop_string: InteropString) -> String {
-        // Unwrap is safe because the string is guaranteed to be valid UTF-8.
-        String::from_utf8(interop_string.array.into()).unwrap()
+        // SAFETY: String is guaranteed to be valid UTF-8.
+        unsafe {
+            String::from_utf8_unchecked(interop_string.array.into())
+        }
     }
 }
 

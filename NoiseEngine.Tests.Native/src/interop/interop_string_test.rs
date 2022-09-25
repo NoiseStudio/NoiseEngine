@@ -9,6 +9,11 @@ extern "C" fn interop_interop_string_test_unmanaged_create() -> InteropString {
 }
 
 #[no_mangle]
+extern "C" fn interop_interop_string_test_unmanaged_create_from_string() -> InteropString {
+    TEST_STRING.to_string().into()
+}
+
+#[no_mangle]
 extern "C" fn interop_interop_string_test_unmanaged_destroy(_string: InteropString) {
 }
 

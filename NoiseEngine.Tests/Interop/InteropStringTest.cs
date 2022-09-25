@@ -10,6 +10,9 @@ public partial class InteropStringTest {
     [InteropImport("interop_interop_string_test_unmanaged_create", InteropConstants.DllName)]
     private static partial string InteropUnmanagedCreate();
 
+    [InteropImport("interop_interop_string_test_unmanaged_create_from_string", InteropConstants.DllName)]
+    private static partial string InteropUnmanagedCreateFromString();
+
     [InteropImport("interop_interop_string_test_unmanaged_destroy", InteropConstants.DllName)]
     private static partial void InteropUnmanagedDestroy(string s);
 
@@ -25,6 +28,12 @@ public partial class InteropStringTest {
     [Fact]
     public void UnmanagedCreate() {
         string s = InteropUnmanagedCreate();
+        Assert.Equal(TestString, s);
+    }
+
+    [Fact]
+    public void UnmanagedCreateFromString() {
+        string s = InteropUnmanagedCreateFromString();
         Assert.Equal(TestString, s);
     }
 
