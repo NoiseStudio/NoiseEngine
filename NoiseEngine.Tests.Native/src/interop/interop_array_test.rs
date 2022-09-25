@@ -15,7 +15,23 @@ extern "C" fn interop_interop_array_test_unmanaged_create(length: i32) -> Intero
 }
 
 #[no_mangle]
+extern "C" fn interop_interop_array_test_unmanaged_create_from_vec(length: i32) -> InteropArray<i32> {
+    let mut vec = Vec::with_capacity(length as usize);
+
+    for i in 0..length {
+        vec.push(i);
+    }
+
+    vec.into()
+}
+
+#[no_mangle]
 extern "C" fn interop_interop_array_test_unmanaged_destroy(_array: InteropArray<i32>) {
+}
+
+#[no_mangle]
+extern "C" fn interop_interop_array_test_unmanaged_destroy_vec(array: InteropArray<i32>) {
+    let _vec: Vec::<i32> = array.into();
 }
 
 #[no_mangle]
