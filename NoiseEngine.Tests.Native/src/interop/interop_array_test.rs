@@ -29,3 +29,13 @@ extern "C" fn interop_interop_array_test_unmanaged_write(array: &mut InteropArra
     let slice: &mut [i32] = array.into();
     slice[index as usize] = value;
 }
+
+#[no_mangle]
+extern "C" fn interop_interop_array_test_unmanaged_as_slice(array: InteropArray<i32>) -> InteropArray<i32> {
+    Vec::from(array.as_slice()).into()
+}
+
+#[no_mangle]
+extern "C" fn interop_interop_array_test_unmanaged_as_mut_slice(mut array: InteropArray<i32>) -> InteropArray<i32> {
+    Vec::from(array.as_mut_slice()).into()
+}

@@ -18,6 +18,12 @@ public partial class InteropArrayTest {
     [InteropImport("interop_interop_array_test_unmanaged_write", InteropConstants.DllName)]
     private static partial void InteropUnmanagedWrite(in InteropArray<int> span, int index, int value);
 
+    [InteropImport("interop_interop_array_test_unmanaged_as_slice", InteropConstants.DllName)]
+    private static partial InteropArray<int> InteropUnmanagedAsSlice(InteropArray<int> array);
+
+    [InteropImport("interop_interop_array_test_unmanaged_as_mut_slice", InteropConstants.DllName)]
+    private static partial InteropArray<int> InteropUnmanagedAsMutSlice(InteropArray<int> array);
+
     [Theory]
     [InlineData(42)]
     public void UnmanagedCreate(int length) {
@@ -48,6 +54,18 @@ public partial class InteropArrayTest {
         using InteropArray<int> interopData = new InteropArray<int>(data);
         InteropUnmanagedWrite(interopData, index, value);
         Assert.Equal(value, interopData[index]);
+    }
+
+    [Theory]
+    [InlineData(new int[] { 1, 2 })]
+    public void UnmanagedAsSlice(int[] array) {
+        Assert.Equal(array, InteropUnmanagedAsSlice(new InteropArray<int>(array)));
+    }
+
+    [Theory]
+    [InlineData(new int[] { 1, 2 })]
+    public void UnmanagedAsMutSlice(int[] array) {
+        Assert.Equal(array, InteropUnmanagedAsMutSlice(new InteropArray<int>(array)));
     }
 
     [Theory]

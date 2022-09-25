@@ -23,6 +23,14 @@ impl<T> InteropArray<T> {
         }
     }
 
+    pub fn as_slice(&self) -> &[T] {
+        self.into()
+    }
+
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self.into()
+    }
+
     /// # Safety
     /// The caller must ensure that the pointer is valid for the specified length and that the
     /// ownership of the pointer is transferred.
