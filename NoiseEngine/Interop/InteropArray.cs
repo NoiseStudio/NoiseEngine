@@ -10,6 +10,7 @@ namespace NoiseEngine.Interop;
 /// Unmanaged memory buffer used for passing data to and from the native library.
 /// </summary>
 /// <typeparam name="T">Type of the element.</typeparam>
+[StructLayout(LayoutKind.Sequential)]
 public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanaged {
 
     private unsafe T* pointer;
