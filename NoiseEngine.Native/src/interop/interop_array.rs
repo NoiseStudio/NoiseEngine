@@ -1,6 +1,6 @@
 use std::{mem, slice};
 
-use super::interop_allocator::{self, InteropAllocator};
+use super::interop_allocator;
 
 #[repr(C)]
 pub struct InteropArray<T> {
@@ -34,8 +34,8 @@ impl<T> Drop for InteropArray<T> {
     }
 }
 
-impl<T> From<Vec<T, InteropAllocator>> for InteropArray<T> {
-    fn from(mut vec: Vec<T, InteropAllocator>) -> InteropArray<T> {
+impl<T> From<Vec<T>> for InteropArray<T> {
+    fn from(mut vec: Vec<T>) -> InteropArray<T> {
         vec.shrink_to_fit();
         let ptr = vec.as_mut_ptr();
         let length = vec.len() as i32;
@@ -48,14 +48,12 @@ impl<T> From<Vec<T, InteropAllocator>> for InteropArray<T> {
     }
 }
 
-impl<T> From<InteropArray<T>> for Vec<T, InteropAllocator> {
-    fn from(array: InteropArray<T>) -> Vec<T, InteropAllocator> {
+impl<T> From<InteropArray<T>> for Vec<T> {
+    fn from(array: InteropArray<T>) -> Vec<T> {
         let vec;
         
         unsafe {
-            vec = Vec::from_raw_parts_in(
-                array.ptr, array.length as usize, array.length as usize, InteropAllocator
-            );
+            vec = Vec::from_raw_parts(array.ptr, array.length as usize, array.length as usize);
         }
 
         mem::forget(array);
