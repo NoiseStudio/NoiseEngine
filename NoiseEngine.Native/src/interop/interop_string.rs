@@ -1,3 +1,5 @@
+use std::mem;
+
 use super::interop_array::InteropArray;
 
 #[repr(C)]
@@ -7,8 +9,17 @@ pub struct InteropString {
 
 impl From<String> for InteropString {
     fn from(string: String) -> InteropString {
+        let ptr = string.as_ptr() as *mut u8;
+        let length = string.len() as i32;
+
+        mem::forget(string);
+
+        let array = unsafe {
+            InteropArray::from_raw_parts(ptr, length)
+        };
+
         InteropString {
-            array: string.into_bytes().into(),
+            array,
         }
     }
 }
@@ -23,7 +34,7 @@ impl From<InteropString> for String {
 impl From<&str> for InteropString {
     fn from(string: &str) -> InteropString {
         InteropString {
-            array: string.as_bytes().into(),
+            array: Vec::from(string.as_bytes()).into(),
         }
     }
 }
