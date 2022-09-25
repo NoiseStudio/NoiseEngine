@@ -27,13 +27,13 @@ public class EntitySystemBaseTest {
 
         Assert.Equal(0, entity.Get<TestComponentA>(world).A);
 
-        system.TryExecuteParallelAndWait();
+        Assert.True(system.TryExecuteParallelAndWait());
         Assert.Equal(1, entity.Get<TestComponentA>(world).A);
 
         system.Enabled = false;
         system.Enabled = true;
 
-        system.TryExecuteParallelAndWait();
+        Assert.True(system.TryExecuteParallelAndWait());
         Assert.Equal(105, entity.Get<TestComponentA>(world).A);
     }
 
