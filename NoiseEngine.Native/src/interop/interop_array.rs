@@ -51,7 +51,7 @@ impl<T> From<Vec<T>> for InteropArray<T> {
 impl<T> From<InteropArray<T>> for Vec<T> {
     fn from(array: InteropArray<T>) -> Vec<T> {
         let vec;
-        
+
         unsafe {
             vec = Vec::from_raw_parts(array.ptr, array.length as usize, array.length as usize);
         }
