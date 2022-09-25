@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace NoiseEngine.Interop;
+namespace NoiseEngine.Interop.InteropMarshalling;
 
 [StructLayout(LayoutKind.Sequential)]
 internal readonly record struct InteropBool {

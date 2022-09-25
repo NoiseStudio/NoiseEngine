@@ -4,7 +4,7 @@ internal class BoolMarshal : InteropMarshal {
 
     public override string MarshallingType => "bool";
 
-    public override string UnmarshallingType => "NoiseEngine.Interop.InteropBool";
+    public override string UnmarshallingType => "NoiseEngine.Interop.InteropMarshalling.InteropBool";
 
     public override string Marshal(string unmarshalledParameterName, out string marshalledParameterName) {
         marshalledParameterName = CreateUniqueVariableName();
