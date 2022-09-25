@@ -4,7 +4,7 @@ use noise_engine_native::interop::interop_array::InteropArray;
 
 #[no_mangle]
 extern "C" fn interop_interop_array_test_unmanaged_create(length: i32) -> InteropArray<i32> {
-    let mut array = InteropArray::<i32>::new(length);
+    let mut array = InteropArray::new(length);
     let slice: &mut [i32] = array.borrow_mut().into();
 
     for (index, value) in slice.into_iter().enumerate() {

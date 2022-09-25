@@ -22,6 +22,16 @@ impl<T> InteropArray<T> {
             length,
         }
     }
+
+    /// # Safety
+    /// The caller must ensure that the pointer is valid for the specified length and that the
+    /// ownership of the pointer is transferred.
+    pub unsafe fn from_raw_parts(ptr: *mut T, length: i32) -> InteropArray<T> {
+        InteropArray {
+            ptr,
+            length,
+        }
+    }
 }
 
 impl<T> Drop for InteropArray<T> {

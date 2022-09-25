@@ -41,7 +41,7 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
     }
 
     private static string CombineWithGenerics(string name, string genericRawString) {
-        return $"{name}<{genericRawString}>";
+        return string.IsNullOrEmpty(genericRawString) ? name : $"{name}<{genericRawString}>";
     }
 
     private static void AddModifiers(StringBuilder builder, SyntaxTokenList modifiers, string? additional) {
@@ -116,7 +116,9 @@ public class InteropImportIncrementalGenerator : IIncrementalGenerator {
 
         MarshalParameters(compilation, method, parameters, body, advancedBody);
         MarshalOutputs(compilation, method, outputs, outputBody);
-        bool hasBody = body.Length > 0 || advancedBody.ToString() != InteropMarshal.MarshalContinuation;
+
+        bool hasBody =
+            body.Length > 0 || outputBody.Length > 0 || advancedBody.ToString() != InteropMarshal.MarshalContinuation;
 
         // Namespace and type declaration.
         GenerateNamespaceWithType(builder, method);
