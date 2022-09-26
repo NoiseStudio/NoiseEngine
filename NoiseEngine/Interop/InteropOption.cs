@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace NoiseEngine.Interop;
 
 [StructLayout(LayoutKind.Sequential)]
-internal readonly record struct InteropOption<T> : IEquatable<InteropOption<T>> where T : unmanaged {
+internal readonly record struct InteropOption<T> where T : unmanaged {
 
     private readonly InteropBool hasValue;
     private readonly T value;
