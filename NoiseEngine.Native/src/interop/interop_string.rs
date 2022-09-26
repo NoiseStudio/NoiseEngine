@@ -1,6 +1,6 @@
 use std::mem;
 
-use super::interop_array::InteropArray;
+use super::{interop_array::InteropArray, result_errors::result_error::ResultError, prelude::InteropResult};
 
 #[repr(C)]
 pub struct InteropString {
@@ -37,6 +37,27 @@ impl From<&str> for InteropString {
     fn from(string: &str) -> InteropString {
         InteropString {
             array: Vec::from(string.as_bytes()).into(),
+        }
+    }
+}
+
+impl ResultError for InteropString {
+}
+
+impl<T> From<Result<T, String>> for InteropResult<T, InteropString> {
+    fn from(result: Result<T, String>) -> Self {
+        match result {
+            Ok(ok) => InteropResult::new(ok),
+            Err(err) => InteropResult::new_err(err.into())
+        }
+    }
+}
+
+impl<T> From<Result<T, &str>> for InteropResult<T, InteropString> {
+    fn from(result: Result<T, &str>) -> Self {
+        match result {
+            Ok(ok) => InteropResult::new(ok),
+            Err(err) => InteropResult::new_err(err.into())
         }
     }
 }
