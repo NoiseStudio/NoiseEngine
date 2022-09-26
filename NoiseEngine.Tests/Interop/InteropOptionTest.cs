@@ -70,18 +70,4 @@ public partial class InteropOptionTest {
         Assert.False(optionA.Equals(optionB));
     }
 
-    [Fact]
-    public void EqualsObject() {
-        InteropOption<int> optionA = 1864;
-        InteropOption<int> optionB = 1864;
-
-        Assert.Equal(optionA, (object)optionB);
-
-        optionB = null;
-        Assert.NotEqual(optionA, (object)optionB);
-
-        InteropOption<float> optionC = 18.64f;
-        Assert.NotEqual(optionA, (object)optionC);
-    }
-
 }
