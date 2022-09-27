@@ -1,15 +1,15 @@
 use std::mem::{ManuallyDrop, MaybeUninit};
 
-use super::result_errors::result_error::ResultError;
+use super::result_errors::result_error_trait::ResultErrorTrait;
 
 #[repr(C)]
-pub struct InteropResult<T, E: ResultError> {
+pub struct InteropResult<T, E: ResultErrorTrait> {
     is_ok: bool,
     ok: MaybeUninit<ManuallyDrop<T>>,
     err: MaybeUninit<ManuallyDrop<E>>
 }
 
-impl<T, E: ResultError> InteropResult<T, E> {
+impl<T, E: ResultErrorTrait> InteropResult<T, E> {
     pub fn new(value: T) -> InteropResult<T, E> {
         InteropResult {
             is_ok: true,
@@ -18,7 +18,7 @@ impl<T, E: ResultError> InteropResult<T, E> {
         }
     }
 
-    pub fn new_err(err: E) -> InteropResult<T, E> {
+    pub fn with_err(err: E) -> InteropResult<T, E> {
         InteropResult {
             is_ok: false,
             ok: MaybeUninit::uninit(),

@@ -32,7 +32,7 @@ internal readonly record struct InteropResult<TValue, TError>
             disposable.Dispose();
 
         throw new InvalidOperationException(
-            $"Unable to unwrap error from {nameof(InteropResult<TValue, TError>)} which is not ok.", exception);
+            $"Unable to unwrap value from {nameof(InteropResult<TValue, TError>)} which is not ok.", exception);
     }
 
     public TError UnwrapError() {
