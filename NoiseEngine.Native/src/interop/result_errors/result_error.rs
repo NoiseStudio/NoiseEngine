@@ -6,9 +6,9 @@ use super::{result_error_trait::ResultErrorTrait, result_error_kind::ResultError
 
 #[repr(C)]
 pub struct ResultError {
-    kind: ResultErrorKind,
     message: InteropString,
-    source_pointer: *const ResultError
+    source_pointer: *const ResultError,
+    kind: ResultErrorKind
 }
 
 impl ResultError {
@@ -26,9 +26,9 @@ impl ResultError {
         };
 
         ResultError {
-            kind,
             message: err.to_string().into(),
-            source_pointer
+            source_pointer,
+            kind
         }
     }
 }

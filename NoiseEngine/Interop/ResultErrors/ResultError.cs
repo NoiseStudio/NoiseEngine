@@ -4,11 +4,21 @@ using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Interop.ResultErrors;
 
+[StructLayout(LayoutKind.Sequential)]
 internal record struct ResultError : IDisposable, IResultError {
 
-    private readonly ResultErrorKind kind;
     private readonly InteropString message;
     private IntPtr sourcePointer;
+
+    public ResultErrorKind Kind { get; }
+    public string Message => message.ToString();
+    public ResultError? InnerError {
+        get {
+            if (sourcePointer == IntPtr.Zero)
+                return null;
+            return Marshal.PtrToStructure<ResultError>(sourcePointer);
+        }
+    }
 
     public void Dispose() {
         message.Dispose();
@@ -30,8 +40,8 @@ internal record struct ResultError : IDisposable, IResultError {
         else
             innerException = null;
 
-        return kind switch {
-            ResultErrorKind.Universal => new Exception(message.ToString(), innerException),
+        return Kind switch {
+            ResultErrorKind.Universal => new Exception(Message, innerException),
             _ => throw new NotImplementedException()
         };
     }
