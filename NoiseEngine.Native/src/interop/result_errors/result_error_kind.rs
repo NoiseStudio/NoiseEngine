@@ -1,30 +1,12 @@
-use std::{collections::HashMap, any::TypeId, error::Error, str::ParseBoolError};
-
-lazy_static! {
-    static ref MAP: HashMap<TypeId, ResultErrorKind> = {
-        let mut map = HashMap::new();
-
-        map.insert(TypeId::of::<ParseBoolError>(), ResultErrorKind::Format);
-
-        map
-    };
-}
+use std::error::Error;
 
 #[repr(C)]
-#[derive(Clone)]
 pub enum ResultErrorKind {
-    Universal = 0,
-    Format = 1
+    Universal = 0
 }
 
 impl ResultErrorKind {
-    pub fn from_err<T: Error + 'static>() -> ResultErrorKind {
-        match MAP.get(&TypeId::of::<T>()) {
-            Some(s) => *s,
-            None => ResultErrorKind::Universal
-        }
+    pub fn from_err(_err: &(dyn Error + 'static)) -> ResultErrorKind {
+        ResultErrorKind::Universal
     }
-}
-
-impl Copy for ResultErrorKind {
 }

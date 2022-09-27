@@ -12,22 +12,21 @@ pub struct ResultError {
 }
 
 impl ResultError {
-    fn new<T: Error + 'static>(err: &T) -> ResultError {
+    pub fn new(err: &(dyn Error + 'static)) -> ResultError {
+        Self::with_kind(err, ResultErrorKind::from_err(err))
+    }
+
+    pub fn with_kind(err: &(dyn Error + 'static), kind: ResultErrorKind) -> ResultError {
         let source_pointer = match err.source() {
             Some(s) => {
-                match s.downcast_ref::<T>() {
-                    Some(r) => {
-                        let b = Box::new(ResultError::new(r));
-                        Box::into_raw(b)
-                    }
-                    None => ptr::null()
-                }
+                let b = Box::new(ResultError::new(s));
+                Box::into_raw(b)
             }
             None => ptr::null()
         };
 
         ResultError {
-            kind: ResultErrorKind::from_err::<T>(),
+            kind,
             message: err.to_string().into(),
             source_pointer
         }

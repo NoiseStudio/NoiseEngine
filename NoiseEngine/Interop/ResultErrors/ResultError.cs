@@ -32,7 +32,6 @@ internal record struct ResultError : IDisposable, IResultError {
 
         return kind switch {
             ResultErrorKind.Universal => new Exception(message.ToString(), innerException),
-            ResultErrorKind.Format => new FormatException(message.ToString(), innerException),
             _ => throw new NotImplementedException()
         };
     }
