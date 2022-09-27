@@ -4,3 +4,4 @@ use interop::interop_allocator::InteropAllocator;
 static GLOBAL_ALLOCATOR: InteropAllocator = InteropAllocator;
 
 pub mod interop;
+pub mod logging;
