@@ -7,7 +7,7 @@ namespace NoiseEngine.Interop.ResultErrors;
 [StructLayout(LayoutKind.Sequential)]
 internal record struct ResultError : IDisposable, IResultError {
 
-    private readonly InteropString message;
+    private InteropString message;
     private IntPtr sourcePointer;
 
     public ResultErrorKind Kind { get; }

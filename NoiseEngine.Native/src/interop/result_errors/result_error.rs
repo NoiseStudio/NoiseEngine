@@ -2,7 +2,7 @@ use std::{error::Error, ptr};
 
 use crate::interop::prelude::{InteropString, InteropResult};
 
-use super::{result_error_trait::ResultErrorTrait, result_error_kind::ResultErrorKind};
+use super::result_error_kind::ResultErrorKind;
 
 #[repr(C)]
 pub struct ResultError {
@@ -33,14 +33,20 @@ impl ResultError {
     }
 }
 
-impl ResultErrorTrait for ResultError {
-}
-
-impl<T, E: Error + 'static> From<Result<T, E>> for InteropResult<T, ResultError> {
+impl<T, E: Error + 'static> From<Result<T, E>> for InteropResult<T> {
     fn from(result: Result<T, E>) -> Self {
         match result {
-            Ok(ok) => InteropResult::new(ok),
+            Ok(ok) => InteropResult::with_ok(ok),
             Err(err) => InteropResult::with_err(ResultError::new(&err))
+        }
+    }
+}
+
+impl<T> From<Result<T, ResultError>> for InteropResult<T> {
+    fn from(result: Result<T, ResultError>) -> Self {
+        match result {
+            Ok(ok) => InteropResult::with_ok(ok),
+            Err(err) => InteropResult::with_err(err)
         }
     }
 }

@@ -6,44 +6,42 @@ using System.Runtime.InteropServices;
 namespace NoiseEngine.Interop;
 
 [StructLayout(LayoutKind.Sequential)]
-internal readonly record struct InteropResult<TValue, TError>
-    where TValue : unmanaged
-    where TError : unmanaged, IResultError
-{
+internal record struct InteropResult<T> where T : unmanaged {
 
     private readonly InteropBool isOk;
-    private readonly TValue value;
-    private readonly TError error;
+    private T value;
+    private ResultError error;
 
     public bool IsOk => isOk;
 
-    public bool TryGetValue(out TValue value, out TError error) {
+    public bool TryGetValue(out T value, out ResultError error) {
         value = this.value;
         error = this.error;
         return IsOk;
     }
 
-    public TValue Unwrap() {
+    public T Unwrap() {
         if (IsOk)
             return value;
 
         Exception exception = error.ToException();
-        if (error is IDisposable disposable)
-            disposable.Dispose();
+        error.Dispose();
 
         throw new InvalidOperationException(
-            $"Unable to unwrap value from {nameof(InteropResult<TValue, TError>)} which is not ok.", exception);
+            $"Unable to unwrap value from {nameof(InteropResult<T>)} which is not ok.", exception);
     }
 
-    public TError UnwrapError() {
+    public ResultError UnwrapError() {
         if (!IsOk)
             return error;
 
-        if (value is IDisposable disposable)
+        if (value is IDisposable disposable) {
             disposable.Dispose();
+            value = (T)disposable;
+        }
 
         throw new InvalidOperationException(
-            $"Unable to unwrap error from {nameof(InteropResult<TValue, TError>)} which is ok.");
+            $"Unable to unwrap error from {nameof(InteropResult<T>)} which is ok.");
     }
 
 }
