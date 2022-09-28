@@ -1,6 +1,6 @@
 use std::{error::Error, ptr};
 
-use crate::interop::prelude::{InteropString, InteropResult};
+use crate::interop::prelude::InteropString;
 
 use super::result_error_kind::ResultErrorKind;
 
@@ -13,7 +13,7 @@ pub struct ResultError {
 
 impl ResultError {
     pub fn new(err: &(dyn Error + 'static)) -> ResultError {
-        Self::with_kind(err, ResultErrorKind::from_err(err))
+        Self::with_kind(err, ResultErrorKind::from(err))
     }
 
     pub fn with_kind(err: &(dyn Error + 'static), kind: ResultErrorKind) -> ResultError {
@@ -33,20 +33,12 @@ impl ResultError {
     }
 }
 
-impl<T, E: Error + 'static> From<Result<T, E>> for InteropResult<T> {
-    fn from(result: Result<T, E>) -> Self {
-        match result {
-            Ok(ok) => InteropResult::with_ok(ok),
-            Err(err) => InteropResult::with_err(ResultError::new(&err))
-        }
-    }
-}
-
-impl<T> From<Result<T, ResultError>> for InteropResult<T> {
-    fn from(result: Result<T, ResultError>) -> Self {
-        match result {
-            Ok(ok) => InteropResult::with_ok(ok),
-            Err(err) => InteropResult::with_err(err)
+impl Drop for ResultError {
+    fn drop(&mut self) {
+        if !self.source_pointer.is_null() {
+            unsafe {
+                Box::from_raw(self.source_pointer as *mut ResultError)
+            };
         }
     }
 }

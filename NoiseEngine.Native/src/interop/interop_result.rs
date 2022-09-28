@@ -1,4 +1,4 @@
-use std::mem::{ManuallyDrop, MaybeUninit};
+use std::{mem::{ManuallyDrop, MaybeUninit}, error::Error};
 
 use super::result_error::ResultError;
 
@@ -23,6 +23,24 @@ impl<T> InteropResult<T> {
             is_ok: false,
             ok: MaybeUninit::uninit(),
             err: MaybeUninit::new(ManuallyDrop::new(err))
+        }
+    }
+}
+
+impl<T, E: Error + 'static> From<Result<T, E>> for InteropResult<T> {
+    fn from(result: Result<T, E>) -> Self {
+        match result {
+            Ok(ok) => InteropResult::with_ok(ok),
+            Err(err) => InteropResult::with_err(ResultError::new(&err))
+        }
+    }
+}
+
+impl<T> From<Result<T, ResultError>> for InteropResult<T> {
+    fn from(result: Result<T, ResultError>) -> Self {
+        match result {
+            Ok(ok) => InteropResult::with_ok(ok),
+            Err(err) => InteropResult::with_err(err)
         }
     }
 }

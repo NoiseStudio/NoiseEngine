@@ -5,8 +5,8 @@ pub enum ResultErrorKind {
     Universal = 0
 }
 
-impl ResultErrorKind {
-    pub fn from_err(_err: &(dyn Error + 'static)) -> ResultErrorKind {
+impl From<&(dyn Error + 'static)> for ResultErrorKind {
+    fn from(_err: &(dyn Error + 'static)) -> Self {
         ResultErrorKind::Universal
     }
 }
