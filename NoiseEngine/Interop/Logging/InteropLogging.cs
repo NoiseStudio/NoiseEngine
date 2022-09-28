@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using NoiseEngine.Logging;
@@ -47,6 +48,7 @@ internal static partial class InteropLogging {
     private static partial void InteropTerminate();
 
     private static void LoggerHandlerImpl(LogData logData) {
+        Debug.Fail("asdfasdkfjl");
         if (Logger is null)
             return;
 

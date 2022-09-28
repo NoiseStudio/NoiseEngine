@@ -64,6 +64,13 @@ public class Logger : IDisposable {
     }
 
     /// <summary>
+    /// Waits for all pending log messages to be written to sinks.
+    /// </summary>
+    public void Flush() {
+        worker.Flush();
+    }
+
+    /// <summary>
     /// Logs data to all sinks.
     /// </summary>
     /// <param name="data">Data to log.</param>

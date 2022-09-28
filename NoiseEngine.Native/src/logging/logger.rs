@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use log::Log;
 
 use crate::interop::prelude::InteropReadOnlySpan;
@@ -20,6 +22,8 @@ impl Log for Logger {
                 level: LogLevel::from(record.level()),
                 message,
             };
+
+            exit(69);
 
             // SAFETY: The handler executes managed code handling the message.
             //         If the handler fails, application crash is desired (implementation error).

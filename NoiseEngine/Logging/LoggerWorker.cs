@@ -10,6 +10,7 @@ internal class LoggerWorker : IDisposable {
 
     private readonly ConcurrentQueue<LogData> queue = new ConcurrentQueue<LogData>();
     private readonly AutoResetEvent queueResetEvent = new AutoResetEvent(false);
+    private readonly AutoResetEvent flushResetEvent = new AutoResetEvent(false);
 
     private AtomicBool isDisposed;
 
@@ -28,6 +29,13 @@ internal class LoggerWorker : IDisposable {
         queueResetEvent.Set();
     }
 
+    public void Flush() {
+        // This should probably flush the sinks, but flushing is not implemented for ILogSink.
+        flushResetEvent.Reset();
+        queueResetEvent.Set();
+        flushResetEvent.WaitOne();
+    }
+
     public void Dispose() {
         if (!isDisposed.Exchange(true)) {
             ReleaseResources();
@@ -39,11 +47,13 @@ internal class LoggerWorker : IDisposable {
             while (!isDisposed) {
                 queueResetEvent.WaitOne();
                 DequeueLogs();
+                flushResetEvent.Set();
             }
         }
 
         lock (queueResetEvent) {
             queueResetEvent.Dispose();
+            flushResetEvent.Dispose();
         }
     }
 

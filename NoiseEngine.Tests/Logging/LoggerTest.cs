@@ -30,6 +30,20 @@ public class LoggerTest {
     }
 
     [Fact]
+    public void Flush() {
+        MockLogSink mockSink = new MockLogSink();
+
+        using Logger logger = new Logger(new ILogSink[] { mockSink }, LogLevel.All);
+
+        foreach (LogData logData in data) {
+            logger.Log(logData);
+        }
+
+        logger.Flush();
+        Assert.Equal(data, mockSink.Logs);
+    }
+
+    [Fact]
     public void LevelMask() {
         const LogLevel Mask = LogLevel.Debug | LogLevel.Info | LogLevel.Error;
 
