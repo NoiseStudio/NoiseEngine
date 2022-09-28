@@ -2,10 +2,10 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace NoiseEngine.Interop.ResultErrors;
+namespace NoiseEngine.Interop;
 
 [StructLayout(LayoutKind.Sequential)]
-internal record struct ResultError : IDisposable, IResultError {
+internal record struct ResultError : IDisposable {
 
     private InteropString message;
     private IntPtr sourcePointer;

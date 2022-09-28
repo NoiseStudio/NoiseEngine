@@ -1,5 +1,4 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.ResultErrors;
 using System;
 
 namespace NoiseEngine.Tests.Interop;

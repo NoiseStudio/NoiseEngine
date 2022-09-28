@@ -1,5 +1,4 @@
 ﻿using NoiseEngine.Interop.InteropMarshalling;
-using NoiseEngine.Interop.ResultErrors;
 using System;
 using System.Runtime.InteropServices;
 

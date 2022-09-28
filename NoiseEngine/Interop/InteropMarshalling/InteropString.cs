@@ -1,12 +1,11 @@
-﻿using NoiseEngine.Interop.ResultErrors;
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NoiseEngine.Interop.InteropMarshalling;
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct InteropString : IDisposable, IResultError {
+internal struct InteropString : IDisposable {
 
     private InteropArray<byte> array;
 
@@ -27,10 +26,6 @@ internal struct InteropString : IDisposable, IResultError {
 
     public void Dispose() {
         array.Dispose();
-    }
-
-    Exception IResultError.ToException() {
-        return new Exception(ToString());
     }
 
 }

@@ -1,15 +1,14 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.ResultErrors;
 using System;
 
-namespace NoiseEngine.Tests.Interop.ResultErrors;
+namespace NoiseEngine.Tests.Interop;
 
 public partial class ResultErrorTest {
 
-    [InteropImport("interop_result_errors_result_error_test_unmanaged_inner_error", InteropConstants.DllName)]
+    [InteropImport("interop_result_error_test_unmanaged_inner_error", InteropConstants.DllName)]
     private static partial ResultError InteropUnmanagedInnerError();
 
-    [InteropImport("interop_result_errors_result_error_test_unmanaged_parse_bool", InteropConstants.DllName)]
+    [InteropImport("interop_result_error_test_unmanaged_parse_bool", InteropConstants.DllName)]
     private static partial ResultError InteropUnmanagedParseBool();
 
     [Fact]

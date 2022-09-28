@@ -1,16 +1,16 @@
 use std::{str::{FromStr, ParseBoolError}, error::Error, fmt::Display};
 
-use noise_engine_native::interop::result_errors::result_error::ResultError;
+use noise_engine_native::interop::result_error::ResultError;
 
 #[no_mangle]
-extern "C" fn interop_result_errors_result_error_test_unmanaged_inner_error() -> ResultError {
+extern "C" fn interop_result_error_test_unmanaged_inner_error() -> ResultError {
     ResultError::new(&InnerError {
         inner: <bool as FromStr>::from_str("invalid").unwrap_err()
     })
 }
 
 #[no_mangle]
-extern "C" fn interop_result_errors_result_error_test_unmanaged_parse_bool() -> ResultError {
+extern "C" fn interop_result_error_test_unmanaged_parse_bool() -> ResultError {
     ResultError::new(&<bool as FromStr>::from_str("invalid").unwrap_err())
 }
 

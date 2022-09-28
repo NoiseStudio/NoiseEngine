@@ -1,6 +1,6 @@
 use std::mem::{ManuallyDrop, MaybeUninit};
 
-use super::result_errors::result_error::ResultError;
+use super::result_error::ResultError;
 
 #[repr(C)]
 pub struct InteropResult<T> {

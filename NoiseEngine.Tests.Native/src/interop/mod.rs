@@ -1,4 +1,4 @@
-mod result_errors;
+mod result_error_test;
 
 mod interop_array_test;
 mod interop_option_test;
