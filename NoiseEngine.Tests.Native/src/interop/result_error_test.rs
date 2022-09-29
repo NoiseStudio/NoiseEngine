@@ -5,13 +5,13 @@ use noise_engine_native::interop::result_error::ResultError;
 #[no_mangle]
 extern "C" fn interop_result_error_test_unmanaged_inner_error() -> ResultError {
     ResultError::new(&InnerError {
-        inner: <bool as FromStr>::from_str("invalid").unwrap_err()
+        inner: bool::from_str("invalid").unwrap_err()
     })
 }
 
 #[no_mangle]
 extern "C" fn interop_result_error_test_unmanaged_parse_bool() -> ResultError {
-    ResultError::new(&<bool as FromStr>::from_str("invalid").unwrap_err())
+    ResultError::new(&bool::from_str("invalid").unwrap_err())
 }
 
 #[derive(Debug)]
