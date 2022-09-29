@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace NoiseEngine.Interop;
 
 [StructLayout(LayoutKind.Sequential)]
-internal record struct ResultError : IDisposable {
+internal struct ResultError : IDisposable {
 
     private InteropString message;
     private IntPtr sourcePointer;

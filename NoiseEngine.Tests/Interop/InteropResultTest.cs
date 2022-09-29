@@ -30,27 +30,27 @@ public partial class InteropResultTest {
     }
 
     [Fact]
-    public void UnwrapValue() {
+    public void GetValueValue() {
         InteropResult<int> result = InteropUnmanagedCreateValue(Value);
-        Assert.Equal(Value, result.Unwrap());
+        Assert.Equal(Value, result.Value);
     }
 
     [Fact]
-    public void UnwrapError() {
+    public void GetValueError() {
         InteropResult<int> result = InteropUnmanagedCreateError(ErrorValue);
-        Assert.Throws<InvalidOperationException>(() => result.Unwrap());
+        Assert.Throws<InvalidOperationException>(() => result.Value);
     }
 
     [Fact]
-    public void UnwrapErrorValue() {
+    public void GetErrorValue() {
         InteropResult<int> result = InteropUnmanagedCreateValue(Value);
-        Assert.Throws<InvalidOperationException>(() => result.UnwrapError());
+        Assert.Throws<InvalidOperationException>(() => result.Error);
     }
 
     [Fact]
-    public void UnwrapErrorError() {
+    public void GetErrorError() {
         InteropResult<int> result = InteropUnmanagedCreateError(ErrorValue);
-        using ResultError error = result.UnwrapError();
+        using ResultError error = result.Error;
         Assert.Equal(ErrorValue, error.Message);
     }
 
