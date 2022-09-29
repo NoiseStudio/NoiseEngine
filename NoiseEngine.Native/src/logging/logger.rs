@@ -1,5 +1,3 @@
-use std::process::exit;
-
 use log::Log;
 
 use crate::interop::prelude::InteropReadOnlySpan;
@@ -16,14 +14,19 @@ impl Log for Logger {
     }
 
     fn log(&self, record: &log::Record) {
+        unsafe {
+            (self.handler)(LogData {
+                level: LogLevel::Error,
+                message: "twoja mama".as_bytes().into(),
+            })
+        }
+        return;
         if let Some(message) = record.args().as_str() {
             let message = InteropReadOnlySpan::from(message.as_bytes());
             let data = LogData {
                 level: LogLevel::from(record.level()),
                 message,
             };
-
-            exit(69);
 
             // SAFETY: The handler executes managed code handling the message.
             //         If the handler fails, application crash is desired (implementation error).

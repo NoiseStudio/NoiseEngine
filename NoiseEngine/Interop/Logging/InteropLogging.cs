@@ -48,7 +48,6 @@ internal static partial class InteropLogging {
     private static partial void InteropTerminate();
 
     private static void LoggerHandlerImpl(LogData logData) {
-        Debug.Fail("asdfasdkfjl");
         if (Logger is null)
             return;
 

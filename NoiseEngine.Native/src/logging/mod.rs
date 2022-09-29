@@ -13,7 +13,7 @@ extern "C" fn logging_initialize(
 ) {
     let logger = logger::Logger { handler };
     log::set_boxed_logger(Box::new(logger)).unwrap();
-    log::set_max_level(log::LevelFilter::Trace);
+    log::set_max_level(log::LevelFilter::Error);
 }
 
 #[no_mangle]
