@@ -2,13 +2,14 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using NoiseEngine.Logging;
+using NoiseEngine.Threading;
 
 namespace NoiseEngine.Interop.Logging;
 
 internal static partial class InteropLogging {
 
-    private static bool initialized;
-    private static bool terminated;
+    private static AtomicBool initialized;
+    private static AtomicBool terminated;
 
     private static LoggerHandlerDelegate? LoggerHandler { get; set; }
 
@@ -18,10 +19,9 @@ internal static partial class InteropLogging {
     private delegate void LoggerHandlerDelegate(LogData logData);
 
     public static void Initialize(Logger logger) {
-        if (initialized)
+        if (initialized.Exchange(true))
             throw new InvalidOperationException("Cannot initialize native logging more than once.");
 
-        initialized = true;
         Logger = logger;
 
         // Prevents GC cleanup (https://stackoverflow.com/a/43227979/14677292)
@@ -33,10 +33,9 @@ internal static partial class InteropLogging {
         if (!initialized)
             throw new InvalidOperationException("Cannot terminate native logging before initializing it.");
 
-        if (terminated)
+        if (terminated.Exchange(true))
             throw new InvalidOperationException("Native logging has already been terminated.");
 
-        terminated = true;
         InteropTerminate();
     }
 
@@ -50,18 +49,7 @@ internal static partial class InteropLogging {
         if (Logger is null)
             return;
 
-        NoiseEngine.Logging.LogLevel level = logData.Level switch {
-            LogLevel.Trace => NoiseEngine.Logging.LogLevel.Trace,
-            LogLevel.Debug => NoiseEngine.Logging.LogLevel.Debug,
-            LogLevel.Info => NoiseEngine.Logging.LogLevel.Info,
-            LogLevel.Warning => NoiseEngine.Logging.LogLevel.Warning,
-            LogLevel.Error => NoiseEngine.Logging.LogLevel.Error,
-            LogLevel.Fatal => NoiseEngine.Logging.LogLevel.Fatal,
-
-            // This should never happen, exception indicates implementation error
-            _ => throw new ArgumentOutOfRangeException(nameof(logData), logData.Level, null)
-        };
-
+        NoiseEngine.Logging.LogLevel level = (NoiseEngine.Logging.LogLevel)logData.Level;
         string message = Encoding.UTF8.GetString(logData.Message.AsSpan());
         Logger.Log(level, message);
     }
