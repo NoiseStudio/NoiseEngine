@@ -1,5 +1,3 @@
-#![crate_type = "dylib"]
-
 use interop::interop_allocator::InteropAllocator;
 
 #[global_allocator]
