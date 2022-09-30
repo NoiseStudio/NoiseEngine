@@ -58,9 +58,17 @@
 
     <Import Project="../NoiseEngine.Shared.xml" />
 
+    <!--
+        Note that this target replaces NoiseEngine.Native dynamic library.
+        This is intentional: all symbols exported by NoiseEngine.Native are
+        also exported by NoiseEngine.Tests.Native (because of static linking),
+        and global state is not shared between the two so we need to use only one library.
+    -->
     <Target Name="CompileTestsNative" BeforeTargets="AfterBuild">
         <Exec WorkingDirectory="../NoiseEngine.Tests.Native/" Command="cargo build $(CargoReleaseFlag)" />
-        <Copy SourceFiles="../NoiseEngine.Tests.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_tests_native.$(OSLibExt)" DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Tests.Native.$(OSLibExt)" />
+        <Copy
+            SourceFiles="../NoiseEngine.Tests.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_tests_native.$(OSLibExt)"
+            DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
     </Target>
 
 </Project>

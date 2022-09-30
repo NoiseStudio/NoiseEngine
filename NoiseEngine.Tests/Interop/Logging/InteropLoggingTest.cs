@@ -17,20 +17,23 @@ public partial class InteropLoggingTest : IDisposable {
         Log.Logger.AddSink(sink);
     }
 
-    [InteropImport("logging_interop_logging_test_debug", InteropConstants.DllName)]
+    [InteropImport("logging_interop_logging_test_debug")]
     private static partial void InteropDebug();
 
-    [InteropImport("logging_interop_logging_test_trace", InteropConstants.DllName)]
+    [InteropImport("logging_interop_logging_test_trace")]
     private static partial void InteropTrace();
 
-    [InteropImport("logging_interop_logging_test_info", InteropConstants.DllName)]
+    [InteropImport("logging_interop_logging_test_info")]
     private static partial void InteropInfo();
 
-    [InteropImport("logging_interop_logging_test_warning", InteropConstants.DllName)]
+    [InteropImport("logging_interop_logging_test_warning")]
     private static partial void InteropWarning();
 
-    [InteropImport("logging_interop_logging_test_error", InteropConstants.DllName)]
+    [InteropImport("logging_interop_logging_test_error")]
     private static partial void InteropError();
+
+    [InteropImport("logging_interop_logging_test_fatal")]
+    private static partial void InteropFatal();
 
     [Fact]
     public void Debug() {
@@ -75,6 +78,15 @@ public partial class InteropLoggingTest : IDisposable {
         LogData data = sink.Logs.Single();
         Assert.Equal(LogLevel.Error, data.Level);
         Assert.Equal("error", data.Message);
+    }
+
+    [Fact]
+    public void Fatal() {
+        InteropFatal();
+        Log.Logger.Flush();
+        LogData data = sink.Logs.Single();
+        Assert.Equal(LogLevel.Fatal, data.Level);
+        Assert.Equal("fatal", data.Message);
     }
 
     public void Dispose() {

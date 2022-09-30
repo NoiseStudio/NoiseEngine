@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using NoiseEngine.Logging;
@@ -57,6 +56,7 @@ internal static partial class InteropLogging {
             LogLevel.Info => NoiseEngine.Logging.LogLevel.Info,
             LogLevel.Warning => NoiseEngine.Logging.LogLevel.Warning,
             LogLevel.Error => NoiseEngine.Logging.LogLevel.Error,
+            LogLevel.Fatal => NoiseEngine.Logging.LogLevel.Fatal,
 
             // This should never happen, exception indicates implementation error
             _ => throw new ArgumentOutOfRangeException(nameof(logData), logData.Level, null)

@@ -1,4 +1,4 @@
-use log::Log;
+use once_cell::sync::OnceCell;
 
 use crate::interop::prelude::InteropReadOnlySpan;
 
@@ -8,34 +8,35 @@ pub(super) struct Logger {
     pub(super) handler: unsafe extern "C" fn(LogData),
 }
 
-impl Log for Logger {
-    fn enabled(&self, _metadata: &log::Metadata) -> bool {
-        true
-    }
+static INSTANCE: OnceCell<Logger> = OnceCell::new();
 
-    fn log(&self, record: &log::Record) {
+pub(super) fn initialize(logger: Logger) {
+    match INSTANCE.set(logger) {
+        Ok(_) => (),
+        Err(_) => panic!("logger is already initialized"),
+    }
+}
+
+pub(super) fn terminate() {
+}
+
+/// # Panics
+/// This function panics if called before [`initialize`].
+pub(super) fn log(level: LogLevel, message: &str) {
+    let logger = INSTANCE.get().expect("logger is not initialized");
+    let message = InteropReadOnlySpan::from(message.as_bytes()); logger.log(level, message);
+}
+
+impl Logger {
+    fn log(&self, level: LogLevel, message: InteropReadOnlySpan<u8>) {
+        let log_data = LogData {
+            level,
+            message,
+        };
+
+        // SAFETY: The handler is set by the user of the library and is expected to be safe.
         unsafe {
-            (self.handler)(LogData {
-                level: LogLevel::Error,
-                message: "twoja mama".as_bytes().into(),
-            })
+            (self.handler)(log_data);
         }
-        return;
-        if let Some(message) = record.args().as_str() {
-            let message = InteropReadOnlySpan::from(message.as_bytes());
-            let data = LogData {
-                level: LogLevel::from(record.level()),
-                message,
-            };
-
-            // SAFETY: The handler executes managed code handling the message.
-            //         If the handler fails, application crash is desired (implementation error).
-            unsafe {
-                (self.handler)(data);
-            }
-        }
-    }
-
-    fn flush(&self) {
     }
 }

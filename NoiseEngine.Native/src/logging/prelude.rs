@@ -1,1 +1,1 @@
-pub use log::{debug, trace, info, warn, error};
+pub use super::{debug, trace, info, warning, error, fatal};

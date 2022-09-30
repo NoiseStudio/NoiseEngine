@@ -9,22 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NoiseEngine.Interop.Logging;
-using LogData = NoiseEngine.Logging.LogData;
 
 namespace NoiseEngine;
-
-public class MockLogSink : ILogSink {
-
-    public List<LogData> Logs { get; } = new List<LogData>();
-
-    public void Dispose() {
-    }
-
-    public void Log(LogData data) {
-        Logs.Add(data);
-    }
-
-}
 
 public static class Application {
 
@@ -72,8 +58,6 @@ public static class Application {
             if (!Log.Logger.Sinks.Any(x => typeof(FileLogSink) == x.GetType()))
                 Log.Logger.AddSink(FileLogSink.CreateFromDirectory("logs"));
         }
-
-        Log.Logger.AddSink(new MockLogSink());
 
         InteropLogging.Initialize(Log.Logger);
 
