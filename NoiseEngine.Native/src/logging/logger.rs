@@ -2,7 +2,7 @@ use once_cell::sync::OnceCell;
 
 use crate::interop::prelude::InteropReadOnlySpan;
 
-use super::{log_level::LogLevel, log_data::LogData};
+use super::{log_level::LogLevel, log_data::LogData, error::{LoggingError, LoggingErrorKind}};
 
 pub(crate) struct Logger {
     pub(crate) handler: unsafe extern "C" fn(LogData),
@@ -10,8 +10,8 @@ pub(crate) struct Logger {
 
 static INSTANCE: OnceCell<Logger> = OnceCell::new();
 
-pub(crate) fn initialize(logger: Logger) -> Result<(), ()>{
-    INSTANCE.set(logger).map_err(|_| ())
+pub(crate) fn initialize(logger: Logger) -> Result<(), LoggingError> {
+    INSTANCE.set(logger).map_err(|_| LoggingError::new(LoggingErrorKind::AlreadyInitialized))
 }
 
 pub(crate) fn terminate() {
