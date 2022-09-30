@@ -2,30 +2,30 @@ use noise_engine_native::logging::prelude::*;
 
 #[no_mangle]
 extern "C" fn logging_interop_logging_test_debug() {
-    debug("debug");
+    log::debug("debug");
 }
 
 #[no_mangle]
 extern "C" fn logging_interop_logging_test_trace() {
-    trace("trace");
+    log::trace("trace");
 }
 
 #[no_mangle]
 extern "C" fn logging_interop_logging_test_info() {
-    info("info");
+    log::info("info");
 }
 
 #[no_mangle]
 extern "C" fn logging_interop_logging_test_warning() {
-    warning("warning");
+    log::warning("warning");
 }
 
 #[no_mangle]
 extern "C" fn logging_interop_logging_test_error() {
-    error("error");
+    log::error("error");
 }
 
 #[no_mangle]
 extern "C" fn logging_interop_logging_test_fatal() {
-    fatal("fatal");
+    log::fatal("fatal");
 }
