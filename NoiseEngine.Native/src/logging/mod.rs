@@ -1,21 +1,8 @@
 pub mod prelude;
 
-mod logger;
-mod log_level;
-mod log_data;
-
-#[no_mangle]
-extern "C" fn logging_initialize(
-    handler: unsafe extern "C" fn(log_data::LogData),
-) {
-    let logger = logger::Logger { handler };
-    logger::initialize(logger);
-}
-
-#[no_mangle]
-extern "C" fn logging_terminate() {
-    logger::terminate();
-}
+pub(crate) mod logger;
+pub(crate) mod log_level;
+pub(crate) mod log_data;
 
 // NOTE: The following functions are not caching logs to be sent from the worker thread;
 //       they are sending them immediately through interop. In the future we may want to change that.

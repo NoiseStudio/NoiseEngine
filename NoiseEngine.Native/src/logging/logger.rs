@@ -4,25 +4,25 @@ use crate::interop::prelude::InteropReadOnlySpan;
 
 use super::{log_level::LogLevel, log_data::LogData};
 
-pub(super) struct Logger {
-    pub(super) handler: unsafe extern "C" fn(LogData),
+pub(crate) struct Logger {
+    pub(crate) handler: unsafe extern "C" fn(LogData),
 }
 
 static INSTANCE: OnceCell<Logger> = OnceCell::new();
 
-pub(super) fn initialize(logger: Logger) {
+pub(crate) fn initialize(logger: Logger) {
     match INSTANCE.set(logger) {
         Ok(_) => (),
         Err(_) => panic!("logger is already initialized"),
     }
 }
 
-pub(super) fn terminate() {
+pub(crate) fn terminate() {
 }
 
 /// # Panics
 /// This function panics if called before [`initialize`].
-pub(super) fn log(level: LogLevel, message: &str) {
+pub(crate) fn log(level: LogLevel, message: &str) {
     let logger = INSTANCE.get().expect("logger is not initialized");
     let message = InteropReadOnlySpan::from(message.as_bytes()); logger.log(level, message);
 }
