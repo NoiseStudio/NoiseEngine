@@ -1,6 +1,6 @@
 use std::mem;
 
-use super::interop_array::InteropArray;
+use super::prelude::InteropArray;
 
 #[repr(C)]
 pub struct InteropString {
