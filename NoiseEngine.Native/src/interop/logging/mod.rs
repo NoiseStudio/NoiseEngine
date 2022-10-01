@@ -1,2 +1,1 @@
-mod interop;
 mod logging;

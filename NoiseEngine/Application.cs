@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using NoiseEngine.Interop.Logging;
 
 namespace NoiseEngine;
 
@@ -58,6 +59,8 @@ public static class Application {
                 Log.Logger.AddSink(FileLogSink.CreateFromDirectory("logs"));
         }
 
+        InteropLogging.Initialize(Log.Logger);
+
         // Set default values.
         if (settings.Name is null) {
             Assembly? entryAssembly = Assembly.GetEntryAssembly();
@@ -96,6 +99,7 @@ public static class Application {
             Graphics.Terminate();
 
             Log.Info($"{nameof(Application)} exited with code {exitCode}.");
+            InteropLogging.Terminate();
             Log.Logger.Dispose();
 
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomainOnExit;

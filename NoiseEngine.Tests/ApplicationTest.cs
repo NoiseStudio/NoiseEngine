@@ -1,18 +1,16 @@
 ﻿using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Mathematics;
 using System.Threading;
+using NoiseEngine.Tests.Fixtures;
 
 namespace NoiseEngine.Tests;
 
+[Collection(nameof(ApplicationCollection))]
 public class ApplicationTest {
 
     [FactRequire(TestRequirements.Gpu | TestRequirements.Gui)]
     public void SimpleScene() {
-        Application.Initialize(new ApplicationSettings {
-            ProcessExitOnApplicationExit = false
-        });
-
-        ApplicationScene scene = new ApplicationScene();
+        using ApplicationScene scene = new ApplicationScene();
 
         for (int x = -10; x < 10; x += 2) {
             for (int y = -10; y < 10; y += 2) {
@@ -20,7 +18,7 @@ public class ApplicationTest {
             }
         }
 
-        RenderCamera camera = scene.CreateWindow("A lot of X-Cuboids 3090 Ti.");
+        using RenderCamera camera = scene.CreateWindow("A lot of X-Cuboids 3090 Ti.");
         camera.Entity.Add(scene.EntityWorld, new ApplicationTestSimpleSceneManagerComponent());
         camera.Scene.AddFrameDependentSystem(new ApplicationTestSimpleSceneManagerSystem(scene));
 
@@ -30,8 +28,6 @@ public class ApplicationTest {
             AutoResetEvent autoResetEvent = new AutoResetEvent(false);
             Application.ApplicationExit += _ => autoResetEvent.Set();
             autoResetEvent.WaitOne();
-        } else {
-            Application.Exit();
         }
     }
 
