@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NoiseEngine.Interop.Logging;
+using NoiseEngine.Rendering.Vulkan;
 
 namespace NoiseEngine;
 
@@ -21,7 +22,10 @@ public static class Application {
     private static bool isExited;
     private static ApplicationSettings? settings;
 
+    public static Version? EngineVersion => typeof(Application).Assembly.GetName().Version;
+
     public static string Name => Settings.Name!;
+    public static Version Version => Settings.Version!;
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
@@ -62,13 +66,22 @@ public static class Application {
         InteropLogging.Initialize(Log.Logger);
 
         // Set default values.
-        if (settings.Name is null) {
+        if (settings.Name is null || settings.Version is null) {
             Assembly? entryAssembly = Assembly.GetEntryAssembly();
 
-            if (entryAssembly is null)
-                settings = settings with { Name = "Unknown" };
-            else
-                settings = settings with { Name = entryAssembly.GetName().Name ?? entryAssembly.Location };
+            if (entryAssembly is null) {
+                settings = settings with {
+                    Name = settings.Name is null ? "Unknown" : settings.Name,
+                    Version = settings.Version is null ? new Version() : settings.Version
+                };
+            } else {
+                AssemblyName name = entryAssembly.GetName();
+
+                settings = settings with {
+                    Name = settings.Name is null ? (name.Name ?? entryAssembly.Location) : settings.Name,
+                    Version = settings.Version is null ? name.Version ?? new Version() : settings.Version
+                };
+            }
         }
 
         Application.settings = settings with {

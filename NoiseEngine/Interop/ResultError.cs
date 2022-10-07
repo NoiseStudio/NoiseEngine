@@ -46,4 +46,10 @@ internal struct ResultError : IDisposable {
         };
     }
 
+    public void ThrowAndDispose() {
+        Exception exception = ToException();
+        Dispose();
+        throw exception;
+    }
+
 }
