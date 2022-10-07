@@ -14,6 +14,7 @@ impl From<VulkanInstanceCreateInfo> for InstanceCreateInfo {
         InstanceCreateInfo {
             application_name: Some(String::from(create_info.application_name)),
             application_version: create_info.application_version.into(),
+            engine_name: Some("NoiseEngine".to_string()),
             engine_version: create_info.engine_version.into(),
             enumerate_portability: true,
             ..Default::default()

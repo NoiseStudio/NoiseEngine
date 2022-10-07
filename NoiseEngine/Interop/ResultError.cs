@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Interop.InteropMarshalling;
+using NoiseEngine.Rendering.Exceptions;
 using System;
 using System.Runtime.InteropServices;
 
@@ -42,6 +43,9 @@ internal struct ResultError : IDisposable {
 
         return Kind switch {
             ResultErrorKind.Universal => new Exception(Message, innerException),
+
+            ResultErrorKind.GraphicsInstanceCreate => new GraphicsInstanceCreateException(Message, innerException),
+
             _ => throw new NotImplementedException()
         };
     }
