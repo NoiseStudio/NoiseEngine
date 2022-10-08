@@ -6,7 +6,7 @@ namespace NoiseEngine.Tests.Rendering.Vulkan;
 [Collection(nameof(ApplicationCollection))]
 public class VulkanInstanceTest {
 
-    [Fact]
+    [FactRequire(TestRequirements.Vulkan)]
     public void CreateAndDispose() {
         using VulkanInstance instance = new VulkanInstance(new VulkanLibrary());
     }

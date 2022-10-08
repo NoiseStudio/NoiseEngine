@@ -6,7 +6,7 @@ namespace NoiseEngine.Tests.Rendering.Vulkan;
 [Collection(nameof(ApplicationCollection))]
 public class VulkanLibraryTest {
 
-    [Fact]
+    [FactRequire(TestRequirements.Vulkan)]
     public void Create() {
         new VulkanLibrary();
     }
