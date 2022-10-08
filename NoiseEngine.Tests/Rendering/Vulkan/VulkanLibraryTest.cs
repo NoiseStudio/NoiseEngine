@@ -1,5 +1,4 @@
 ﻿using NoiseEngine.Rendering.Vulkan;
-using System;
 
 namespace NoiseEngine.Tests.Rendering.Vulkan;
 

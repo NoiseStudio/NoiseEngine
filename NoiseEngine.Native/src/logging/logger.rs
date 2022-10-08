@@ -25,6 +25,14 @@ pub(crate) fn log(level: LogLevel, message: &str) {
     logger.log(level, message);
 }
 
+/// # Panics
+/// This function panics if called before [`initialize`].
+pub(crate) fn log_owned(level: LogLevel, message: String) {
+    let logger = INSTANCE.get().expect("logger is not initialized");
+    let message = InteropReadOnlySpan::from(message.as_bytes());
+    logger.log(level, message);
+}
+
 impl Logger {
     fn log(&self, level: LogLevel, message: InteropReadOnlySpan<u8>) {
         let log_data = LogData {

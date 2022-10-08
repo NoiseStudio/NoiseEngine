@@ -13,10 +13,16 @@ internal class VulkanLibrary {
             error.ThrowAndDispose();
 
         Handle = native;
+        Log.Info($"Created new {this}.");
     }
 
     ~VulkanLibrary() {
         VulkanLibraryInterop.Destroy(Handle);
+        Log.Info($"Disposed {this}.");
+    }
+
+    public override string ToString() {
+        return $"{nameof(VulkanLibrary)} {{ Handle = {Handle} }}";
     }
 
 }

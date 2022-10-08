@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Rendering.Exceptions;
 
-internal class GraphicsInstanceCreateException : Exception {
+public class GraphicsInstanceCreateException : Exception {
 
     public GraphicsInstanceCreateException() {
     }

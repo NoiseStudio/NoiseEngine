@@ -6,7 +6,8 @@ internal partial class VulkanInstanceInterop {
 
     [InteropImport("graphics_vulkan_vulkan_instance_interop_create")]
     public static partial InteropResult<InteropHandle<VulkanInstance>> Create(
-        InteropHandle<VulkanLibrary> library, VulkanInstanceCreateInfo createInfo
+        InteropHandle<VulkanLibrary> library, VulkanInstanceCreateInfo createInfo,
+        VulkanLogSeverity logSeverity, VulkanLogType logType
     );
 
     [InteropImport("graphics_vulkan_vulkan_instance_interop_destroy")]
