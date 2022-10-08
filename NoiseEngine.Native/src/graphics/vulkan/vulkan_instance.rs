@@ -76,7 +76,7 @@ fn log_callback(msg: &Message) {
 
     match msg.layer_prefix {
         Some(prefix) => {
-            logger::log_owned(level, prefix.to_owned() + ": " + msg.description)
+            logger::log(level, (prefix.to_owned() + ": " + msg.description).as_str())
         },
         None => logger::log(level, msg.description)
     }
