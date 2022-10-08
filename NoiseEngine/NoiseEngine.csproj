@@ -56,7 +56,7 @@
 
     <Import Project="../NoiseEngine.Shared.xml" />
 
-    <Target Name="CompileNative" BeforeTargets="AfterBuild">
+    <Target Name="CompileNative" BeforeTargets="AfterBuild" Condition="$(DoNotBuildMainNative) != 'true'">
         <Exec WorkingDirectory="../NoiseEngine.Native/" Command="cargo build $(CargoReleaseFlag)" />
         <Copy SourceFiles="../NoiseEngine.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_native.$(OSLibExt)" DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
     </Target>
