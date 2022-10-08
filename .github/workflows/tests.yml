@@ -15,12 +15,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install Mesa Vulkan drivers
+    - name: Install Mesa Vulkan graphics drivers
       run: sudo apt install mesa-vulkan-drivers
-    - name: Install Vulkan tools
-      run: sudo apt install vulkan-tools
-    - name: Vulkan info
-      run: vulkaninfo
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
