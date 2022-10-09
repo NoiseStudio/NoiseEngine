@@ -19,32 +19,29 @@ use super::{vulkan_log_severity::VulkanLogSeverity, vulkan_log_type::VulkanLogTy
 
 pub(crate) fn create(
     library: Arc<VulkanLibrary>, create_info: VulkanInstanceCreateInfo,
-    log_severity: VulkanLogSeverity, log_type: VulkanLogType
+    log_severity: BitFlags<VulkanLogSeverity>, log_type: BitFlags<VulkanLogType>
 ) -> Result<Arc<Instance>, InstanceCreationError> {
     let create_info_final = InstanceCreateInfo {
         enabled_extensions: *library.supported_extensions(),
         ..create_info.into()
     };
-
-    let severity_flags = BitFlags::from_flag(log_severity);
-    let type_flags = BitFlags::from_flag(log_type);
-
-    if severity_flags.is_empty() || type_flags.is_empty() {
+    
+    if log_severity.is_empty() || log_type.is_empty() {
         return Instance::new(library, create_info_final)
     }
 
     let severity_final = DebugUtilsMessageSeverity {
-        verbose: severity_flags.contains(VulkanLogSeverity::Verbose),
-        information: severity_flags.contains(VulkanLogSeverity::Info),
-        warning: severity_flags.contains(VulkanLogSeverity::Warning),
-        error: severity_flags.contains(VulkanLogSeverity::Error),
+        verbose: log_severity.contains(VulkanLogSeverity::Verbose),
+        information: log_severity.contains(VulkanLogSeverity::Info),
+        warning: log_severity.contains(VulkanLogSeverity::Warning),
+        error: log_severity.contains(VulkanLogSeverity::Error),
         ..Default::default()
     };
 
     let type_final = DebugUtilsMessageType {
-        general: type_flags.contains(VulkanLogType::General),
-        validation: type_flags.contains(VulkanLogType::Validation),
-        performance: type_flags.contains(VulkanLogType::Performance),
+        general: log_type.contains(VulkanLogType::General),
+        validation: log_type.contains(VulkanLogType::Validation),
+        performance: log_type.contains(VulkanLogType::Performance),
         ..Default::default()
     };
 
@@ -76,7 +73,7 @@ fn log_callback(msg: &Message) {
 
     match msg.layer_prefix {
         Some(prefix) => {
-            logger::log(level, (prefix.to_owned() + ": " + msg.description).as_str())
+            logger::log(level, format!("{}: {}", prefix, msg.description).as_str())
         },
         None => logger::log(level, msg.description)
     }

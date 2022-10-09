@@ -4,7 +4,7 @@ namespace NoiseEngine.Rendering.Exceptions;
 
 public class GraphicsInstanceCreateException : Exception {
 
-    public GraphicsInstanceCreateException() {
+    public GraphicsInstanceCreateException() : base($"Unable to create new {nameof(GraphicsInstance)}.") {
     }
 
     public GraphicsInstanceCreateException(string? message) : base(message) {

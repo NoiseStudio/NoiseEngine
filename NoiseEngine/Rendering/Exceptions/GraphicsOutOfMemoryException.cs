@@ -4,7 +4,7 @@ namespace NoiseEngine.Rendering.Exceptions;
 
 public class GraphicsOutOfMemoryException : Exception {
 
-    public GraphicsOutOfMemoryException() {
+    public GraphicsOutOfMemoryException() : base("Out of graphics memory.") {
     }
 
     public GraphicsOutOfMemoryException(string? message) : base(message) {

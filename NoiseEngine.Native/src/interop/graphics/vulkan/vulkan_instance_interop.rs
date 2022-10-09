@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use enumflags2::BitFlags;
 use vulkano::{instance::Instance, VulkanLibrary};
 
 use crate::{
@@ -12,7 +13,7 @@ use super::vulkan_instance_create_info::VulkanInstanceCreateInfo;
 #[no_mangle]
 extern "C" fn graphics_vulkan_vulkan_instance_interop_create(
     library: &Arc<VulkanLibrary>, create_info: VulkanInstanceCreateInfo,
-    log_severity: VulkanLogSeverity, log_type: VulkanLogType
+    log_severity: BitFlags<VulkanLogSeverity>, log_type: BitFlags<VulkanLogType>
 ) -> InteropResult<Box<Arc<Instance>>> {
     match vulkan_instance::create(library.clone(), create_info, log_severity, log_type) {
         Ok(instance) => InteropResult::with_ok(Box::new(instance)),

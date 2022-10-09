@@ -4,7 +4,7 @@ namespace NoiseEngine.Interop.Exceptions;
 
 public class LibraryLoadException : Exception {
 
-    public LibraryLoadException() {
+    public LibraryLoadException() : base("Unable to load library.") {
     }
 
     public LibraryLoadException(string? message) : base(message) {
