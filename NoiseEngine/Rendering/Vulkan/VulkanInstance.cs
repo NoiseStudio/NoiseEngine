@@ -11,8 +11,14 @@ internal sealed class VulkanInstance : GraphicsInstance {
     public InteropHandle<VulkanInstance> Handle { get; private set; }
 
     public VulkanInstance(
-        VulkanLibrary library, VulkanLogSeverity? logSeverity = null, VulkanLogType? logType = null
+        VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType
     ) {
+        if (logType is VulkanLogType.DeviceAddressBinding) {
+            throw new ArgumentException(
+                $"{nameof(VulkanLogType.DeviceAddressBinding)} flag is temporarily unavailable.", nameof(logType)
+            );
+        }
+
         Library = library;
 
         VulkanInstanceCreateInfo createInfo = new VulkanInstanceCreateInfo(
@@ -21,34 +27,8 @@ internal sealed class VulkanInstance : GraphicsInstance {
             new VulkanVersion(Application.EngineVersion ?? new Version())
         );
 
-        VulkanLogSeverity severity;
-        if (logSeverity.HasValue) {
-            severity = logSeverity.Value;
-        } else {
-            severity = VulkanLogSeverity.Warning | VulkanLogSeverity.Error;
-#if DEBUG
-            severity |= VulkanLogSeverity.Verbose | VulkanLogSeverity.Info;
-#endif
-        }
-
-        VulkanLogType type;
-        if (logType.HasValue) {
-            type = logType.Value;
-
-            if (type is VulkanLogType.DeviceAddressBinding) {
-                throw new ArgumentException(
-                    $"{nameof(VulkanLogType.DeviceAddressBinding)} flag is temporarily unavailable.", nameof(logType)
-                );
-            }
-        } else {
-            type = VulkanLogType.General;
-#if DEBUG
-            type |= VulkanLogType.Validation | VulkanLogType.Performance;
-#endif
-        }
-
         InteropResult<InteropHandle<VulkanInstance>> result = VulkanInstanceInterop.Create(
-            Library.Handle, createInfo, severity, type
+            Library.Handle, createInfo, logSeverity, logType
         );
         if (!result.TryGetValue(out InteropHandle<VulkanInstance> nativeInstance, out ResultError error))
             error.ThrowAndDispose();
