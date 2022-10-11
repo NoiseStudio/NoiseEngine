@@ -13,7 +13,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
     public VulkanInstance(
         VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType
     ) {
-        if (logType is VulkanLogType.DeviceAddressBinding) {
+        if (logType.HasFlag(VulkanLogType.DeviceAddressBinding)) {
             throw new ArgumentException(
                 $"{nameof(VulkanLogType.DeviceAddressBinding)} flag is temporarily unavailable.", nameof(logType)
             );
