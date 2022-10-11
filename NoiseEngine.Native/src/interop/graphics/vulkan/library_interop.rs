@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use vulkano::{VulkanLibrary, LoadingError::{LibraryLoadFailure, OomError}};
 
-use crate::{interop::prelude::{InteropResult, ResultError, ResultErrorKind}, graphics::vulkan::vulkan_library};
+use crate::{interop::prelude::{InteropResult, ResultError, ResultErrorKind}, graphics::vulkan::library};
 
 #[no_mangle]
-extern "C" fn graphics_vulkan_vulkan_library_interop_create() -> InteropResult<Box<Arc<VulkanLibrary>>> {
-    match vulkan_library::create() {
+extern "C" fn graphics_vulkan_library_interop_create() -> InteropResult<Box<Arc<VulkanLibrary>>> {
+    match library::create() {
         Ok(library) => InteropResult::with_ok(Box::new(library)),
         Err(err) => { 
             InteropResult::with_err(match err {
@@ -20,5 +20,5 @@ extern "C" fn graphics_vulkan_vulkan_library_interop_create() -> InteropResult<B
 }
 
 #[no_mangle]
-extern "C" fn graphics_vulkan_vulkan_library_interop_destroy(_handle: Box<Arc<VulkanLibrary>>) {
+extern "C" fn graphics_vulkan_library_interop_destroy(_handle: Box<Arc<VulkanLibrary>>) {
 }

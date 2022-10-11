@@ -11,11 +11,11 @@ use vulkano::{
 };
 
 use crate::{
-    interop::graphics::vulkan::vulkan_instance_create_info::VulkanInstanceCreateInfo,
+    interop::graphics::vulkan::instance_create_info::VulkanInstanceCreateInfo,
     logging::{logger, log_level::LogLevel, log}
 };
 
-use super::{vulkan_log_severity::VulkanLogSeverity, vulkan_log_type::VulkanLogType};
+use super::{log_severity::VulkanLogSeverity, log_type::VulkanLogType};
 
 pub(crate) fn create(
     library: Arc<VulkanLibrary>, create_info: VulkanInstanceCreateInfo,
