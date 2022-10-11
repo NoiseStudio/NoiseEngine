@@ -18,75 +18,81 @@ public partial class InteropLoggingTest : IDisposable {
     }
 
     [InteropImport("logging_interop_logging_test_debug")]
-    private static partial void InteropDebug();
+    private static partial void InteropDebug(string message);
 
     [InteropImport("logging_interop_logging_test_trace")]
-    private static partial void InteropTrace();
+    private static partial void InteropTrace(string message);
 
     [InteropImport("logging_interop_logging_test_info")]
-    private static partial void InteropInfo();
+    private static partial void InteropInfo(string message);
 
     [InteropImport("logging_interop_logging_test_warning")]
-    private static partial void InteropWarning();
+    private static partial void InteropWarning(string message);
 
     [InteropImport("logging_interop_logging_test_error")]
-    private static partial void InteropError();
+    private static partial void InteropError(string message);
 
     [InteropImport("logging_interop_logging_test_fatal")]
-    private static partial void InteropFatal();
+    private static partial void InteropFatal(string message);
 
     [Fact]
     public void Debug() {
-        InteropDebug();
+        string message = Guid.NewGuid().ToString();
+        InteropDebug(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single();
+        LogData data = sink.Logs.Single(x => x.Message == message);
         Assert.Equal(LogLevel.Debug, data.Level);
-        Assert.Equal("debug", data.Message);
+        Assert.Equal(message, data.Message);
     }
 
     [Fact]
     public void Trace() {
-        InteropTrace();
+        string message = Guid.NewGuid().ToString();
+        InteropTrace(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single();
+        LogData data = sink.Logs.Single(x => x.Message == message);
         Assert.Equal(LogLevel.Trace, data.Level);
-        Assert.Equal("trace", data.Message);
+        Assert.Equal(message, data.Message);
     }
 
     [Fact]
     public void Info() {
-        InteropInfo();
+        string message = Guid.NewGuid().ToString();
+        InteropInfo(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single();
+        LogData data = sink.Logs.Single(x => x.Message == message);
         Assert.Equal(LogLevel.Info, data.Level);
-        Assert.Equal("info", data.Message);
+        Assert.Equal(message, data.Message);
     }
 
     [Fact]
     public void Warning() {
-        InteropWarning();
+        string message = Guid.NewGuid().ToString();
+        InteropWarning(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single();
+        LogData data = sink.Logs.Single(x => x.Message == message);
         Assert.Equal(LogLevel.Warning, data.Level);
-        Assert.Equal("warning", data.Message);
+        Assert.Equal(message, data.Message);
     }
 
     [Fact]
     public void Error() {
-        InteropError();
+        string message = Guid.NewGuid().ToString();
+        InteropError(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single();
+        LogData data = sink.Logs.Single(x => x.Message == message);
         Assert.Equal(LogLevel.Error, data.Level);
-        Assert.Equal("error", data.Message);
+        Assert.Equal(message, data.Message);
     }
 
     [Fact]
     public void Fatal() {
-        InteropFatal();
+        string message = Guid.NewGuid().ToString();
+        InteropFatal(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single();
+        LogData data = sink.Logs.Single(x => x.Message == message);
         Assert.Equal(LogLevel.Fatal, data.Level);
-        Assert.Equal("fatal", data.Message);
+        Assert.Equal(message, data.Message);
     }
 
     public void Dispose() {

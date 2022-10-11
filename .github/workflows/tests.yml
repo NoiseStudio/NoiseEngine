@@ -15,6 +15,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install Mesa Vulkan graphics drivers
+      run: sudo apt install mesa-vulkan-drivers
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
@@ -23,7 +25,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore /p:DoNotBuildMainNative=true
     - name: Run tests
       run: dotnet test --no-build --verbosity normal
       timeout-minutes: 1

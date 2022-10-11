@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace NoiseEngine.Tests;
 
@@ -19,6 +18,8 @@ internal static class TestRequirementsExtensions {
             return string.Format(Reason, "GPU");
         if (requirements.HasFlag(TestRequirements.Gui) && args.Contains("gui;"))
             return string.Format(Reason, "GUI");
+        if (requirements.HasFlag(TestRequirements.Vulkan) && args.Contains("vulkan;"))
+            return string.Format(Reason, "Vulkan");
 
         return string.Empty;
     }
