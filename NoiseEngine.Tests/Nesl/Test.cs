@@ -68,7 +68,7 @@ public class Test {
         }).GetCode());
     }
 
-    [FactRequire(TestRequirements.Graphics)]
+    /*[FactRequire(TestRequirements.Graphics)]
     public void TestGlsl() {
         const string InColor3GlslFrag = @"
             #version 450
@@ -82,6 +82,6 @@ public class Test {
         // Compile.
         File.WriteAllBytes($"{nameof(TestGlsl)}.spv",
             ShaderCompiler.CompileGlsl(InColor3GlslFrag, ShaderStage.Fragment));
-    }
+    }*/
 
 }

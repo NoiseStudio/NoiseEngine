@@ -23,19 +23,4 @@
         <CargoBuildPath>target/release</CargoBuildPath>
     </PropertyGroup>
 
-    <!-- External libraries -->
-    <PropertyGroup>
-        <ExternalPath>../External</ExternalPath>
-    </PropertyGroup>
-
-    <Target Name="CopyExternalLibraries" BeforeTargets="AfterBuild">
-        <Copy SourceFiles="$(ExternalPath)/NoiseEngine.InteropServices.Native.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
-        <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Rendering.Native.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
-        <Copy SourceFiles="$(ExternalPath)/$(OSLibPrefix)glfw3.$(OSLibExt)" DestinationFolder="$(OutputPath)" />
-
-        <!-- TEMP -->
-        <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Threading.dll" DestinationFolder="$(OutputPath)" />
-        <Copy SourceFiles="$(ExternalPath)/NoiseEngine.Collections.dll" DestinationFolder="$(OutputPath)" />
-    </Target>
-
 </Project>

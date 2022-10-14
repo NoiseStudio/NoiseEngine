@@ -1,10 +1,8 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.DeveloperTools.Components;
 using NoiseEngine.DeveloperTools.Systems;
-using NoiseEngine.Inputs;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
-using NoiseEngine.Rendering.Presentation;
 using System;
 using System.Collections.Generic;
 
@@ -43,7 +41,7 @@ internal class ApplicationTestSimpleSceneManagerSystem
             //    value.Rotation.X, value.Rotation.Y, value.Rotation.Z))
         });
 
-        if (Window.TryGetFocusedWindow(out Window? focusedWindow)) {
+        /*if (Window.TryGetFocusedWindow(out Window? focusedWindow)) {
             Input input = Input.GetInput(focusedWindow);
 
             if (input.GetKeyDown(Key.Tab, out KeyModifier keyModifier) && keyModifier == KeyModifier.Shift) {
@@ -54,7 +52,7 @@ internal class ApplicationTestSimpleSceneManagerSystem
 
                 Enabled = false;
             }
-        }
+        }*/
     }
 
 }

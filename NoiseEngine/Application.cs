@@ -3,7 +3,6 @@ using NoiseEngine.Interop.Logging;
 using NoiseEngine.Jobs;
 using NoiseEngine.Logging;
 using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
@@ -30,7 +29,7 @@ public static class Application {
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
-    public static IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
+    //public static IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
 
     public static GraphicsInstance GraphicsInstance => GetGraphicsInstance();
 
@@ -115,8 +114,6 @@ public static class Application {
 
             lock (graphicsInstanceLocker)
                 graphicsInstance?.Dispose();
-
-            Graphics.Terminate();
 
             Log.Info($"{nameof(Application)} exited with code {exitCode}.");
             InteropLogging.Terminate();

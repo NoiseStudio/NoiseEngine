@@ -1,19 +1,14 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs;
-using NoiseEngine.Mathematics;
 using NoiseEngine.Primitives;
 using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Systems;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace NoiseEngine;
-
-extern alias OldLogging;
 
 public class ApplicationScene : IDisposable {
 
@@ -56,9 +51,9 @@ public class ApplicationScene : IDisposable {
     /// <summary>
     /// Creates new Window on this <see cref="ApplicationScene"/>.
     /// </summary>
-    /// <param name="title">Title of <see cref="Window"/>.</param>
-    /// <param name="width">Width of <see cref="Window"/>.</param>
-    /// <param name="height">Height of <see cref="Window"/>.</param>
+    /// <param name="title">Title of Window.</param>
+    /// <param name="width">Width of Window.</param>
+    /// <param name="height">Height of Window.</param>
     /// <param name="autoRender">If <see langword="true"/> render camera will be automatically renders
     /// their view to window on each frame.</param>
     /// <returns>New <see cref="RenderCamera"/>.</returns>
@@ -69,7 +64,7 @@ public class ApplicationScene : IDisposable {
 
         RenderCamera camera = new RenderCamera(
             this,
-            new Camera(new Window(GraphicsDevice, new UInt2(width, height), title)),
+            //new Camera(new Window(GraphicsDevice, new UInt2(width, height), title)),
             autoRender
         );
         cameras.Add(camera);
@@ -137,11 +132,10 @@ public class ApplicationScene : IDisposable {
             lock (defaultGraphicsDeviceLocker) {
                 if (defaultGraphicsDevice is null) {
 
-                    OldLogging::NoiseEngine.Logging.Logger oldLogger = new OldLogging::NoiseEngine.Logging.Logger();
-                    Graphics.Initialize(oldLogger, Application.Name, Assembly.GetEntryAssembly()!.GetName().Version!);
-                    defaultGraphicsDevice = new GraphicsDevice(false);
-
-                    primitiveShared = new PrimitiveCreatorShared(defaultGraphicsDevice);
+                    defaultGraphicsDevice = null;
+                    throw new NotImplementedException();
+                    /*defaultGraphicsDevice = new GraphicsDevice(false);
+                    primitiveShared = new PrimitiveCreatorShared(defaultGraphicsDevice);*/
                 }
             }
         }
