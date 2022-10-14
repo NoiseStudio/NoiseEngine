@@ -8,7 +8,7 @@ namespace NoiseEngine.Tests;
 [Collection(nameof(ApplicationCollection))]
 public class ApplicationTest {
 
-    [FactRequire(TestRequirements.Gpu | TestRequirements.Gui)]
+    [FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
     public void SimpleScene() {
         using ApplicationScene scene = new ApplicationScene();
 

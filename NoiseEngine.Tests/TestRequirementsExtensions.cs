@@ -14,8 +14,8 @@ internal static class TestRequirementsExtensions {
 
         args = args.ToLower();
 
-        if (requirements.HasFlag(TestRequirements.Gpu) && args.Contains("gpu;"))
-            return string.Format(Reason, "GPU");
+        if (requirements.HasFlag(TestRequirements.Graphics) && args.Contains("graphics;"))
+            return string.Format(Reason, "graphics");
         if (requirements.HasFlag(TestRequirements.Gui) && args.Contains("gui;"))
             return string.Format(Reason, "GUI");
         if (requirements.HasFlag(TestRequirements.Vulkan) && args.Contains("vulkan;"))

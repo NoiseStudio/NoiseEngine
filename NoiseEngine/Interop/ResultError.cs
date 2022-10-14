@@ -45,6 +45,7 @@ internal struct ResultError : IDisposable {
         return Kind switch {
             ResultErrorKind.Universal => new Exception(Message, innerException),
             ResultErrorKind.LibraryLoad => new LibraryLoadException(Message, innerException),
+            ResultErrorKind.Overflow => new OverflowException(Message, innerException),
 
             ResultErrorKind.GraphicsInstanceCreate => new GraphicsInstanceCreateException(Message, innerException),
             ResultErrorKind.GraphicsOutOfHostMemory => new GraphicsOutOfHostMemoryException(Message, innerException),

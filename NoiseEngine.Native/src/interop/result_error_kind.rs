@@ -4,6 +4,7 @@ use std::error::Error;
 pub enum ResultErrorKind {
     Universal = 0,
     LibraryLoad = 1,
+    Overflow = 2,
 
     GraphicsInstanceCreate = 1000,
     GraphicsOutOfHostMemory = 1001,

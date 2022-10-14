@@ -4,7 +4,7 @@ namespace NoiseEngine.Tests;
 
 [Flags]
 internal enum TestRequirements {
-    Gpu = 1 << 0,
+    Graphics = 1 << 0,
     Gui = 1 << 1,
     Vulkan = 1 << 2
 }

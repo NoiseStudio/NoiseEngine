@@ -6,7 +6,7 @@ internal readonly record struct InteropHandle<T>(IntPtr Pointer) {
 
     public static InteropHandle<T> Zero => new InteropHandle<T>(IntPtr.Zero);
 
-    private static unsafe string ToStringFormat = "x" + sizeof(IntPtr) * 2;
+    private static readonly unsafe string ToStringFormat = "x" + sizeof(IntPtr) * 2;
 
     public bool IsNull => Pointer == IntPtr.Zero;
 

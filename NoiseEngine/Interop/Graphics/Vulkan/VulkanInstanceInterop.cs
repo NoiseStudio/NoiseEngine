@@ -13,4 +13,9 @@ internal partial class VulkanInstanceInterop {
     [InteropImport("graphics_vulkan_instance_interop_destroy")]
     public static partial void Destroy(InteropHandle<VulkanInstance> instance);
 
+    [InteropImport("graphics_vulkan_instance_interop_get_physical_devices")]
+    public static partial InteropResult<InteropArray<VulkanPhysicalDeviceValue>> GetPhysicalDevices(
+        InteropHandle<VulkanInstance> instance
+    );
+
 }

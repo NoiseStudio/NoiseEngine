@@ -20,7 +20,7 @@ internal class VulkanLibrary {
     }
 
     public override string ToString() {
-        return $"{nameof(VulkanLibrary)} {{ Handle = {Handle} }}";
+        return $"{nameof(VulkanLibrary)} {{ {nameof(Handle)} = {Handle} }}";
     }
 
 }
