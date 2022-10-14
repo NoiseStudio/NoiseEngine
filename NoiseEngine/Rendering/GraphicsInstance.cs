@@ -14,6 +14,10 @@ public abstract class GraphicsInstance : IDisposable {
 
     protected abstract IReadOnlyList<GraphicsPhysicalDevice> ProtectedPhysicalDevices { get; set; }
 
+    /// <summary>
+    /// Creates new <see cref="GraphicsInstance"/>.
+    /// </summary>
+    /// <returns>New <see cref="GraphicsInstance"/>.</returns>
     public static GraphicsInstance Create() {
         return new VulkanInstance(new VulkanLibrary(), VulkanLogSeverity.All, VulkanLogType.All);
     }
