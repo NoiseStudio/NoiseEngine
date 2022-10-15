@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use vulkano::{device::{physical::PhysicalDevice, Device, DeviceCreateInfo, DeviceExtensions, QueueCreateInfo}};
+use vulkano::{device::{physical::PhysicalDevice, Device, DeviceCreateInfo, QueueCreateInfo}};
 
 use crate::{errors::invalid_operation::InvalidOperationError};
 
@@ -26,10 +26,6 @@ impl VulkanDevice {
         let (device, _queues) = match Device::new(
             self.physical_device(),
             DeviceCreateInfo {
-                enabled_extensions: DeviceExtensions {
-                    khr_swapchain: true,
-                    ..Default::default()
-                },
                 queue_create_infos: self.create_queue_create_infos(),
                 ..Default::default()
             }
