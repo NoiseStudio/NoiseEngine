@@ -10,9 +10,9 @@ public abstract class GraphicsInstance : IDisposable {
     private readonly AtomicBool isDisposed;
 
     public bool IsDisposed => isDisposed;
-    public IReadOnlyList<GraphicsPhysicalDevice> PhysicalDevices => ProtectedPhysicalDevices;
+    public IReadOnlyList<GraphicsDevice> Devices => ProtectedDevices;
 
-    protected abstract IReadOnlyList<GraphicsPhysicalDevice> ProtectedPhysicalDevices { get; set; }
+    protected abstract IReadOnlyList<GraphicsDevice> ProtectedDevices { get; set; }
 
     /// <summary>
     /// Creates new <see cref="GraphicsInstance"/>.
@@ -31,7 +31,7 @@ public abstract class GraphicsInstance : IDisposable {
 
         ReleaseResources();
 
-        ProtectedPhysicalDevices = Array.Empty<GraphicsPhysicalDevice>();
+        ProtectedDevices = Array.Empty<GraphicsDevice>();
     }
 
     internal VulkanInstance AsVulkan() {

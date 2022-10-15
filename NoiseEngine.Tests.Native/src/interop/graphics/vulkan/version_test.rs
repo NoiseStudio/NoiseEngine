@@ -1,4 +1,4 @@
-use noise_engine_native::interop::{prelude::InteropResult, errors::overflow::OverflowError};
+use noise_engine_native::{interop::prelude::InteropResult, errors::overflow::OverflowError};
 use vulkano::Version;
 
 #[no_mangle]

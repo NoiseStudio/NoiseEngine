@@ -5,11 +5,12 @@ use uuid::Uuid;
 use vulkano::{instance::Instance, VulkanLibrary};
 
 use crate::{
-    interop::{prelude::{InteropResult, ResultError, ResultErrorKind, InteropArray}, errors::overflow::OverflowError},
-    graphics::vulkan::{instance, log_severity::VulkanLogSeverity, log_type::VulkanLogType}
+    errors::overflow::OverflowError,
+    graphics::{vulkan::{instance, log_severity::VulkanLogSeverity, log_type::VulkanLogType, device::VulkanDevice}},
+    interop::prelude::{InteropResult, ResultError, ResultErrorKind, InteropArray}
 };
 
-use super::{instance_create_info::VulkanInstanceCreateInfo, physical_device_value::VulkanPhysicalDeviceValue};
+use super::{instance_create_info::VulkanInstanceCreateInfo, device_value::VulkanDeviceValue};
 
 #[no_mangle]
 extern "C" fn graphics_vulkan_instance_interop_create(
@@ -29,9 +30,9 @@ extern "C" fn graphics_vulkan_instance_interop_destroy(_handle: Box<Arc<Instance
 }
 
 #[no_mangle]
-extern "C" fn graphics_vulkan_instance_interop_get_physical_devices(
+extern "C" fn graphics_vulkan_instance_interop_get_devices(
     instance: &Arc<Instance>
-) -> InteropResult<InteropArray<VulkanPhysicalDeviceValue>> {
+) -> InteropResult<InteropArray<VulkanDeviceValue>> {
     match instance.enumerate_physical_devices() {
         Ok(physical_devices) => {
             let mut result = Vec::with_capacity(physical_devices.len());
@@ -39,7 +40,14 @@ extern "C" fn graphics_vulkan_instance_interop_get_physical_devices(
             for physical_device in physical_devices {
                 let properties = physical_device.properties();
 
-                result.push(VulkanPhysicalDeviceValue {
+                let mut is_supports_graphics = false;
+                let mut is_supports_computing = false;
+                for queue_family_properties in physical_device.queue_family_properties() {
+                    is_supports_graphics |= queue_family_properties.queue_flags.graphics;
+                    is_supports_computing |= queue_family_properties.queue_flags.compute;
+                }
+
+                result.push(VulkanDeviceValue {
                     name: properties.device_name.to_owned().into(),
                     vendor: properties.vendor_id,
                     device_type: unsafe { mem::transmute(properties.device_type) },
@@ -54,7 +62,9 @@ extern "C" fn graphics_vulkan_instance_interop_get_physical_devices(
                         Some(uuid) => Uuid::from_bytes_le(uuid),
                         None => Uuid::nil()
                     },
-                    handle: Box::new(physical_device)
+                    is_supports_graphics,
+                    is_supports_computing,
+                    handle: Box::new(VulkanDevice::new(physical_device))
                 });
             }
 

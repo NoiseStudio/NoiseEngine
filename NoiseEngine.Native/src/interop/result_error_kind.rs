@@ -4,11 +4,14 @@ use std::error::Error;
 pub enum ResultErrorKind {
     Universal = 0,
     LibraryLoad = 1,
-    Overflow = 2,
+    InvalidOperation = 2,
+    Overflow = 3,
 
-    GraphicsInstanceCreate = 1000,
-    GraphicsOutOfHostMemory = 1001,
-    GraphicsOutOfDeviceMemory = 1002
+    GraphicsUniversal = 1000,
+    GraphicsInstanceCreate = 1001,
+    GraphicsOutOfHostMemory = 1002,
+    GraphicsOutOfDeviceMemory = 1003,
+    GraphicsDeviceLost = 1004
 }
 
 impl From<&(dyn Error + 'static)> for ResultErrorKind {

@@ -11,7 +11,6 @@ pub mod interop_result;
 pub mod interop_span;
 pub mod interop_string;
 
-pub mod errors;
 pub mod graphics;
 
 mod logging;

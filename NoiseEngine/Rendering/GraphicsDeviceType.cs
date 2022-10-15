@@ -1,5 +1,6 @@
-#[repr(C)]
-pub enum GraphicsPhysicalDeviceType {
+﻿namespace NoiseEngine.Rendering;
+
+public enum GraphicsDeviceType : uint {
     Other = 0,
     IntegratedGpu = 1,
     DiscreteGpu = 2,

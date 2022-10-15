@@ -4,7 +4,6 @@ using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
-using NoiseEngine.Rendering;
 using System;
 using System.IO;
 

@@ -3,7 +3,7 @@
 /// <summary>
 /// Vendors from https://github.com/KhronosGroup/Vulkan-Docs/blob/main/xml/vk.xml.
 /// </summary>
-public enum GraphicsPhysicalDeviceVendor : uint {
+public enum GraphicsDeviceVendor : uint {
     Unknown = 0,
     Samsung = 1256,
     Nintendo = 1406,

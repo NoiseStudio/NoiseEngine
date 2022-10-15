@@ -1,17 +1,26 @@
-﻿using System.Runtime.CompilerServices;
+﻿using NoiseEngine.Interop;
+using NoiseEngine.Interop.Graphics.Vulkan;
+using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Rendering.Vulkan;
 
 internal sealed class VulkanDevice : GraphicsDevice {
 
     public new VulkanInstance Instance => Unsafe.As<VulkanInstance>(base.Instance);
-    public new VulkanPhysicalDevice PhysicalDevice => Unsafe.As<VulkanPhysicalDevice>(base.PhysicalDevice);
 
-    private VulkanDevice(VulkanPhysicalDevice physicalDevice) : base(physicalDevice) {
+    public VulkanDevice(VulkanInstance instance, VulkanDeviceValue value) : base(
+        instance, value.ToGraphics()
+    ) {
+        value.Dispose();
     }
 
-    public static VulkanDevice Create(VulkanPhysicalDevice physicalDevice) {
-        return new VulkanDevice(physicalDevice);
+    internal override void InternalDispose() {
+        VulkanDeviceInterop.Destroy(Handle);
+    }
+
+    protected override void InitializeWorker() {
+        if (!VulkanDeviceInterop.Initialize(Handle).TryGetValue(out _, out ResultError error))
+            error.ThrowAndDispose();
     }
 
 }

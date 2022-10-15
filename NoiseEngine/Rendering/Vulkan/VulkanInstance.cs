@@ -10,13 +10,12 @@ namespace NoiseEngine.Rendering.Vulkan;
 
 internal sealed class VulkanInstance : GraphicsInstance {
 
-    public new IReadOnlyList<VulkanPhysicalDevice> PhysicalDevices =>
-        Unsafe.As<IReadOnlyList<VulkanPhysicalDevice>>(ProtectedPhysicalDevices);
+    public new IReadOnlyList<VulkanDevice> Devices => Unsafe.As<IReadOnlyList<VulkanDevice>>(ProtectedDevices);
 
     public VulkanLibrary Library { get; private set; }
     public InteropHandle<VulkanInstance> Handle { get; private set; }
 
-    protected override IReadOnlyList<GraphicsPhysicalDevice> ProtectedPhysicalDevices { get; set; }
+    protected override IReadOnlyList<GraphicsDevice> ProtectedDevices { get; set; }
 
     public VulkanInstance(
         VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType
@@ -44,14 +43,14 @@ internal sealed class VulkanInstance : GraphicsInstance {
         Handle = nativeInstance;
         Log.Info($"Created new {this}.");
 
-        if (!VulkanInstanceInterop.GetPhysicalDevices(Handle).TryGetValue(
-            out InteropArray<VulkanPhysicalDeviceValue> physicalDevices, out error
+        if (!VulkanInstanceInterop.GetDevices(Handle).TryGetValue(
+            out InteropArray<VulkanDeviceValue> devices, out error
         )) {
             error.ThrowAndDispose();
         }
 
-        ProtectedPhysicalDevices = physicalDevices.Select(x => new VulkanPhysicalDevice(this, x)).ToArray();
-        physicalDevices.Dispose();
+        ProtectedDevices = devices.Select(x => new VulkanDevice(this, x)).ToArray();
+        devices.Dispose();
     }
 
     public override string ToString() {
@@ -61,7 +60,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
     protected override void ReleaseResources() {
         string toString = ToString();
 
-        foreach (VulkanPhysicalDevice physicalDevice in PhysicalDevices)
+        foreach (VulkanDevice physicalDevice in Devices)
             physicalDevice.InternalDispose();
 
         InteropHandle<VulkanInstance> handle = Handle;
