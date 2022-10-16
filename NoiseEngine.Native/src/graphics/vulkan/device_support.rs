@@ -9,7 +9,7 @@ pub struct VulkanDeviceSupport {
 
 impl VulkanDeviceSupport {
     pub fn is_suitable_to(&self, main: &Self) -> bool {
-        !(self.graphics && !main.graphics) || !(self.computing && !main.computing) || !(self.transfer && !main.transfer)
+        !(self.graphics && !main.graphics) && !(self.computing && !main.computing) && !(self.transfer && !main.transfer)
     }
     
     pub(crate) fn family_cmp(&self, other: &Self) -> Ordering {
