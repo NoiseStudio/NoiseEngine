@@ -18,8 +18,8 @@ impl VulkanDevice {
         Self { physical_device, initialized: None }
     }
 
-    fn create_not_initialized_error() -> InvalidOperationError{
-        return InvalidOperationError::with_str("VulkanDevice is not initialized.")
+    fn create_not_initialized_error() -> InvalidOperationError {
+        InvalidOperationError::with_str("VulkanDevice is not initialized.")
     }
 
     pub fn initialize(&mut self) -> Result<(), VulkanDeviceCreateError> {
@@ -96,7 +96,7 @@ impl VulkanDevice {
         queue_create_infos
     }
 
-    fn create_queue_families(&self, queues: impl ExactSizeIterator<Item = Arc<Queue>>) -> Vec<VulkanQueueFamily> {
+    fn create_queue_families(&self, queues: impl Iterator<Item = Arc<Queue>>) -> Vec<VulkanQueueFamily> {
         let mut families: Vec<_> = self.physical_device()
             .queue_family_properties().into_iter().map(|family| VulkanQueueFamily {
                 support: VulkanDeviceSupport {
@@ -152,24 +152,22 @@ impl VulkanQueueFamily {
     }
 }
 
-pub struct VulkanQueue {
-    family: *const VulkanQueueFamily,
+pub struct VulkanQueue<'a> {
+    family: &'a VulkanQueueFamily,
     queue: Arc<Queue>
 }
 
-impl VulkanQueue {
+impl<'a> VulkanQueue<'a> {
+    pub fn family(&self) -> &VulkanQueueFamily {
+        &self.family
+    }
+
     pub fn queue(&self) -> &Arc<Queue> {
         &self.queue
     }
-
-    pub fn family(&self) -> &VulkanQueueFamily {
-        unsafe {
-            self.family.as_ref()
-        }.unwrap()
-    }
 }
 
-impl Drop for VulkanQueue {
+impl<'a> Drop for VulkanQueue<'a> {
     fn drop(&mut self) {
         self.family().push(self.queue.clone())
     }
