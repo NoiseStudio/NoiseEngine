@@ -1,8 +1,8 @@
-﻿using NoiseEngine.InteropServices;
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Linq;
+using NoiseEngine.Interop.InteropMarshalling;
 
 namespace NoiseEngine.Diagnostics;
 
@@ -28,7 +28,7 @@ public static class MemoryInfo {
     }
 
     [DllImport("psapi.dll", SetLastError = true)]
-    private static extern NativeBool GetPerformanceInfo(
+    private static extern InteropBool GetPerformanceInfo(
         [Out] out PerformanceInformation information, [In] int size);
 
     private static PerformanceInformation GetWindowsPerformanceInfo() {

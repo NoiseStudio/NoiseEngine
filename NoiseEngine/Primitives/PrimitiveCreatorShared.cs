@@ -44,32 +44,32 @@ internal class PrimitiveCreatorShared : IDisposable {
 
     private readonly GraphicsDevice graphicsDevice;
 
-    private Shader? defaultShader;
-    private Material? defaultMaterial;
+    //private Shader? defaultShader;
+    //private Material? defaultMaterial;
 
-    private Mesh? cubeMesh;
+    //private Mesh? cubeMesh;
 
-    public Material DefaultMaterial => defaultMaterial ??= new Material(DefaultShader);
-    public Shader DefaultShader => defaultShader ??= Shader.FromGlslSource(
+    //public Material DefaultMaterial => defaultMaterial ??= new Material(DefaultShader);
+    /*public Shader DefaultShader => defaultShader ??= Shader.FromGlslSource(
         graphicsDevice,
         InPosition3Color3OutColor3GlslVert,
         InColor3GlslFrag,
         "main",
         "main",
-        VertexPosition3Color3.GetVertexDescription());
+        VertexPosition3Color3.GetVertexDescription());*/
 
-    internal Mesh CubeMesh => cubeMesh ?? CreateCubeMesh();
+    //internal Mesh CubeMesh => cubeMesh ?? CreateCubeMesh();
 
     public PrimitiveCreatorShared(GraphicsDevice graphicsDevice) {
         this.graphicsDevice = graphicsDevice;
     }
 
     public void Dispose() {
-        defaultMaterial?.Destroy();
-        defaultShader?.Destroy();
+        //defaultMaterial?.Destroy();
+        //defaultShader?.Destroy();
     }
 
-    private Mesh CreateCubeMesh() {
+    /*private Mesh CreateCubeMesh() {
         Interlocked.CompareExchange(ref cubeMesh, new Mesh<VertexPosition3Color3, ushort>(
             graphicsDevice,
             new VertexPosition3Color3[] {
@@ -120,6 +120,6 @@ internal class PrimitiveCreatorShared : IDisposable {
         ), null);
 
         return CubeMesh;
-    }
+    }*/
 
 }

@@ -1,6 +1,4 @@
 ﻿using NoiseEngine.Jobs;
-using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Systems;
 using System;
 using System.Threading;
@@ -15,17 +13,17 @@ internal class RenderCameraThread : IDisposable {
 
     public bool IsDisposed { get; private set; }
     public ApplicationScene Scene { get; }
-    public Camera Camera { get; }
+    //public Camera Camera { get; }
 
-    public Window RenderTarget => Camera.RenderTarget;
+    //public Window RenderTarget => Camera.RenderTarget;
     public bool IsWindow => true;
-    public bool IsShouldClose => IsDisposed || (IsWindow && RenderTarget.GetShouldClose());
+    public bool IsShouldClose => throw new NotImplementedException();//IsDisposed || (IsWindow && RenderTarget.GetShouldClose());
 
     internal RenderCameraThread(RenderCamera renderCamera, MeshRendererSystem meshRenderer) {
         this.renderCamera = new WeakReference<RenderCamera>(renderCamera);
 
         Scene = renderCamera.Scene;
-        Camera = renderCamera.Camera;
+        //Camera = renderCamera.Camera;
 
         new Thread(ThreadWorker) {
             Name = nameof(RenderCameraThread)
@@ -60,10 +58,10 @@ internal class RenderCameraThread : IDisposable {
 
         // Dispose render camera when windows is closed.
         // TODO: move this to Window class as event.
-        if (RenderTarget.GetShouldClose() && renderCamera.TryGetTarget(out RenderCamera? r)) {
+        /*if (RenderTarget.GetShouldClose() && renderCamera.TryGetTarget(out RenderCamera? r)) {
             disposedEvent = new ManualResetEventSlim(true);
             r.Dispose();
-        }
+        }*/
     }
 
 }

@@ -9,7 +9,7 @@ namespace NoiseEngine.Nesl;
 
 internal static class NeslPrimitiveTest {
 
-    internal static Shader CreateShader(GraphicsDevice graphicsDevice, string vertexShader) {
+    /*internal static Shader CreateShader(GraphicsDevice graphicsDevice, string vertexShader) {
         IlGenerator? il;
         NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(NeslPrimitiveTest));
 
@@ -31,6 +31,6 @@ internal static class NeslPrimitiveTest {
             fragment.Guid.ToString(),
             VertexPosition3Color3.GetVertexDescription()
         );
-    }
+    }*/
 
 }

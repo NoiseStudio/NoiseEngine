@@ -1,4 +1,6 @@
-pub mod conversions;
+pub mod errors;
+
+pub mod device;
 pub mod instance;
 pub mod library;
 pub mod log_severity;

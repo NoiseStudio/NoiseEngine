@@ -32,28 +32,6 @@
         <ProjectReference Include="../NoiseEngine/NoiseEngine.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Reference Include="NoiseEngine.Common">
-            <HintPath>../External/NoiseEngine.Common.dll</HintPath>
-        </Reference>
-        <Reference Include="NoiseEngine.Inputs">
-            <HintPath>../External/NoiseEngine.Inputs.dll</HintPath>
-        </Reference>
-        <Reference Include="NoiseEngine.InteropServices">
-            <HintPath>../External/NoiseEngine.InteropServices.dll</HintPath>
-        </Reference>
-        <Reference Include="NoiseEngine.Logging">
-            <HintPath>../External/NoiseEngine.Logging.dll</HintPath>
-            <Aliases>OldLogging</Aliases>
-        </Reference>
-        <Reference Include="NoiseEngine.Mathematics">
-            <HintPath>../External/NoiseEngine.Mathematics.dll</HintPath>
-        </Reference>
-        <Reference Include="NoiseEngine.Rendering">
-            <HintPath>../External/NoiseEngine.Rendering.dll</HintPath>
-        </Reference>
-    </ItemGroup>
-
     <Import Project="../NoiseEngine.Shared.xml" />
 
     <!--
@@ -64,9 +42,7 @@
     -->
     <Target Name="CompileTestsNative" BeforeTargets="AfterBuild">
         <Exec WorkingDirectory="../NoiseEngine.Tests.Native/" Command="cargo build $(CargoReleaseFlag)" />
-        <Copy
-            SourceFiles="../NoiseEngine.Tests.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_tests_native.$(OSLibExt)"
-            DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
+        <Copy SourceFiles="../NoiseEngine.Tests.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_tests_native.$(OSLibExt)" DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
     </Target>
 
 </Project>

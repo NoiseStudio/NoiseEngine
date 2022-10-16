@@ -4,7 +4,6 @@ using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
-using NoiseEngine.Rendering;
 using System;
 using System.IO;
 
@@ -68,7 +67,7 @@ public class Test {
         }).GetCode());
     }
 
-    [FactRequire(TestRequirements.Gpu)]
+    /*[FactRequire(TestRequirements.Graphics)]
     public void TestGlsl() {
         const string InColor3GlslFrag = @"
             #version 450
@@ -82,6 +81,6 @@ public class Test {
         // Compile.
         File.WriteAllBytes($"{nameof(TestGlsl)}.spv",
             ShaderCompiler.CompileGlsl(InColor3GlslFrag, ShaderStage.Fragment));
-    }
+    }*/
 
 }

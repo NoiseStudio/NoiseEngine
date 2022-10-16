@@ -1,9 +1,6 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.DeveloperTools.Components;
-using NoiseEngine.Inputs;
 using NoiseEngine.Jobs;
-using NoiseEngine.Mathematics;
-using NoiseEngine.Rendering.Presentation;
 using System;
 using System.Collections.Generic;
 
@@ -28,7 +25,8 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
     protected override void OnUpdateEntity(
         Entity entity, TransformComponent transform, DebugMovementComponent movement
     ) {
-        if (!Window.TryGetFocusedWindow(out Window? window))
+        _ = speed;
+        /*if (!Window.TryGetFocusedWindow(out Window? window))
             return;
 
         Input input = Input.GetInput(window);
@@ -98,7 +96,7 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
         }
 
         entity.Set(this, transform with { Position = position, Rotation = rotation });
-        entity.Set(this, movement);
+        entity.Set(this, movement);*/
     }
 
 }

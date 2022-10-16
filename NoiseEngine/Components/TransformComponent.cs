@@ -36,7 +36,7 @@ public record struct TransformComponent : IEntityComponent {
         }
     }
 
-    public Matrix4x4 Matrix { get; private init; }
+    public Matrix4x4<float> Matrix { get; private init; }
 
     public Vector3<float> Left => Rotation * Vector3<float>.Left;
     public Vector3<float> Right => Rotation * Vector3<float>.Right;
@@ -50,9 +50,7 @@ public record struct TransformComponent : IEntityComponent {
         this.rotation = rotation;
         this.scale = scale;
 
-        // TODO: implement
-        Matrix = Matrix4x4.Translate(new Float3(position.X, position.Y, position.Z));
-        // * Matrix4x4.Rotate(rotation) * Matrix4x4.Scale(scale);
+        Matrix = CalculateMatrix();
     }
 
     public TransformComponent(Vector3<float> position, Quaternion<float> rotation)
@@ -83,10 +81,8 @@ public record struct TransformComponent : IEntityComponent {
         return Matrix.GetHashCode();
     }
 
-    private Matrix4x4 CalculateMatrix() {
-        // TODO: implement
-        return Matrix4x4.Translate(new Float3(Position.X, position.Y, position.Z));
-        // * Matrix4x4.Rotate(Rotation) * Matrix4x4.Scale(Scale);
+    private Matrix4x4<float> CalculateMatrix() {
+        return Matrix4x4<float>.Translate(Position) * Matrix4x4<float>.Rotate(Rotation) * Matrix4x4<float>.Scale(Scale);
     }
 
     private bool PrintMembers(StringBuilder builder) {

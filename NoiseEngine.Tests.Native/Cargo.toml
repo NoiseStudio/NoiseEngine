@@ -8,3 +8,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 noise_engine_native = { path = "../NoiseEngine.Native" }
+vulkano = "0.31.1"

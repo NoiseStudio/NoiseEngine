@@ -1,26 +1,26 @@
 ﻿using NoiseEngine.Collections.Concurrent;
+using NoiseEngine.Interop.Logging;
 using NoiseEngine.Jobs;
 using NoiseEngine.Logging;
 using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using NoiseEngine.Interop.Logging;
-using NoiseEngine.Rendering.Vulkan;
 
 namespace NoiseEngine;
 
 public static class Application {
 
     private static readonly object exitLocker = new object();
+    private static readonly object graphicsInstanceLocker = new object();
     private static readonly ConcurrentList<ApplicationScene> loadedScenes = new ConcurrentList<ApplicationScene>();
 
     private static AtomicBool isInitialized;
     private static bool isExited;
     private static ApplicationSettings? settings;
+    private static GraphicsInstance? graphicsInstance;
 
     public static Version? EngineVersion => typeof(Application).Assembly.GetName().Version;
 
@@ -29,7 +29,9 @@ public static class Application {
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
-    public static IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
+    //public static IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
+
+    public static GraphicsInstance GraphicsInstance => GetGraphicsInstance();
 
     internal static ApplicationSettings Settings => settings ?? throw new InvalidOperationException(
         $"{nameof(Application)} has not been initialized with a call to {nameof(Initialize)}.");
@@ -109,7 +111,9 @@ public static class Application {
                 scene.Dispose();
 
             EntitySchedule.Dispose();
-            Graphics.Terminate();
+
+            lock (graphicsInstanceLocker)
+                graphicsInstance?.Dispose();
 
             Log.Info($"{nameof(Application)} exited with code {exitCode}.");
             InteropLogging.Terminate();
@@ -136,6 +140,26 @@ public static class Application {
         Log.Logger.Dispose();
 
         throw new ApplicationException(info);
+    }
+
+    private static GraphicsInstance GetGraphicsInstance() {
+        if (graphicsInstance is not null)
+            return graphicsInstance;
+
+        lock (graphicsInstanceLocker) {
+            if (graphicsInstance is not null)
+                return graphicsInstance;
+
+            AssertNotExited();
+            graphicsInstance = GraphicsInstance.Create();
+        }
+
+        return graphicsInstance;
+    }
+
+    private static void AssertNotExited() {
+        if (isExited)
+            throw new InvalidOperationException($"{nameof(Application)} is exited.");
     }
 
 }

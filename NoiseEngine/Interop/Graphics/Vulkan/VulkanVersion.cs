@@ -60,4 +60,8 @@ internal readonly record struct VulkanVersion {
         return (uint)version.Major << 22 | (uint)version.Minor << 12 | (uint)version.Revision;
     }
 
+    public Version ToVersion() {
+        return new Version((int)(version >> 22), (int)((version >> 12) & MaxMinor), 0, (int)(version & MaxRevision));
+    }
+
 }
