@@ -1,10 +1,15 @@
-﻿using NoiseEngine.Rendering;
+﻿using NoiseEngine.Interop;
+using NoiseEngine.Rendering;
 using NoiseEngine.Tests.Fixtures;
+using System.Threading.Tasks;
 
 namespace NoiseEngine.Tests.Rendering;
 
 [Collection(nameof(ApplicationCollection))]
-public class GraphicsDeviceTest {
+public partial class GraphicsDeviceTest {
+
+    [InteropImport("graphics_vulkan_device_test_get_queue")]
+    private static partial InteropResult<None> InteropUnmanagedGetQueue(InteropHandle<GraphicsDevice> device);
 
     [FactRequire(TestRequirements.Graphics)]
     public void Properties() {
@@ -18,6 +23,14 @@ public class GraphicsDeviceTest {
     public void Initialize() {
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices)
             device.Initialize();
+    }
+
+    [FactRequire(TestRequirements.Graphics)]
+    public void UnmanagedGetQueue() {
+        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+            device.Initialize();
+            Parallel.For(0, 64, (_, _) => _ = InteropUnmanagedGetQueue(device.Handle).Value);
+        }
     }
 
 }
