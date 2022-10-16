@@ -40,11 +40,11 @@ extern "C" fn graphics_vulkan_instance_interop_get_devices(
             for physical_device in physical_devices {
                 let properties = physical_device.properties();
 
-                let mut is_supports_graphics = false;
-                let mut is_supports_computing = false;
+                let mut supports_graphics = false;
+                let mut supports_computing = false;
                 for queue_family_properties in physical_device.queue_family_properties() {
-                    is_supports_graphics |= queue_family_properties.queue_flags.graphics;
-                    is_supports_computing |= queue_family_properties.queue_flags.compute;
+                    supports_graphics |= queue_family_properties.queue_flags.graphics;
+                    supports_computing |= queue_family_properties.queue_flags.compute;
                 }
 
                 result.push(VulkanDeviceValue {
@@ -62,8 +62,8 @@ extern "C" fn graphics_vulkan_instance_interop_get_devices(
                         Some(uuid) => Uuid::from_bytes_le(uuid),
                         None => Uuid::nil()
                     },
-                    is_supports_graphics,
-                    is_supports_computing,
+                    supports_graphics,
+                    supports_computing,
                     handle: Box::new(VulkanDevice::new(physical_device))
                 });
             }

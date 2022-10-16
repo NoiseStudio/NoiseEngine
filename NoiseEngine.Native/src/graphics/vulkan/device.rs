@@ -24,7 +24,7 @@ impl VulkanDevice {
 
         // TODO: Add queues management.
         let (device, _queues) = match Device::new(
-            self.physical_device(),
+            self.physical_device().clone(),
             DeviceCreateInfo {
                 queue_create_infos: self.create_queue_create_infos(),
                 ..Default::default()
@@ -38,13 +38,12 @@ impl VulkanDevice {
         Ok(())
     }
 
-    pub fn physical_device(&self) -> Arc<PhysicalDevice> {
-        self.physical_device.clone()
+    pub fn physical_device(&self) -> &Arc<PhysicalDevice> {
+        &self.physical_device
     }
 
     fn create_queue_create_infos(&self) -> Vec<QueueCreateInfo> {
-        let physical_device = self.physical_device();
-        let queue_families = physical_device.queue_family_properties();
+        let queue_families = self.physical_device().queue_family_properties();
 
         let mut queue_create_infos = Vec::with_capacity(queue_families.len());
         let mut queue_family_index: u32 = 0;
