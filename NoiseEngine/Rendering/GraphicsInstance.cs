@@ -7,7 +7,7 @@ namespace NoiseEngine.Rendering;
 
 public abstract class GraphicsInstance : IDisposable {
 
-    private readonly AtomicBool isDisposed;
+    private AtomicBool isDisposed;
 
     public bool IsDisposed => isDisposed;
     public IReadOnlyList<GraphicsDevice> Devices => ProtectedDevices;
@@ -32,10 +32,6 @@ public abstract class GraphicsInstance : IDisposable {
         ReleaseResources();
 
         ProtectedDevices = Array.Empty<GraphicsDevice>();
-    }
-
-    internal VulkanInstance AsVulkan() {
-        return (VulkanInstance)this;
     }
 
     protected abstract void ReleaseResources();

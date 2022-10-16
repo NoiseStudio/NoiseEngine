@@ -17,8 +17,8 @@ public abstract class GraphicsDevice {
     public GraphicsDeviceType Type { get; }
     public Version ApiVersion { get; }
     public Guid Guid { get; }
-    public bool IsSupportsGraphics { get; }
-    public bool IsSupportsComputing { get; }
+    public bool SupportsGraphics { get; }
+    public bool SupportsComputing { get; }
 
     internal InteropHandle<GraphicsDevice> Handle { get; }
 
@@ -29,8 +29,8 @@ public abstract class GraphicsDevice {
         Type = value.Type;
         ApiVersion = value.ApiVersion;
         Guid = value.Guid;
-        IsSupportsGraphics = value.IsSupportGraphics;
-        IsSupportsComputing = value.IsSupportComputing;
+        SupportsGraphics = value.SupportGraphics;
+        SupportsComputing = value.SupportComputing;
         Handle = value.Handle;
     }
 
@@ -61,10 +61,6 @@ public abstract class GraphicsDevice {
             InitializeWorker();
             isInitialized = true;
         }
-    }
-
-    internal VulkanDevice AsVulkan() {
-        return (VulkanDevice)this;
     }
 
     protected abstract void InitializeWorker();

@@ -50,8 +50,7 @@ public record struct TransformComponent : IEntityComponent {
         this.rotation = rotation;
         this.scale = scale;
 
-        Matrix = Matrix4x4<float>.Translate(position) * Matrix4x4<float>.Rotate(rotation)
-            * Matrix4x4<float>.Scale(scale);
+        Matrix = CalculateMatrix();
     }
 
     public TransformComponent(Vector3<float> position, Quaternion<float> rotation)

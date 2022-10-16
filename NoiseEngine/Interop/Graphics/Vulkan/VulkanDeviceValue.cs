@@ -11,8 +11,8 @@ internal readonly record struct VulkanDeviceValue(
     VulkanVersion ApiVersion,
     uint DriverVersion,
     Guid Guid,
-    InteropBool IsSupportsGraphics,
-    InteropBool IsSupportsComputing,
+    InteropBool SupportsGraphics,
+    InteropBool SupportsComputing,
     InteropHandle<GraphicsDevice> Handle
 ) : IDisposable {
 
@@ -21,6 +21,7 @@ internal readonly record struct VulkanDeviceValue(
             if (Enum.IsDefined(UnsafeVendor))
                 return UnsafeVendor;
 
+            // Checks repeated Vendors from PCI Vendor Id list.
             return (uint)UnsafeVendor switch {
                 5197 => GraphicsDeviceVendor.Samsung,
                 6091 => GraphicsDeviceVendor.Qualcomm,
@@ -43,8 +44,8 @@ internal readonly record struct VulkanDeviceValue(
             ApiVersion.ToVersion(),
             DriverVersion,
             Guid,
-            IsSupportsGraphics,
-            IsSupportsComputing,
+            SupportsGraphics,
+            SupportsComputing,
             Handle
         );
     }

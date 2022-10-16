@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Interop.Graphics.Vulkan;
 
-internal partial class VulkanDeviceInterop {
+internal static partial class VulkanDeviceInterop {
 
     [InteropImport("graphics_vulkan_device_interop_destroy")]
     public static partial void Destroy(InteropHandle<GraphicsDevice> device);

@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Interop.Graphics.Vulkan;
 
-internal partial class VulkanLibraryInterop {
+internal static partial class VulkanLibraryInterop {
 
     [InteropImport("graphics_vulkan_library_interop_create")]
     public static partial InteropResult<InteropHandle<VulkanLibrary>> Create();

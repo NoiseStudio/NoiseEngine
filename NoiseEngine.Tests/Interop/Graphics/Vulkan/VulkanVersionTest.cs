@@ -6,10 +6,10 @@ namespace NoiseEngine.Tests.Interop.Graphics.Vulkan;
 
 public partial class VulkanVersionTest {
 
-    [InteropImport("interop_graphics_vulkan_version_test_managed_create", InteropConstants.DllName)]
+    [InteropImport("interop_graphics_vulkan_version_test_managed_create")]
     private static partial InteropResult<VulkanVersion> InteropManagedCreate(VulkanVersion version);
 
-    [InteropImport("interop_graphics_vulkan_version_test_unmanaged_create", InteropConstants.DllName)]
+    [InteropImport("interop_graphics_vulkan_version_test_unmanaged_create")]
     private static partial InteropResult<VulkanVersion> InteropUnmanagedCreate(int major, int minor, int revision);
 
     [Theory]

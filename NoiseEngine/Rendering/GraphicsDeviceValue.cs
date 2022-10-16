@@ -10,7 +10,7 @@ internal record struct GraphicsDeviceValue(
     Version ApiVersion,
     uint DriverVersion,
     Guid Guid,
-    bool IsSupportGraphics,
-    bool IsSupportComputing,
+    bool SupportGraphics,
+    bool SupportComputing,
     InteropHandle<GraphicsDevice> Handle
 );
