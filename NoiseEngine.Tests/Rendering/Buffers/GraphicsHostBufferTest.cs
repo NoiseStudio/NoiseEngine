@@ -21,7 +21,7 @@ public class GraphicsHostBufferTest {
         int[] data = Enumerable.Range(0, Size).ToArray();
 
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
-            int[] readed = new int[Size];
+            int[] read = new int[Size];
 
             using GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(
                 device, GraphicsBufferUsage.Storage, Size
@@ -29,8 +29,8 @@ public class GraphicsHostBufferTest {
 
             buffer.SetData(data);
 
-            buffer.GetData(readed);
-            Assert.Equal(data, readed);
+            buffer.GetData(read);
+            Assert.Equal(data, read);
         }
     }
 

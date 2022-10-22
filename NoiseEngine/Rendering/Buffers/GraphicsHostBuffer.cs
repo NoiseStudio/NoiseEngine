@@ -1,8 +1,10 @@
 ﻿using NoiseEngine.Interop;
 using NoiseEngine.Interop.Graphics.Buffers;
 using NoiseEngine.Interop.Graphics.Vulkan.Buffers;
+using NoiseEngine.Nesl.Default;
 using NoiseEngine.Rendering.Exceptions;
 using System;
+using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Buffers;
 
@@ -68,24 +70,18 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="buffer">Buffer for copied data from this <see cref="GraphicsReadOnlyBuffer{T}"/>.</param>
     /// <param name="start">Start index of copy.</param>
     protected override unsafe void GetDataUnchecked(Span<T> buffer, ulong start) {
-        Span<byte> b;
-        fixed (void* pointer = buffer)
-            b = new Span<byte>(pointer, (int)GetSize((ulong)buffer.Length));
-
+        Span<byte> b = MemoryMarshal.Cast<T, byte>(buffer);
         if (!GraphicsBufferInterop.HostRead(Handle.Pointer, b, start).TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
     }
 
     /// <summary>
-    /// Sets data to this <see cref="GraphicsHostBuffer{T}"/> without size and start checks.
+    /// Copies <paramref name="data"/> to this <see cref="GraphicsBuffer{T}"/> without size and start checks.
     /// </summary>
-    /// <param name="data">New data.</param>
-    /// <param name="start">Start of <paramref name="data"/> entry.</param>
+    /// <param name="data">Data to copy.</param>
+    /// <param name="start">Start index of copy.</param>
     protected override unsafe void SetDataUnchecked(ReadOnlySpan<T> data, ulong start) {
-        ReadOnlySpan<byte> b;
-        fixed (void* pointer = data)
-            b = new ReadOnlySpan<byte>(pointer, (int)GetSize((ulong)data.Length));
-
+        ReadOnlySpan<byte> b = MemoryMarshal.Cast<T, byte>(data);
         if (!GraphicsBufferInterop.HostWrite(Handle.Pointer, b, start).TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
     }

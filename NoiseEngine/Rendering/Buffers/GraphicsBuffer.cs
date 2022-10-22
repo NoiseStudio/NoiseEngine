@@ -11,9 +11,9 @@ public abstract class GraphicsBuffer<T> : GraphicsReadOnlyBuffer<T> where T : un
     }
 
     /// <summary>
-    /// Sets data to this <see cref="GraphicsBuffer{T}"/>.
+    /// Copies <paramref name="data"/> to this <see cref="GraphicsBuffer{T}"/>.
     /// </summary>
-    /// <param name="data">New data.</param>
+    /// <param name="data">Data to copy.</param>
     public void SetData(ReadOnlySpan<T> data) {
         if ((ulong)data.Length > Count)
             throw new ArgumentOutOfRangeException(nameof(data));
@@ -22,10 +22,10 @@ public abstract class GraphicsBuffer<T> : GraphicsReadOnlyBuffer<T> where T : un
     }
 
     /// <summary>
-    /// Sets data to this <see cref="GraphicsBuffer{T}"/> without size and start checks.
+    /// Copies <paramref name="data"/> to this <see cref="GraphicsBuffer{T}"/> without size and start checks.
     /// </summary>
-    /// <param name="data">New data.</param>
-    /// <param name="start">Start of <paramref name="data"/> entry.</param>
+    /// <param name="data">Data to copy.</param>
+    /// <param name="start">Start index of copy.</param>
     protected abstract void SetDataUnchecked(ReadOnlySpan<T> data, ulong start);
 
 }

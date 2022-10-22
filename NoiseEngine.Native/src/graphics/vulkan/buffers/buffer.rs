@@ -29,14 +29,13 @@ impl<'a> VulkanBuffer<'a> {
         let vulkan_device = device.device()?;
         let buffer = Self::create_buffer(vulkan_device, size, usage)?;
 
-        let memory = MemoryPool::alloc_from_requirements(
-            &vulkan_device.standard_memory_pool(),
+        let memory = vulkan_device.standard_memory_pool().alloc_from_requirements(
             &buffer.memory_requirements(),
             AllocLayout::Linear,
             match map {
                 true => MappingRequirement::Map,
                 false => MappingRequirement::DoNotMap
-            }, 
+            },
             Some(DedicatedAllocation::Buffer(&buffer)),
             |m| {
                 if map {
@@ -98,7 +97,7 @@ impl<'a> VulkanBuffer<'a> {
     fn get_mapped_memory(&self) -> Result<&MappedDeviceMemory, InvalidOperationError> {
         match self.memory.mapped_memory() {
             Some(m) => Ok(m),
-            None => Err(InvalidOperationError::with_str("This VulkanBuffer does not mapped memory."))
+            None => Err(InvalidOperationError::with_str("This VulkanBuffer has no mapped memory."))
         }
     }
 
