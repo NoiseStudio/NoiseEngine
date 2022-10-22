@@ -108,7 +108,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// Span becomes invalid when the object is disposed.
     /// </summary>
     /// <param name="start">Start index of the span.</param>
-    /// <param name="length">Lenght of the span.</param>
+    /// <param name="length">Length of the span.</param>
     /// <returns>Span with the view of the memory held by this object.</returns>
     /// <throws cref="ArgumentOutOfRangeException">
     /// <paramref name="start"/> is out of range or <paramref name="length"/> is invalid.

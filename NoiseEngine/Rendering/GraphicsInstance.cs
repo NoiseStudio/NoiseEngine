@@ -9,6 +9,8 @@ public abstract class GraphicsInstance : IDisposable {
 
     private AtomicBool isDisposed;
 
+    public abstract GraphicsApi Api { get; }
+
     public bool IsDisposed => isDisposed;
     public IReadOnlyList<GraphicsDevice> Devices => ProtectedDevices;
 
@@ -32,8 +34,12 @@ public abstract class GraphicsInstance : IDisposable {
         ReleaseResources();
 
         ProtectedDevices = Array.Empty<GraphicsDevice>();
+        GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Release resources from this <see cref="GraphicsDevice"/>.
+    /// </summary>
     protected abstract void ReleaseResources();
 
 }

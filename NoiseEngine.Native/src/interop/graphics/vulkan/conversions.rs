@@ -1,4 +1,4 @@
-use vulkano::{VulkanError, device::DeviceCreationError, OomError};
+use vulkano::{VulkanError, device::DeviceCreationError, OomError, memory::{DeviceMemoryError, MemoryMapError}, buffer::BufferCreationError};
 
 use crate::interop::prelude::{ResultError, ResultErrorKind};
 
@@ -18,6 +18,33 @@ impl From<DeviceCreationError> for ResultError {
             DeviceCreationError::DeviceLost => ResultErrorKind::GraphicsDeviceLost,
             DeviceCreationError::OutOfDeviceMemory => ResultErrorKind::GraphicsOutOfHostMemory,
             DeviceCreationError::OutOfHostMemory => ResultErrorKind::GraphicsOutOfHostMemory,
+            _ => ResultErrorKind::GraphicsUniversal
+        })
+    }
+}
+
+impl From<DeviceMemoryError> for ResultError {
+    fn from(err: DeviceMemoryError) -> Self {
+        ResultError::with_kind(&err, match err {
+            DeviceMemoryError::OomError(oom) => oom.into(),
+            _ => ResultErrorKind::GraphicsUniversal
+        })
+    }
+}
+
+impl From<BufferCreationError> for ResultError {
+    fn from(err: BufferCreationError) -> Self {
+        match err {
+            BufferCreationError::AllocError(err) => err.into(),
+            _ => ResultError::with_kind(&err, ResultErrorKind::GraphicsUniversal)
+        }
+    }
+}
+
+impl From<MemoryMapError> for ResultError {
+    fn from(err: MemoryMapError) -> Self {
+        ResultError::with_kind(&err, match err {
+            MemoryMapError::OomError(oom) => oom.into(),
             _ => ResultErrorKind::GraphicsUniversal
         })
     }
