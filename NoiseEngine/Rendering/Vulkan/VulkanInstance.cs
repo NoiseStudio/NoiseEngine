@@ -12,6 +12,8 @@ internal sealed class VulkanInstance : GraphicsInstance {
 
     public new IReadOnlyList<VulkanDevice> Devices => Unsafe.As<IReadOnlyList<VulkanDevice>>(ProtectedDevices);
 
+    public override GraphicsApi Api => GraphicsApi.Vulkan;
+
     public VulkanLibrary Library { get; private set; }
     public InteropHandle<VulkanInstance> Handle { get; private set; }
 
