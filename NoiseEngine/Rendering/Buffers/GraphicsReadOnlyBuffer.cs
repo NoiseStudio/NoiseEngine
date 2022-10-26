@@ -26,7 +26,7 @@ public abstract class GraphicsReadOnlyBuffer<T> : IDisposable where T : unmanage
     }
 
     ~GraphicsReadOnlyBuffer() {
-        //ReleaseResources();
+        ReleaseResources();
     }
 
     /// <summary>
