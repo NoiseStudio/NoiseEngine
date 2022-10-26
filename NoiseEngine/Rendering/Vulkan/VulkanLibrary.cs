@@ -1,5 +1,5 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.Graphics.Vulkan;
+using NoiseEngine.Interop.Rendering.Vulkan;
 
 namespace NoiseEngine.Rendering.Vulkan;
 

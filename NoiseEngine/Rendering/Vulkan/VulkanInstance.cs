@@ -1,5 +1,5 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.Graphics.Vulkan;
+using NoiseEngine.Interop.Rendering.Vulkan;
 using NoiseEngine.Interop.InteropMarshalling;
 using System;
 using System.Collections.Generic;
@@ -62,8 +62,8 @@ internal sealed class VulkanInstance : GraphicsInstance {
     protected override void ReleaseResources() {
         string toString = ToString();
 
-        foreach (VulkanDevice physicalDevice in Devices)
-            physicalDevice.InternalDispose();
+        foreach (VulkanDevice device in Devices)
+            device.InternalDispose();
 
         InteropHandle<VulkanInstance> handle = Handle;
         Handle = InteropHandle<VulkanInstance>.Zero;

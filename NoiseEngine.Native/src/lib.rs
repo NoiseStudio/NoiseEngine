@@ -4,6 +4,6 @@ use interop::interop_allocator::InteropAllocator;
 static GLOBAL_ALLOCATOR: InteropAllocator = InteropAllocator;
 
 pub mod errors;
-pub mod graphics;
 pub mod interop;
 pub mod logging;
+pub mod rendering;

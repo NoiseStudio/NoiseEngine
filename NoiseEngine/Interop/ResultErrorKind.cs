@@ -3,8 +3,9 @@
 internal enum ResultErrorKind : uint {
     Universal = 0,
     LibraryLoad = 1,
-    InvalidOperation = 2,
-    Overflow = 3,
+    NullReference = 2,
+    InvalidOperation = 3,
+    Overflow = 4,
 
     GraphicsUniversal = 1000,
     GraphicsInstanceCreate = 1001,

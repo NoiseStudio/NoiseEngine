@@ -45,6 +45,7 @@ internal struct ResultError : IDisposable {
         return Kind switch {
             ResultErrorKind.Universal => new Exception(Message, innerException),
             ResultErrorKind.LibraryLoad => new LibraryLoadException(Message, innerException),
+            ResultErrorKind.NullReference => new NullReferenceException(Message, innerException),
             ResultErrorKind.InvalidOperation => new InvalidOperationException(Message, innerException),
             ResultErrorKind.Overflow => new OverflowException(Message, innerException),
 

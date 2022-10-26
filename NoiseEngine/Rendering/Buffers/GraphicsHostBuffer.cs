@@ -1,6 +1,6 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.Graphics.Buffers;
-using NoiseEngine.Interop.Graphics.Vulkan.Buffers;
+using NoiseEngine.Interop.Rendering.Buffers;
+using NoiseEngine.Interop.Rendering.Vulkan.Buffers;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Rendering.Exceptions;
 using System;

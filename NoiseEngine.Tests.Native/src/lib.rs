@@ -1,3 +1,3 @@
-mod graphics;
 mod interop;
 mod logging;
+mod rendering;

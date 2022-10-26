@@ -1,5 +1,5 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.Graphics.Buffers;
+using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Threading;
 using System;
 using System.Runtime.InteropServices;
@@ -26,7 +26,7 @@ public abstract class GraphicsReadOnlyBuffer<T> : IDisposable where T : unmanage
     }
 
     ~GraphicsReadOnlyBuffer() {
-        ReleaseResources();
+        //ReleaseResources();
     }
 
     /// <summary>
