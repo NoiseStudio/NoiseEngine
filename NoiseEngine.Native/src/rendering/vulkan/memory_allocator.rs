@@ -1,4 +1,4 @@
-use std::{sync::Mutex, ptr, mem::ManuallyDrop, cell::UnsafeCell};
+use std::{sync::Mutex, ptr, mem::ManuallyDrop};
 
 use ash::vk;
 use gpu_alloc::{Config, Request, UsageFlags};
@@ -64,16 +64,14 @@ impl Drop for MemoryAllocator {
 
 pub(crate) struct MemoryBlock {
     allocator_ptr: *const MemoryAllocator,
-    inner: UnsafeCell<ManuallyDrop<gpu_alloc::MemoryBlock<vk::DeviceMemory>>>,
-    mutex: Mutex<()>
+    inner: Mutex<ManuallyDrop<gpu_alloc::MemoryBlock<vk::DeviceMemory>>>
 }
 
 impl MemoryBlock {
     fn new(allocator: &MemoryAllocator, inner: gpu_alloc::MemoryBlock<vk::DeviceMemory>) -> MemoryBlock {
         MemoryBlock {
             allocator_ptr: allocator,
-            inner: ManuallyDrop::new(inner).into(),
-            mutex: Mutex::new(())
+            inner: Mutex::new(ManuallyDrop::new(inner))
         }
     }
 
@@ -84,38 +82,26 @@ impl MemoryBlock {
     }
 
     pub fn memory(&self) -> vk::DeviceMemory {
-        *unsafe { &*self.inner.get() }.memory()
+        self.inner.lock().unwrap().memory().clone()
     }
 
     pub fn offset(&self) -> u64 {
-        unsafe { &*self.inner.get() }.offset()
+        self.inner.lock().unwrap().offset()
     }
 
     pub fn read(&self, buffer: &mut [u8], start: u64) -> Result<(), VulkanUniversalError> {
-        let lock = self.mutex.lock().unwrap();
-
-        let result = unsafe {
-            (&mut *self.inner.get()).read_bytes(self.allocator().memory_device(), start, buffer)
-        };
-
-        drop(lock);
-
-        match result {
+        match unsafe {
+            self.inner.lock().unwrap().read_bytes(self.allocator().memory_device(), start, buffer)
+        } {
             Ok(()) => Ok(()),
             Err(err) => Err(err.into())
         }
     }
 
     pub fn write(&self, data: &[u8], start: u64) -> Result<(), VulkanUniversalError> {
-        let lock = self.mutex.lock().unwrap();
-
-        let result = unsafe {
-            (&mut *self.inner.get()).write_bytes(self.allocator().memory_device(), start, data)
-        };
-
-        drop(lock);
-
-        match result {
+        match unsafe {
+            self.inner.lock().unwrap().write_bytes(self.allocator().memory_device(), start, data)
+        } {
             Ok(()) => Ok(()),
             Err(err) => Err(err.into())
         }
@@ -125,7 +111,7 @@ impl MemoryBlock {
 impl Drop for MemoryBlock {
     fn drop(&mut self) {
         let block = unsafe {
-            ptr::read(self.inner.get_mut() as &gpu_alloc::MemoryBlock<vk::DeviceMemory>)
+            ptr::read(self.inner.get_mut().unwrap() as &gpu_alloc::MemoryBlock<vk::DeviceMemory>)
         };
 
         unsafe {
