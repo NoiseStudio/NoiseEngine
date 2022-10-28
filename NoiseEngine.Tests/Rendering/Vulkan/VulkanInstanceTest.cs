@@ -10,7 +10,7 @@ public class VulkanInstanceTest {
     public void CreateAndDispose() {
         VulkanLibrary library = new VulkanLibrary();
         using VulkanInstance instance = new VulkanInstance(
-            library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers
+            library, VulkanLogSeverity.All, VulkanLogType.All, false
         );
     }
 
