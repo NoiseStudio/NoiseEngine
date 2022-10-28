@@ -12,6 +12,7 @@ internal readonly record struct VulkanLayerProperties(string Name, string Descri
     internal VulkanLayerProperties(
         VulkanLayerPropertiesRaw raw
     ) : this(raw.Name, raw.Description, raw.ImplementationVersion) {
+        specificationVersion = raw.SpecificationVersion;
     }
 
 }
