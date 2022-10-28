@@ -11,8 +11,8 @@ internal class VulkanLibrary {
     private readonly object extensionPropertiesLocker = new object();
     private readonly object layerPropertiesLocker = new object();
 
-    private IReadOnlyList<VulkanExtensionProperties>? extensionProperties = Array.Empty<VulkanExtensionProperties>();
-    private IReadOnlyList<VulkanLayerProperties>? layerProperties = Array.Empty<VulkanLayerProperties>();
+    private IReadOnlyList<VulkanExtensionProperties>? extensionProperties;
+    private IReadOnlyList<VulkanLayerProperties>? layerProperties;
 
     public InteropHandle<VulkanLibrary> Handle { get; }
 

@@ -11,7 +11,7 @@ public class VulkanLibraryTest {
         new VulkanLibrary();
     }
 
-    /*[FactRequire(TestRequirements.Vulkan)]
+    [FactRequire(TestRequirements.Vulkan)]
     public void GetExtensionProperties() {
         _ = new VulkanLibrary().ExtensionProperties;
     }
@@ -19,6 +19,6 @@ public class VulkanLibraryTest {
     [FactRequire(TestRequirements.Vulkan)]
     public void GetLayerProperties() {
         _ = new VulkanLibrary().LayerProperties;
-    }*/
+    }
 
 }

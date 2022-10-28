@@ -22,7 +22,7 @@ public abstract class GraphicsInstance : IDisposable {
     /// <returns>New <see cref="GraphicsInstance"/>.</returns>
     public static GraphicsInstance Create() {
         VulkanLibrary library = new VulkanLibrary();
-        return new VulkanInstance(library, VulkanLogSeverity.All, VulkanLogType.All, false);
+        return new VulkanInstance(library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers);
     }
 
     /// <summary>

@@ -13,7 +13,7 @@ pub(crate) struct VulkanApplicationInfo {
 
 impl From<VulkanApplicationInfo> for vk::ApplicationInfo {
     fn from(create_info: VulkanApplicationInfo) -> Self {
-        let application_name = CString::new("ddd").unwrap();
+        let application_name = CString::new(String::from(create_info.application_name)).unwrap();
         let engine_name = unsafe {
             CStr::from_bytes_with_nul_unchecked(b"NoiseEngine\0")
         };
@@ -25,7 +25,7 @@ impl From<VulkanApplicationInfo> for vk::ApplicationInfo {
             application_version: create_info.application_version,
             p_engine_name: engine_name.as_ptr(),
             engine_version: create_info.engine_version,
-            api_version: 0,
+            api_version: vk::make_api_version(0, 1, 3, 0)
         }
     }
 }
