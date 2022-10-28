@@ -6,10 +6,10 @@ use super::{application_info::VulkanApplicationInfo, device_value::VulkanDeviceV
 
 #[no_mangle]
 extern "C" fn rendering_vulkan_instance_interop_create(
-    library: &ash::Entry, create_info: VulkanApplicationInfo,
-    log_severity: vk::DebugUtilsMessageSeverityFlagsEXT, log_type: vk::DebugUtilsMessageTypeFlagsEXT
+    library: &ash::Entry, create_info: VulkanApplicationInfo, log_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
+    log_type: vk::DebugUtilsMessageTypeFlagsEXT, validation: bool
 ) -> InteropResult<Box<ash::Instance>> {
-    match instance::create(library, create_info, log_severity, log_type) {
+    match instance::create(library, create_info, log_severity, log_type, validation) {
         Ok(instance) => InteropResult::with_ok(Box::new(instance)),
         Err(err) => {
             InteropResult::with_err(ResultError::with_kind(&err, ResultErrorKind::GraphicsInstanceCreate))

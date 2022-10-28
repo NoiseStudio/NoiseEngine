@@ -12,12 +12,12 @@ use crate::{
 use super::{device::VulkanDevice, errors::universal::VulkanUniversalError};
 
 pub(crate) fn create(
-    library: &ash::Entry, application_info: VulkanApplicationInfo,
-    log_severity: vk::DebugUtilsMessageSeverityFlagsEXT, log_type: vk::DebugUtilsMessageTypeFlagsEXT
+    library: &ash::Entry, application_info: VulkanApplicationInfo, log_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
+    log_type: vk::DebugUtilsMessageTypeFlagsEXT, validation: bool
 ) -> Result<ash::Instance, VulkanUniversalError> {
     let create_info;
 
-    if log_severity.is_empty() || log_type.is_empty() {
+    if (log_severity.is_empty() || log_type.is_empty()) && !validation {
         create_info = vk::InstanceCreateInfo {
             s_type: vk::StructureType::INSTANCE_CREATE_INFO,
             p_next: ptr::null(),
@@ -36,15 +36,18 @@ pub(crate) fn create(
     }
 
     let mut enabled_extensions: Vec<*const i8> = Vec::new();
-    enabled_extensions.push(ash::extensions::ext::DebugUtils::name().as_ptr());
-
     let mut enabled_layers: Vec<*const i8> = Vec::new();
 
-    let validation_layer = match CString::new("VK_LAYER_KHRONOS_validation") {
-        Ok(str) => str,
-        Err(_) => return Err(NullReferenceError::default().into())
-    };
-    enabled_layers.push(validation_layer.as_ptr());
+    let validation_layer;
+    if validation {
+        enabled_extensions.push(ash::extensions::ext::DebugUtils::name().as_ptr());
+
+        validation_layer = match CString::new("VK_LAYER_KHRONOS_validation") {
+            Ok(str) => str,
+            Err(_) => return Err(NullReferenceError::default().into())
+        };
+        enabled_layers.push(validation_layer.as_ptr());
+    }
 
     let messenger_create_info = vk::DebugUtilsMessengerCreateInfoEXT {
         s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,

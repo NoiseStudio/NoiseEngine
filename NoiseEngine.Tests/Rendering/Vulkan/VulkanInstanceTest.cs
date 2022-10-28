@@ -8,8 +8,9 @@ public class VulkanInstanceTest {
 
     [FactRequire(TestRequirements.Vulkan)]
     public void CreateAndDispose() {
+        VulkanLibrary library = new VulkanLibrary();
         using VulkanInstance instance = new VulkanInstance(
-            new VulkanLibrary(), VulkanLogSeverity.All, VulkanLogType.All
+            library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers
         );
     }
 

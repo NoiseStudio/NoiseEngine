@@ -20,7 +20,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
     protected override IReadOnlyList<GraphicsDevice> ProtectedDevices { get; set; }
 
     public VulkanInstance(
-        VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType
+        VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType, bool validation
     ) {
         if (logType.HasFlag(VulkanLogType.DeviceAddressBinding)) {
             throw new ArgumentException(
@@ -37,7 +37,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
         );
 
         InteropResult<InteropHandle<VulkanInstance>> result = VulkanInstanceInterop.Create(
-            Library.Handle, createInfo, logSeverity, logType
+            Library.Handle, createInfo, logSeverity, logType, validation
         );
         if (!result.TryGetValue(out InteropHandle<VulkanInstance> nativeInstance, out ResultError error))
             error.ThrowAndDispose();

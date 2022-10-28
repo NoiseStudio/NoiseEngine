@@ -7,7 +7,7 @@ internal static partial class VulkanInstanceInterop {
     [InteropImport("rendering_vulkan_instance_interop_create")]
     public static partial InteropResult<InteropHandle<VulkanInstance>> Create(
         InteropHandle<VulkanLibrary> library, VulkanInstanceCreateInfo createInfo,
-        VulkanLogSeverity logSeverity, VulkanLogType logType
+        VulkanLogSeverity logSeverity, VulkanLogType logType, bool validation
     );
 
     [InteropImport("rendering_vulkan_instance_interop_destroy")]

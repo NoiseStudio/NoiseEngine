@@ -11,7 +11,8 @@ namespace NoiseEngine.Tests.Rendering.Buffers;
 public class GraphicsHostBufferTest {
 
     private const ulong Size = 1024;
-    private const int Threads = 64;
+
+    private int Threads { get; } = Environment.ProcessorCount * 4;
 
     [FactRequire(TestRequirements.Graphics)]
     public void CreateDestroy() {
@@ -43,7 +44,8 @@ public class GraphicsHostBufferTest {
 
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
             Parallel.For(0, Threads, _ => {
-                using GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
+                using GraphicsHostBuffer<int> buffer =
+                    new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
 
                 int[] data = new int[Size];
                 for (int i = 0; i < (int)Size; i++)
