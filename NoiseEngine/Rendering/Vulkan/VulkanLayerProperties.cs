@@ -3,17 +3,15 @@ using System;
 
 namespace NoiseEngine.Rendering.Vulkan;
 
-internal readonly record struct VulkanLayerProperties(string Name, string Description) {
+internal readonly record struct VulkanLayerProperties(string Name, string Description, uint ImplementationVersion) {
 
     private readonly VulkanVersion specificationVersion;
-    private readonly VulkanVersion implementationVersion;
 
     public Version SpecificationVersion => specificationVersion.ToVersion();
-    public Version ImplementationVersion => implementationVersion.ToVersion();
 
-    internal VulkanLayerProperties(VulkanLayerPropertiesRaw raw) : this(raw.Name, raw.Description) {
-        specificationVersion = raw.SpecificationVersion;
-        implementationVersion = raw.ImplementationVersion;
+    internal VulkanLayerProperties(
+        VulkanLayerPropertiesRaw raw
+    ) : this(raw.Name, raw.Description, raw.ImplementationVersion) {
     }
 
 }

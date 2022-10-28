@@ -9,7 +9,7 @@ internal struct VulkanExtensionPropertiesRaw {
 
     private unsafe fixed byte name[VulkanConstants.MaxExtensionNameSize];
 
-    public VulkanVersion SpecificationVersion { get; }
+    public uint SpecificationVersion { get; }
 
     public unsafe string Name {
         get {

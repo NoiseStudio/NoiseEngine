@@ -10,7 +10,7 @@ internal struct VulkanLayerPropertiesRaw {
     private unsafe fixed byte name[VulkanConstants.MaxExtensionNameSize];
 
     public VulkanVersion SpecificationVersion { get; }
-    public VulkanVersion ImplementationVersion { get; }
+    public uint ImplementationVersion { get; }
 
     private unsafe fixed byte description[VulkanConstants.MaxExtensionNameSize];
 
