@@ -21,6 +21,29 @@ public class GraphicsHostBufferTest {
     }
 
     [FactRequire(TestRequirements.Graphics)]
+    public void CreateDestroyMultithread() {
+        Random random = new Random();
+
+        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+            Parallel.For(0, Threads, _ => {
+                using GraphicsHostBuffer<int> buffer =
+                    new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
+
+                int[] data = new int[Size];
+                for (int i = 0; i < (int)Size; i++)
+                    data[i] = random.Next();
+
+                buffer.SetData(data);
+
+                int[] read = new int[Size];
+                buffer.GetData(read);
+
+                Assert.Equal(data, read);
+            });
+        }
+    }
+
+    [FactRequire(TestRequirements.Graphics)]
     public void SetGetData() {
         int[] data = Enumerable.Range(0, (int)Size).ToArray();
 
@@ -40,22 +63,18 @@ public class GraphicsHostBufferTest {
 
     [FactRequire(TestRequirements.Graphics)]
     public void SetGetDataMultithread() {
-        Random random = new Random();
+        int[] data = Enumerable.Range(0, (int)Size).ToArray();
 
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+            using GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(
+                device, GraphicsBufferUsage.Storage, Size
+            );
+
             Parallel.For(0, Threads, _ => {
-                using GraphicsHostBuffer<int> buffer =
-                    new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
-
-                int[] data = new int[Size];
-                for (int i = 0; i < (int)Size; i++)
-                    data[i] = random.Next();
-
+                int[] read = new int[Size];
                 buffer.SetData(data);
 
-                int[] read = new int[Size];
                 buffer.GetData(read);
-
                 Assert.Equal(data, read);
             });
         }

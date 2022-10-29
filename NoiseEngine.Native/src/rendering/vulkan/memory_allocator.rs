@@ -91,13 +91,12 @@ impl<'a> MemoryBlock<'a> {
     }
 
     pub fn read(&self, buffer: &mut [u8], start: u64) -> Result<(), VulkanUniversalError> {
-        let lock = self.mutex.lock().unwrap();
-
-        let result = unsafe {
-            (*self.inner.get()).read_bytes(self.allocator().memory_device(), start, buffer)
+        let result = {
+            let _lock = self.mutex.lock().unwrap();
+            unsafe {
+                (*self.inner.get()).read_bytes(self.allocator().memory_device(), start, buffer)
+            }
         };
-
-        drop(lock);
 
         match result {
             Ok(()) => Ok(()),
@@ -106,13 +105,12 @@ impl<'a> MemoryBlock<'a> {
     }
 
     pub fn write(&self, data: &[u8], start: u64) -> Result<(), VulkanUniversalError> {
-        let lock = self.mutex.lock().unwrap();
-
-        let result = unsafe {
-            (*self.inner.get()).write_bytes(self.allocator().memory_device(), start, data)
+        let result = {
+            let _lock = self.mutex.lock().unwrap();
+            unsafe {
+                (*self.inner.get()).write_bytes(self.allocator().memory_device(), start, data)
+            }
         };
-
-        drop(lock);
 
         match result {
             Ok(()) => Ok(()),

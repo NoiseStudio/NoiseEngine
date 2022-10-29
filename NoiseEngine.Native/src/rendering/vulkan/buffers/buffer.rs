@@ -80,7 +80,7 @@ impl<'a> VulkanBuffer<'a> {
     }
 }
 
-impl<'a> Drop for VulkanBuffer<'a> {
+impl Drop for VulkanBuffer<'_> {
     fn drop(&mut self) {
         let initialized = self.device().initialized().unwrap();
         let device = initialized.vulkan_device();
@@ -91,7 +91,7 @@ impl<'a> Drop for VulkanBuffer<'a> {
     }
 }
 
-impl<'a> GraphicsBuffer for VulkanBuffer<'a> {
+impl GraphicsBuffer for VulkanBuffer<'_> {
     fn host_read(&self, buffer: &mut [u8], start: u64) -> InteropResult<()> {
         match self.memory.read(buffer, start) {
             Ok(()) => InteropResult::with_ok(()),
