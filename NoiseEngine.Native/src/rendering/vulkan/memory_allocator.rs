@@ -12,7 +12,7 @@ pub(crate) struct MemoryAllocator {
 }
 
 impl MemoryAllocator {
-    pub fn new(device: &'_ VulkanDevice) -> Result<Self, VulkanUniversalError> {
+    pub fn new(device: &VulkanDevice) -> Result<Self, VulkanUniversalError> {
         let props = unsafe {
             gpu_alloc_ash::device_properties(device.instance(), 0, device.physical_device())?
         };

@@ -11,14 +11,14 @@ use super::{
 };
 
 pub struct VulkanDevice {
-    instance: *const ash::Instance,
+    instance_ptr: *const ash::Instance,
     physical_device: vk::PhysicalDevice,
     initialized: Option<VulkanDeviceInitialized>
 }
 
 impl VulkanDevice {
-    pub fn new(instance: &'_ ash::Instance, physical_device: vk::PhysicalDevice) -> Self {
-        Self { instance, physical_device, initialized: None }
+    pub fn new(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> Self {
+        Self { instance_ptr: instance, physical_device, initialized: None }
     }
 
     fn create_not_initialized_error() -> InvalidOperationError {
@@ -65,7 +65,7 @@ impl VulkanDevice {
 
     pub fn instance(&self) -> &ash::Instance {
         unsafe {
-            &*self.instance
+            &*self.instance_ptr
         }
     }
 
