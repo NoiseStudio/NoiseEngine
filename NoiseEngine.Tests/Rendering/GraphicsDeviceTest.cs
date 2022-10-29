@@ -8,7 +8,7 @@ namespace NoiseEngine.Tests.Rendering;
 [Collection(nameof(ApplicationCollection))]
 public partial class GraphicsDeviceTest {
 
-    [InteropImport("graphics_vulkan_device_test_get_queue")]
+    [InteropImport("rendering_vulkan_device_test_get_queue")]
     private static partial InteropResult<None> InteropUnmanagedGetQueue(InteropHandle<GraphicsDevice> device);
 
     [FactRequire(TestRequirements.Graphics)]

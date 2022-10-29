@@ -7,7 +7,7 @@ extern "C" fn interop_interop_array_test_unmanaged_create(length: i32) -> Intero
     let mut array = InteropArray::new(length);
     let slice: &mut [i32] = array.borrow_mut().into();
 
-    for (index, value) in slice.into_iter().enumerate() {
+    for (index, value) in slice.iter_mut().enumerate() {
         *value = index as i32;
     }
 

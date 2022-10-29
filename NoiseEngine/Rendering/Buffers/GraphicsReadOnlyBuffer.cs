@@ -1,5 +1,5 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.Graphics.Buffers;
+using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Threading;
 using System;
 using System.Runtime.InteropServices;

@@ -7,6 +7,15 @@ pub struct InteropString {
     array: InteropArray<u8>,
 }
 
+impl From<InteropString> for String {
+    fn from(interop_string: InteropString) -> String {
+        // SAFETY: String is guaranteed to be valid UTF-8.
+        unsafe {
+            String::from_utf8_unchecked(interop_string.array.into())
+        }
+    }
+}
+
 impl From<String> for InteropString {
     fn from(string: String) -> InteropString {
         let ptr = string.as_ptr() as *mut u8;
@@ -20,15 +29,6 @@ impl From<String> for InteropString {
 
         InteropString {
             array,
-        }
-    }
-}
-
-impl From<InteropString> for String {
-    fn from(interop_string: InteropString) -> String {
-        // SAFETY: String is guaranteed to be valid UTF-8.
-        unsafe {
-            String::from_utf8_unchecked(interop_string.array.into())
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.Graphics.Vulkan;
+using NoiseEngine.Interop.Rendering.Vulkan;
 using NoiseEngine.Interop.InteropMarshalling;
 using System;
 using System.Collections.Generic;
@@ -20,7 +20,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
     protected override IReadOnlyList<GraphicsDevice> ProtectedDevices { get; set; }
 
     public VulkanInstance(
-        VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType
+        VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType, bool validation
     ) {
         if (logType.HasFlag(VulkanLogType.DeviceAddressBinding)) {
             throw new ArgumentException(
@@ -30,14 +30,14 @@ internal sealed class VulkanInstance : GraphicsInstance {
 
         Library = library;
 
-        VulkanInstanceCreateInfo createInfo = new VulkanInstanceCreateInfo(
+        VulkanApplicationInfo createInfo = new VulkanApplicationInfo(
             new InteropString(Application.Name),
             new VulkanVersion(Application.Version),
             new VulkanVersion(Application.EngineVersion ?? new Version())
         );
 
         InteropResult<InteropHandle<VulkanInstance>> result = VulkanInstanceInterop.Create(
-            Library.Handle, createInfo, logSeverity, logType
+            Library.Handle, createInfo, logSeverity, logType, validation
         );
         if (!result.TryGetValue(out InteropHandle<VulkanInstance> nativeInstance, out ResultError error))
             error.ThrowAndDispose();
@@ -62,8 +62,8 @@ internal sealed class VulkanInstance : GraphicsInstance {
     protected override void ReleaseResources() {
         string toString = ToString();
 
-        foreach (VulkanDevice physicalDevice in Devices)
-            physicalDevice.InternalDispose();
+        foreach (VulkanDevice device in Devices)
+            device.InternalDispose();
 
         InteropHandle<VulkanInstance> handle = Handle;
         Handle = InteropHandle<VulkanInstance>.Zero;

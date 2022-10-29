@@ -4,10 +4,14 @@ use libc::c_void;
 
 pub struct InteropAllocator;
 
+/// # Safety
+/// This unsafy calls the malloc function of the libc.
 pub unsafe fn alloc(size: usize) -> *mut u8 {
     libc::malloc(size) as *mut u8
 }
 
+/// # Safety
+/// This unsafy calls the free function of the libc.
 pub unsafe fn dealloc(ptr: *mut u8) {
     libc::free(ptr as *mut c_void);
 }
