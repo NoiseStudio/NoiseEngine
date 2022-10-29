@@ -17,6 +17,7 @@ impl MemoryAllocator {
             gpu_alloc_ash::device_properties(device.instance(), 0, device.physical_device())?
         };
 
+        // TODO: implement best suitable config.
         let config = Config::i_am_potato();
 
         Ok(MemoryAllocator {
@@ -95,7 +96,7 @@ impl MemoryBlock {
         let lock = self.mutex.lock().unwrap();
 
         let result = unsafe {
-            (&mut *self.inner.get()).read_bytes(self.allocator().memory_device(), start, buffer)
+            (*self.inner.get()).read_bytes(self.allocator().memory_device(), start, buffer)
         };
 
         drop(lock);
@@ -110,7 +111,7 @@ impl MemoryBlock {
         let lock = self.mutex.lock().unwrap();
 
         let result = unsafe {
-            (&mut *self.inner.get()).write_bytes(self.allocator().memory_device(), start, data)
+            (*self.inner.get()).write_bytes(self.allocator().memory_device(), start, data)
         };
 
         drop(lock);

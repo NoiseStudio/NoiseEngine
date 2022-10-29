@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::{
     interop::rendering::vulkan::{application_info::VulkanApplicationInfo, device_value::VulkanDeviceValue},
-    logging::{logger, log_level::LogLevel, log}, errors::{overflow::OverflowError, null_reference::NullReferenceError}
+    logging::{logger, log_level::LogLevel, log}, errors::null_reference::NullReferenceError
 };
 
 use super::{device::VulkanDevice, errors::universal::VulkanUniversalError};
@@ -118,12 +118,7 @@ pub(crate) fn get_vulkan_physical_devices(
                     }.into(),
                     vendor: properties.vendor_id,
                     device_type: unsafe { mem::transmute(properties.device_type) },
-                    api_version: match u32::try_from(properties.api_version) {
-                        Ok(v) => v,
-                        Err(_) => return Err(OverflowError::with_str(
-                            "Vulkan API version overflowed on physical device."
-                        ).into())
-                    },
+                    api_version: properties.api_version,
                     driver_version: properties.driver_version,
                     guid: Uuid::from_bytes_le(id_properties.device_uuid),
                     supports_graphics,
@@ -132,7 +127,7 @@ pub(crate) fn get_vulkan_physical_devices(
                 });
             }
 
-            Ok(result.into())
+            Ok(result)
         },
         Err(err) => Err(err.into())
     }
@@ -175,5 +170,5 @@ unsafe extern "system" fn log_callback(
 
     logger::log(level, format!("{}: {}", prefix, message).as_str());
 
-    return vk::FALSE;
+    vk::FALSE
 }

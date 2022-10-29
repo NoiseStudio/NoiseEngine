@@ -1,4 +1,4 @@
-use std::ptr;
+use std::{ptr, mem::ManuallyDrop};
 
 use ash::vk::{self, QueueFlags};
 use lockfree::stack::Stack;
@@ -57,7 +57,7 @@ impl VulkanDevice {
         self.initialized = Some(VulkanDeviceInitialized {
             device,
             queue_families,
-            allocator: MemoryAllocator::new(self)?
+            allocator: ManuallyDrop::new(MemoryAllocator::new(self)?)
         });
 
         Ok(())
@@ -90,7 +90,7 @@ impl VulkanDevice {
 
     pub(crate) fn initialized(&self) -> Result<&VulkanDeviceInitialized, InvalidOperationError> {
         match &self.initialized {
-            Some(i) => Ok(&i),
+            Some(i) => Ok(i),
             None => Err(Self::create_not_initialized_error())
         }
     }
@@ -101,9 +101,10 @@ impl VulkanDevice {
         };
 
         let mut queue_create_infos = Vec::with_capacity(queue_families.len());
-        let mut queue_family_index: u32 = 0;
 
-        for queue_family in queue_families {
+        for
+            (queue_family_index, queue_family) in (0_u32..).zip(queue_families.into_iter())
+        {
             let mut queues = Vec::new();
             for _ in 0..queue_family.queue_count {
                 queues.push(1.0)
@@ -117,8 +118,6 @@ impl VulkanDevice {
                 queue_count: queue_family.queue_count,
                 p_queue_priorities: queues.as_ptr(),
             });
-
-            queue_family_index += 1;
         }
 
         queue_create_infos
@@ -158,7 +157,7 @@ impl VulkanDevice {
 pub(crate) struct VulkanDeviceInitialized {
     device: ash::Device,
     queue_families: Vec<VulkanQueueFamily>,
-    allocator: MemoryAllocator
+    allocator: ManuallyDrop<MemoryAllocator>
 }
 
 impl VulkanDeviceInitialized {
@@ -177,9 +176,8 @@ impl VulkanDeviceInitialized {
 
 impl Drop for VulkanDeviceInitialized {
     fn drop(&mut self) {
-        drop(&self.allocator);
-
         unsafe {
+            ManuallyDrop::drop(&mut self.allocator);
             self.device.destroy_device(None)
         }
     }
@@ -221,6 +219,6 @@ pub struct VulkanQueue<'a> {
 
 impl<'a> Drop for VulkanQueue<'a> {
     fn drop(&mut self) {
-        self.family.push(self.queue.clone())
+        self.family.push(self.queue)
     }
 }

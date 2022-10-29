@@ -84,8 +84,6 @@ impl VulkanBuffer {
 
 impl Drop for VulkanBuffer {
     fn drop(&mut self) {
-        drop(&self.memory);
-
         let initialized = self.device().initialized().unwrap();
         let device = initialized.vulkan_device();
 
