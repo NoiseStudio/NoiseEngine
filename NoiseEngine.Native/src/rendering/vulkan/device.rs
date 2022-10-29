@@ -11,14 +11,14 @@ use super::{
 };
 
 pub struct VulkanDevice {
-    instance_ptr: *const ash::Instance,
+    instance: *const ash::Instance,
     physical_device: vk::PhysicalDevice,
     initialized: Option<VulkanDeviceInitialized>
 }
 
 impl VulkanDevice {
-    pub fn new(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> Self {
-        Self { instance_ptr: instance, physical_device, initialized: None }
+    pub fn new(instance: &'_ ash::Instance, physical_device: vk::PhysicalDevice) -> Self {
+        Self { instance, physical_device, initialized: None }
     }
 
     fn create_not_initialized_error() -> InvalidOperationError {
@@ -65,7 +65,7 @@ impl VulkanDevice {
 
     pub fn instance(&self) -> &ash::Instance {
         unsafe {
-            &*self.instance_ptr
+            &*self.instance
         }
     }
 
@@ -103,7 +103,7 @@ impl VulkanDevice {
         let mut queue_create_infos = Vec::with_capacity(queue_families.len());
 
         for
-            (queue_family_index, queue_family) in (0_u32..).zip(queue_families.into_iter())
+            (queue_family_index, queue_family) in (0u32..).zip(queue_families.into_iter())
         {
             let mut queues = Vec::new();
             for _ in 0..queue_family.queue_count {

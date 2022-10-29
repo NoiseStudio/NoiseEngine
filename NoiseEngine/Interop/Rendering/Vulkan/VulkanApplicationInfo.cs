@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace NoiseEngine.Interop.Rendering.Vulkan;
 
 [StructLayout(LayoutKind.Sequential)]
-internal readonly record struct VulkanInstanceCreateInfo(
+internal readonly record struct VulkanApplicationInfo(
     InteropString ApplicationName,
     VulkanVersion ApplicationVersion,
     VulkanVersion EngineVersion

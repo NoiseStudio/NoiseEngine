@@ -16,13 +16,15 @@ pub(crate) fn create(
     log_type: vk::DebugUtilsMessageTypeFlagsEXT, validation: bool
 ) -> Result<ash::Instance, VulkanUniversalError> {
     let create_info;
+    let p_application_info =
+        Result::<vk::ApplicationInfo, VulkanUniversalError>::from(application_info)?;
 
     if (log_severity.is_empty() || log_type.is_empty()) && !validation {
         create_info = vk::InstanceCreateInfo {
             s_type: vk::StructureType::INSTANCE_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::InstanceCreateFlags::empty(),
-            p_application_info: &application_info.into(),
+            p_application_info: &p_application_info,
             enabled_layer_count: 0,
             pp_enabled_layer_names: ptr::null(),
             enabled_extension_count: 0,
@@ -63,7 +65,7 @@ pub(crate) fn create(
         s_type: vk::StructureType::INSTANCE_CREATE_INFO,
         p_next: &messenger_create_info as *const vk::DebugUtilsMessengerCreateInfoEXT as *const c_void,
         flags: vk::InstanceCreateFlags::empty(),
-        p_application_info: &application_info.into(),
+        p_application_info: &p_application_info,
         enabled_layer_count: enabled_layers.len() as u32,
         pp_enabled_layer_names: enabled_layers.as_ptr(),
         enabled_extension_count: enabled_extensions.len() as u32,

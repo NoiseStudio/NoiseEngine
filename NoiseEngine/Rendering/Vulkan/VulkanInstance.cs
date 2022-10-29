@@ -30,7 +30,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
 
         Library = library;
 
-        VulkanInstanceCreateInfo createInfo = new VulkanInstanceCreateInfo(
+        VulkanApplicationInfo createInfo = new VulkanApplicationInfo(
             new InteropString(Application.Name),
             new VulkanVersion(Application.Version),
             new VulkanVersion(Application.EngineVersion ?? new Version())

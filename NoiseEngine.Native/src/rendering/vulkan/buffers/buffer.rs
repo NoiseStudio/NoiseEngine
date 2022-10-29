@@ -11,15 +11,15 @@ use crate::{rendering::{
     buffers::buffer::GraphicsBuffer
 }, interop::prelude::InteropResult};
 
-pub(crate) struct VulkanBuffer {
-    device_ptr: *const VulkanDevice,
+pub(crate) struct VulkanBuffer<'a> {
+    device_ptr: &'a VulkanDevice,
     buffer: vk::Buffer,
-    memory: MemoryBlock
+    memory: MemoryBlock<'a>
 }
 
-impl VulkanBuffer {
+impl<'a> VulkanBuffer<'a> {
     pub fn new(
-        device: &VulkanDevice, usage: vk::BufferUsageFlags, size: u64, map: bool
+        device: &'a VulkanDevice, usage: vk::BufferUsageFlags, size: u64, map: bool
     ) -> Result<Self, VulkanUniversalError> {
         let initialized = device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
@@ -35,9 +35,7 @@ impl VulkanBuffer {
     }
 
     pub fn device(&self) -> &VulkanDevice {
-        unsafe {
-            &*self.device_ptr
-        }
+        self.device_ptr
     }
 
     fn create_buffer(
@@ -82,7 +80,7 @@ impl VulkanBuffer {
     }
 }
 
-impl Drop for VulkanBuffer {
+impl<'a> Drop for VulkanBuffer<'a> {
     fn drop(&mut self) {
         let initialized = self.device().initialized().unwrap();
         let device = initialized.vulkan_device();
@@ -93,7 +91,7 @@ impl Drop for VulkanBuffer {
     }
 }
 
-impl GraphicsBuffer for VulkanBuffer {
+impl<'a> GraphicsBuffer for VulkanBuffer<'a> {
     fn host_read(&self, buffer: &mut [u8], start: u64) -> InteropResult<()> {
         match self.memory.read(buffer, start) {
             Ok(()) => InteropResult::with_ok(()),
