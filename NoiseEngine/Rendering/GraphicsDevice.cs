@@ -1,4 +1,6 @@
 ﻿using NoiseEngine.Interop;
+using NoiseEngine.Interop.Rendering.Buffers;
+using NoiseEngine.Rendering.Buffers;
 using System;
 
 namespace NoiseEngine.Rendering;
@@ -61,6 +63,10 @@ public abstract class GraphicsDevice {
             isInitialized = true;
         }
     }
+
+    internal abstract InteropHandle<GraphicsCommandBuffer> CreateCommandBuffer(
+        ReadOnlySpan<byte> data, GraphicsCommandBufferUsage usage
+    );
 
     protected abstract void InitializeWorker();
 

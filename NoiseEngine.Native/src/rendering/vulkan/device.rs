@@ -73,7 +73,7 @@ impl VulkanDevice {
         self.physical_device
     }
 
-    pub fn get_queue(&self, support: VulkanDeviceSupport) -> Result<VulkanQueue, InvalidOperationError> {
+    pub fn get_family(&self, support: VulkanDeviceSupport) -> Result<&VulkanQueueFamily, InvalidOperationError> {
         let initialized = match &self.initialized {
             Some(i) => i,
             None => return Err(Self::create_not_initialized_error())
@@ -81,11 +81,18 @@ impl VulkanDevice {
 
         for family in &initialized.queue_families {
             if support.is_suitable_to(&family.support) {
-                return Ok(family.pop())
+                return Ok(family);
             }
         }
 
-        Err(InvalidOperationError::with_str("This VulkanDevice does not have suitable queues."))
+        Err(InvalidOperationError::with_str("This VulkanDevice does not have suitable families."))
+    }
+
+    pub fn get_queue(&self, support: VulkanDeviceSupport) -> Result<VulkanQueue, InvalidOperationError> {
+        match self.get_family(support) {
+            Ok(family) => Ok(family.pop()),
+            Err(err) => Err(err)
+        }
     }
 
     pub(crate) fn initialized(&self) -> Result<&VulkanDeviceInitialized, InvalidOperationError> {
@@ -129,6 +136,7 @@ impl VulkanDevice {
             self.instance().get_physical_device_queue_family_properties(self.physical_device)
         }.into_iter().map(|family| {
             let result = VulkanQueueFamily {
+                index: queue_family_index,
                 support: VulkanDeviceSupport {
                     graphics: family.queue_flags.contains(QueueFlags::GRAPHICS),
                     computing: family.queue_flags.contains(QueueFlags::COMPUTE),
@@ -184,22 +192,22 @@ impl Drop for VulkanDeviceInitialized {
 }
 
 pub struct VulkanQueueFamily {
+    index: u32,
     support: VulkanDeviceSupport,
     queues: Stack<vk::Queue>,
     reset_event: AutoResetEvent
 }
 
 impl VulkanQueueFamily {
+    pub fn index(&self) -> u32 {
+        self.index
+    }
+
     pub fn support(&self) -> &VulkanDeviceSupport {
         &self.support
     }
 
-    fn push(&self, queue: vk::Queue) {
-        self.queues.push(queue);
-        self.reset_event.set();
-    }
-
-    fn pop(&self) -> VulkanQueue {
+    pub fn pop(&self) -> VulkanQueue {
         loop {
             match self.queues.pop() {
                 Some(queue) => return VulkanQueue {
@@ -209,6 +217,11 @@ impl VulkanQueueFamily {
                 None => self.reset_event.wait()
             }
         }
+    }
+
+    fn push(&self, queue: vk::Queue) {
+        self.queues.push(queue);
+        self.reset_event.set();
     }
 }
 

@@ -38,6 +38,10 @@ impl<'a> VulkanBuffer<'a> {
         self.device_ptr
     }
 
+    pub fn inner(&self) -> vk::Buffer {
+        self.buffer
+    }
+
     fn create_buffer(
         initialized: &VulkanDeviceInitialized, size: u64, usage: vk::BufferUsageFlags
     ) -> Result<vk::Buffer, VulkanUniversalError> {

@@ -34,7 +34,7 @@ public abstract class GraphicsReadOnlyBuffer<T> : IDisposable where T : unmanage
     /// </summary>
     /// <param name="count">T object count.</param>
     /// <returns>Size in bytes of <paramref name="count"/>.</returns>
-    protected static ulong GetSize(ulong count) {
+    public static ulong GetSize(ulong count) {
         return checked(count * (ulong)Marshal.SizeOf<T>());
     }
 

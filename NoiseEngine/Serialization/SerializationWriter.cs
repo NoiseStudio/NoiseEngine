@@ -103,6 +103,14 @@ public class SerializationWriter : IReadOnlyList<byte> {
     }
 
     /// <summary>
+    /// Converts <see cref="nuint"/> to bytes and writes it to this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <param name="obj"><see cref="nuint"/> value.</param>
+    public void WriteUIntN(nuint obj) {
+        WriteUInt64(obj);
+    }
+
+    /// <summary>
     /// Converts <see cref="sbyte"/> to byte and writes it to this <see cref="SerializationWriter"/>.
     /// </summary>
     /// <param name="obj"><see cref="sbyte"/> value.</param>
@@ -132,6 +140,14 @@ public class SerializationWriter : IReadOnlyList<byte> {
     /// <param name="obj"><see cref="long"/> value.</param>
     public void WriteInt64(long obj) {
         delegation.WriteInt64(obj);
+    }
+
+    /// <summary>
+    /// Converts <see cref="nint"/> to bytes and writes it to this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <param name="obj"><see cref="nint"/> value.</param>
+    public void WriteIntN(nint obj) {
+        WriteInt64(obj);
     }
 
     /// <summary>
