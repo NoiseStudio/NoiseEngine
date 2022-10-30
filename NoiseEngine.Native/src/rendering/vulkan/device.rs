@@ -7,7 +7,7 @@ use rsevents::{AutoResetEvent, Awaitable, EventState};
 use crate::errors::invalid_operation::InvalidOperationError;
 
 use super::{
-    device_support::VulkanDeviceSupport, errors::universal::VulkanUniversalError, memory_allocator::MemoryAllocator
+    device_support::VulkanDeviceSupport, errors::universal::VulkanUniversalError, memory_allocator::MemoryAllocator, device_pool::VulkanDevicePool
 };
 
 pub struct VulkanDevice {
@@ -57,7 +57,8 @@ impl VulkanDevice {
         self.initialized = Some(VulkanDeviceInitialized {
             device,
             queue_families,
-            allocator: ManuallyDrop::new(MemoryAllocator::new(self)?)
+            allocator: ManuallyDrop::new(MemoryAllocator::new(self)?),
+            pool: VulkanDevicePool::new(self)
         });
 
         Ok(())
@@ -90,7 +91,7 @@ impl VulkanDevice {
 
     pub fn get_queue(&self, support: VulkanDeviceSupport) -> Result<VulkanQueue, InvalidOperationError> {
         match self.get_family(support) {
-            Ok(family) => Ok(family.pop()),
+            Ok(family) => Ok(family.get_queue()),
             Err(err) => Err(err)
         }
     }
@@ -147,7 +148,7 @@ impl VulkanDevice {
             };
 
             for i in 0..family.queue_count {
-                result.push(unsafe {
+                result.push_queue(unsafe {
                     device.get_device_queue(queue_family_index, i)
                 });
             }
@@ -165,7 +166,8 @@ impl VulkanDevice {
 pub(crate) struct VulkanDeviceInitialized {
     device: ash::Device,
     queue_families: Vec<VulkanQueueFamily>,
-    allocator: ManuallyDrop<MemoryAllocator>
+    allocator: ManuallyDrop<MemoryAllocator>,
+    pool: VulkanDevicePool
 }
 
 impl VulkanDeviceInitialized {
@@ -175,6 +177,10 @@ impl VulkanDeviceInitialized {
 
     pub fn allocator(&self) -> &MemoryAllocator {
         &self.allocator
+    }
+
+    pub fn pool(&self) -> &VulkanDevicePool {
+        &self.pool
     }
 
     pub fn queue_families_count(&self) -> usize {
@@ -207,19 +213,26 @@ impl VulkanQueueFamily {
         &self.support
     }
 
-    pub fn pop(&self) -> VulkanQueue {
+    pub fn try_get_queue(&self) -> Option<VulkanQueue> {
+        match self.queues.pop() {
+            Some(queue) => Some(VulkanQueue {
+                family: self,
+                queue
+            }),
+            None => None
+        }
+    }
+
+    pub fn get_queue(&self) -> VulkanQueue {
         loop {
-            match self.queues.pop() {
-                Some(queue) => return VulkanQueue {
-                    family: self,
-                    queue
-                },
+            match self.try_get_queue() {
+                Some(queue) => return queue,
                 None => self.reset_event.wait()
             }
         }
     }
 
-    fn push(&self, queue: vk::Queue) {
+    fn push_queue(&self, queue: vk::Queue) {
         self.queues.push(queue);
         self.reset_event.set();
     }
@@ -232,6 +245,6 @@ pub struct VulkanQueue<'a> {
 
 impl<'a> Drop for VulkanQueue<'a> {
     fn drop(&mut self) {
-        self.family.push(self.queue)
+        self.family.push_queue(self.queue)
     }
 }

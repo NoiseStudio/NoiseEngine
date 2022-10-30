@@ -16,8 +16,6 @@ public class GraphicsCommandBufferTest {
         int[] data = Enumerable.Range(0, (int)Size).ToArray();
 
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
-            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device);
-
             using GraphicsHostBuffer<int> sourceBuffer = new GraphicsHostBuffer<int>(
                 device, GraphicsBufferUsage.TransferSource, Size
             );
@@ -27,8 +25,9 @@ public class GraphicsCommandBufferTest {
 
             sourceBuffer.SetData(data);
 
+            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device);
             commandBuffer.Copy(sourceBuffer, destinationBuffer, Size);
-            commandBuffer.Execute();
+            commandBuffer.Execute().Wait();
 
             int[] read = new int[Size];
             destinationBuffer.GetData(read);

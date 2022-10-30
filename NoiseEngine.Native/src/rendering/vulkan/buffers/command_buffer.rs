@@ -3,11 +3,14 @@ use std::ptr;
 use ash::vk;
 
 use crate::{
-    rendering::{vulkan::{
-        device::{VulkanDevice, VulkanQueueFamily}, device_support::VulkanDeviceSupport,
-        errors::universal::VulkanUniversalError
+    rendering::{
+        vulkan::{
+            device::{VulkanDevice, VulkanQueueFamily}, device_support::VulkanDeviceSupport,
+            errors::universal::VulkanUniversalError, fence::VulkanFence
+        },
+        buffers::{command_buffers::command::GraphicsCommandBufferCommand, command_buffer::GraphicsCommandBuffer}, fence::GraphicsFence
     },
-    buffers::{command_buffers::command::GraphicsCommandBufferCommand, command_buffer::GraphicsCommandBuffer}}, serialization::reader::SerializationReader, interop::prelude::InteropResult
+    serialization::reader::SerializationReader, interop::prelude::InteropResult
 };
 
 use super::buffer::VulkanBuffer;
@@ -35,7 +38,7 @@ impl<'a> VulkanCommandBuffer<'a> {
             queue_family_index: queue_family.index(),
         };
 
-        let initialized = device.initialized().unwrap();
+        let initialized = device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
         let command_pool = unsafe {
@@ -66,8 +69,8 @@ impl<'a> VulkanCommandBuffer<'a> {
         Ok(result)
     }
 
-    pub fn execute(&self) -> Result<(), VulkanUniversalError> {
-        let initialized = self.device.initialized().unwrap();
+    pub fn execute(&self) -> Result<VulkanFence, VulkanUniversalError> {
+        let initialized = self.device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
         let submit_info = vk::SubmitInfo {
@@ -82,25 +85,18 @@ impl<'a> VulkanCommandBuffer<'a> {
             p_signal_semaphores: ptr::null(),
         };
 
-        let fence_info = vk::FenceCreateInfo {
-            s_type: vk::StructureType::FENCE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: vk::FenceCreateFlags::empty(),
-        };
-
+        let fence = initialized.pool().get_fence()?;
         unsafe {
-            let fence = vulkan_device.create_fence(&fence_info, None)?;
+            vulkan_device.queue_submit(
+                self.queue_family.get_queue().queue, &[submit_info], fence.inner()
+            )
+        }?;
 
-            vulkan_device.queue_submit(self.queue_family.pop().queue, &[submit_info], fence)?;
-
-            vulkan_device.wait_for_fences(&[fence], true, 1000000)?;
-        };
-
-        Ok(())
+        Ok(fence)
     }
 
     fn record(&mut self, mut data: SerializationReader) -> Result<(), VulkanUniversalError> {
-        let initialized = self.device.initialized().unwrap();
+        let initialized = self.device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
         unsafe {
@@ -158,9 +154,9 @@ impl Drop for VulkanCommandBuffer<'_> {
 }
 
 impl GraphicsCommandBuffer for VulkanCommandBuffer<'_> {
-    fn execute(&self) -> InteropResult<()> {
+    fn execute(&self) -> InteropResult<Box<Box<dyn GraphicsFence + '_>>> {
         match self.execute() {
-            Ok(()) => InteropResult::with_ok(()),
+            Ok(fence) => InteropResult::with_ok(Box::new(Box::new(fence))),
             Err(err) => InteropResult::with_err(err.into())
         }
     }

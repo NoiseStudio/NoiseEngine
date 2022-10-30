@@ -36,7 +36,7 @@ public class GraphicsCommandBuffer {
         );
     }
 
-    public void Execute() {
+    public GraphicsFence Execute() {
         if (handle == InteropHandle<GraphicsCommandBuffer>.Zero) {
             writerCountOnHandleCreation = writer.Count;
             handle = Device.CreateCommandBuffer(
@@ -44,8 +44,13 @@ public class GraphicsCommandBuffer {
             );
         }
 
-        if (!GraphicsCommandBufferInterop.Execute(handle).TryGetValue(out _, out ResultError error))
+        if (!GraphicsCommandBufferInterop.Execute(handle).TryGetValue(
+            out InteropHandle<GraphicsFence> fenceHandle, out ResultError error
+        )) {
             error.ThrowAndDispose();
+        }
+
+        return new GraphicsFence(Device, fenceHandle);
     }
 
     /// <summary>
