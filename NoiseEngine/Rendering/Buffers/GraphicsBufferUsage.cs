@@ -9,5 +9,7 @@ public enum GraphicsBufferUsage : uint {
     Storage = 1 << 5,
     Index = 1 << 6,
     Vertex = 1 << 7,
-    Indirect = 1 << 8
+    Indirect = 1 << 8,
+
+    TransferAll = TransferSource | TransferDestination
 }

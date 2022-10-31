@@ -1,5 +1,8 @@
 ﻿using NoiseEngine.Interop;
+using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Interop.Rendering.Vulkan;
+using NoiseEngine.Rendering.Buffers;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Rendering.Vulkan;
@@ -16,6 +19,18 @@ internal sealed class VulkanDevice : GraphicsDevice {
 
     internal override void InternalDispose() {
         VulkanDeviceInterop.Destroy(Handle);
+    }
+
+    internal override InteropHandle<GraphicsCommandBuffer> CreateCommandBuffer(
+        ReadOnlySpan<byte> data, GraphicsCommandBufferUsage usage, bool simultaneousExecute
+    ) {
+        if (!VulkanDeviceInterop.CreateCommandBuffer(Handle, data, usage, simultaneousExecute).TryGetValue(
+            out InteropHandle<GraphicsCommandBuffer> handle, out ResultError error
+        )) {
+            error.ThrowAndDispose();
+        }
+
+        return handle;
     }
 
     protected override void InitializeWorker() {
