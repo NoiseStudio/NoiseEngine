@@ -16,7 +16,7 @@ public class GraphicsFenceTest {
         ).ToArray();
     }
 
-    [Fact]
+    [FactRequire(TestRequirements.Graphics)]
     public void IsSignaled() {
         foreach (GraphicsCommandBuffer[] c in commandBuffers) {
             GraphicsCommandBuffer commandBuffer = c[0];
@@ -30,7 +30,7 @@ public class GraphicsFenceTest {
         }
     }
 
-    [Fact]
+    [FactRequire(TestRequirements.Graphics)]
     public void Wait() {
         foreach (GraphicsCommandBuffer[] c in commandBuffers) {
             GraphicsCommandBuffer commandBuffer = c[0];
@@ -40,7 +40,7 @@ public class GraphicsFenceTest {
         }
     }
 
-    [Fact]
+    [FactRequire(TestRequirements.Graphics)]
     public void WaitAll() {
         foreach (GraphicsCommandBuffer[] c in commandBuffers) {
             GraphicsFence[] fences = new GraphicsFence[c.Length];
@@ -56,7 +56,7 @@ public class GraphicsFenceTest {
         }
     }
 
-    [Fact]
+    [FactRequire(TestRequirements.Graphics)]
     public void WaitAny() {
         foreach (GraphicsCommandBuffer[] c in commandBuffers) {
             GraphicsFence[] fences = new GraphicsFence[c.Length];

@@ -6,21 +6,21 @@ use crate::{
     rendering::{
         vulkan::{
             device::{VulkanDevice, VulkanQueueFamily}, device_support::VulkanDeviceSupport,
-            errors::universal::VulkanUniversalError, fence::VulkanFence
+            errors::universal::VulkanUniversalError, fence::VulkanFence, pool_wrappers::VulkanCommandPool
         },
         buffers::{command_buffers::command::GraphicsCommandBufferCommand, command_buffer::GraphicsCommandBuffer},
         fence::GraphicsFence
     },
-    serialization::reader::SerializationReader, interop::prelude::InteropResult
+    serialization::reader::SerializationReader, interop::prelude::InteropResult, common::pool::PoolItem
 };
 
 use super::buffer::VulkanBuffer;
 
 pub struct VulkanCommandBuffer<'a> {
     device: &'a VulkanDevice,
-    command_pool: vk::CommandPool,
     inner: vk::CommandBuffer,
-    queue_family: &'a VulkanQueueFamily
+    queue_family: &'a VulkanQueueFamily,
+    _command_pool: PoolItem<'a, VulkanCommandPool>,
 }
 
 impl<'a> VulkanCommandBuffer<'a> {
@@ -32,24 +32,15 @@ impl<'a> VulkanCommandBuffer<'a> {
             Err(err) => return Err(err.into())
         };
 
-        let pool_info = vk::CommandPoolCreateInfo {
-            s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: vk::CommandPoolCreateFlags::empty(),
-            queue_family_index: queue_family.index(),
-        };
+        let command_pool = queue_family.get_command_pool()?;
 
         let initialized = device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
-        let command_pool = unsafe {
-            vulkan_device.create_command_pool(&pool_info, None)
-        }?;
-
         let allocate_info = vk::CommandBufferAllocateInfo {
             s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
             p_next: ptr::null(),
-            command_pool,
+            command_pool: command_pool.inner(),
             level: vk::CommandBufferLevel::PRIMARY,
             command_buffer_count: 1,
         };
@@ -60,9 +51,9 @@ impl<'a> VulkanCommandBuffer<'a> {
 
         let mut result = VulkanCommandBuffer {
             device,
-            command_pool,
             inner: command_buffer,
             queue_family,
+            _command_pool: command_pool,
         };
 
         result.record(data, simultaneous_execute)?;
@@ -156,8 +147,10 @@ impl Drop for VulkanCommandBuffer<'_> {
         let initialized = self.device.initialized().unwrap();
 
         unsafe {
-            initialized.vulkan_device().destroy_command_pool(self.command_pool, None);
-        }
+            initialized.vulkan_device().reset_command_buffer(
+                self.inner, vk::CommandBufferResetFlags::empty()
+            )
+        }.unwrap();
     }
 }
 

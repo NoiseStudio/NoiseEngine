@@ -21,8 +21,8 @@ public class GraphicsCommandBuffer {
     private int writerCountOnHandleCreation;
     private InteropHandle<GraphicsCommandBuffer> handle;
 
-    private bool graphics;
-    private bool computing;
+    private bool graphics = false;
+    private bool computing = false;
     private bool transfer;
 
     public GraphicsDevice Device { get; }

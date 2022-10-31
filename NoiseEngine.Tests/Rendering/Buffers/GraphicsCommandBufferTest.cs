@@ -41,7 +41,7 @@ public class GraphicsCommandBufferTest {
         }
     }
 
-    [Fact]
+    [FactRequire(TestRequirements.Graphics)]
     public void CopyBuffer() {
         int i = 0;
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {

@@ -10,3 +10,4 @@ pub mod library;
 pub mod log_severity;
 pub mod log_type;
 pub mod memory_allocator;
+pub mod pool_wrappers;
