@@ -5,7 +5,7 @@ use crate::{
     serialization::reader::SerializationReader
 };
 
-pub fn copy_buffer<'a>(data: &'a mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device) {
+pub fn copy_buffer(data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device) {
     let source_buffer = data.read_unchecked::<&&VulkanBuffer>();
     let destination_buffer = data.read_unchecked::<&&VulkanBuffer>();
 
