@@ -27,11 +27,7 @@ impl<'a> VulkanCommandBuffer<'a> {
     pub fn new(
         device: &'a VulkanDevice, data: SerializationReader, usage: VulkanDeviceSupport, simultaneous_execute: bool
     ) -> Result<Self, VulkanUniversalError> {
-        let queue_family = match device.get_family(usage) {
-            Ok(family) => family,
-            Err(err) => return Err(err.into())
-        };
-
+        let queue_family = device.get_family(usage)?;
         let command_pool = queue_family.get_command_pool()?;
 
         let initialized = device.initialized()?;

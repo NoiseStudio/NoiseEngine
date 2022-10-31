@@ -19,7 +19,11 @@ extern "C" fn rendering_fence_interop_wait_multiple(
     fences: InteropReadOnlySpan<&&dyn GraphicsFence>, wait_all: bool, timeout: u64
 ) -> InteropResult<()> {
     let f: &[&&dyn GraphicsFence] = fences.into();
-    unsafe {
+
+    match unsafe {
         f[0].wait_multiple(f, wait_all, timeout)
+    } {
+        Ok(()) => InteropResult::with_ok(()),
+        Err(err) => InteropResult::with_err(err)
     }
 }

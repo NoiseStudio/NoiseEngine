@@ -55,7 +55,8 @@ public class FastListTest {
 
     [Fact]
     public void CopyToArray() {
-        FastList<int> list = new FastList<int>(TestArray);
+        FastList<int> list = new FastList<int>(TestArray.Length * 2);
+        list.AddRange(TestArray);
         int[] data = new int[TestArray.Length];
 
         list.CopyTo(data, 0);

@@ -2,7 +2,7 @@ use std::mem;
 
 use ash::vk;
 
-use crate::{rendering::fence::GraphicsFence, interop::prelude::InteropResult};
+use crate::{rendering::fence::GraphicsFence, interop::prelude::{InteropResult, ResultError}};
 
 use super::{device_pool::VulkanDevicePool, errors::universal::VulkanUniversalError};
 
@@ -63,7 +63,9 @@ impl GraphicsFence for VulkanFence<'_> {
         }
     }
 
-    unsafe fn wait_multiple(&self, fences: &[&&dyn GraphicsFence], wait_all: bool, timeout: u64) -> InteropResult<()> {
+    unsafe fn wait_multiple(
+        &self, fences: &[&&dyn GraphicsFence], wait_all: bool, timeout: u64
+    ) -> Result<(), ResultError> {
         let f: &[&&VulkanFence] = mem::transmute(fences);
         let mut vec = Vec::with_capacity(f.len());
 
@@ -71,9 +73,6 @@ impl GraphicsFence for VulkanFence<'_> {
             vec.push(fence.inner);
         }
 
-        match self.wait(&vec, wait_all, timeout) {
-            Ok(()) => InteropResult::with_ok(()),
-            Err(err) => InteropResult::with_err(err.into()),
-        }
+        Ok(self.wait(&vec, wait_all, timeout)?)
     }
 }
