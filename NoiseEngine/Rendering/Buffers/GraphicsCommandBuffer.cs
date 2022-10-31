@@ -87,7 +87,7 @@ public class GraphicsCommandBuffer {
                 }
 
                 fences.AsSpan(i).CopyTo(fences.AsSpan());
-                fences.RemoveAtEnd(fences.Count - i);
+                fences.RemoveLast(fences.Count - i);
             } else {
                 fences.Clear();
             }

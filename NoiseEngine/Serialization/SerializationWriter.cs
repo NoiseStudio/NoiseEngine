@@ -105,6 +105,7 @@ public class SerializationWriter : IReadOnlyList<byte> {
     /// <summary>
     /// Converts <see cref="nuint"/> to bytes and writes it to this <see cref="SerializationWriter"/>.
     /// </summary>
+    /// <remarks>32-bit architectures are not supported.</remarks>
     /// <param name="obj"><see cref="nuint"/> value.</param>
     public void WriteUIntN(nuint obj) {
         WriteUInt64(obj);
@@ -145,6 +146,7 @@ public class SerializationWriter : IReadOnlyList<byte> {
     /// <summary>
     /// Converts <see cref="nint"/> to bytes and writes it to this <see cref="SerializationWriter"/>.
     /// </summary>
+    /// <remarks>32-bit architectures are not supported.</remarks>
     /// <param name="obj"><see cref="nint"/> value.</param>
     public void WriteIntN(nint obj) {
         WriteInt64(obj);

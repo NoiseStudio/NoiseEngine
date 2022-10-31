@@ -24,7 +24,7 @@ impl<'a> SerializationReader<'a> {
         self.index += size;
 
         Some(unsafe {
-            ptr::read::<T>(ptr as *const T)
+            ptr::read_unaligned::<T>(ptr as *const T)
         })
     }
 
@@ -37,12 +37,7 @@ impl<'a> SerializationReader<'a> {
         self.index += mem::size_of::<T>();
 
         unsafe {
-            ptr::read::<T>(ptr as *const T)
+            ptr::read_unaligned::<T>(ptr as *const T)
         }
-    }
-
-    pub fn read_box_dyn_downcast_unchecked<D: Sized, T>(&mut self) -> &T {
-        let a = self.read_unchecked::<&Box<D>>().as_ref();
-        unsafe { &*(a as *const D as *const T) }
     }
 }

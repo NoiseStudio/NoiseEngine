@@ -153,7 +153,7 @@ public class FastList<T> : IList<T>, IReadOnlyList<T>, IList {
     /// from <see cref="FastList{T}"/>. The <see cref="Array"/> must have zero-based indexing.</param>
     /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
     public void CopyTo(T[] array, int arrayIndex) {
-        items.CopyTo(array, arrayIndex);
+        items.AsSpan(0, Count).CopyTo(array.AsSpan(arrayIndex));
     }
 
     /// <summary>
@@ -259,10 +259,10 @@ public class FastList<T> : IList<T>, IReadOnlyList<T>, IList {
     }
 
     /// <summary>
-    /// Removes <paramref name="count"/> indexes on end of this <see cref="FastList{T}"/>.
+    /// Removes <paramref name="count"/> elements on end of this <see cref="FastList{T}"/>.
     /// </summary>
-    /// <param name="count">Number of indexes to remove.</param>
-    public void RemoveAtEnd(int count) {
+    /// <param name="count">Number of elements to remove.</param>
+    public void RemoveLast(int count) {
         this.count -= count;
         Array.Clear(items, this.count, count);
     }

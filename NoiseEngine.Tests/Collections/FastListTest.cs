@@ -54,7 +54,16 @@ public class FastListTest {
     }
 
     [Fact]
-    public void CopyTo() {
+    public void CopyToArray() {
+        FastList<int> list = new FastList<int>(TestArray);
+        int[] data = new int[TestArray.Length];
+
+        list.CopyTo(data, 0);
+        Assert.Equal(data, list);
+    }
+
+    [Fact]
+    public void CopyToFastList() {
         FastList<int> list = new FastList<int>(TestArray);
         FastList<int> list2 = new FastList<int>();
 
@@ -116,12 +125,12 @@ public class FastListTest {
     }
 
     [Fact]
-    public void RemoveAtEnd() {
+    public void RemoveLast() {
         FastList<int> list = new FastList<int>(TestArray);
 
         Assert.Equal(TestArray.Length, list.Count);
-        list.RemoveAtEnd(2);
-        Assert.Equal(TestArray.Length - 2, list.Count);
+        list.RemoveLast(2);
+        Assert.Equal(TestArray.AsSpan(0, TestArray.Length - 2).ToArray(), list);
     }
 
     [Fact]

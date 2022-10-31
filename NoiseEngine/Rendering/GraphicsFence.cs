@@ -31,13 +31,13 @@ public class GraphicsFence {
     }
 
     /// <summary>
-    /// Waits until everyone <paramref name="fences"/> to become signaled.
+    /// Waits for all <paramref name="fences"/> to become signaled.
     /// </summary>
     /// <param name="fences">
     /// <see cref="GraphicsFence"/> to wait. They must belong to the same <see cref="GraphicsDevice"/>.
     /// </param>
     /// <param name="timeout">
-    /// The timeout period in units of nanoseconds. timeout is adjusted to the closest value allowed by the
+    /// The timeout period in units of nanoseconds. Timeout is adjusted to the closest value allowed by the
     /// implementation-dependent timeout accuracy, which may be substantially longer than one nanosecond,
     /// and may be longer than the requested period.
     /// </param>
@@ -46,13 +46,13 @@ public class GraphicsFence {
     }
 
     /// <summary>
-    /// Waits until anyone <paramref name="fences"/> to become signaled.
+    /// Waits until at least one of the <paramref name="fences"/> becomes signaled.
     /// </summary>
     /// <param name="fences">
     /// <see cref="GraphicsFence"/> to wait. They must belong to the same <see cref="GraphicsDevice"/>.
     /// </param>
     /// <param name="timeout">
-    /// The timeout period in units of nanoseconds. timeout is adjusted to the closest value allowed by the
+    /// The timeout period in units of nanoseconds. Timeout is adjusted to the closest value allowed by the
     /// implementation-dependent timeout accuracy, which may be substantially longer than one nanosecond,
     /// and may be longer than the requested period.
     /// </param>
@@ -61,17 +61,19 @@ public class GraphicsFence {
     }
 
     private static void WaitMultiple(IEnumerable<GraphicsFence> fences, bool waitAll, ulong timeout) {
-        int count = fences.Count();
+        GraphicsFence[] fencesArray = fences.ToArray();
+
+        int count = fencesArray.Length;
         if (count == 0)
             return;
 
         Span<InteropHandle<GraphicsFence>> handles = count <= 1024 ?
             stackalloc InteropHandle<GraphicsFence>[count] : new InteropHandle<GraphicsFence>[count];
 
-        GraphicsDevice device = fences.First().Device;
+        GraphicsDevice device = fencesArray[0].Device;
 
         int i = 0;
-        foreach (GraphicsFence fence in fences) {
+        foreach (GraphicsFence fence in fencesArray) {
             if (device != fence.Device)
                 throw new ArgumentException($"Fences are not from the same {nameof(GraphicsDevice)}.", nameof(fences));
 
@@ -86,7 +88,7 @@ public class GraphicsFence {
     /// Waits for this <see cref="GraphicsFence"/> to become signaled.
     /// </summary>
     /// <param name="timeout">
-    /// The timeout period in units of nanoseconds. timeout is adjusted to the closest value allowed by the
+    /// The timeout period in units of nanoseconds. Timeout is adjusted to the closest value allowed by the
     /// implementation-dependent timeout accuracy, which may be substantially longer than one nanosecond,
     /// and may be longer than the requested period.
     /// </param>
