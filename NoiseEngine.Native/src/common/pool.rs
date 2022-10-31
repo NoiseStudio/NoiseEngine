@@ -23,7 +23,7 @@ impl<T> Pool<T> {
 
     pub fn get_or_create<E, F>(&self, factory: F) -> Result<PoolItem<T>, E>
     where
-        F: Fn() -> Result<T, E>
+        F: FnOnce() -> Result<T, E>
     {
         match self.try_get() {
             Some(s) => Ok(s),

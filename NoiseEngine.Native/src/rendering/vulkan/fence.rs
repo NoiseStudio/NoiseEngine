@@ -20,7 +20,7 @@ impl<'a> VulkanFence<'a>{
         self.inner
     }
 
-    /// Safety
+    /// # Safety
     /// All fences must be from the same device.
     unsafe fn wait(&self, fences: &[vk::Fence], wait_all: bool, timeout: u64) -> Result<(), VulkanUniversalError> {
         let initialized = self.pool.device().initialized()?;

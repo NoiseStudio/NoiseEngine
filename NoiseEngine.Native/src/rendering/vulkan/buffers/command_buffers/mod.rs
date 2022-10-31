@@ -1,1 +1,1 @@
-pub(crate) mod memory;
+pub(super) mod memory_commands;

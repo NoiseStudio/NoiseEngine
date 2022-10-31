@@ -14,7 +14,7 @@ use crate::{
     serialization::reader::SerializationReader, interop::prelude::InteropResult, common::pool::PoolItem
 };
 
-use super::command_buffers::memory::MemoryCommands;
+use super::command_buffers::memory_commands;
 
 pub struct VulkanCommandBuffer<'a> {
     device: &'a VulkanDevice,
@@ -93,28 +93,26 @@ impl<'a> VulkanCommandBuffer<'a> {
         let initialized = self.device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
-        {
-            let mut begin_info_flags = vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT;
-            if simultaneous_execute {
-                begin_info_flags |= vk::CommandBufferUsageFlags::SIMULTANEOUS_USE;
-            }
-
-            let begin_info = vk::CommandBufferBeginInfo {
-                s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
-                p_next: ptr::null(),
-                flags: begin_info_flags,
-                p_inheritance_info: ptr::null(),
-            };
-
-            unsafe {
-                vulkan_device.begin_command_buffer(self.inner, &begin_info)
-            }?;
+        let mut begin_info_flags = vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT;
+        if simultaneous_execute {
+            begin_info_flags |= vk::CommandBufferUsageFlags::SIMULTANEOUS_USE;
         }
+
+        let begin_info = vk::CommandBufferBeginInfo {
+            s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
+            p_next: ptr::null(),
+            flags: begin_info_flags,
+            p_inheritance_info: ptr::null(),
+        };
+
+        unsafe {
+            vulkan_device.begin_command_buffer(self.inner, &begin_info)
+        }?;
 
         while let Some(command) = data.read::<GraphicsCommandBufferCommand>() {
             match command {
                 GraphicsCommandBufferCommand::CopyBuffer =>
-                    MemoryCommands::copy_buffer(&mut data, self, vulkan_device)
+                    memory_commands::copy_buffer(&mut data, self, vulkan_device)
             };
         };
 
