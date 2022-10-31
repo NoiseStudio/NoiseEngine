@@ -41,7 +41,7 @@ public class GraphicsFence {
     /// implementation-dependent timeout accuracy, which may be substantially longer than one nanosecond,
     /// and may be longer than the requested period.
     /// </param>
-    public static void WaitAll(IEnumerable<GraphicsFence> fences, ulong timeout) {
+    public static void WaitAll(IEnumerable<GraphicsFence> fences, ulong timeout = ulong.MaxValue) {
         WaitMultiple(fences, true, timeout);
     }
 
@@ -56,8 +56,8 @@ public class GraphicsFence {
     /// implementation-dependent timeout accuracy, which may be substantially longer than one nanosecond,
     /// and may be longer than the requested period.
     /// </param>
-    public static void WaitAny(IEnumerable<GraphicsFence> fences, ulong timeout) {
-        WaitMultiple(fences, true, timeout);
+    public static void WaitAny(IEnumerable<GraphicsFence> fences, ulong timeout = ulong.MaxValue) {
+        WaitMultiple(fences, false, timeout);
     }
 
     private static void WaitMultiple(IEnumerable<GraphicsFence> fences, bool waitAll, ulong timeout) {

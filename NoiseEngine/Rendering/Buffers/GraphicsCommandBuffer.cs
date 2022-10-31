@@ -7,11 +7,17 @@ using System;
 
 namespace NoiseEngine.Rendering.Buffers;
 
+/// <summary>
+/// Command buffer used to execute commands on a <see cref="GraphicsDevice"/>.
+/// </summary>
+/// <remarks>Must be externally synchronized.</remarks>
 public class GraphicsCommandBuffer {
 
     private readonly FastList<object> references = new FastList<object>();
     private readonly SerializationWriter writer = new SerializationWriter(BitConverter.IsLittleEndian);
+    private readonly FastList<GraphicsFence> fences = new FastList<GraphicsFence>();
 
+    private bool simultaneousExecute;
     private int writerCountOnHandleCreation;
     private InteropHandle<GraphicsCommandBuffer> handle;
 
@@ -21,9 +27,26 @@ public class GraphicsCommandBuffer {
 
     public GraphicsDevice Device { get; }
 
-    public GraphicsCommandBuffer(GraphicsDevice device) {
+    /// <summary>
+    /// Specifies that a <see cref="GraphicsCommandBuffer"/> can be simultaneous executed
+    /// and attached into multiple primary <see cref="GraphicsCommandBuffer"/>.
+    /// </summary>
+    /// <remarks>Changing the value calls the <see cref="Deconstruct"/> method.</remarks>
+    public bool SimultaneousExecute {
+        get => simultaneousExecute;
+        set {
+            if (simultaneousExecute != value) {
+                simultaneousExecute = value;
+                Deconstruct();
+            }
+        }
+    }
+
+    public GraphicsCommandBuffer(GraphicsDevice device, bool simultaneousExecute) {
         device.Initialize();
+
         Device = device;
+        this.simultaneousExecute = simultaneousExecute;
     }
 
     private static ArgumentException CreateUsageNotIncludeException(string paramName, GraphicsBufferUsage usage) {
@@ -36,13 +59,13 @@ public class GraphicsCommandBuffer {
         );
     }
 
+    /// <summary>
+    /// Executes this <see cref="GraphicsFence"/>.
+    /// </summary>
+    /// <remarks>This method also calls <see cref="Construct"/> method.</remarks>
+    /// <returns>New <see cref="GraphicsFence"/> associated with this execution.</returns>
     public GraphicsFence Execute() {
-        if (handle == InteropHandle<GraphicsCommandBuffer>.Zero) {
-            writerCountOnHandleCreation = writer.Count;
-            handle = Device.CreateCommandBuffer(
-                writer.AsSpan(), new GraphicsCommandBufferUsage(graphics, computing, transfer)
-            );
-        }
+        Construct();
 
         if (!GraphicsCommandBufferInterop.Execute(handle).TryGetValue(
             out InteropHandle<GraphicsFence> fenceHandle, out ResultError error
@@ -50,19 +73,89 @@ public class GraphicsCommandBuffer {
             error.ThrowAndDispose();
         }
 
-        return new GraphicsFence(Device, fenceHandle);
+        FastList<GraphicsFence> fences = this.fences;
+        if (fences.Count > 0) {
+            int i;
+            for (i = 0; i < fences.Count && fences[i].IsSignaled; i++) {
+            }
+
+            if (i < fences.Count) {
+                if (!SimultaneousExecute) {
+                    throw new InvalidOperationException(
+                        $"This {nameof(GraphicsCommandBuffer)} cannot be executed simultaneous."
+                    );
+                }
+
+                fences.AsSpan(i).CopyTo(fences.AsSpan());
+                fences.RemoveAtEnd(fences.Count - i);
+            } else {
+                fences.Clear();
+            }
+        }
+
+        GraphicsFence fence = new GraphicsFence(Device, fenceHandle);
+        fences.Add(fence);
+        return fence;
     }
 
     /// <summary>
-    /// Clears this <see cref="GraphicsCommandBuffer"/>.
+    /// Waits for pending <see cref="GraphicsFence"/>s, destroys native handle and clears this
+    /// <see cref="GraphicsCommandBuffer"/>.
     /// </summary>
     public void Clear() {
-        GraphicsCommandBufferInterop.Destroy(handle);
-
-        writer.Clear();
+        Deconstruct();
         references.Clear();
+        writer.Clear();
     }
 
+    /// <summary>
+    /// Construct native handle from recorded data.
+    /// </summary>
+    /// <remarks>
+    /// In a situation where the command buffer is already constructed and the amount of recorded data differs,
+    /// the <see cref="Deconstruct"/> method is called first.
+    /// </remarks>
+    public void Construct() {
+        if (handle != InteropHandle<GraphicsCommandBuffer>.Zero) {
+            if (writerCountOnHandleCreation != writer.Count)
+                Deconstruct();
+            else
+                return;
+        }
+
+        writerCountOnHandleCreation = writer.Count;
+        handle = Device.CreateCommandBuffer(
+            writer.AsSpan(), new GraphicsCommandBufferUsage(graphics, computing, transfer), SimultaneousExecute
+        );
+    }
+
+    /// <summary>
+    /// Waits for pending <see cref="GraphicsFence"/>s and destroys native handle.
+    /// </summary>
+    public void Deconstruct() {
+        if (handle == InteropHandle<GraphicsCommandBuffer>.Zero)
+            return;
+
+        GraphicsFence.WaitAll(fences);
+        fences.Clear();
+
+        GraphicsCommandBufferInterop.Destroy(handle);
+        handle = InteropHandle<GraphicsCommandBuffer>.Zero;
+    }
+
+    /// <summary>
+    /// Copies <paramref name="count"/> of data from <paramref name="sourceBuffer"/> to
+    /// <paramref name="destinationBuffer"/> starting with a zero index.
+    /// </summary>
+    /// <typeparam name="T">Type of the element in buffers.</typeparam>
+    /// <param name="sourceBuffer">Source buffer with <see cref="GraphicsBufferUsage.TransferSource"/> flag.</param>
+    /// <param name="destinationBuffer">
+    /// Destination buffer with <see cref="GraphicsBufferUsage.TransferDestination"/> flag.
+    /// </param>
+    /// <param name="count">Count of copied data.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Source or destination buffer is shorten than given <paramref name="count"/>.
+    /// </exception>
     public void Copy<T>(
         GraphicsReadOnlyBuffer<T> sourceBuffer, GraphicsBuffer<T> destinationBuffer, ulong count
     ) where T : unmanaged {

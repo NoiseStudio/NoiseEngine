@@ -116,6 +116,15 @@ public class FastListTest {
     }
 
     [Fact]
+    public void RemoveAtEnd() {
+        FastList<int> list = new FastList<int>(TestArray);
+
+        Assert.Equal(TestArray.Length, list.Count);
+        list.RemoveAtEnd(2);
+        Assert.Equal(TestArray.Length - 2, list.Count);
+    }
+
+    [Fact]
     public void ToArray() {
         List<int> list2 = new List<int>(TestArray);
         FastList<int> list = new FastList<int>(TestArray);

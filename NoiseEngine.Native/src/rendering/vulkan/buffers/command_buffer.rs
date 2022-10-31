@@ -8,7 +8,8 @@ use crate::{
             device::{VulkanDevice, VulkanQueueFamily}, device_support::VulkanDeviceSupport,
             errors::universal::VulkanUniversalError, fence::VulkanFence
         },
-        buffers::{command_buffers::command::GraphicsCommandBufferCommand, command_buffer::GraphicsCommandBuffer}, fence::GraphicsFence
+        buffers::{command_buffers::command::GraphicsCommandBufferCommand, command_buffer::GraphicsCommandBuffer},
+        fence::GraphicsFence
     },
     serialization::reader::SerializationReader, interop::prelude::InteropResult
 };
@@ -24,7 +25,7 @@ pub struct VulkanCommandBuffer<'a> {
 
 impl<'a> VulkanCommandBuffer<'a> {
     pub fn new(
-        device: &'a VulkanDevice, data: SerializationReader, usage: VulkanDeviceSupport
+        device: &'a VulkanDevice, data: SerializationReader, usage: VulkanDeviceSupport, simultaneous_execute: bool
     ) -> Result<Self, VulkanUniversalError> {
         let queue_family = match device.get_family(usage) {
             Ok(family) => family,
@@ -64,7 +65,7 @@ impl<'a> VulkanCommandBuffer<'a> {
             queue_family,
         };
 
-        result.record(data)?;
+        result.record(data, simultaneous_execute)?;
 
         Ok(result)
     }
@@ -95,15 +96,22 @@ impl<'a> VulkanCommandBuffer<'a> {
         Ok(fence)
     }
 
-    fn record(&mut self, mut data: SerializationReader) -> Result<(), VulkanUniversalError> {
+    fn record(
+        &mut self, mut data: SerializationReader, simultaneous_execute: bool
+    ) -> Result<(), VulkanUniversalError> {
         let initialized = self.device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
         unsafe {
+            let mut begin_info_flags = vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT;
+            if simultaneous_execute {
+                begin_info_flags |= vk::CommandBufferUsageFlags::SIMULTANEOUS_USE;
+            }
+
             let begin_info = vk::CommandBufferBeginInfo {
                 s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
                 p_next: ptr::null(),
-                flags: vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
+                flags: begin_info_flags,
                 p_inheritance_info: ptr::null(),
             };
 

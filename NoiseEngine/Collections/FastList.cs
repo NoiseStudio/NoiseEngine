@@ -259,6 +259,15 @@ public class FastList<T> : IList<T>, IReadOnlyList<T>, IList {
     }
 
     /// <summary>
+    /// Removes <paramref name="count"/> indexes on end of this <see cref="FastList{T}"/>.
+    /// </summary>
+    /// <param name="count">Number of indexes to remove.</param>
+    public void RemoveAtEnd(int count) {
+        this.count -= count;
+        Array.Clear(items, this.count, count);
+    }
+
+    /// <summary>
     /// Copies the elements of the <see cref="FastList{T}"/> to a new array.
     /// </summary>
     /// <returns>An array containing copies of the elements of the <see cref="FastList{T}"/>.</returns>

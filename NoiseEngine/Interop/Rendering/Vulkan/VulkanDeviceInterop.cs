@@ -21,7 +21,8 @@ internal static partial class VulkanDeviceInterop {
 
     [InteropImport("rendering_vulkan_device_interop_create_command_buffer")]
     public static partial InteropResult<InteropHandle<GraphicsCommandBuffer>> CreateCommandBuffer(
-        InteropHandle<GraphicsDevice> device, ReadOnlySpan<byte> data, GraphicsCommandBufferUsage usage
+        InteropHandle<GraphicsDevice> device, ReadOnlySpan<byte> data, GraphicsCommandBufferUsage usage,
+        bool simultaneousExecute
     );
 
 }

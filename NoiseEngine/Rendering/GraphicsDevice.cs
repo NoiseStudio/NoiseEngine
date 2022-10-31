@@ -65,7 +65,7 @@ public abstract class GraphicsDevice {
     }
 
     internal abstract InteropHandle<GraphicsCommandBuffer> CreateCommandBuffer(
-        ReadOnlySpan<byte> data, GraphicsCommandBufferUsage usage
+        ReadOnlySpan<byte> data, GraphicsCommandBufferUsage usage, bool simultaneousExecute
     );
 
     protected abstract void InitializeWorker();

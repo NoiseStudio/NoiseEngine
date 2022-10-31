@@ -22,9 +22,9 @@ internal sealed class VulkanDevice : GraphicsDevice {
     }
 
     internal override InteropHandle<GraphicsCommandBuffer> CreateCommandBuffer(
-        ReadOnlySpan<byte> data, GraphicsCommandBufferUsage usage
+        ReadOnlySpan<byte> data, GraphicsCommandBufferUsage usage, bool simultaneousExecute
     ) {
-        if (!VulkanDeviceInterop.CreateCommandBuffer(Handle, data, usage).TryGetValue(
+        if (!VulkanDeviceInterop.CreateCommandBuffer(Handle, data, usage, simultaneousExecute).TryGetValue(
             out InteropHandle<GraphicsCommandBuffer> handle, out ResultError error
         )) {
             error.ThrowAndDispose();
