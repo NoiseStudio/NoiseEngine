@@ -11,7 +11,7 @@ public abstract class GraphicsReadOnlyBuffer<T> where T : unmanaged {
     public GraphicsBufferUsage Usage { get; }
     public ulong Count { get; }
 
-    internal InteropHandle<GraphicsReadOnlyBuffer<T>> Handle { get; private set; }
+    internal InteropHandle<GraphicsReadOnlyBuffer<T>> Handle { get; }
 
     private protected GraphicsReadOnlyBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count, InteropHandle<GraphicsReadOnlyBuffer<T>> handle

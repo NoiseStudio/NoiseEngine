@@ -58,6 +58,7 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
 
         int i = 0;
         do {
+            // Tries to create a graphic buffer.
             IntPtr handle;
             switch (device.Instance.Api) {
                 case GraphicsApi.Vulkan:
@@ -74,6 +75,9 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
 
             if (exception is null)
                 return new InteropHandle<GraphicsReadOnlyBuffer<T>>(handle);
+
+            // The first occurrence of GraphicsOutOfMemoryException is ignored, after which memory cleanup is called
+            // and then the graphics buffer creating is tried again. Next occurrences will throws exception.
             if (i++ != 0)
                 break;
             if (exception is not GraphicsOutOfMemoryException)
