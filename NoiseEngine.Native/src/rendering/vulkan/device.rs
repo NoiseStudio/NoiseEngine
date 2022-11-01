@@ -1,4 +1,4 @@
-use std::{ptr, mem::ManuallyDrop};
+use std::{ptr, mem::ManuallyDrop, rc::Rc};
 
 use ash::vk::{self, QueueFlags};
 use lockfree::stack::Stack;
@@ -11,15 +11,15 @@ use super::{
     device_pool::VulkanDevicePool, pool_wrappers::VulkanCommandPool
 };
 
-pub struct VulkanDevice {
-    instance_ptr: *const ash::Instance,
+pub struct VulkanDevice<'inst: 'init, 'init> {
+    instance: &'inst ash::Instance,
     physical_device: vk::PhysicalDevice,
-    initialized: Option<VulkanDeviceInitialized>
+    initialized: Option<VulkanDeviceInitialized<'init>>
 }
 
-impl VulkanDevice {
-    pub fn new(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> Self {
-        Self { instance_ptr: instance, physical_device, initialized: None }
+impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
+    pub fn new(instance: &'inst ash::Instance, physical_device: vk::PhysicalDevice) -> Self {
+        Self { instance, physical_device, initialized: None }
     }
 
     fn create_not_initialized_error() -> InvalidOperationError {
@@ -50,54 +50,38 @@ impl VulkanDevice {
         };
 
         let device = unsafe {
-            self.instance().create_device(self.physical_device, &create_info, None)
-        }?;
+            Rc::new(self.instance().create_device(self.physical_device, &create_info, None)?)
+        };
 
-        let queue_families = self.create_queue_families(&device);
+        let queue_families = Self::create_queue_families(self.instance, self.physical_device, device.clone());
+        let instance = self.instance;
 
         self.initialized = Some(VulkanDeviceInitialized {
-            device,
+            device: device.clone(),
             queue_families: ManuallyDrop::new(queue_families),
-            allocator: ManuallyDrop::new(MemoryAllocator::new(self)?),
-            pool: VulkanDevicePool::new(self)
+            allocator: ManuallyDrop::new(MemoryAllocator::new(instance, device.clone(), self.physical_device())?),
+            pool: VulkanDevicePool::new(device.clone()),
         });
 
         Ok(())
     }
 
     pub fn instance(&self) -> &ash::Instance {
-        unsafe {
-            &*self.instance_ptr
-        }
+        self.instance
     }
 
     pub fn physical_device(&self) -> vk::PhysicalDevice {
         self.physical_device
     }
 
-    pub fn get_family(&self, support: VulkanDeviceSupport) -> Result<&VulkanQueueFamily, InvalidOperationError> {
-        let initialized = match &self.initialized {
-            Some(i) => i,
-            None => return Err(Self::create_not_initialized_error())
-        };
-
-        for family in &*initialized.queue_families {
-            if support.is_suitable_to(&family.support) {
-                return Ok(family);
-            }
-        }
-
-        Err(InvalidOperationError::with_str("This VulkanDevice does not have suitable families."))
-    }
-
-    pub fn get_queue(&self, support: VulkanDeviceSupport) -> Result<VulkanQueue, InvalidOperationError> {
-        match self.get_family(support) {
+    pub fn get_queue<'dev: 'init>(&'dev self, support: VulkanDeviceSupport) -> Result<VulkanQueue, InvalidOperationError> {
+        match self.initialized()?.get_family(support) {
             Ok(family) => Ok(family.get_queue()),
             Err(err) => Err(err)
         }
     }
 
-    pub(crate) fn initialized(&self) -> Result<&VulkanDeviceInitialized, InvalidOperationError> {
+    pub(crate) fn initialized(&self) -> Result<&VulkanDeviceInitialized<'init>, InvalidOperationError> {
         match &self.initialized {
             Some(i) => Ok(i),
             None => Err(Self::create_not_initialized_error())
@@ -132,13 +116,17 @@ impl VulkanDevice {
         queue_create_infos
     }
 
-    fn create_queue_families(&self, device: &ash::Device) -> Vec<VulkanQueueFamily> {
+    fn create_queue_families(
+        instance: &'inst ash::Instance,
+        physical_device: vk::PhysicalDevice,
+        device: Rc<ash::Device>
+    ) -> Vec<VulkanQueueFamily<'init>> {
         let mut queue_family_index = 0;
         let mut families: Vec<_> = unsafe {
-            self.instance().get_physical_device_queue_family_properties(self.physical_device)
+            instance.get_physical_device_queue_family_properties(physical_device)
         }.into_iter().map(|family| {
             let result = VulkanQueueFamily {
-                device_ptr: self,
+                vulkan_device: device.clone(),
                 index: queue_family_index,
                 support: VulkanDeviceSupport {
                     graphics: family.queue_flags.contains(QueueFlags::GRAPHICS),
@@ -166,14 +154,14 @@ impl VulkanDevice {
     }
 }
 
-pub(crate) struct VulkanDeviceInitialized {
-    device: ash::Device,
-    queue_families: ManuallyDrop<Vec<VulkanQueueFamily>>,
+pub(crate) struct VulkanDeviceInitialized<'init> {
+    device: Rc<ash::Device>,
+    queue_families: ManuallyDrop<Vec<VulkanQueueFamily<'init>>>,
     allocator: ManuallyDrop<MemoryAllocator>,
-    pool: VulkanDevicePool
+    pool: VulkanDevicePool,
 }
 
-impl VulkanDeviceInitialized {
+impl<'init> VulkanDeviceInitialized<'init> {
     pub fn vulkan_device(&self) -> &ash::Device {
         &self.device
     }
@@ -189,9 +177,19 @@ impl VulkanDeviceInitialized {
     pub fn queue_families_count(&self) -> usize {
         self.queue_families.len()
     }
+
+    pub fn get_family(&self, support: VulkanDeviceSupport) -> Result<&VulkanQueueFamily<'init>, InvalidOperationError> {
+        for family in &*self.queue_families {
+            if support.is_suitable_to(&family.support) {
+                return Ok(&family);
+            }
+        }
+
+        Err(InvalidOperationError::with_str("This VulkanDevice does not have suitable families."))
+    }
 }
 
-impl Drop for VulkanDeviceInitialized {
+impl Drop for VulkanDeviceInitialized<'_> {
     fn drop(&mut self) {
         unsafe {
             ManuallyDrop::drop(&mut self.queue_families);
@@ -201,22 +199,16 @@ impl Drop for VulkanDeviceInitialized {
     }
 }
 
-pub struct VulkanQueueFamily {
-    device_ptr: *const VulkanDevice,
+pub struct VulkanQueueFamily<'fam> {
+    vulkan_device: Rc<ash::Device>,
     index: u32,
     support: VulkanDeviceSupport,
     queues: Stack<vk::Queue>,
     reset_event: AutoResetEvent,
-    command_pools: Pool<VulkanCommandPool>
+    command_pools: Pool<VulkanCommandPool<'fam>>,
 }
 
-impl VulkanQueueFamily {
-    pub fn device(&self) -> &VulkanDevice {
-        unsafe {
-            &*self.device_ptr
-        }
-    }
-
+impl<'fam> VulkanQueueFamily<'fam> {
     pub fn index(&self) -> u32 {
         self.index
     }
@@ -225,7 +217,7 @@ impl VulkanQueueFamily {
         &self.support
     }
 
-    pub fn try_get_queue(&self) -> Option<VulkanQueue> {
+    pub fn try_get_queue(&self) -> Option<VulkanQueue<'fam, '_>> {
         match self.queues.pop() {
             Some(queue) => Some(VulkanQueue {
                 family: self,
@@ -235,7 +227,7 @@ impl VulkanQueueFamily {
         }
     }
 
-    pub fn get_queue(&self) -> VulkanQueue {
+    pub fn get_queue(&self) -> VulkanQueue<'fam, '_> {
         loop {
             match self.try_get_queue() {
                 Some(queue) => return queue,
@@ -244,7 +236,7 @@ impl VulkanQueueFamily {
         }
     }
 
-    pub fn get_command_pool(&self) -> Result<PoolItem<VulkanCommandPool>, VulkanUniversalError> {
+    pub fn get_command_pool(&'fam self) -> Result<PoolItem<'fam, VulkanCommandPool<'fam>>, VulkanUniversalError> {
         self.command_pools.get_or_create(|| {
             let pool_info = vk::CommandPoolCreateInfo {
                 s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
@@ -253,14 +245,11 @@ impl VulkanQueueFamily {
                 queue_family_index: self.index(),
             };
 
-            let initialized = self.device().initialized()?;
-            let vulkan_device = initialized.vulkan_device();
-
             let command_pool = unsafe {
-                vulkan_device.create_command_pool(&pool_info, None)
+                self.vulkan_device.create_command_pool(&pool_info, None)
             }?;
 
-            Ok(VulkanCommandPool::new(initialized, command_pool))
+            Ok(VulkanCommandPool::new(&self.vulkan_device, command_pool))
         })
     }
 
@@ -270,12 +259,12 @@ impl VulkanQueueFamily {
     }
 }
 
-pub struct VulkanQueue<'a> {
-    pub family: &'a VulkanQueueFamily,
+pub struct VulkanQueue<'init: 'fam, 'fam> {
+    pub family: &'fam VulkanQueueFamily<'init>,
     pub queue: vk::Queue
 }
 
-impl<'a> Drop for VulkanQueue<'a> {
+impl<'a> Drop for VulkanQueue<'_, '_> {
     fn drop(&mut self) {
         self.family.push_queue(self.queue)
     }

@@ -4,24 +4,23 @@ use ash::vk;
 
 use crate::{rendering::{
     vulkan::{
-        device::{VulkanDevice, VulkanDeviceInitialized},
+        device::VulkanDeviceInitialized,
         errors::universal::VulkanUniversalError,
         memory_allocator::MemoryBlock
     },
     buffers::buffer::GraphicsBuffer
 }, interop::prelude::InteropResult};
 
-pub(crate) struct VulkanBuffer<'a> {
-    device_ptr: &'a VulkanDevice,
+pub(crate) struct VulkanBuffer<'init: 'ma, 'ma> {
+    vulkan_device: &'init ash::Device,
     buffer: vk::Buffer,
-    memory: MemoryBlock<'a>
+    memory: MemoryBlock<'ma>,
 }
 
-impl<'a> VulkanBuffer<'a> {
+impl<'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
     pub fn new(
-        device: &'a VulkanDevice, usage: vk::BufferUsageFlags, size: u64, map: bool
+        initialized: &'init VulkanDeviceInitialized<'init>, usage: vk::BufferUsageFlags, size: u64, map: bool
     ) -> Result<Self, VulkanUniversalError> {
-        let initialized = device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
         let buffer = Self::create_buffer(initialized, size, usage)?;
@@ -31,11 +30,7 @@ impl<'a> VulkanBuffer<'a> {
             vulkan_device.bind_buffer_memory(buffer, memory.memory(), memory.offset())
         }?;
 
-        Ok(VulkanBuffer { device_ptr: device, buffer, memory })
-    }
-
-    pub fn device(&self) -> &VulkanDevice {
-        self.device_ptr
+        Ok(VulkanBuffer { vulkan_device, buffer, memory })
     }
 
     pub fn inner(&self) -> vk::Buffer {
@@ -84,18 +79,15 @@ impl<'a> VulkanBuffer<'a> {
     }
 }
 
-impl Drop for VulkanBuffer<'_> {
+impl Drop for VulkanBuffer<'_, '_> {
     fn drop(&mut self) {
-        let initialized = self.device().initialized().unwrap();
-        let device = initialized.vulkan_device();
-
         unsafe {
-            device.destroy_buffer(self.buffer, None);
+            self.vulkan_device.destroy_buffer(self.buffer, None);
         }
     }
 }
 
-impl GraphicsBuffer for VulkanBuffer<'_> {
+impl GraphicsBuffer for VulkanBuffer<'_, '_> {
     fn host_read(&self, buffer: &mut [u8], start: u64) -> InteropResult<()> {
         match self.memory.read(buffer, start) {
             Ok(()) => InteropResult::with_ok(()),

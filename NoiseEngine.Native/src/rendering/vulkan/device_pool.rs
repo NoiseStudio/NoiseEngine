@@ -1,29 +1,25 @@
-use std::ptr;
+use std::{ptr, rc::Rc};
 
 use ash::vk;
 
-use super::{device::VulkanDevice, errors::universal::VulkanUniversalError, fence::VulkanFence};
+use super::{errors::universal::VulkanUniversalError, fence::VulkanFence};
 
 pub struct VulkanDevicePool {
-    device_ptr: *const VulkanDevice
+    vulkan_device: Rc<ash::Device>,
 }
 
 impl VulkanDevicePool {
-    pub fn new(device: &VulkanDevice) -> Self {
+    pub(super) fn new(device: Rc<ash::Device>) -> Self {
         Self {
-            device_ptr: device
+            vulkan_device: device
         }
     }
 
-    pub fn device(&self) -> &VulkanDevice {
-        unsafe {
-            &*self.device_ptr
-        }
+    pub fn vulkan_device(&self) -> &ash::Device {
+        &self.vulkan_device
     }
 
     pub fn get_fence(&self) -> Result<VulkanFence, VulkanUniversalError> {
-        let initialized = self.device().initialized()?;
-
         let create_info = vk::FenceCreateInfo {
             s_type: vk::StructureType::FENCE_CREATE_INFO,
             p_next: ptr::null(),
@@ -31,7 +27,7 @@ impl VulkanDevicePool {
         };
 
         let fence = unsafe {
-            initialized.vulkan_device().create_fence(&create_info, None)
+            self.vulkan_device.create_fence(&create_info, None)
         }?;
 
         Ok(VulkanFence::new(self, fence))

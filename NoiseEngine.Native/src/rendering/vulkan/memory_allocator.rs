@@ -1,35 +1,33 @@
-use std::{sync::Mutex, ptr, mem::ManuallyDrop, cell::UnsafeCell};
+use std::{sync::Mutex, ptr, mem::ManuallyDrop, cell::UnsafeCell, rc::Rc};
 
 use ash::vk;
 use gpu_alloc::{Config, Request, UsageFlags};
 use gpu_alloc_ash::AshMemoryDevice;
 
-use super::{errors::universal::VulkanUniversalError, device::VulkanDevice};
+use super::errors::universal::VulkanUniversalError;
 
 pub(crate) struct MemoryAllocator {
-    device_ptr: *const VulkanDevice,
+    device: Rc<ash::Device>,
     inner: Mutex<gpu_alloc::GpuAllocator<vk::DeviceMemory>>
 }
 
 impl MemoryAllocator {
-    pub fn new(device: &VulkanDevice) -> Result<Self, VulkanUniversalError> {
+    pub fn new(
+        instance: &ash::Instance,
+        device: Rc<ash::Device>,
+        physical_device: vk::PhysicalDevice,
+    ) -> Result<Self, VulkanUniversalError> {
         let props = unsafe {
-            gpu_alloc_ash::device_properties(device.instance(), 0, device.physical_device())?
+            gpu_alloc_ash::device_properties(instance, 0, physical_device)?
         };
 
         // TODO: implement best suitable config.
         let config = Config::i_am_potato();
 
         Ok(MemoryAllocator {
-            device_ptr: device,
+            device: device.clone(),
             inner: Mutex::new(gpu_alloc::GpuAllocator::new(config, props))
         })
-    }
-
-    pub fn device(&self) -> &VulkanDevice {
-        unsafe {
-            &*self.device_ptr
-        }
     }
 
     pub fn alloc(&self, size: u64, map: bool) -> Result<MemoryBlock, VulkanUniversalError> {
@@ -51,7 +49,7 @@ impl MemoryAllocator {
     }
 
     fn memory_device(&self) -> &AshMemoryDevice {
-        AshMemoryDevice::wrap(self.device().initialized().unwrap().vulkan_device())
+        AshMemoryDevice::wrap(&self.device)
     }
 }
 
@@ -63,14 +61,14 @@ impl Drop for MemoryAllocator {
     }
 }
 
-pub(crate) struct MemoryBlock<'a> {
-    allocator_ptr: &'a MemoryAllocator,
+pub(crate) struct MemoryBlock<'ma> {
+    allocator_ptr: &'ma MemoryAllocator,
     inner: UnsafeCell<ManuallyDrop<gpu_alloc::MemoryBlock<vk::DeviceMemory>>>,
     mutex: Mutex<()>
 }
 
-impl<'a> MemoryBlock<'a> {
-    fn new(allocator: &'a MemoryAllocator, inner: gpu_alloc::MemoryBlock<vk::DeviceMemory>) -> Self {
+impl<'ma> MemoryBlock<'ma> {
+    fn new(allocator: &'ma MemoryAllocator, inner: gpu_alloc::MemoryBlock<vk::DeviceMemory>) -> Self {
         MemoryBlock {
             allocator_ptr: allocator,
             inner: ManuallyDrop::new(inner).into(),
@@ -119,7 +117,7 @@ impl<'a> MemoryBlock<'a> {
     }
 }
 
-impl<'a> Drop for MemoryBlock<'a> {
+impl Drop for MemoryBlock<'_> {
     fn drop(&mut self) {
         let block = unsafe {
             ptr::read(self.inner.get_mut() as &gpu_alloc::MemoryBlock<vk::DeviceMemory>)
