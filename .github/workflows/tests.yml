@@ -14,20 +14,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Mesa Vulkan graphics drivers
-      run: sudo apt install mesa-vulkan-drivers
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '7.x.x'
-        include-prerelease: true
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore /p:DoNotBuildMainNative=true
-    - name: Run tests
-      run: dotnet test --no-build --verbosity normal
-      timeout-minutes: 1
-      env:
-        NOISEENGINE_NO_SUPPORTS: gpu;gui;
+      - name: Checkout
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '7.x.x'
+
+      - name: Download SwiftShader-Setup
+        uses: robinraju/release-downloader@v1.6
+        with:
+          repository: "NoiseStudio/SwiftShader-Setup"
+          latest: true
+          fileName: "SwiftShader-Setup.tar.gz"
+      - name: Unpack SwiftShader-Setup
+        run: tar -xvzf SwiftShader-Setup.tar.gz
+      - name: Install SwiftShader
+        working-directory: SwiftShader-Setup
+        run: sudo dotnet SwiftShader-Setup.dll
+
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore /p:DoNotBuildMainNative=true
+      - name: Run tests
+        run: dotnet test --no-build --verbosity normal
+        timeout-minutes: 1
+        env:
+          NOISEENGINE_NO_SUPPORTS: gui;
