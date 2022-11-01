@@ -22,7 +22,7 @@ jobs:
           dotnet-version: '7.x.x'
 
       - name: Install Vulkan Loader
-        uses: sudo apt install libvulkan1
+        run: sudo apt install libvulkan1
       - name: Download SwiftShader-Setup
         uses: robinraju/release-downloader@v1.6
         with:
