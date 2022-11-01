@@ -1,20 +1,17 @@
 ﻿using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Buffers;
-using NoiseEngine.Threading;
 using System;
 using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Buffers;
 
-public abstract class GraphicsReadOnlyBuffer<T> : IDisposable where T : unmanaged {
-
-    private AtomicBool isDisposed;
+public abstract class GraphicsReadOnlyBuffer<T> where T : unmanaged {
 
     public GraphicsDevice Device { get; }
     public GraphicsBufferUsage Usage { get; }
     public ulong Count { get; }
 
-    internal InteropHandle<GraphicsReadOnlyBuffer<T>> Handle { get; private set; }
+    internal InteropHandle<GraphicsReadOnlyBuffer<T>> Handle { get; }
 
     private protected GraphicsReadOnlyBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count, InteropHandle<GraphicsReadOnlyBuffer<T>> handle
@@ -26,7 +23,10 @@ public abstract class GraphicsReadOnlyBuffer<T> : IDisposable where T : unmanage
     }
 
     ~GraphicsReadOnlyBuffer() {
-        ReleaseResources();
+        if (Handle == InteropHandle<GraphicsReadOnlyBuffer<T>>.Zero)
+            return;
+
+        GraphicsBufferInterop.Destroy(Handle.Pointer);
     }
 
     /// <summary>
@@ -50,30 +50,11 @@ public abstract class GraphicsReadOnlyBuffer<T> : IDisposable where T : unmanage
     }
 
     /// <summary>
-    /// Disposes this <see cref="GraphicsReadOnlyBuffer{T}"/>.
-    /// </summary>
-    public void Dispose() {
-        if (isDisposed.Exchange(true))
-            return;
-
-        ReleaseResources();
-        GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
     /// Copies data from this <see cref="GraphicsBuffer{T}"/> to given <paramref name="buffer"/>
     /// without size and start checks.
     /// </summary>
     /// <param name="buffer">Buffer for copied data from this <see cref="GraphicsReadOnlyBuffer{T}"/>.</param>
     /// <param name="start">Start index of copy.</param>
     protected abstract void GetDataUnchecked(Span<T> buffer, ulong start);
-
-    /// <summary>
-    /// Release resources from this <see cref="GraphicsReadOnlyBuffer{T}"/>.
-    /// </summary>
-    private void ReleaseResources() {
-        GraphicsBufferInterop.Destroy(Handle.Pointer);
-        Handle = InteropHandle<GraphicsReadOnlyBuffer<T>>.Zero;
-    }
 
 }

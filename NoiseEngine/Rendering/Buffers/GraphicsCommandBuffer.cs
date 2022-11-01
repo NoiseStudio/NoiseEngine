@@ -4,6 +4,7 @@ using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using NoiseEngine.Serialization;
 using System;
+using System.Linq;
 
 namespace NoiseEngine.Rendering.Buffers;
 
@@ -43,10 +44,31 @@ public class GraphicsCommandBuffer {
     }
 
     public GraphicsCommandBuffer(GraphicsDevice device, bool simultaneousExecute) {
+        GC.SuppressFinalize(this);
         device.Initialize();
 
         Device = device;
         this.simultaneousExecute = simultaneousExecute;
+    }
+
+    ~GraphicsCommandBuffer() {
+        if (handle == InteropHandle<GraphicsCommandBuffer>.Zero)
+            return;
+
+        if (fences.Any(x => !x.IsSignaled)) {
+            GraphicsCommandBufferCleaner.Enqueue(new GraphicsCommandBufferCleanData(
+                Device, handle, references, fences
+            ));
+            return;
+        }
+
+        references.Clear();
+        fences.Clear();
+        DestroyHandle(handle);
+    }
+
+    internal static void DestroyHandle(InteropHandle<GraphicsCommandBuffer> handle) {
+        GraphicsCommandBufferInterop.Destroy(handle);
     }
 
     private static ArgumentException CreateUsageNotIncludeException(string paramName, GraphicsBufferUsage usage) {
@@ -123,6 +145,8 @@ public class GraphicsCommandBuffer {
                 return;
         }
 
+        GC.ReRegisterForFinalize(this);
+
         writerCountOnHandleCreation = writer.Count;
         handle = Device.CreateCommandBuffer(
             writer.AsSpan(), new GraphicsCommandBufferUsage(graphics, computing, transfer), SimultaneousExecute
@@ -139,8 +163,11 @@ public class GraphicsCommandBuffer {
         GraphicsFence.WaitAll(fences);
         fences.Clear();
 
-        GraphicsCommandBufferInterop.Destroy(handle);
+        GC.SuppressFinalize(this);
+
+        InteropHandle<GraphicsCommandBuffer> copy = handle;
         handle = InteropHandle<GraphicsCommandBuffer>.Zero;
+        DestroyHandle(copy);
     }
 
     /// <summary>

@@ -49,8 +49,6 @@ public abstract class GraphicsDevice {
             $"{nameof(Handle)} = {Handle} }}";
     }
 
-    internal abstract void InternalDispose();
-
     internal void Initialize() {
         if (isInitialized)
             return;
