@@ -1,4 +1,7 @@
-use crate::{rendering::fence::GraphicsFence, interop::{prelude::InteropResult, interop_read_only_span::InteropReadOnlySpan}};
+use crate::{
+    rendering::fence::GraphicsFence,
+    interop::{prelude::InteropResult, interop_read_only_span::InteropReadOnlySpan}
+};
 
 #[no_mangle]
 extern "C" fn rendering_fence_interop_destroy(_handle: Box<Box<dyn GraphicsFence>>) {
