@@ -62,7 +62,7 @@ impl Drop for MemoryAllocator {
 }
 
 pub(crate) struct MemoryBlock<'ma> {
-    allocator_ptr: &'ma MemoryAllocator,
+    allocator: &'ma MemoryAllocator,
     inner: UnsafeCell<ManuallyDrop<gpu_alloc::MemoryBlock<vk::DeviceMemory>>>,
     mutex: Mutex<()>
 }
@@ -70,14 +70,14 @@ pub(crate) struct MemoryBlock<'ma> {
 impl<'ma> MemoryBlock<'ma> {
     fn new(allocator: &'ma MemoryAllocator, inner: gpu_alloc::MemoryBlock<vk::DeviceMemory>) -> Self {
         MemoryBlock {
-            allocator_ptr: allocator,
+            allocator,
             inner: ManuallyDrop::new(inner).into(),
             mutex: Mutex::new(())
         }
     }
 
     pub fn allocator(&self) -> &MemoryAllocator {
-        self.allocator_ptr
+        self.allocator
     }
 
     pub fn memory(&self) -> vk::DeviceMemory {

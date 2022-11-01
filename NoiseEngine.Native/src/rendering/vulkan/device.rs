@@ -74,7 +74,10 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
         self.physical_device
     }
 
-    pub fn get_queue<'dev: 'init>(&'dev self, support: VulkanDeviceSupport) -> Result<VulkanQueue, InvalidOperationError> {
+    pub fn get_queue<'dev: 'init>(
+        &'dev self,
+        support: VulkanDeviceSupport,
+    ) -> Result<VulkanQueue, InvalidOperationError> {
         match self.initialized()?.get_family(support) {
             Ok(family) => Ok(family.get_queue()),
             Err(err) => Err(err)

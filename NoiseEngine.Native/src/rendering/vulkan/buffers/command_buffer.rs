@@ -25,7 +25,10 @@ pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
 
 impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
     pub fn new(
-        device: &'dev VulkanDevice<'_, 'init>, data: SerializationReader, usage: VulkanDeviceSupport, simultaneous_execute: bool
+        device: &'dev VulkanDevice<'_, 'init>,
+        data: SerializationReader,
+        usage: VulkanDeviceSupport,
+        simultaneous_execute: bool,
     ) -> Result<Self, VulkanUniversalError> {
         let initialized = device.initialized()?;
         let queue_family = initialized.get_family(usage)?;
