@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Interop;
 using NoiseEngine.Interop.InteropMarshalling;
 using NoiseEngine.Interop.Rendering.Vulkan;
-using NoiseEngine.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;

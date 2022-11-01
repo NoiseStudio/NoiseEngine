@@ -1,10 +1,11 @@
 use ash::vk;
+use libc::c_void;
 
 use crate::{interop::prelude::{InteropResult, ResultError, ResultErrorKind, InteropArray}, rendering::vulkan::library};
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_library_interop_create() -> InteropResult<Box<ash::Entry>> {
-    match library::create() {
+extern "C" fn rendering_vulkan_library_interop_create(symbol: *const c_void) -> InteropResult<Box<ash::Entry>> {
+    match library::create(symbol) {
         Ok(library) => InteropResult::with_ok(Box::new(library)),
         Err(err) => {
             InteropResult::with_err(ResultError::with_kind(&err, ResultErrorKind::LibraryLoad))
