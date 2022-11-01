@@ -6,13 +6,13 @@ use crate::{rendering::fence::GraphicsFence, interop::prelude::{InteropResult, R
 
 use super::{device_pool::VulkanDevicePool, errors::universal::VulkanUniversalError};
 
-pub struct VulkanFence<'a> {
-    pool: &'a VulkanDevicePool,
+pub struct VulkanFence<'devpool> {
+    pool: &'devpool VulkanDevicePool,
     inner: vk::Fence
 }
 
-impl<'a> VulkanFence<'a>{
-    pub fn new(pool: &'a VulkanDevicePool, inner: vk::Fence) -> Self {
+impl<'devpool> VulkanFence<'devpool>{
+    pub fn new(pool: &'devpool VulkanDevicePool, inner: vk::Fence) -> Self {
         Self { pool, inner }
     }
 
@@ -23,9 +23,7 @@ impl<'a> VulkanFence<'a>{
     /// # Safety
     /// All fences must be from the same device.
     unsafe fn wait(&self, fences: &[vk::Fence], wait_all: bool, timeout: u64) -> Result<bool, VulkanUniversalError> {
-        let initialized = self.pool.device().initialized()?;
-
-        match initialized.vulkan_device().wait_for_fences(fences, wait_all, timeout) {
+        match self.pool.vulkan_device().wait_for_fences(fences, wait_all, timeout) {
             Ok(()) => Ok(true),
             Err(err) => match err {
                 vk::Result::TIMEOUT => Ok(false),
@@ -37,10 +35,8 @@ impl<'a> VulkanFence<'a>{
 
 impl Drop for VulkanFence<'_> {
     fn drop(&mut self) {
-        let initialized = self.pool.device().initialized().unwrap();
-
         unsafe {
-            initialized.vulkan_device().destroy_fence(self.inner, None);
+            self.pool.vulkan_device().destroy_fence(self.inner, None);
         }
     }
 }
@@ -56,13 +52,8 @@ impl GraphicsFence for VulkanFence<'_> {
     }
 
     fn is_signaled(&self) -> InteropResult<bool> {
-        let initialized = match self.pool.device().initialized() {
-            Ok(i) => i,
-            Err(err) => return InteropResult::with_err(err.into()),
-        };
-
         match unsafe {
-            initialized.vulkan_device().get_fence_status(self.inner)
+            self.pool.vulkan_device().get_fence_status(self.inner)
         } {
             Ok(i) => InteropResult::with_ok(i),
             Err(err) => return InteropResult::with_err(err.into()),

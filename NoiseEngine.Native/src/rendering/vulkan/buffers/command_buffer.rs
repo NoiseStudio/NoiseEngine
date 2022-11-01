@@ -5,7 +5,7 @@ use ash::vk;
 use crate::{
     rendering::{
         vulkan::{
-            device::{VulkanDevice, VulkanQueueFamily}, device_support::VulkanDeviceSupport,
+            device::{VulkanDevice, VulkanQueueFamily, VulkanDeviceInitialized}, device_support::VulkanDeviceSupport,
             errors::universal::VulkanUniversalError, fence::VulkanFence, pool_wrappers::VulkanCommandPool
         },
         buffers::{command_buffers::command::GraphicsCommandBufferCommand, command_buffer::GraphicsCommandBuffer},
@@ -16,21 +16,24 @@ use crate::{
 
 use super::command_buffers::memory_commands;
 
-pub struct VulkanCommandBuffer<'a> {
-    device: &'a VulkanDevice,
+pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
+    initialized: &'init VulkanDeviceInitialized<'init>,
     inner: vk::CommandBuffer,
-    queue_family: &'a VulkanQueueFamily,
-    _command_pool: PoolItem<'a, VulkanCommandPool>,
+    queue_family: &'fam VulkanQueueFamily<'init>,
+    _command_pool: PoolItem<'fam, VulkanCommandPool<'init>>,
 }
 
-impl<'a> VulkanCommandBuffer<'a> {
+impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
     pub fn new(
-        device: &'a VulkanDevice, data: SerializationReader, usage: VulkanDeviceSupport, simultaneous_execute: bool
+        device: &'dev VulkanDevice<'_, 'init>,
+        data: SerializationReader,
+        usage: VulkanDeviceSupport,
+        simultaneous_execute: bool,
     ) -> Result<Self, VulkanUniversalError> {
-        let queue_family = device.get_family(usage)?;
+        let initialized = device.initialized()?;
+        let queue_family = initialized.get_family(usage)?;
         let command_pool = queue_family.get_command_pool()?;
 
-        let initialized = device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
         let allocate_info = vk::CommandBufferAllocateInfo {
@@ -46,7 +49,7 @@ impl<'a> VulkanCommandBuffer<'a> {
         }?[0];
 
         let result = VulkanCommandBuffer {
-            device,
+            initialized,
             inner: command_buffer,
             queue_family,
             _command_pool: command_pool,
@@ -62,7 +65,7 @@ impl<'a> VulkanCommandBuffer<'a> {
     }
 
     pub fn execute(&self) -> Result<VulkanFence, VulkanUniversalError> {
-        let initialized = self.device.initialized()?;
+        let initialized = self.initialized;
         let vulkan_device = initialized.vulkan_device();
 
         let submit_info = vk::SubmitInfo {
@@ -90,7 +93,7 @@ impl<'a> VulkanCommandBuffer<'a> {
     fn record(
         &self, mut data: SerializationReader, simultaneous_execute: bool
     ) -> Result<(), VulkanUniversalError> {
-        let initialized = self.device.initialized()?;
+        let initialized = self.initialized;
         let vulkan_device = initialized.vulkan_device();
 
         let mut begin_info_flags = vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT;
@@ -124,9 +127,9 @@ impl<'a> VulkanCommandBuffer<'a> {
     }
 }
 
-impl Drop for VulkanCommandBuffer<'_> {
+impl Drop for VulkanCommandBuffer<'_, '_> {
     fn drop(&mut self) {
-        let initialized = self.device.initialized().unwrap();
+        let initialized = self.initialized;
 
         unsafe {
             initialized.vulkan_device().reset_command_buffer(
@@ -136,8 +139,8 @@ impl Drop for VulkanCommandBuffer<'_> {
     }
 }
 
-impl<'a> GraphicsCommandBuffer<'a> for VulkanCommandBuffer<'a> {
-    fn execute(&'a self) -> InteropResult<Box<Box<dyn GraphicsFence + 'a>>> {
+impl GraphicsCommandBuffer for VulkanCommandBuffer<'_, '_> {
+    fn execute(&self) -> InteropResult<Box<Box<dyn GraphicsFence + '_>>> {
         match self.execute() {
             Ok(fence) => InteropResult::with_ok(Box::new(Box::new(fence))),
             Err(err) => InteropResult::with_err(err.into())
