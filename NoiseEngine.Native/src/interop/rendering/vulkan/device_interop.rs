@@ -21,9 +21,12 @@ extern "C" fn rendering_vulkan_device_interop_initialize(device: &mut VulkanDevi
 }
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_device_interop_create_command_buffer<'a>(
-    device: &'a VulkanDevice, data: InteropReadOnlySpan<u8>, usage: VulkanDeviceSupport, simultaneous_execute: bool
-) -> InteropResult<Box<Box<dyn GraphicsCommandBuffer<'a> + 'a>>>{
+extern "C" fn rendering_vulkan_device_interop_create_command_buffer<'dev: 'init, 'init: 'cbuf, 'cbuf>(
+    device: &'dev VulkanDevice<'_, 'init>,
+    data: InteropReadOnlySpan<u8>,
+    usage: VulkanDeviceSupport,
+    simultaneous_execute: bool,
+) -> InteropResult<Box<Box<dyn GraphicsCommandBuffer + 'cbuf>>>{
     match VulkanCommandBuffer::new(
         device, SerializationReader::new(data.into()), usage, simultaneous_execute
     ) {
