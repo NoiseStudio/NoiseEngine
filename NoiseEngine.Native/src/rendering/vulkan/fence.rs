@@ -22,10 +22,16 @@ impl<'a> VulkanFence<'a>{
 
     /// # Safety
     /// All fences must be from the same device.
-    unsafe fn wait(&self, fences: &[vk::Fence], wait_all: bool, timeout: u64) -> Result<(), VulkanUniversalError> {
+    unsafe fn wait(&self, fences: &[vk::Fence], wait_all: bool, timeout: u64) -> Result<bool, VulkanUniversalError> {
         let initialized = self.pool.device().initialized()?;
 
-        Ok(initialized.vulkan_device().wait_for_fences(fences, wait_all, timeout)?)
+        match initialized.vulkan_device().wait_for_fences(fences, wait_all, timeout) {
+            Ok(()) => Ok(true),
+            Err(err) => match err {
+                vk::Result::TIMEOUT => Ok(false),
+                _ => Err(err.into())
+            }
+        }
     }
 }
 
@@ -40,11 +46,11 @@ impl Drop for VulkanFence<'_> {
 }
 
 impl GraphicsFence for VulkanFence<'_> {
-    fn wait(&self, timeout: u64) -> InteropResult<()> {
+    fn wait(&self, timeout: u64) -> InteropResult<bool> {
         match unsafe {
             self.wait(&[self.inner], false, timeout)
         } {
-            Ok(()) => InteropResult::with_ok(()),
+            Ok(is_signaled) => InteropResult::with_ok(is_signaled),
             Err(err) => InteropResult::with_err(err.into()),
         }
     }
@@ -65,7 +71,7 @@ impl GraphicsFence for VulkanFence<'_> {
 
     unsafe fn wait_multiple(
         &self, fences: &[&&dyn GraphicsFence], wait_all: bool, timeout: u64
-    ) -> Result<(), ResultError> {
+    ) -> Result<bool, ResultError> {
         let f: &[&&VulkanFence] = mem::transmute(fences);
         let mut vec = Vec::with_capacity(f.len());
 
