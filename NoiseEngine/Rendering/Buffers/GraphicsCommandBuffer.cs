@@ -4,7 +4,6 @@ using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using NoiseEngine.Serialization;
 using System;
-using System.Threading;
 
 namespace NoiseEngine.Rendering.Buffers;
 
@@ -59,15 +58,9 @@ public class GraphicsCommandBuffer {
             if (fence.IsSignaled)
                 continue;
 
-            ThreadPool.QueueUserWorkItem(static data => {
-                GraphicsFence.WaitAll(data.fences);
-
-                data.references.Clear();
-                data.fences.Clear();
-
-                DestroyHandle(data.handle);
-            }, (handle, references, fences), false);
-
+            GraphicsCommandBufferCleaner.Enqueue(new GraphicsCommandBufferCleanData(
+                Device, handle, references, fences
+            ));
             return;
         }
 
@@ -76,7 +69,7 @@ public class GraphicsCommandBuffer {
         DestroyHandle(handle);
     }
 
-    private static void DestroyHandle(InteropHandle<GraphicsCommandBuffer> handle) {
+    internal static void DestroyHandle(InteropHandle<GraphicsCommandBuffer> handle) {
         GraphicsCommandBufferInterop.Destroy(handle);
     }
 
