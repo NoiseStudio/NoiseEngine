@@ -9,9 +9,7 @@ public class VulkanInstanceTest {
     [FactRequire(TestRequirements.Vulkan)]
     public void CreateAndDispose() {
         VulkanLibrary library = new VulkanLibrary();
-        using VulkanInstance instance = new VulkanInstance(
-            library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers
-        );
+        _ = new VulkanInstance(library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers);
     }
 
 }

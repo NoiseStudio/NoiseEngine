@@ -112,9 +112,6 @@ public static class Application {
 
             EntitySchedule.Dispose();
 
-            lock (graphicsInstanceLocker)
-                graphicsInstance?.Dispose();
-
             Log.Info($"{nameof(Application)} exited with code {exitCode}.");
             InteropLogging.Terminate();
             Log.Logger.Dispose();

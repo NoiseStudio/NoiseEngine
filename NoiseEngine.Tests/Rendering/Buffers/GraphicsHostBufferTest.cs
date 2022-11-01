@@ -17,7 +17,7 @@ public class GraphicsHostBufferTest {
     [FactRequire(TestRequirements.Graphics)]
     public void CreateDestroy() {
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices)
-            new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size).Dispose();
+            new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
     }
 
     [FactRequire(TestRequirements.Graphics)]
@@ -26,8 +26,7 @@ public class GraphicsHostBufferTest {
 
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
             Parallel.For(0, Threads, _ => {
-                using GraphicsHostBuffer<int> buffer =
-                    new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
+                GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
 
                 int[] data = new int[Size];
                 for (int i = 0; i < (int)Size; i++)
@@ -50,9 +49,7 @@ public class GraphicsHostBufferTest {
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
             int[] read = new int[Size];
 
-            using GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(
-                device, GraphicsBufferUsage.Storage, Size
-            );
+            GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
 
             buffer.SetData(data);
 
@@ -66,9 +63,7 @@ public class GraphicsHostBufferTest {
         int[] data = Enumerable.Range(0, (int)Size).ToArray();
 
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
-            using GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(
-                device, GraphicsBufferUsage.Storage, Size
-            );
+            GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
 
             Parallel.For(0, Threads, _ => {
                 int[] read = new int[Size];

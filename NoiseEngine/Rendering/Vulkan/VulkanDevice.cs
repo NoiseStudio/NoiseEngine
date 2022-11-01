@@ -17,7 +17,10 @@ internal sealed class VulkanDevice : GraphicsDevice {
         value.Dispose();
     }
 
-    internal override void InternalDispose() {
+    ~VulkanDevice() {
+        if (Handle == InteropHandle<GraphicsDevice>.Zero)
+            return;
+
         VulkanDeviceInterop.Destroy(Handle);
     }
 

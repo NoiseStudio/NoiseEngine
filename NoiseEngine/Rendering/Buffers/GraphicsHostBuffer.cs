@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Interop.Rendering.Vulkan.Buffers;
-using NoiseEngine.Nesl.Default;
 using NoiseEngine.Rendering.Exceptions;
 using System;
 using System.Runtime.InteropServices;
@@ -26,6 +25,7 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     public GraphicsHostBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count
     ) : base(device, usage, count, CreateHandle(device, usage, count)) {
+        GC.AddMemoryPressure(GetSizeSigned(Count));
     }
 
     /// <summary>
@@ -42,25 +42,51 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
         SetDataUnchecked(data, 0);
     }
 
+    ~GraphicsHostBuffer() {
+        if (Handle != InteropHandle<GraphicsReadOnlyBuffer<T>>.Zero)
+            return;
+
+        GC.RemoveMemoryPressure(GetSizeSigned(Count));
+    }
+
     private static InteropHandle<GraphicsReadOnlyBuffer<T>> CreateHandle(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count
     ) {
         device.Initialize();
 
-        IntPtr handle;
-        switch (device.Instance.Api) {
-            case GraphicsApi.Vulkan:
-                if (!VulkanBufferInterop.Create(device.Handle, usage, GetSize(count), true).TryGetValue(
-                    out handle, out ResultError error
-                )) {
-                    error.ThrowAndDispose();
-                }
-                break;
-            default:
-                throw new GraphicsApiNotSupportedException(device.Instance.Api);
-        }
+        Exception? exception = null;
 
-        return new InteropHandle<GraphicsReadOnlyBuffer<T>>(handle);
+        int i = 0;
+        do {
+            IntPtr handle;
+            switch (device.Instance.Api) {
+                case GraphicsApi.Vulkan:
+                    if (!VulkanBufferInterop.Create(device.Handle, usage, GetSize(count), true).TryGetValue(
+                        out handle, out ResultError error
+                    )) {
+                        exception = error.ToException();
+                        error.Dispose();
+                    }
+                    break;
+                default:
+                    throw new GraphicsApiNotSupportedException(device.Instance.Api);
+            }
+
+            if (exception is null)
+                return new InteropHandle<GraphicsReadOnlyBuffer<T>>(handle);
+            if (i++ != 0)
+                break;
+            if (exception is not GraphicsOutOfMemoryException)
+                throw exception;
+
+            GraphicsMemoryHelper.WaitToCollect();
+        } while(true);
+
+        throw exception;
+    }
+
+    private static long GetSizeSigned(ulong count) {
+        return (long)Math.Min(GetSize(count), long.MaxValue);
     }
 
     /// <summary>

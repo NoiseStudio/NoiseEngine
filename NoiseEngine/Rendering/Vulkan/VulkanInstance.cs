@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.Rendering.Vulkan;
 using NoiseEngine.Interop.InteropMarshalling;
+using NoiseEngine.Interop.Rendering.Vulkan;
+using NoiseEngine.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,8 +15,8 @@ internal sealed class VulkanInstance : GraphicsInstance {
 
     public override GraphicsApi Api => GraphicsApi.Vulkan;
 
-    public VulkanLibrary Library { get; private set; }
-    public InteropHandle<VulkanInstance> Handle { get; private set; }
+    public VulkanLibrary Library { get; }
+    public InteropHandle<VulkanInstance> Handle { get; }
 
     protected override IReadOnlyList<GraphicsDevice> ProtectedDevices { get; set; }
 
@@ -55,23 +56,19 @@ internal sealed class VulkanInstance : GraphicsInstance {
         devices.Dispose();
     }
 
-    public override string ToString() {
-        return $"{nameof(VulkanInstance)} {{ {nameof(Handle)} = {Handle} }}";
+    ~VulkanInstance() {
+        if (Handle == InteropHandle<VulkanInstance>.Zero)
+            return;
+
+        VulkanInstanceInterop.Destroy(Handle);
+
+        Logger logger = Log.Logger;
+        if (!logger.IsDisposed)
+            logger.Info($"Disposed {this}.");
     }
 
-    protected override void ReleaseResources() {
-        string toString = ToString();
-
-        foreach (VulkanDevice device in Devices)
-            device.InternalDispose();
-
-        InteropHandle<VulkanInstance> handle = Handle;
-        Handle = InteropHandle<VulkanInstance>.Zero;
-        VulkanInstanceInterop.Destroy(handle);
-
-        Library = null!;
-
-        Log.Info($"Disposed {toString}.");
+    public override string ToString() {
+        return $"{nameof(VulkanInstance)} {{ {nameof(Handle)} = {Handle} }}";
     }
 
 }
