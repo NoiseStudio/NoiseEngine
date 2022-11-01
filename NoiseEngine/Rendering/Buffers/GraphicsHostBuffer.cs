@@ -77,7 +77,7 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
                 return new InteropHandle<GraphicsReadOnlyBuffer<T>>(handle);
 
             // The first occurrence of GraphicsOutOfMemoryException is ignored, after which memory cleanup is called
-            // and then the graphics buffer creating is tried again. Next occurrences will throws exception.
+            // and then the graphics buffer creating is tried again. Next occurrences will throw exception.
             if (i++ != 0)
                 break;
             if (exception is not GraphicsOutOfMemoryException)

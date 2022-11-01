@@ -61,10 +61,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
             return;
 
         VulkanInstanceInterop.Destroy(Handle);
-
-        Logger logger = Log.Logger;
-        if (!logger.IsDisposed)
-            logger.Info($"Disposed {this}.");
+        Log.Info($"Disposed {this}.");
     }
 
     public override string ToString() {
