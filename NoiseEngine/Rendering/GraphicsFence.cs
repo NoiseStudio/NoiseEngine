@@ -129,7 +129,7 @@ public class GraphicsFence {
     /// <see langword="true"/> when this <see cref="GraphicsFence"/> has received a signal;
     /// otherwise <see langword="false"/>.
     /// </returns>
-    public bool Wait(ulong nanosecondsTimeout = ulong.MaxValue) {
+    public bool Wait(ulong nanosecondsTimeout) {
         if (!GraphicsFenceInterop.Wait(handle, nanosecondsTimeout).TryGetValue(
             out InteropBool isSignaled, out ResultError error
         )) {

@@ -4,6 +4,7 @@ using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using NoiseEngine.Serialization;
 using System;
+using System.Linq;
 
 namespace NoiseEngine.Rendering.Buffers;
 
@@ -54,10 +55,7 @@ public class GraphicsCommandBuffer {
         if (handle == InteropHandle<GraphicsCommandBuffer>.Zero)
             return;
 
-        foreach (GraphicsFence fence in fences) {
-            if (fence.IsSignaled)
-                continue;
-
+        if (fences.Any(x => !x.IsSignaled)) {
             GraphicsCommandBufferCleaner.Enqueue(new GraphicsCommandBufferCleanData(
                 Device, handle, references, fences
             ));

@@ -6,7 +6,7 @@ namespace NoiseEngine.Rendering.Buffers.CommandBuffers;
 internal static class GraphicsCommandBufferCleaner {
 
     private const ulong Timeout = 1000000000;
-    private const uint ObtainedTimeoutsWaringCount = 16;
+    private const uint ObtainedTimeoutsWarningCount = 16;
 
     private static readonly ConcurrentQueue<GraphicsCommandBufferCleanData> queue =
         new ConcurrentQueue<GraphicsCommandBufferCleanData>();
@@ -14,6 +14,7 @@ internal static class GraphicsCommandBufferCleaner {
 
     static GraphicsCommandBufferCleaner() {
         new Thread(ThreadWorker) {
+            IsBackground = true,
             Priority = ThreadPriority.Lowest,
             Name = nameof(GraphicsCommandBufferCleaner)
         }.Start();
@@ -30,7 +31,7 @@ internal static class GraphicsCommandBufferCleaner {
                 if (!GraphicsFence.WaitAll(data.Fences, Timeout)) {
                     data = data with { ObtainedTimeouts = data.ObtainedTimeouts + 1 };
 
-                    if (data.ObtainedTimeouts >= ObtainedTimeoutsWaringCount) {
+                    if (data.ObtainedTimeouts >= ObtainedTimeoutsWarningCount) {
                         Log.Warning(
                             $"{nameof(GraphicsCommandBuffer)} {{ Handle = {data.Handle} }} lives too long. " +
                             $"Obtained {data.ObtainedTimeouts} timeouts in {nameof(GraphicsCommandBufferCleaner)}."
