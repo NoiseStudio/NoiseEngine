@@ -264,7 +264,7 @@ pub struct VulkanQueue<'init: 'fam, 'fam> {
     pub queue: vk::Queue
 }
 
-impl<'a> Drop for VulkanQueue<'_, '_> {
+impl Drop for VulkanQueue<'_, '_> {
     fn drop(&mut self) {
         self.family.push_queue(self.queue)
     }
