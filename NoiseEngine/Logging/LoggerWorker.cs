@@ -20,6 +20,7 @@ internal class LoggerWorker : IDisposable {
         Sinks = new ConcurrentList<ILogSink>();
 
         new Thread(Worker) {
+            IsBackground = true,
             Name = $"{nameof(Logger)} worker"
         }.Start();
     }

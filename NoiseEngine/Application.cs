@@ -113,8 +113,7 @@ public static class Application {
             EntitySchedule.Dispose();
 
             Log.Info($"{nameof(Application)} exited with code {exitCode}.");
-            InteropLogging.Terminate();
-            Log.Logger.Dispose();
+            Log.Logger.Flush();
 
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomainOnExit;
             if (Settings.ProcessExitOnApplicationExit)
@@ -134,7 +133,7 @@ public static class Application {
         string info = $"The process was closed without calling {nameof(Application)}.{nameof(Exit)} method.";
 
         Log.Fatal(info);
-        Log.Logger.Dispose();
+        Log.Logger.Flush();
 
         throw new ApplicationException(info);
     }
