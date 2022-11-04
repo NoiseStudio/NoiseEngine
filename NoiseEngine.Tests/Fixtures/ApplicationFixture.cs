@@ -17,7 +17,7 @@ public class ApplicationFixture : IDisposable {
 
         Log.Logger.LogLevelMask = LogLevel.All;
 
-        GraphicsDevices = Application.GraphicsInstance.Devices;
+        GraphicsDevices = Application.GraphicsInstance.Devices.Where(x => !x.Name.StartsWith("llvm")).ToArray();
 
         Log.Info($"Used {nameof(GraphicsDevice)} for tests:");
         int i = 0;
