@@ -5,13 +5,12 @@ using System.Linq;
 
 namespace NoiseEngine.Tests.Rendering;
 
-[Collection(nameof(ApplicationCollection))]
-public class GraphicsFenceTest {
+public class GraphicsFenceTest : GraphicsTestEnvironment {
 
     private readonly GraphicsCommandBuffer[][] commandBuffers;
 
-    public GraphicsFenceTest() {
-        commandBuffers = Application.GraphicsInstance.Devices.Select(x => Enumerable.Range(0, 4).Select(
+    public GraphicsFenceTest(ApplicationFixture fixture) : base(fixture) {
+        commandBuffers = Devices.Select(x => Enumerable.Range(0, 4).Select(
             _ => new GraphicsCommandBuffer(x, true)).ToArray()
         ).ToArray();
     }

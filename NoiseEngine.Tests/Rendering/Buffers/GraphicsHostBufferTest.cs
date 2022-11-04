@@ -7,16 +7,18 @@ using System.Threading.Tasks;
 
 namespace NoiseEngine.Tests.Rendering.Buffers;
 
-[Collection(nameof(ApplicationCollection))]
-public class GraphicsHostBufferTest {
+public class GraphicsHostBufferTest : GraphicsTestEnvironment {
 
     private const ulong Size = 1024;
 
     private int Threads { get; } = Environment.ProcessorCount * 4;
 
+    public GraphicsHostBufferTest(ApplicationFixture fixture) : base(fixture) {
+    }
+
     [FactRequire(TestRequirements.Graphics)]
     public void CreateDestroy() {
-        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices)
+        foreach (GraphicsDevice device in Devices)
             new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
     }
 
@@ -24,7 +26,7 @@ public class GraphicsHostBufferTest {
     public void CreateDestroyMultithread() {
         Random random = new Random();
 
-        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+        foreach (GraphicsDevice device in Devices) {
             Parallel.For(0, Threads, _ => {
                 GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
 
@@ -46,7 +48,7 @@ public class GraphicsHostBufferTest {
     public void SetGetData() {
         int[] data = Enumerable.Range(0, (int)Size).ToArray();
 
-        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+        foreach (GraphicsDevice device in Devices) {
             int[] read = new int[Size];
 
             GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
@@ -62,7 +64,7 @@ public class GraphicsHostBufferTest {
     public void SetGetDataMultithread() {
         int[] data = Enumerable.Range(0, (int)Size).ToArray();
 
-        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+        foreach (GraphicsDevice device in Devices) {
             GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
 
             Parallel.For(0, Threads, _ => {

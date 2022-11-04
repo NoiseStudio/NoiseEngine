@@ -113,8 +113,11 @@ public static class Application {
             EntitySchedule.Dispose();
 
             Log.Info($"{nameof(Application)} exited with code {exitCode}.");
-            InteropLogging.Terminate();
-            Log.Logger.Dispose();
+            Log.Logger.Flush();
+
+            // TODO: Add finalizer to dipose logger.
+            //InteropLogging.Terminate();
+            //Log.Logger.Dispose();
 
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomainOnExit;
             if (Settings.ProcessExitOnApplicationExit)
