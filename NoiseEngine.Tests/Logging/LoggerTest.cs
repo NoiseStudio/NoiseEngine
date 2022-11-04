@@ -20,11 +20,11 @@ public class LoggerTest {
     public void Log() {
         MockLogSink mockSink = new MockLogSink();
 
-        using (Logger logger = new Logger(new ILogSink[] { mockSink }, LogLevel.All)) {
-            foreach (LogData logData in data) {
-                logger.Log(logData);
-            }
+        Logger logger = new Logger(new ILogSink[] { mockSink }, LogLevel.All);
+        foreach (LogData logData in data) {
+            logger.Log(logData);
         }
+        logger.Flush();
 
         Assert.Equal(data, mockSink.Logs);
     }
@@ -33,8 +33,7 @@ public class LoggerTest {
     public void Flush() {
         MockLogSink mockSink = new MockLogSink();
 
-        using Logger logger = new Logger(new ILogSink[] { mockSink }, LogLevel.All);
-
+        Logger logger = new Logger(new ILogSink[] { mockSink }, LogLevel.All);
         foreach (LogData logData in data) {
             logger.Log(logData);
         }
@@ -49,11 +48,11 @@ public class LoggerTest {
 
         MockLogSink mockSink = new MockLogSink();
 
-        using (Logger logger = new Logger(new ILogSink[] { mockSink }, Mask)) {
-            foreach (LogData logData in data) {
-                logger.Log(logData);
-            }
+        Logger logger = new Logger(new ILogSink[] { mockSink }, Mask);
+        foreach (LogData logData in data) {
+            logger.Log(logData);
         }
+        logger.Flush();
 
         IEnumerable<LogData> expected = data.Where(x => (x.Level & Mask) == x.Level);
 

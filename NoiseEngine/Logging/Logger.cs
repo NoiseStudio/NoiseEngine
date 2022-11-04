@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NoiseEngine.Logging;
 
-public class Logger : IDisposable {
+public class Logger {
 
     private readonly LoggerWorker worker;
 
@@ -13,8 +13,6 @@ public class Logger : IDisposable {
     public IEnumerable<ILogSink> Sinks => worker.Sinks;
 
     public LogLevel LogLevelMask { get; set; }
-
-    public bool IsDisposed { get; private set; }
 
     /// <summary>
     /// Creates a new logger. The logger takes ownership of provided sinks and disposes them when it is disposed.
@@ -32,8 +30,7 @@ public class Logger : IDisposable {
     }
 
     ~Logger() {
-        Warning("Logger has not been disposed explicitly.");
-        ReleaseResources();
+        worker.Dispose();
     }
 
     private static bool CheckIfLogLevelIsSpecificValue(LogLevel level) {
@@ -145,25 +142,6 @@ public class Logger : IDisposable {
     /// <param name="message">Message to log.</param>
     public void Fatal(string message) {
         Log(LogLevel.Fatal, message);
-    }
-
-    /// <summary>
-    /// Disposes the logger and all the sinks.
-    /// First time this method is called it waits for the worker thread to finish,
-    /// subsequent calls do not have that guarantee.
-    /// </summary>
-    public void Dispose() {
-        if (IsDisposed) {
-            return;
-        }
-
-        IsDisposed = true;
-        ReleaseResources();
-        GC.SuppressFinalize(this);
-    }
-
-    private void ReleaseResources() {
-        worker.Dispose();
     }
 
 }
