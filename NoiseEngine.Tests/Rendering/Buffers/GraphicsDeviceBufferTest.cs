@@ -17,7 +17,7 @@ public class GraphicsDeviceBufferTest {
     [FactRequire(TestRequirements.Graphics)]
     public void CreateDestroy() {
         foreach (GraphicsDevice device in Application.GraphicsInstance.Devices)
-            new GraphicsDeviceBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
+            _ = new GraphicsDeviceBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
     }
 
     [FactRequire(TestRequirements.Graphics)]

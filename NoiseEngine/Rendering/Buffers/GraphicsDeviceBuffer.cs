@@ -16,7 +16,7 @@ public class GraphicsDeviceBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="device">
     /// <see cref="GraphicsDevice"/> associated with the new <see cref="GraphicsDeviceBuffer{T}"/>.
     /// </param>
-    /// <param name="usage">Usage of new <see cref="GraphicsBuffer{T}"/>.</param>
+    /// <param name="usage">Usage of new <see cref="GraphicsDeviceBuffer{T}"/>.</param>
     /// <param name="count">Capacity of new <see cref="GraphicsDeviceBuffer{T}"/>.</param>
     public GraphicsDeviceBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count
@@ -29,8 +29,8 @@ public class GraphicsDeviceBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="device">
     /// <see cref="GraphicsDevice"/> associated with the new <see cref="GraphicsDeviceBuffer{T}"/>.
     /// </param>
-    /// <param name="usage">Usage of new <see cref="GraphicsBuffer{T}"/>.</param>
-    /// <param name="data">Data that is copied to the new <see cref="GraphicsBuffer{T}"/>.</param>
+    /// <param name="usage">Usage of new <see cref="GraphicsDeviceBuffer{T}"/>.</param>
+    /// <param name="data">Data that is copied to the new <see cref="GraphicsDeviceBuffer{T}"/>.</param>
     public GraphicsDeviceBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ReadOnlySpan<T> data
     ) : this(device, usage, (ulong)data.Length) {
@@ -38,10 +38,10 @@ public class GraphicsDeviceBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     }
 
     /// <summary>
-    /// Copies data from this <see cref="GraphicsBuffer{T}"/> to given <paramref name="buffer"/>
+    /// Copies data from this <see cref="GraphicsDeviceBuffer{T}"/> to given <paramref name="buffer"/>
     /// without size and start checks.
     /// </summary>
-    /// <param name="buffer">Buffer for copied data from this <see cref="GraphicsReadOnlyBuffer{T}"/>.</param>
+    /// <param name="buffer">Buffer for copied data from this <see cref="GraphicsDeviceBuffer{T}"/>.</param>
     /// <param name="index">Start index of copy.</param>
     protected override void GetDataUnchecked(Span<T> buffer, ulong index) {
         GraphicsHostBuffer<T> host = Device.BufferPool.GetOrCreateHost<T>(
@@ -61,7 +61,7 @@ public class GraphicsDeviceBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     }
 
     /// <summary>
-    /// Copies <paramref name="data"/> to this <see cref="GraphicsBuffer{T}"/> without size and start checks.
+    /// Copies <paramref name="data"/> to this <see cref="GraphicsDeviceBuffer{T}"/> without size and start checks.
     /// </summary>
     /// <param name="data">Data to copy.</param>
     /// <param name="index">Start index of copy.</param>
