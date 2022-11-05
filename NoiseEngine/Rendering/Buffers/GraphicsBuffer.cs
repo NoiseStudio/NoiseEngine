@@ -22,10 +22,24 @@ public abstract class GraphicsBuffer<T> : GraphicsReadOnlyBuffer<T> where T : un
     }
 
     /// <summary>
+    /// Copies <paramref name="data"/> to this <see cref="GraphicsBuffer{T}"/> starting with <paramref name="index"/>.
+    /// </summary>
+    /// <param name="data">Data to copy.</param>
+    /// <param name="index">Start index of copy.</param>
+    public void SetData(ReadOnlySpan<T> data, ulong index) {
+        if (index > Count)
+            throw new ArgumentOutOfRangeException(nameof(index));
+        if ((ulong)data.Length + index > Count)
+            throw new ArgumentOutOfRangeException(nameof(data));
+
+        SetDataUnchecked(data, index);
+    }
+
+    /// <summary>
     /// Copies <paramref name="data"/> to this <see cref="GraphicsBuffer{T}"/> without size and start checks.
     /// </summary>
     /// <param name="data">Data to copy.</param>
-    /// <param name="start">Start index of copy.</param>
-    protected abstract void SetDataUnchecked(ReadOnlySpan<T> data, ulong start);
+    /// <param name="index">Start index of copy.</param>
+    protected abstract void SetDataUnchecked(ReadOnlySpan<T> data, ulong index);
 
 }

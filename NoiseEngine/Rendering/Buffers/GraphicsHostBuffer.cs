@@ -1,7 +1,5 @@
 ﻿using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Buffers;
-using NoiseEngine.Interop.Rendering.Vulkan.Buffers;
-using NoiseEngine.Rendering.Exceptions;
 using System;
 using System.Runtime.InteropServices;
 
@@ -20,11 +18,11 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="device">
     /// <see cref="GraphicsDevice"/> associated with the new <see cref="GraphicsHostBuffer{T}"/>.
     /// </param>
-    /// <param name="usage">Usage of new <see cref="GraphicsBuffer{T}"/>.</param>
+    /// <param name="usage">Usage of new <see cref="GraphicsHostBuffer{T}"/>.</param>
     /// <param name="count">Capacity of new <see cref="GraphicsHostBuffer{T}"/>.</param>
     public GraphicsHostBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count
-    ) : base(device, usage, count, CreateHandle(device, usage, count)) {
+    ) : base(device, usage, count, GraphicsBufferHelper<T>.CreateHandle(device, usage, GetSize(count), true)) {
         GC.AddMemoryPressure(GetSizeSigned(Count));
     }
 
@@ -34,8 +32,8 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="device">
     /// <see cref="GraphicsDevice"/> associated with the new <see cref="GraphicsHostBuffer{T}"/>.
     /// </param>
-    /// <param name="usage">Usage of new <see cref="GraphicsBuffer{T}"/>.</param>
-    /// <param name="data">Data that is copied to the new <see cref="GraphicsBuffer{T}"/>.</param>
+    /// <param name="usage">Usage of new <see cref="GraphicsHostBuffer{T}"/>.</param>
+    /// <param name="data">Data that is copied to the new <see cref="GraphicsHostBuffer{T}"/>.</param>
     public GraphicsHostBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ReadOnlySpan<T> data
     ) : this(device, usage, (ulong)data.Length) {
@@ -49,70 +47,30 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
         GC.RemoveMemoryPressure(GetSizeSigned(Count));
     }
 
-    private static InteropHandle<GraphicsReadOnlyBuffer<T>> CreateHandle(
-        GraphicsDevice device, GraphicsBufferUsage usage, ulong count
-    ) {
-        device.Initialize();
-
-        Exception? exception = null;
-
-        int i = 0;
-        do {
-            // Tries to create a graphic buffer.
-            IntPtr handle;
-            switch (device.Instance.Api) {
-                case GraphicsApi.Vulkan:
-                    if (!VulkanBufferInterop.Create(device.Handle, usage, GetSize(count), true).TryGetValue(
-                        out handle, out ResultError error
-                    )) {
-                        exception = error.ToException();
-                        error.Dispose();
-                    }
-                    break;
-                default:
-                    throw new GraphicsApiNotSupportedException(device.Instance.Api);
-            }
-
-            if (exception is null)
-                return new InteropHandle<GraphicsReadOnlyBuffer<T>>(handle);
-
-            // The first occurrence of GraphicsOutOfMemoryException is ignored, after which memory cleanup is called
-            // and then the graphics buffer creating is tried again. Next occurrences will throw exception.
-            if (i++ != 0)
-                break;
-            if (exception is not GraphicsOutOfMemoryException)
-                throw exception;
-
-            GraphicsMemoryHelper.WaitToCollect();
-        } while(true);
-
-        throw exception;
-    }
-
     private static long GetSizeSigned(ulong count) {
         return (long)Math.Min(GetSize(count), long.MaxValue);
     }
 
     /// <summary>
-    /// Copies data from this <see cref="GraphicsBuffer{T}"/> to given <paramref name="buffer"/>
+    /// Copies data from this <see cref="GraphicsHostBuffer{T}"/> to given <paramref name="buffer"/>
     /// without size and start checks.
     /// </summary>
-    /// <param name="buffer">Buffer for copied data from this <see cref="GraphicsReadOnlyBuffer{T}"/>.</param>
-    /// <param name="start">Start index of copy.</param>
-    protected override unsafe void GetDataUnchecked(Span<T> buffer, ulong start) {
+    /// <param name="buffer">Buffer for copied data from this <see cref="GraphicsHostBuffer{T}"/>.</param>
+    /// <param name="index">Start index of copy.</param>
+    protected override void GetDataUnchecked(Span<T> buffer, ulong index) {
         Span<byte> b = MemoryMarshal.Cast<T, byte>(buffer);
-        if (!GraphicsBufferInterop.HostRead(Handle.Pointer, b, start).TryGetValue(out _, out ResultError error))
+        if (!GraphicsBufferInterop.HostRead(Handle.Pointer, b, index).TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
     }
 
     /// <summary>
-    /// Copies <paramref name="data"/> to this <see cref="GraphicsBuffer{T}"/> without size and start checks.
+    /// Copies <paramref name="data"/> to this <see cref="GraphicsHostBuffer{T}"/> without size and start checks.
     /// </summary>
     /// <param name="data">Data to copy.</param>
-    /// <param name="start">Start index of copy.</param>
-    protected override unsafe void SetDataUnchecked(ReadOnlySpan<T> data, ulong start) {
+    /// <param name="index">Start index of copy.</param>
+    protected override void SetDataUnchecked(ReadOnlySpan<T> data, ulong index) {
         ReadOnlySpan<byte> b = MemoryMarshal.Cast<T, byte>(data);
-        if (!GraphicsBufferInterop.HostWrite(Handle.Pointer, b, start).TryGetValue(out _, out ResultError error))
+        if (!GraphicsBufferInterop.HostWrite(Handle.Pointer, b, index).TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
     }
 

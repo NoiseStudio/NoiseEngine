@@ -2,6 +2,7 @@
 using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers;
 using System;
+using System.Threading;
 
 namespace NoiseEngine.Rendering;
 
@@ -11,6 +12,7 @@ public abstract class GraphicsDevice {
 
     private readonly object initializeLocker = new object();
     private bool isInitialized;
+    private GraphicsBufferPool? bufferPool;
 
     public GraphicsInstance Instance { get; }
     public string Name { get; }
@@ -22,6 +24,18 @@ public abstract class GraphicsDevice {
     public bool SupportsComputing { get; }
 
     internal InteropHandle<GraphicsDevice> Handle { get; }
+
+    internal GraphicsBufferPool BufferPool {
+        get {
+            GraphicsBufferPool? pool = bufferPool;
+            if (pool is not null)
+                return pool;
+
+            Initialize();
+            Interlocked.CompareExchange(ref bufferPool, new GraphicsBufferPool(this), null);
+            return bufferPool;
+        }
+    }
 
     private protected GraphicsDevice(GraphicsInstance instance, GraphicsDeviceValue value) {
         Instance = instance;
