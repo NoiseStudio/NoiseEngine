@@ -64,7 +64,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
         self.inner
     }
 
-    pub fn execute(&self) -> Result<VulkanFence, VulkanUniversalError> {
+    pub fn execute(&'init self) -> Result<VulkanFence, VulkanUniversalError> {
         let initialized = self.initialized;
         let vulkan_device = initialized.vulkan_device();
 
@@ -139,8 +139,8 @@ impl Drop for VulkanCommandBuffer<'_, '_> {
     }
 }
 
-impl GraphicsCommandBuffer for VulkanCommandBuffer<'_, '_> {
-    fn execute(&self) -> InteropResult<Box<Box<dyn GraphicsFence + '_>>> {
+impl<'init> GraphicsCommandBuffer<'init> for VulkanCommandBuffer<'init, '_> {
+    fn execute(&'init self) -> InteropResult<Box<Box<dyn GraphicsFence + 'init>>> {
         match self.execute() {
             Ok(fence) => InteropResult::with_ok(Box::new(Box::new(fence))),
             Err(err) => InteropResult::with_err(err.into())

@@ -22,7 +22,9 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="count">Capacity of new <see cref="GraphicsHostBuffer{T}"/>.</param>
     public GraphicsHostBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count
-    ) : base(device, usage, count, GraphicsBufferHelper<T>.CreateHandle(device, usage, GetSize(count), true)) {
+    ) : base(device, usage, count, GraphicsBufferHelper<T>.CreateHandle(
+        device, usage, GetSize(count), true, out InteropHandle<GraphicsReadOnlyBuffer<T>> innerHandle
+    ), innerHandle) {
         GC.AddMemoryPressure(GetSizeSigned(Count));
     }
 

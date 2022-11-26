@@ -161,7 +161,7 @@ pub(crate) struct VulkanDeviceInitialized<'init> {
     device: Rc<ash::Device>,
     queue_families: ManuallyDrop<Vec<VulkanQueueFamily<'init>>>,
     allocator: ManuallyDrop<MemoryAllocator>,
-    pool: VulkanDevicePool,
+    pool: VulkanDevicePool<'init>,
 }
 
 impl<'init> VulkanDeviceInitialized<'init> {
@@ -173,7 +173,7 @@ impl<'init> VulkanDeviceInitialized<'init> {
         &self.allocator
     }
 
-    pub fn pool(&self) -> &VulkanDevicePool {
+    pub fn pool(&self) -> &VulkanDevicePool<'init> {
         &self.pool
     }
 

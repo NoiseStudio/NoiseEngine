@@ -9,6 +9,7 @@ internal enum SpirVOpCode : ushort {
     [OpCodeValidationOptional(typeof(SpirVId[]))]
     OpEntryPoint = 15,
     [OpCodeValidation(typeof(SpirVId), typeof(uint))]
+    [OpCodeValidationOptional(typeof(SpirVLiteral))]
     OpExecutionMode = 16,
     [OpCodeValidation(typeof(uint))]
     OpCapability = 17,
@@ -24,12 +25,18 @@ internal enum SpirVOpCode : ushort {
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId))]
     OpTypeFunction = 33,
 
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral))]
+    OpConstant = 43,
+
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(uint), typeof(SpirVId))]
     OpFunction = 54,
     [OpCodeValidation]
     OpFunctionEnd = 56,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(uint))]
     OpVariable = 59,
+
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId))]
+    OpStore = 62,
 
     [OpCodeValidation(typeof(SpirVId), typeof(uint))]
     [OpCodeValidationOptional(typeof(SpirVLiteral))]

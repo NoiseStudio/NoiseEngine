@@ -19,7 +19,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
     public abstract IEnumerable<NeslAttribute> Attributes { get; }
     public abstract IEnumerable<NeslGenericTypeParameter> GenericTypeParameters { get; }
-    public abstract IEnumerable<NeslField> Fields { get; }
+    public abstract IReadOnlyList<NeslField> Fields { get; }
     public abstract IEnumerable<NeslMethod> Methods { get; }
 
     public virtual string Name => FullName.Substring(FullName.LastIndexOf(Delimiter) + 1);

@@ -14,7 +14,7 @@ internal class SerializedNeslType : NeslType {
 
     public override IEnumerable<NeslAttribute> Attributes { get; }
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => genericTypeParameters;
-    public override IEnumerable<NeslField> Fields => fields;
+    public override IReadOnlyList<NeslField> Fields => fields;
     public override IEnumerable<NeslMethod> Methods => methods;
 
     public SerializedNeslType(NeslAssembly assembly, string fullName, NeslAttribute[] attributes)

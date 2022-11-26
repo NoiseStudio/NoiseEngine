@@ -6,8 +6,9 @@ namespace NoiseEngine.Rendering.Buffers;
 public abstract class GraphicsBuffer<T> : GraphicsReadOnlyBuffer<T> where T : unmanaged {
 
     private protected GraphicsBuffer(
-        GraphicsDevice device, GraphicsBufferUsage usage, ulong count, InteropHandle<GraphicsReadOnlyBuffer<T>> handle
-    ) : base(device, usage, count, handle) {
+        GraphicsDevice device, GraphicsBufferUsage usage, ulong count, InteropHandle<GraphicsReadOnlyBuffer<T>> handle,
+        InteropHandle<GraphicsReadOnlyBuffer<T>> innerHandle
+    ) : base(device, usage, count, handle, innerHandle) {
     }
 
     /// <summary>

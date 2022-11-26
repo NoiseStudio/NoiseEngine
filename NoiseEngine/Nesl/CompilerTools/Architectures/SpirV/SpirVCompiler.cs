@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+﻿using NoiseEngine.Collections;
+using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
 using System.Buffers.Binary;
@@ -7,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -19,6 +19,8 @@ internal class SpirVCompiler {
         new ConcurrentDictionary<NeslField, Lazy<SpirVVariable>>();
     private readonly ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>> functions =
         new ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>>();
+    private readonly ConcurrentDictionary<object, Lazy<SpirVId>> consts =
+        new ConcurrentDictionary<object, Lazy<SpirVId>>();
 
     private readonly ConcurrentBag<SpirVVariable> allVariables = new ConcurrentBag<SpirVVariable>();
 
@@ -54,6 +56,18 @@ internal class SpirVCompiler {
 
     internal SpirVId GetNextId() {
         return new SpirVId(Interlocked.Increment(ref nextId));
+    }
+
+    internal SpirVId GetConst(float data) {
+        return consts.GetOrAdd(data, _ => new Lazy<SpirVId>(() => {
+            SpirVId id = GetNextId();
+            lock (TypesAndVariables) {
+                TypesAndVariables.Emit(
+                    SpirVOpCode.OpConstant, BuiltInTypes.GetOpTypeFloat(32).Id, id, data.ToSpirVLiteral()
+                );
+            }
+            return id;
+        })).Value;
     }
 
     internal void AddVariable(SpirVVariable variable) {
@@ -104,7 +118,9 @@ internal class SpirVCompiler {
         Header.Emit(SpirVOpCode.OpMemoryModel, (uint)AddressingModel.Logical, (uint)MemoryModel.Glsl450);
 
         // Generate entry points.
-        Parallel.ForEach(EntryPoints, x => GetSpirVFunction(x.Method));
+        //Parallel.ForEach(EntryPoints, x => GetSpirVFunction(x.Method));
+        foreach (var e in EntryPoints)
+            GetSpirVFunction(e.Method);
 
         // Emit OpEntryPoint.
         foreach (NeslEntryPoint entryPoint in EntryPoints) {
@@ -117,14 +133,18 @@ internal class SpirVCompiler {
             );
 
             // TODO: add support for another execution modes.
-            Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
-        }
-
-        // Emit OpExecutionMode.
-        foreach (NeslEntryPoint entryPoint in EntryPoints) {
-            SpirVFunction function = GetSpirVFunction(entryPoint.Method);
-
-            Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
+            switch (entryPoint.ExecutionModel) {
+                case ExecutionModel.Vertex:
+                case ExecutionModel.Fragment:
+                    Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
+                    break;
+                case ExecutionModel.GLCompute:
+                    SpirVLiteral literal = 1u.ToSpirVLiteral() + 1u.ToSpirVLiteral() + 1u.ToSpirVLiteral();
+                    Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.LocalSize, literal);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         // Construct result.

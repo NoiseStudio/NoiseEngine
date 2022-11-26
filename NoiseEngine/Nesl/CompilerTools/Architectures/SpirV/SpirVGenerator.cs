@@ -73,6 +73,12 @@ internal class SpirVGenerator {
         Writer.WriteBytes(argument3.Bytes.ToArray());
     }
 
+    public void Emit(SpirVOpCode opCode, SpirVId argument1, float argument2) {
+        EmitWorker(opCode, 3, typeof(SpirVId), typeof(float));
+        Writer.WriteUInt32(argument1.RawId);
+        Writer.WriteFloat32(argument2);
+    }
+
     public void Emit(SpirVOpCode opCode, SpirVId argument1, uint argument2, SpirVId argument3) {
         EmitWorker(opCode, 4, typeof(SpirVId), typeof(uint), typeof(SpirVId));
         Writer.WriteUInt32(argument1.RawId);

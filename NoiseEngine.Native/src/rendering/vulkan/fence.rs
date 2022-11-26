@@ -7,12 +7,12 @@ use crate::{rendering::fence::GraphicsFence, interop::prelude::{InteropResult, R
 use super::{device_pool::VulkanDevicePool, errors::universal::VulkanUniversalError};
 
 pub struct VulkanFence<'devpool> {
-    pool: &'devpool VulkanDevicePool,
+    pool: &'devpool VulkanDevicePool<'devpool>,
     inner: vk::Fence
 }
 
 impl<'devpool> VulkanFence<'devpool>{
-    pub fn new(pool: &'devpool VulkanDevicePool, inner: vk::Fence) -> Self {
+    pub fn new(pool: &'devpool VulkanDevicePool<'devpool>, inner: vk::Fence) -> Self {
         Self { pool, inner }
     }
 

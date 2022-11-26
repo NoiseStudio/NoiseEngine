@@ -6,4 +6,5 @@
 internal enum ExecutionMode : uint {
     OriginUpperLeft = 7,
     OriginLowerLeft = 8,
+    LocalSize = 17
 }
