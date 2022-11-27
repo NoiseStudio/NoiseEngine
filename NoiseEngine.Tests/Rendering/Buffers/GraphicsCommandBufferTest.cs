@@ -89,9 +89,6 @@ public class GraphicsCommandBufferTest {
         SpirVCompilationResult result = SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(main, ExecutionModel.GLCompute)
         });
-        File.WriteAllBytes($"{nameof(Dispatch)}.spv", result.GetCode());
-
-        byte[] code = File.ReadAllBytes("simplest.spv");
 
         // Descriptor set data.
         ReadOnlySpan<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[] {
@@ -124,12 +121,12 @@ public class GraphicsCommandBufferTest {
             set.Update(template, data);
 
             // Create shader module.
-            ShaderModule module = new ShaderModule(device, code);
+            ShaderModule module = new ShaderModule(device, result.GetCode());
 
             // Create pipeline.
             PipelineLayout pipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { layout });
             ComputePipeline pipeline = new ComputePipeline(
-                pipelineLayout, new PipelineShaderStage(ShaderStageFlags.Compute, module, "main"),
+                pipelineLayout, new PipelineShaderStage(ShaderStageFlags.Compute, module, new Guid().ToString()),
                 PipelineCreateFlags.None
             );
 

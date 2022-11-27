@@ -15,15 +15,22 @@ internal class SpirVVariable {
         NeslType = neslType;
         StorageClass = storageClass;
 
-        SpirVType type = Compiler.BuiltInTypes.GetOpTypePointer(storageClass, Compiler.GetSpirVType(neslType));
+        SpirVType type = Compiler.GetSpirVType(neslType);
+        SpirVType structure = Compiler.GetSpirVStruct(new SpirVType[] { type });
+        SpirVType structurePointer = Compiler.BuiltInTypes.GetOpTypePointer(storageClass, structure);
 
         Id = Compiler.GetNextId();
         lock (Compiler.TypesAndVariables)
-            Compiler.TypesAndVariables.Emit(SpirVOpCode.OpVariable, type.Id, Id, (uint)storageClass);
+            Compiler.TypesAndVariables.Emit(SpirVOpCode.OpVariable, structurePointer.Id, Id, (uint)storageClass);
 
-        lock (Compiler.Header) {
-            Compiler.Header.Emit(SpirVOpCode.OpDecorate, Id, (uint)Decoration.DescriptorSet, 0u.ToSpirVLiteral());
-            Compiler.Header.Emit(SpirVOpCode.OpDecorate, Id, (uint)Decoration.Binding, 0u.ToSpirVLiteral());
+        lock (Compiler.Annotations) {
+            Compiler.Annotations.Emit(
+                SpirVOpCode.OpMemberDecorate, structure.Id, 0u.ToSpirVLiteral(), (uint)Decoration.Offset,
+                0u.ToSpirVLiteral()
+            );
+            Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, structure.Id, 3u);
+            Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, Id, (uint)Decoration.DescriptorSet, 0u.ToSpirVLiteral());
+            Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, Id, (uint)Decoration.Binding, 0u.ToSpirVLiteral());
         }
     }
 

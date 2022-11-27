@@ -42,7 +42,7 @@ public class NeslTypeTest {
         IlGenerator il = genericMethod.IlGenerator;
 
         il.Emit(OpCode.LoadArg, (byte)0);
-        il.Emit(OpCode.LoadUInt32, 0u);
+        il.Emit(OpCode.LoadUInt32, 0u, 0u);
         il.Emit(OpCode.SetElement, genericTypeParameter);
         il.Emit(OpCode.Return);
 

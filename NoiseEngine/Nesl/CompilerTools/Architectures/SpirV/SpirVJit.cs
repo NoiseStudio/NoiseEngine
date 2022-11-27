@@ -1,7 +1,9 @@
-﻿using NoiseEngine.Nesl.Emit;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -25,9 +27,21 @@ internal class SpirVJit {
                 case OpCode.LoadFloat32:
                     uint index = instruction.ReadUInt32();
                     if (index < neslMethod.Type.Fields.Count) {
+                        NeslField field = neslMethod.Type.Fields[(int)index];
+                        SpirVVariable variable = Compiler.GetSpirVVariable(field);
+                        SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(
+                            StorageClass.Uniform, Compiler.GetSpirVType(field.FieldType)
+                        );
+
+                        SpirVId id = Compiler.GetNextId();
+                        generator.Emit(
+                            SpirVOpCode.OpAccessChain, pointer.Id, id, variable.Id,
+                            new SpirVId[] { Compiler.GetConst(0) }
+                        );
+
                         generator.Emit(
                             SpirVOpCode.OpStore,
-                            Compiler.GetSpirVVariable(neslMethod.Type.Fields[(int)index]).Id,
+                            id,
                             Compiler.GetConst(instruction.ReadFloat32())
                         );
                     } else {

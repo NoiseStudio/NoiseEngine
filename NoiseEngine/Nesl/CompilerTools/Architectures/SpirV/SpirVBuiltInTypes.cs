@@ -47,6 +47,18 @@ internal class SpirVBuiltInTypes {
         })).Value;
     }
 
+    public SpirVType GetOpTypeInt(ulong size, bool signed) {
+        return types.GetOrAdd(new object[] { SpirVOpCode.OpTypeInt, size, signed }, _ => new Lazy<SpirVType>(() => {
+            lock (Compiler.TypesAndVariables) {
+                SpirVId id = Compiler.GetNextId();
+                Compiler.TypesAndVariables.Emit(
+                    SpirVOpCode.OpTypeInt, id, ((uint)size).ToSpirVLiteral(), (signed ? 1u : 0u).ToSpirVLiteral()
+                );
+                return new SpirVType(Compiler, id);
+            }
+        })).Value;
+    }
+
     public SpirVType GetOpTypeFloat(ulong size) {
         return types.GetOrAdd(new object[] { SpirVOpCode.OpTypeFloat, size }, _ => new Lazy<SpirVType>(() => {
             lock (Compiler.TypesAndVariables) {

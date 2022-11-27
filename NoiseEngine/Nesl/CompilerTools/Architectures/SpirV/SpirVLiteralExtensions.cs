@@ -26,6 +26,13 @@ internal static class SpirVLiteralExtensions {
         return new SpirVLiteral(result);
     }
 
+    public static SpirVLiteral ToSpirVLiteral(this int value) {
+        byte[] result = new byte[sizeof(int)];
+        BinaryPrimitives.WriteInt32LittleEndian(result.AsSpan(), value);
+
+        return new SpirVLiteral(result);
+    }
+
     public static SpirVLiteral ToSpirVLiteral(this float value) {
         byte[] result = new byte[sizeof(float)];
         BinaryPrimitives.WriteSingleLittleEndian(result.AsSpan(), value);

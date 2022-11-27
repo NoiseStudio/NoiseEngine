@@ -13,8 +13,8 @@ namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
 internal class SpirVCompiler {
 
-    private readonly ConcurrentDictionary<NeslType, Lazy<SpirVType>> types =
-        new ConcurrentDictionary<NeslType, Lazy<SpirVType>>();
+    private readonly ConcurrentDictionary<object, Lazy<SpirVType>> types =
+        new ConcurrentDictionary<object, Lazy<SpirVType>>();
     private readonly ConcurrentDictionary<NeslField, Lazy<SpirVVariable>> variables =
         new ConcurrentDictionary<NeslField, Lazy<SpirVVariable>>();
     private readonly ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>> functions =
@@ -56,6 +56,18 @@ internal class SpirVCompiler {
 
     internal SpirVId GetNextId() {
         return new SpirVId(Interlocked.Increment(ref nextId));
+    }
+
+    internal SpirVId GetConst(int data) {
+        return consts.GetOrAdd(data, _ => new Lazy<SpirVId>(() => {
+            SpirVId id = GetNextId();
+            lock (TypesAndVariables) {
+                TypesAndVariables.Emit(
+                    SpirVOpCode.OpConstant, BuiltInTypes.GetOpTypeInt(32, true).Id, id, data.ToSpirVLiteral()
+                );
+            }
+            return id;
+        })).Value;
     }
 
     internal SpirVId GetConst(float data) {
@@ -103,6 +115,21 @@ internal class SpirVCompiler {
         })).Value;
     }
 
+    internal SpirVType GetSpirVStruct(IReadOnlyList<SpirVType> fields) {
+        return types.GetOrAdd(new EquatableReadOnlyList<SpirVType>(fields), _ => new Lazy<SpirVType>(() => {
+            SpirVId id = GetNextId();
+
+            Span<SpirVId> fieldIds = stackalloc SpirVId[fields.Count];
+            for (int i = 0; i < fields.Count; i++)
+                fieldIds[i] = fields[i].Id;
+
+            lock (TypesAndVariables)
+                TypesAndVariables.Emit(SpirVOpCode.OpTypeStruct, id, fieldIds);
+
+            return new SpirVType(this, id);
+        })).Value;
+    }
+
     internal SpirVFunction GetSpirVFunction(NeslMethod neslMethod) {
         return functions.GetOrAdd(neslMethod,
             _ => new Lazy<SpirVFunction>(() => new SpirVFunction(this, neslMethod))).Value;
@@ -128,7 +155,8 @@ internal class SpirVCompiler {
 
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,
-                function.Id, entryPoint.Method.Guid.ToString().ToSpirVLiteral(),
+                // TODO: revert GUID.
+                function.Id, /*entryPoint.Method.Guid*/new Guid().ToString().ToSpirVLiteral(),
                 allVariables.OrderBy(x => x.StorageClass).Select(x => x.Id).ToArray()
             );
 
