@@ -155,8 +155,7 @@ internal class SpirVCompiler {
 
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,
-                // TODO: revert GUID.
-                function.Id, /*entryPoint.Method.Guid*/new Guid().ToString().ToSpirVLiteral(),
+                function.Id, entryPoint.Method.Guid.ToString().ToSpirVLiteral(),
                 allVariables.OrderBy(x => x.StorageClass).Select(x => x.Id).ToArray()
             );
 

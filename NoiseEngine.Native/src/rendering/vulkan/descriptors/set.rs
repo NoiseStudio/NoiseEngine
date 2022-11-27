@@ -15,7 +15,7 @@ use super::{update_template::DescriptorUpdateTemplate, set_layout::DescriptorSet
 pub struct DescriptorSet<'init> {
     initialized: &'init VulkanDeviceInitialized<'init>,
     inner: vk::DescriptorSet,
-    _pool: PoolItem<'init, VulkanDescriptorPool<'init>>
+    pool: PoolItem<'init, VulkanDescriptorPool<'init>>
 }
 
 impl<'init: 'setl, 'setl> DescriptorSet<'init> {
@@ -35,7 +35,7 @@ impl<'init: 'setl, 'setl> DescriptorSet<'init> {
             initialized.vulkan_device().allocate_descriptor_sets(&allocate_info)
         }?[0];
 
-        Ok(Self { initialized, inner, _pool: pool })
+        Ok(Self { initialized, inner, pool })
     }
 
     pub fn inner(&self) -> vk::DescriptorSet {
@@ -49,5 +49,15 @@ impl<'init: 'setl, 'setl> DescriptorSet<'init> {
                 data.as_ptr() as *const c_void
             );
         }
+    }
+}
+
+impl Drop for DescriptorSet<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            self.initialized.vulkan_device().reset_descriptor_pool(
+                self.pool.inner(), vk::DescriptorPoolResetFlags::default()
+            )
+        }.unwrap();
     }
 }

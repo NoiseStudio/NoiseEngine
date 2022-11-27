@@ -126,7 +126,7 @@ public class GraphicsCommandBufferTest {
             // Create pipeline.
             PipelineLayout pipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { layout });
             ComputePipeline pipeline = new ComputePipeline(
-                pipelineLayout, new PipelineShaderStage(ShaderStageFlags.Compute, module, new Guid().ToString()),
+                pipelineLayout, new PipelineShaderStage(ShaderStageFlags.Compute, module, main.Guid.ToString()),
                 PipelineCreateFlags.None
             );
 
