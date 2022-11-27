@@ -1,7 +1,10 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Buffers;
+using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
+using NoiseEngine.Rendering.Vulkan;
+using NoiseEngine.Rendering.Vulkan.Descriptors;
 using NoiseEngine.Serialization;
 using System;
 using System.Linq;
@@ -23,7 +26,7 @@ public class GraphicsCommandBuffer {
     private InteropHandle<GraphicsCommandBuffer> handle;
 
     private bool graphics = false;
-    private bool computing = false;
+    private bool computing;
     private bool transfer;
 
     public GraphicsDevice Device { get; }
@@ -229,6 +232,22 @@ public class GraphicsCommandBuffer {
             writer.WriteUInt64(region.DestinationOffset);
             writer.WriteUInt64(region.Size);
         }
+    }
+
+    internal void DispatchUnchecked(ComputePipeline pipeline, DescriptorSet descriptorSet, Vector3<uint> groupCount) {
+        computing = true;
+
+        FastList<object> references = this.references;
+        references.EnsureCapacity(references.Count + 2);
+        references.UnsafeAdd(pipeline);
+        references.UnsafeAdd(descriptorSet);
+
+        writer.WriteCommand(CommandBufferCommand.Dispatch);
+        writer.WriteIntN(pipeline.Handle.Pointer);
+        writer.WriteIntN(descriptorSet.Handle.Pointer);
+        writer.WriteUInt32(groupCount.X);
+        writer.WriteUInt32(groupCount.Y);
+        writer.WriteUInt32(groupCount.Z);
     }
 
 }

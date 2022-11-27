@@ -1,23 +1,39 @@
-use std::ptr;
+use std::{ptr, ffi::CString};
 
 use ash::vk;
 
+use crate::errors::invalid_operation::InvalidOperationError;
+
 use super::{
     errors::universal::VulkanUniversalError, pipeline_layout::PipelineLayout,
-    pipeline_shader_stage::PipelineShaderStage, device::VulkanDeviceInitialized
+    pipeline_shader_stage::PipelineShaderStage
 };
 
-pub struct Pipeline<'init> {
-    initialized: &'init VulkanDeviceInitialized<'init>,
-    inner: vk::Pipeline
+pub struct Pipeline<'init, 'pipl: 'init> {
+    inner: vk::Pipeline,
+    layout: &'pipl PipelineLayout<'init>
 }
 
-impl<'init, 'pipl: 'init> Pipeline<'init> {
+impl<'init, 'pipl: 'init> Pipeline<'init, 'pipl> {
     pub fn with_compute(
         layout: &'pipl PipelineLayout<'init>, stage: PipelineShaderStage, flags: vk::PipelineCreateFlags
     ) -> Result<Self, VulkanUniversalError> {
-        let final_stage =
-            Result::<vk::PipelineShaderStageCreateInfo, VulkanUniversalError>::from(stage)?;
+        let stage_name = match CString::new(String::from(stage.name)) {
+            Ok(s) => s,
+            Err(_) => return Err(
+                InvalidOperationError::with_str("Pipeline shader stage name contains null character.").into()
+            )
+        };
+
+        let final_stage = vk::PipelineShaderStageCreateInfo {
+            s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::PipelineShaderStageCreateFlags::empty(),
+            stage: stage.stage,
+            module: stage.module.inner(),
+            p_name: stage_name.as_ptr(),
+            p_specialization_info: ptr::null(),
+        };
 
         let create_info = vk::ComputePipelineCreateInfo {
             s_type: vk::StructureType::COMPUTE_PIPELINE_CREATE_INFO,
@@ -39,18 +55,22 @@ impl<'init, 'pipl: 'init> Pipeline<'init> {
             Err((_, err)) => return Err(err.into())
         };
 
-        Ok(Self { initialized, inner })
+        Ok(Self { inner, layout })
     }
 
     pub fn inner(&self) -> vk::Pipeline {
         self.inner
     }
+
+    pub fn layout(&'pipl self) -> &PipelineLayout {
+        &self.layout
+    }
 }
 
-impl Drop for Pipeline<'_> {
+impl Drop for Pipeline<'_, '_> {
     fn drop(&mut self) {
         unsafe {
-            self.initialized.vulkan_device().destroy_pipeline(self.inner, None);
+            self.layout.initialized().vulkan_device().destroy_pipeline(self.inner, None);
         }
     }
 }

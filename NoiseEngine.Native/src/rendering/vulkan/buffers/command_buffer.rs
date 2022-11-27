@@ -14,13 +14,13 @@ use crate::{
     serialization::reader::SerializationReader, interop::prelude::InteropResult, common::pool::PoolItem
 };
 
-use super::command_buffers::memory_commands;
+use super::command_buffers::{memory_commands, compute_commands};
 
 pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     initialized: &'init VulkanDeviceInitialized<'init>,
     inner: vk::CommandBuffer,
     queue_family: &'fam VulkanQueueFamily<'init>,
-    _command_pool: PoolItem<'fam, VulkanCommandPool<'init>>,
+    command_pool: PoolItem<'fam, VulkanCommandPool<'init>>,
 }
 
 impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
@@ -52,7 +52,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             initialized,
             inner: command_buffer,
             queue_family,
-            _command_pool: command_pool,
+            command_pool,
         };
 
         result.record(data, simultaneous_execute)?;
@@ -98,7 +98,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
 
         let mut begin_info_flags = vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT;
         if simultaneous_execute {
-            begin_info_flags |= vk::CommandBufferUsageFlags::SIMULTANEOUS_USE;
+            begin_info_flags = vk::CommandBufferUsageFlags::SIMULTANEOUS_USE;
         }
 
         let begin_info = vk::CommandBufferBeginInfo {
@@ -115,7 +115,9 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
         while let Some(command) = data.read::<GraphicsCommandBufferCommand>() {
             match command {
                 GraphicsCommandBufferCommand::CopyBuffer =>
-                    memory_commands::copy_buffer(&mut data, self, vulkan_device)
+                    memory_commands::copy_buffer(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::Dispatch =>
+                    compute_commands::dispatch(&mut data, self, vulkan_device)
             };
         };
 
@@ -132,8 +134,8 @@ impl Drop for VulkanCommandBuffer<'_, '_> {
         let initialized = self.initialized;
 
         unsafe {
-            initialized.vulkan_device().reset_command_buffer(
-                self.inner, vk::CommandBufferResetFlags::empty()
+            initialized.vulkan_device().reset_command_pool(
+                self.command_pool.inner(), vk::CommandPoolResetFlags::empty()
             )
         }.unwrap();
     }

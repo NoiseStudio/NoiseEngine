@@ -14,7 +14,7 @@ public class DescriptorSetTest {
     [FactRequire(TestRequirements.Vulkan)]
     public unsafe void Update() {
         ReadOnlySpan<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[] {
-            new DescriptorSetLayoutBinding(0, DescriptorType.Uniform, 0, ShaderStageFlags.All, 0)
+            new DescriptorSetLayoutBinding(0, DescriptorType.Uniform, 1, ShaderStageFlags.All, 0)
         };
         ReadOnlySpan<DescriptorUpdateTemplateEntry> entries = stackalloc DescriptorUpdateTemplateEntry[] {
             new DescriptorUpdateTemplateEntry(0, 0, 1, DescriptorType.Uniform, 0, 0)
