@@ -7,8 +7,8 @@ internal readonly record struct DescriptorBufferInfo(IntPtr Buffer, ulong Offset
 
     private const ulong WholeSize = ~0ul;
 
-    public static DescriptorBufferInfo Create<T>(GraphicsReadOnlyBuffer<T> buffer) where T : unmanaged {
-        return new DescriptorBufferInfo(buffer.InnerHandle.Pointer, 0, WholeSize);
+    public static DescriptorBufferInfo Create(GraphicsReadOnlyBuffer buffer) {
+        return new DescriptorBufferInfo(buffer.InnerHandleUniversal.Pointer, 0, WholeSize);
     }
 
 }

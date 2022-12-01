@@ -11,7 +11,6 @@ using NoiseEngine.Rendering.Vulkan;
 using NoiseEngine.Rendering.Vulkan.Descriptors;
 using NoiseEngine.Tests.Fixtures;
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Tests.Rendering.Buffers;
@@ -138,6 +137,48 @@ public class GraphicsCommandBufferTest {
             // Assert.
             hostBuffer.GetData(readData);
             Assert.Equal(new float[] { 18.64f }, readData);
+
+            i++;
+        }
+    }
+
+    [FactRequire(TestRequirements.Graphics)]
+    public void DispatchNew() {
+        const float Value = 18.64f;
+
+        // Shader code.
+        NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(Dispatch));
+
+        NeslTypeBuilder shaderType = assembly.DefineType("Shader");
+
+        NeslFieldBuilder buffer = shaderType.DefineField("buffer", BuiltInTypes.Float32);
+        buffer.AddAttribute(StaticAttribute.Create());
+
+        NeslMethodBuilder main = shaderType.DefineMethod("Main");
+        IlGenerator il = main.IlGenerator;
+
+        il.Emit(OpCode.LoadFloat32, 0u, Value);
+        il.Emit(OpCode.Return);
+
+        // Create compute shader.
+        float[] readData = new float[1];
+
+        int i = 0;
+        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+            GraphicsHostBuffer<float> hostBuffer =
+                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
+
+            ComputeShader shader = new ComputeShader(device, shaderType);
+            shader.GetProperty(buffer)!.SetBuffer(hostBuffer);
+
+            // Dispatch.
+            commandBuffer[i].Dispatch(shader.GetKernel(main)!, Vector3<uint>.One);
+            commandBuffer[i].Execute();
+            commandBuffer[i].Clear();
+
+            // Assert.
+            hostBuffer.GetData(readData);
+            Assert.Equal(new float[] { Value }, readData);
 
             i++;
         }

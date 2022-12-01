@@ -3,7 +3,9 @@ using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
+using NoiseEngine.Rendering.Exceptions;
 using NoiseEngine.Rendering.Vulkan;
+using NoiseEngine.Rendering.Vulkan.Buffers;
 using NoiseEngine.Rendering.Vulkan.Descriptors;
 using NoiseEngine.Serialization;
 using System;
@@ -17,6 +19,7 @@ namespace NoiseEngine.Rendering.Buffers;
 /// <remarks>Must be externally synchronized.</remarks>
 public class GraphicsCommandBuffer {
 
+    private readonly GraphicsCommandBufferDelegation delegation;
     private readonly FastList<object> references = new FastList<object>();
     private readonly SerializationWriter writer = new SerializationWriter(BitConverter.IsLittleEndian);
     private readonly FastList<GraphicsFence> fences = new FastList<GraphicsFence>();
@@ -52,6 +55,11 @@ public class GraphicsCommandBuffer {
 
         Device = device;
         this.simultaneousExecute = simultaneousExecute;
+
+        delegation = device.Instance.Api switch {
+            GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(writer),
+            _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
+        };
     }
 
     ~GraphicsCommandBuffer() {
@@ -211,6 +219,16 @@ public class GraphicsCommandBuffer {
         });
     }
 
+    public void Dispatch(ComputeKernel kernel, Vector3<uint> groupCount) {
+        if (kernel.Device != Device)
+            throw CreateInvalidDeviceException(nameof(kernel), "Compute kernel");
+
+        if (groupCount.X == 0 || groupCount.Y == 0 || groupCount.Z == 0)
+            throw new ArgumentException("Group count cannot have zero on any unit.", nameof(groupCount));
+
+        DispatchUnchecked(kernel, groupCount);
+    }
+
     internal void CopyUnchecked<T1, T2>(
         GraphicsReadOnlyBuffer<T1> sourceBuffer, GraphicsBuffer<T2> destinationBuffer,
         ReadOnlySpan<BufferCopyRegion> regions
@@ -232,6 +250,12 @@ public class GraphicsCommandBuffer {
             writer.WriteUInt64(region.DestinationOffset);
             writer.WriteUInt64(region.Size);
         }
+    }
+
+    internal void DispatchUnchecked(ComputeKernel kernel, Vector3<uint> groupCount) {
+        computing = true;
+        references.Add(kernel);
+        delegation.DispatchWorker(kernel, groupCount);
     }
 
     internal void DispatchUnchecked(ComputePipeline pipeline, DescriptorSet descriptorSet, Vector3<uint> groupCount) {
