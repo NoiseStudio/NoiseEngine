@@ -1,7 +1,6 @@
-﻿using NoiseEngine.Common.Shaders;
-using NoiseEngine.Common.Shaders.Vulkan;
-using NoiseEngine.Nesl;
+﻿using NoiseEngine.Nesl;
 using NoiseEngine.Rendering.Exceptions;
+using NoiseEngine.Rendering.Vulkan;
 
 namespace NoiseEngine.Rendering;
 

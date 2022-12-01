@@ -1,4 +1,4 @@
-﻿namespace NoiseEngine.Common.Shaders;
+﻿namespace NoiseEngine.Rendering;
 
 public enum ShaderPropertyType {
     Buffer

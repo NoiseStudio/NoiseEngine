@@ -1,7 +1,7 @@
 ﻿using NoiseEngine.Rendering.Buffers;
 using System;
 
-namespace NoiseEngine.Common.Shaders;
+namespace NoiseEngine.Rendering;
 
 public abstract class ShaderProperty {
 

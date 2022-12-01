@@ -1,8 +1,7 @@
 ﻿using NoiseEngine.Nesl;
-using NoiseEngine.Rendering;
 using System.Collections.Generic;
 
-namespace NoiseEngine.Common.Shaders;
+namespace NoiseEngine.Rendering;
 
 internal abstract class CommonShaderDelegation {
 

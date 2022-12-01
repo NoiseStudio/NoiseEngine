@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Nesl;
-using NoiseEngine.Rendering;
 
-namespace NoiseEngine.Common.Shaders;
+namespace NoiseEngine.Rendering;
 
 internal interface ICommonShader {
 

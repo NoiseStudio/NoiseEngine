@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Common.Shaders.Vulkan;
-using NoiseEngine.Mathematics;
+﻿using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using NoiseEngine.Serialization;

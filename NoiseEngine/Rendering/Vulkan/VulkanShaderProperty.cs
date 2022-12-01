@@ -4,7 +4,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NoiseEngine.Common.Shaders.Vulkan;
+namespace NoiseEngine.Rendering.Vulkan;
 
 internal class VulkanShaderProperty : ShaderProperty {
 

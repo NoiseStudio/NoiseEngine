@@ -1,15 +1,13 @@
 ﻿using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
-using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Vulkan;
 using NoiseEngine.Rendering.Vulkan.Descriptors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace NoiseEngine.Common.Shaders.Vulkan;
+namespace NoiseEngine.Rendering.Vulkan;
 
 internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
 
