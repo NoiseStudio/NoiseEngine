@@ -219,6 +219,13 @@ public class GraphicsCommandBuffer {
         });
     }
 
+    /// <summary>
+    /// Dispatches <paramref name="kernel"/> with number of local workgroups defined in
+    /// <paramref name="groupCount"/>.
+    /// </summary>
+    /// <param name="kernel"><see cref="ComputeKernel"/> to dispatch.</param>
+    /// <param name="groupCount">Number of local workgroups.</param>
+    /// <exception cref="ArgumentException">Some unit of <paramref name="groupCount"/> is a zero.</exception>
     public void Dispatch(ComputeKernel kernel, Vector3<uint> groupCount) {
         if (kernel.Device != Device)
             throw CreateInvalidDeviceException(nameof(kernel), "Compute kernel");

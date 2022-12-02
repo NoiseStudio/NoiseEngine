@@ -21,10 +21,26 @@ public class ComputeShader : ICommonShader {
         };
     }
 
+    /// <summary>
+    /// Tries return <see cref="ShaderProperty"/> created from given <paramref name="neslProperty"/>.
+    /// </summary>
+    /// <param name="neslProperty">Origin <see cref="NeslField"/> of returned <see cref="ShaderProperty"/>.</param>
+    /// <returns>
+    /// <see cref="ShaderProperty"/> when this <see cref="ComputeShader"/> contains given
+    /// <paramref name="neslProperty"/>; otherwise null.
+    /// </returns>
     public ShaderProperty? GetProperty(NeslField neslProperty) {
         return Delegation.Properties.TryGetValue(neslProperty, out ShaderProperty? property) ? property : null;
     }
 
+    /// <summary>
+    /// Tries return <see cref="ComputeKernel"/> created from given <paramref name="neslMethod"/>.
+    /// </summary>
+    /// <param name="neslMethod">Origin <see cref="NeslMethod"/> of returned <see cref="ComputeKernel"/>.</param>
+    /// <returns>
+    /// <see cref="ComputeKernel"/> when this <see cref="ComputeShader"/> contains given
+    /// <paramref name="neslMethod"/>; otherwise null.
+    /// </returns>
     public ComputeKernel? GetKernel(NeslMethod neslMethod) {
         return Delegation.Kernels!.TryGetValue(neslMethod, out ComputeKernel? kernel) ? kernel : null;
     }
