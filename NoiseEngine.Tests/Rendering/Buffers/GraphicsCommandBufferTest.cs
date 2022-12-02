@@ -1,12 +1,12 @@
 ﻿using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
+using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System;
 
 namespace NoiseEngine.Tests.Rendering.Buffers;
 
-[Collection(nameof(ApplicationCollection))]
-public class GraphicsCommandBufferTest {
+public class GraphicsCommandBufferTest : GraphicsTestEnvironment {
 
     private const ulong Size = 1024;
 
@@ -18,8 +18,8 @@ public class GraphicsCommandBufferTest {
     private readonly GraphicsHostBuffer<int>[] hostBufferA;
     private readonly GraphicsHostBuffer<int>[] hostBufferB;
 
-    public GraphicsCommandBufferTest() {
-        int length = Application.GraphicsInstance.Devices.Count;
+    public GraphicsCommandBufferTest(ApplicationFixture fixture) : base(fixture) {
+        int length = Fixture.GraphicsDevices.Count;
 
         commandBuffer = new GraphicsCommandBuffer[length];
 
@@ -27,7 +27,7 @@ public class GraphicsCommandBufferTest {
         hostBufferB = new GraphicsHostBuffer<int>[length];
 
         int i = 0;
-        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+        foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             commandBuffer[i] = new GraphicsCommandBuffer(device, true);
 
             hostBufferA[i] = new GraphicsHostBuffer<int>(
@@ -44,7 +44,7 @@ public class GraphicsCommandBufferTest {
     [FactRequire(TestRequirements.Graphics)]
     public void CopyBuffer() {
         int i = 0;
-        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+        foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             int[] data = GetRandomData();
             hostBufferA[i].SetData(data);
 
