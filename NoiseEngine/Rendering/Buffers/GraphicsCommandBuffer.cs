@@ -265,20 +265,4 @@ public class GraphicsCommandBuffer {
         delegation.DispatchWorker(kernel, groupCount);
     }
 
-    internal void DispatchUnchecked(ComputePipeline pipeline, DescriptorSet descriptorSet, Vector3<uint> groupCount) {
-        computing = true;
-
-        FastList<object> references = this.references;
-        references.EnsureCapacity(references.Count + 2);
-        references.UnsafeAdd(pipeline);
-        references.UnsafeAdd(descriptorSet);
-
-        writer.WriteCommand(CommandBufferCommand.Dispatch);
-        writer.WriteIntN(pipeline.Handle.Pointer);
-        writer.WriteIntN(descriptorSet.Handle.Pointer);
-        writer.WriteUInt32(groupCount.X);
-        writer.WriteUInt32(groupCount.Y);
-        writer.WriteUInt32(groupCount.Z);
-    }
-
 }

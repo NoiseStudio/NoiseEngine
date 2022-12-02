@@ -4,7 +4,6 @@ using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
-using NoiseEngine.Nesl.Emit.Attributes;
 using System;
 using System.IO;
 
@@ -65,27 +64,6 @@ public class Test {
         // Compile.
         File.WriteAllBytes($"{nameof(TestSpirV)}.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(main, ExecutionModel.Fragment)
-        }).GetCode());
-    }
-
-    [Fact]
-    public void TestCompute() {
-        NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(TestCompute));
-
-        NeslTypeBuilder shader = assembly.DefineType("Shader");
-
-        NeslFieldBuilder buffer = shader.DefineField("buffer", BuiltInTypes.Float32);
-        buffer.AddAttribute(StaticAttribute.Create());
-
-        NeslMethodBuilder main = shader.DefineMethod("Main");
-        IlGenerator il = main.IlGenerator;
-
-        il.Emit(OpCode.LoadFloat32, 0u, 18.64f);
-        il.Emit(OpCode.Return);
-
-        // Compile.
-        File.WriteAllBytes($"{nameof(TestCompute)}.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
-            new NeslEntryPoint(main, ExecutionModel.GLCompute)
         }).GetCode());
     }
 

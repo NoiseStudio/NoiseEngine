@@ -1,17 +1,11 @@
 ﻿using NoiseEngine.Mathematics;
-using NoiseEngine.Nesl;
-using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
-using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
-using NoiseEngine.Rendering.Vulkan;
-using NoiseEngine.Rendering.Vulkan.Descriptors;
 using NoiseEngine.Tests.Fixtures;
 using System;
-using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Tests.Rendering.Buffers;
 
@@ -70,80 +64,7 @@ public class GraphicsCommandBufferTest {
     }
 
     [FactRequire(TestRequirements.Graphics)]
-    public unsafe void Dispatch() {
-        // Shader.
-        NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(Dispatch));
-
-        NeslTypeBuilder shader = assembly.DefineType("Shader");
-
-        NeslFieldBuilder buffer = shader.DefineField("buffer", BuiltInTypes.Float32);
-        buffer.AddAttribute(StaticAttribute.Create());
-
-        NeslMethodBuilder main = shader.DefineMethod("Main");
-        IlGenerator il = main.IlGenerator;
-
-        il.Emit(OpCode.LoadFloat32, 0u, 18.64f);
-        il.Emit(OpCode.Return);
-
-        SpirVCompilationResult result = SpirVCompiler.Compile(new NeslEntryPoint[] {
-            new NeslEntryPoint(main, ExecutionModel.GLCompute)
-        });
-
-        // Descriptor set data.
-        ReadOnlySpan<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[] {
-            new DescriptorSetLayoutBinding(0, DescriptorType.Storage, 1, ShaderStageFlags.Compute, 0)
-        };
-        ReadOnlySpan<DescriptorUpdateTemplateEntry> entries = stackalloc DescriptorUpdateTemplateEntry[] {
-            new DescriptorUpdateTemplateEntry(0, 0, 1, DescriptorType.Storage, 0, 0)
-        };
-
-        ReadOnlySpan<byte> data = stackalloc byte[Marshal.SizeOf<DescriptorBufferInfo>()];
-        float[] readData = new float[1];
-
-        int i = 0;
-        foreach (GraphicsDevice d in Application.GraphicsInstance.Devices) {
-            if (d is not VulkanDevice device)
-                continue;
-
-            // Create host buffer.
-            GraphicsHostBuffer<float> hostBuffer =
-                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
-
-            // Create descriptor set.
-            DescriptorSetLayout layout = new DescriptorSetLayout(device, bindings);
-            DescriptorSet set = new DescriptorSet(layout);
-            DescriptorUpdateTemplate template = new DescriptorUpdateTemplate(layout, entries);
-
-            fixed (byte* pointer = data)
-                Marshal.StructureToPtr(DescriptorBufferInfo.Create(hostBuffer), (nint)pointer, false);
-
-            set.Update(template, data);
-
-            // Create shader module.
-            ShaderModule module = new ShaderModule(device, result.GetCode());
-
-            // Create pipeline.
-            PipelineLayout pipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { layout });
-            ComputePipeline pipeline = new ComputePipeline(
-                pipelineLayout, new PipelineShaderStage(ShaderStageFlags.Compute, module, main.Guid.ToString()),
-                PipelineCreateFlags.None
-            );
-
-            // Dispatch.
-            commandBuffer[i].DispatchUnchecked(pipeline, set, Vector3<uint>.One);
-            commandBuffer[i].Execute();
-            commandBuffer[i].Clear();
-
-            // Assert.
-            hostBuffer.GetData(readData);
-            Assert.Equal(new float[] { 18.64f }, readData);
-
-            i++;
-        }
-    }
-
-    [FactRequire(TestRequirements.Graphics)]
-    public void DispatchNew() {
+    public void Dispatch() {
         const float Value = 18.64f;
 
         // Shader code.
