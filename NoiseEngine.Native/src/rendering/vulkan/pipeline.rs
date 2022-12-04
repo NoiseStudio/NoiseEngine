@@ -62,7 +62,7 @@ impl<'init: 'pipl, 'pipl> Pipeline<'init, 'pipl> {
         self.inner
     }
 
-    pub fn layout(&'init self) -> &PipelineLayout {
+    pub fn layout(&self) -> &'pipl PipelineLayout<'init> {
         &self.layout
     }
 }

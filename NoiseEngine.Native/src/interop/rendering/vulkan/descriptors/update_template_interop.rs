@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_descriptors_update_template_create<'init, 'setl: 'init>(
+extern "C" fn rendering_vulkan_descriptors_update_template_create<'init: 'setl, 'setl>(
     layout: &'setl DescriptorSetLayout<'init>, entries: InteropReadOnlySpan<vk::DescriptorUpdateTemplateEntry>
 ) -> InteropResult<Box<DescriptorUpdateTemplate<'init>>> {
     match DescriptorUpdateTemplate::new(layout, entries.into()) {

@@ -4,7 +4,7 @@ use crate::{
 };
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_pipeline_layout_create<'init, 'setl: 'init>(
+extern "C" fn rendering_vulkan_pipeline_layout_create<'init: 'setl, 'setl>(
     layouts: InteropReadOnlySpan<&'setl DescriptorSetLayout<'init>>
 ) -> InteropResult<Box<PipelineLayout<'init>>> {
     match PipelineLayout::new(layouts.into()) {
