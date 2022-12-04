@@ -8,8 +8,8 @@ extern "C" fn rendering_buffers_command_buffer_interop_destroy(_handle: Box<Box<
 }
 
 #[no_mangle]
-extern "C" fn rendering_buffers_command_buffer_interop_execute<'cbuf: 'fence, 'fence>(
-    command_buffer: &&'cbuf dyn GraphicsCommandBuffer<'cbuf>
+extern "C" fn rendering_buffers_command_buffer_interop_execute<'init: 'cbuf, 'cbuf: 'fence, 'fence>(
+    command_buffer: &&'cbuf dyn GraphicsCommandBuffer<'init>
 ) -> InteropResult<Box<Box<dyn GraphicsFence + 'fence>>> {
     command_buffer.execute()
 }

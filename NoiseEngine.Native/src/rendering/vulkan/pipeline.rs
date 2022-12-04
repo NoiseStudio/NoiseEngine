@@ -9,12 +9,12 @@ use super::{
     pipeline_shader_stage::PipelineShaderStage
 };
 
-pub struct Pipeline<'init, 'pipl: 'init> {
+pub struct Pipeline<'init: 'pipl, 'pipl> {
     inner: vk::Pipeline,
     layout: &'pipl PipelineLayout<'init>
 }
 
-impl<'init, 'pipl: 'init> Pipeline<'init, 'pipl> {
+impl<'init: 'pipl, 'pipl> Pipeline<'init, 'pipl> {
     pub fn with_compute(
         layout: &'pipl PipelineLayout<'init>, stage: PipelineShaderStage, flags: vk::PipelineCreateFlags
     ) -> Result<Self, VulkanUniversalError> {
@@ -62,7 +62,7 @@ impl<'init, 'pipl: 'init> Pipeline<'init, 'pipl> {
         self.inner
     }
 
-    pub fn layout(&'pipl self) -> &PipelineLayout {
+    pub fn layout(&'init self) -> &PipelineLayout {
         &self.layout
     }
 }

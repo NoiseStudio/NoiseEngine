@@ -54,7 +54,9 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
             Rc::new(self.instance().create_device(self.physical_device, &create_info, None)?)
         };
 
-        let queue_families = Self::create_queue_families(self.instance, self.physical_device, device.clone());
+        let queue_families = Self::create_queue_families(
+            self.instance, self.physical_device, device.clone()
+        );
         let instance = self.instance;
 
         self.initialized = Some(VulkanDeviceInitialized {

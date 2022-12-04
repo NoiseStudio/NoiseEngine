@@ -11,7 +11,7 @@ pub struct PipelineLayout<'init> {
     inner: vk::PipelineLayout
 }
 
-impl<'init, 'setl: 'init> PipelineLayout<'init> {
+impl<'init: 'setl, 'setl> PipelineLayout<'init> {
     pub fn new(layouts: &[&'setl DescriptorSetLayout<'init>]) -> Result<Self, VulkanUniversalError> {
         let mut final_layouts = Vec::with_capacity(layouts.len());
         for layout in layouts {

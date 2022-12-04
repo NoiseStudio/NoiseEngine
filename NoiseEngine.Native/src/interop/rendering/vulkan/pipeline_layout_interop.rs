@@ -4,9 +4,9 @@ use crate::{
 };
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_pipeline_layout_create<'setl: 'pipl, 'pipl>(
-    layouts: InteropReadOnlySpan<&'setl DescriptorSetLayout<'pipl>>
-) -> InteropResult<Box<PipelineLayout<'pipl>>> {
+extern "C" fn rendering_vulkan_pipeline_layout_create<'init, 'setl: 'init>(
+    layouts: InteropReadOnlySpan<&'setl DescriptorSetLayout<'init>>
+) -> InteropResult<Box<PipelineLayout<'init>>> {
     match PipelineLayout::new(layouts.into()) {
         Ok(p) => InteropResult::with_ok(Box::new(p)),
         Err(err) => InteropResult::with_err(err.into())
