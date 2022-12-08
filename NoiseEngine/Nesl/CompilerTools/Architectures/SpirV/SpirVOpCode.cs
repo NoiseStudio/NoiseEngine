@@ -9,20 +9,28 @@ internal enum SpirVOpCode : ushort {
     [OpCodeValidationOptional(typeof(SpirVId[]))]
     OpEntryPoint = 15,
     [OpCodeValidation(typeof(SpirVId), typeof(uint))]
+    [OpCodeValidationOptional(typeof(SpirVLiteral))]
     OpExecutionMode = 16,
     [OpCodeValidation(typeof(uint))]
     OpCapability = 17,
 
     [OpCodeValidation(typeof(SpirVId))]
     OpTypeVoid = 19,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVLiteral), typeof(SpirVLiteral))]
+    OpTypeInt = 21,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVLiteral))]
     OpTypeFloat = 22,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral))]
     OpTypeVector = 23,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId[]))]
+    OpTypeStruct = 30,
     [OpCodeValidation(typeof(SpirVId), typeof(uint), typeof(SpirVId))]
     OpTypePointer = 32,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId))]
     OpTypeFunction = 33,
+
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral))]
+    OpConstant = 43,
 
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(uint), typeof(SpirVId))]
     OpFunction = 54,
@@ -31,9 +39,17 @@ internal enum SpirVOpCode : ushort {
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(uint))]
     OpVariable = 59,
 
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId))]
+    OpStore = 62,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId[]))]
+    OpAccessChain = 65,
+
     [OpCodeValidation(typeof(SpirVId), typeof(uint))]
     [OpCodeValidationOptional(typeof(SpirVLiteral))]
     OpDecorate = 71,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVLiteral), typeof(uint))]
+    [OpCodeValidationOptional(typeof(SpirVLiteral))]
+    OpMemberDecorate = 72,
 
     [OpCodeValidation(typeof(SpirVId))]
     OpLabel = 248,

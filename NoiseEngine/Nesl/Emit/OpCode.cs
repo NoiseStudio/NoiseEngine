@@ -3,15 +3,17 @@
 public enum OpCode : ushort {
     [OpCodeValidation(typeof(byte))]
     LoadArg,
-    [OpCodeValidation(typeof(NeslField))]
+    [OpCodeValidation(typeof(uint), typeof(NeslField))]
     LoadField,
-    [OpCodeValidation(typeof(uint))]
+    [OpCodeValidation(typeof(uint), typeof(uint))]
     LoadUInt32,
     [OpCodeValidation(typeof(ulong))]
     LoadUInt64,
-    [OpCodeValidation(typeof(float))]
+    [OpCodeValidation(typeof(uint), typeof(float))]
     LoadFloat32,
 
+    [OpCodeValidation(typeof(NeslField), typeof(uint))]
+    SetField,
     [OpCodeValidation(typeof(NeslType))]
     SetElement,
 
@@ -27,5 +29,8 @@ public enum OpCode : ushort {
     [OpCodeValidation(typeof(NeslMethod))]
     Call,
     [OpCodeValidation]
-    Return
+    Return,
+
+    [OpCodeValidation(typeof(NeslType), typeof(uint))]
+    DefVariable,
 }

@@ -1,4 +1,8 @@
-﻿using NoiseEngine.Rendering;
+﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Nesl.Default;
+using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes;
+using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Fixtures;
 using System;
@@ -31,7 +35,7 @@ public class GraphicsCommandBufferTest {
             commandBuffer[i] = new GraphicsCommandBuffer(device, true);
 
             hostBufferA[i] = new GraphicsHostBuffer<int>(
-                device, GraphicsBufferUsage.TransferSource, Size
+                device, GraphicsBufferUsage.TransferSource | GraphicsBufferUsage.Uniform, Size
             );
             hostBufferB[i] = new GraphicsHostBuffer<int>(
                 device, GraphicsBufferUsage.TransferDestination, Size
@@ -54,6 +58,48 @@ public class GraphicsCommandBufferTest {
 
             hostBufferB[i].GetData(readInt);
             Assert.Equal(data, readInt);
+
+            i++;
+        }
+    }
+
+    [FactRequire(TestRequirements.Graphics)]
+    public void Dispatch() {
+        const float Value = 18.64f;
+
+        // Shader code.
+        NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly(nameof(Dispatch));
+
+        NeslTypeBuilder shaderType = assembly.DefineType("Shader");
+
+        NeslFieldBuilder buffer = shaderType.DefineField("buffer", BuiltInTypes.Float32);
+        buffer.AddAttribute(StaticAttribute.Create());
+
+        NeslMethodBuilder main = shaderType.DefineMethod("Main");
+        IlGenerator il = main.IlGenerator;
+
+        il.Emit(OpCode.LoadFloat32, 0u, Value);
+        il.Emit(OpCode.Return);
+
+        // Create compute shader.
+        float[] readData = new float[1];
+
+        int i = 0;
+        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+            GraphicsHostBuffer<float> hostBuffer =
+                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
+
+            ComputeShader shader = new ComputeShader(device, shaderType);
+            shader.GetProperty(buffer)!.SetBuffer(hostBuffer);
+
+            // Dispatch.
+            commandBuffer[i].Dispatch(shader.GetKernel(main)!, Vector3<uint>.One);
+            commandBuffer[i].Execute();
+            commandBuffer[i].Clear();
+
+            // Assert.
+            hostBuffer.GetData(readData);
+            Assert.Equal(new float[] { Value }, readData);
 
             i++;
         }

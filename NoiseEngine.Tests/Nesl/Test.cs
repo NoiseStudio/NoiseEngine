@@ -23,12 +23,12 @@ public class Test {
         IlGenerator il = main.IlGenerator;
 
         il.Emit(OpCode.LoadArg, 0);
-        il.Emit(OpCode.LoadField, buffer);
-        il.Emit(OpCode.LoadUInt32, 5u);
-        il.Emit(OpCode.LoadFloat32, 18.64f);
+        il.Emit(OpCode.LoadField, 0u, buffer);
+        il.Emit(OpCode.LoadUInt32, 5u, 5u);
+        il.Emit(OpCode.LoadFloat32, 0x41951eb8u, 18.64f);
         il.Emit(OpCode.SetElement, BuiltInTypes.Float32);
 
-        il.Emit(OpCode.LoadFloat32, 12f);
+        il.Emit(OpCode.LoadFloat32, 0x41400000u, 12f);
         il.Emit(OpCode.Return);
 
         // Compile and run.

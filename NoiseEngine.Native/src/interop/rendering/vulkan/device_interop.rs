@@ -26,7 +26,7 @@ extern "C" fn rendering_vulkan_device_interop_create_command_buffer<'dev: 'init,
     data: InteropReadOnlySpan<u8>,
     usage: VulkanDeviceSupport,
     simultaneous_execute: bool,
-) -> InteropResult<Box<Box<dyn GraphicsCommandBuffer + 'cbuf>>>{
+) -> InteropResult<Box<Box<dyn GraphicsCommandBuffer<'init> + 'cbuf>>>{
     match VulkanCommandBuffer::new(
         device, SerializationReader::new(data.into()), usage, simultaneous_execute
     ) {

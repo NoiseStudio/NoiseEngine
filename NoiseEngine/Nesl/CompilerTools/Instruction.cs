@@ -4,10 +4,10 @@ using System.Buffers.Binary;
 
 namespace NoiseEngine.Nesl.CompilerTools;
 
-internal readonly struct Instruction {
+internal struct Instruction {
 
     private readonly IlContainer container;
-    private readonly uint tailIndex;
+    private uint tailIndex;
 
     public OpCode OpCode { get; }
 
@@ -18,19 +18,27 @@ internal readonly struct Instruction {
     }
 
     public float ReadFloat32() {
-        return BinaryPrimitives.ReadSingleLittleEndian(GetTail());
+        float result = BinaryPrimitives.ReadSingleLittleEndian(GetTail());
+        tailIndex += sizeof(float);
+        return result;
     }
 
     public byte ReadUInt8() {
-        return GetTail()[0];
+        byte result = GetTail()[0];
+        tailIndex += sizeof(byte);
+        return result;
     }
 
     public uint ReadUInt32() {
-        return BinaryPrimitives.ReadUInt32LittleEndian(GetTail());
+        uint result = BinaryPrimitives.ReadUInt32LittleEndian(GetTail());
+        tailIndex += sizeof(uint);
+        return result;
     }
 
     public ulong ReadUInt64() {
-        return BinaryPrimitives.ReadUInt64LittleEndian(GetTail());
+        ulong result = BinaryPrimitives.ReadUInt64LittleEndian(GetTail());
+        tailIndex += sizeof(ulong);
+        return result;
     }
 
     private ReadOnlySpan<byte> GetTail() {

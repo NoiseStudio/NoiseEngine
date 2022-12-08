@@ -5,21 +5,29 @@ using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Buffers;
 
-public abstract class GraphicsReadOnlyBuffer<T> where T : unmanaged {
+public abstract class GraphicsReadOnlyBuffer<T> : GraphicsReadOnlyBuffer where T : unmanaged {
 
     public GraphicsDevice Device { get; }
     public GraphicsBufferUsage Usage { get; }
     public ulong Count { get; }
 
     internal InteropHandle<GraphicsReadOnlyBuffer<T>> Handle { get; }
+    internal InteropHandle<GraphicsReadOnlyBuffer<T>> InnerHandle { get; }
+
+    internal override InteropHandle<GraphicsReadOnlyBuffer> HandleUniversal =>
+        new InteropHandle<GraphicsReadOnlyBuffer>(Handle.Pointer);
+    internal override InteropHandle<GraphicsReadOnlyBuffer> InnerHandleUniversal =>
+        new InteropHandle<GraphicsReadOnlyBuffer>(InnerHandle.Pointer);
 
     private protected GraphicsReadOnlyBuffer(
-        GraphicsDevice device, GraphicsBufferUsage usage, ulong count, InteropHandle<GraphicsReadOnlyBuffer<T>> handle
+        GraphicsDevice device, GraphicsBufferUsage usage, ulong count, InteropHandle<GraphicsReadOnlyBuffer<T>> handle,
+        InteropHandle<GraphicsReadOnlyBuffer<T>> innerHandle
     ) {
         Device = device;
         Usage = usage;
         Count = count;
         Handle = handle;
+        InnerHandle = innerHandle;
     }
 
     ~GraphicsReadOnlyBuffer() {

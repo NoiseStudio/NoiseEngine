@@ -11,7 +11,7 @@ internal class NotFullyConstructedGenericNeslType : NeslType {
 
     public override IEnumerable<NeslAttribute> Attributes => ParentType.Attributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => ParentType.GenericTypeParameters;
-    public override IEnumerable<NeslField> Fields => ParentType.Fields;
+    public override IReadOnlyList<NeslField> Fields => ParentType.Fields;
     public override IEnumerable<NeslMethod> Methods => ParentType.Methods;
 
     public NotFullyConstructedGenericNeslType(NeslType parentType, ImmutableArray<NeslType> typeArguments) : base(

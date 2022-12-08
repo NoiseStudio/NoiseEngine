@@ -6,7 +6,7 @@ namespace NoiseEngine.Nesl;
 public abstract class NeslGenericTypeParameter : NeslType {
 
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => throw NewStillGenericException();
-    public override IEnumerable<NeslField> Fields => throw NewStillGenericException();
+    public override IReadOnlyList<NeslField> Fields => throw NewStillGenericException();
     public override IEnumerable<NeslMethod> Methods => throw NewStillGenericException();
 
     public INeslGenericTypeParameterOwner Owner { get; }

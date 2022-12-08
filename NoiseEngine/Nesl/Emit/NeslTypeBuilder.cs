@@ -13,14 +13,14 @@ public class NeslTypeBuilder : NeslType {
     private readonly ConcurrentBag<NeslAttribute> attributes = new ConcurrentBag<NeslAttribute>();
     private readonly List<NeslGenericTypeParameterBuilder> genericTypeParameters =
         new List<NeslGenericTypeParameterBuilder>();
-    private readonly ConcurrentDictionary<string, NeslFieldBuilder> fields =
-        new ConcurrentDictionary<string, NeslFieldBuilder>();
+    private readonly List<NeslFieldBuilder> fields =
+        new List<NeslFieldBuilder>();
     private readonly ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder> methods =
         new ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder>();
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => genericTypeParameters;
-    public override IEnumerable<NeslField> Fields => fields.Values;
+    public override IReadOnlyList<NeslField> Fields => fields;
     public override IEnumerable<NeslMethod> Methods => methods.Values;
 
     internal NeslTypeBuilder(NeslAssemblyBuilder assembly, string fullName) : base(assembly, fullName) {
@@ -61,9 +61,12 @@ public class NeslTypeBuilder : NeslType {
     public NeslFieldBuilder DefineField(string name, NeslType fieldType) {
         NeslFieldBuilder field = new NeslFieldBuilder(this, name, fieldType);
 
-        if (!fields.TryAdd(name, field)) {
-            throw new ArgumentException($"{nameof(NeslField)} named `{name}` already exists in `{Name}` type.",
-                nameof(name));
+        lock (fields) {
+            if (fields.Any(x => x.Name == name)) {
+                throw new ArgumentException($"{nameof(NeslField)} named `{name}` already exists in `{Name}` type.",
+                    nameof(name));
+            }
+            fields.Add(field);
         }
 
         return field;
