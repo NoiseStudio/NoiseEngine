@@ -85,7 +85,7 @@ public class GraphicsCommandBufferTest : GraphicsTestEnvironment {
         float[] readData = new float[1];
 
         int i = 0;
-        foreach (GraphicsDevice device in Application.GraphicsInstance.Devices) {
+        foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             GraphicsHostBuffer<float> hostBuffer =
                 new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
 
