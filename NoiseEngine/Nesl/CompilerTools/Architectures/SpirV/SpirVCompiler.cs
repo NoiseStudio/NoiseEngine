@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+﻿using NoiseEngine.Collections;
+using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
 using System.Buffers.Binary;
@@ -13,12 +14,14 @@ namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
 internal class SpirVCompiler {
 
-    private readonly ConcurrentDictionary<NeslType, Lazy<SpirVType>> types =
-        new ConcurrentDictionary<NeslType, Lazy<SpirVType>>();
+    private readonly ConcurrentDictionary<object, Lazy<SpirVType>> types =
+        new ConcurrentDictionary<object, Lazy<SpirVType>>();
     private readonly ConcurrentDictionary<NeslField, Lazy<SpirVVariable>> variables =
         new ConcurrentDictionary<NeslField, Lazy<SpirVVariable>>();
     private readonly ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>> functions =
         new ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>>();
+    private readonly ConcurrentDictionary<object, Lazy<SpirVId>> consts =
+        new ConcurrentDictionary<object, Lazy<SpirVId>>();
 
     private readonly ConcurrentBag<SpirVVariable> allVariables = new ConcurrentBag<SpirVVariable>();
 
@@ -56,6 +59,30 @@ internal class SpirVCompiler {
         return new SpirVId(Interlocked.Increment(ref nextId));
     }
 
+    internal SpirVId GetConst(int data) {
+        return consts.GetOrAdd(data, _ => new Lazy<SpirVId>(() => {
+            SpirVId id = GetNextId();
+            lock (TypesAndVariables) {
+                TypesAndVariables.Emit(
+                    SpirVOpCode.OpConstant, BuiltInTypes.GetOpTypeInt(32, true).Id, id, data.ToSpirVLiteral()
+                );
+            }
+            return id;
+        })).Value;
+    }
+
+    internal SpirVId GetConst(float data) {
+        return consts.GetOrAdd(data, _ => new Lazy<SpirVId>(() => {
+            SpirVId id = GetNextId();
+            lock (TypesAndVariables) {
+                TypesAndVariables.Emit(
+                    SpirVOpCode.OpConstant, BuiltInTypes.GetOpTypeFloat(32).Id, id, data.ToSpirVLiteral()
+                );
+            }
+            return id;
+        })).Value;
+    }
+
     internal void AddVariable(SpirVVariable variable) {
         allVariables.Add(variable);
     }
@@ -89,6 +116,21 @@ internal class SpirVCompiler {
         })).Value;
     }
 
+    internal SpirVType GetSpirVStruct(IReadOnlyList<SpirVType> fields) {
+        return types.GetOrAdd(new EquatableReadOnlyList<SpirVType>(fields), _ => new Lazy<SpirVType>(() => {
+            SpirVId id = GetNextId();
+
+            Span<SpirVId> fieldIds = stackalloc SpirVId[fields.Count];
+            for (int i = 0; i < fields.Count; i++)
+                fieldIds[i] = fields[i].Id;
+
+            lock (TypesAndVariables)
+                TypesAndVariables.Emit(SpirVOpCode.OpTypeStruct, id, fieldIds);
+
+            return new SpirVType(this, id);
+        })).Value;
+    }
+
     internal SpirVFunction GetSpirVFunction(NeslMethod neslMethod) {
         return functions.GetOrAdd(neslMethod,
             _ => new Lazy<SpirVFunction>(() => new SpirVFunction(this, neslMethod))).Value;
@@ -117,14 +159,18 @@ internal class SpirVCompiler {
             );
 
             // TODO: add support for another execution modes.
-            Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
-        }
-
-        // Emit OpExecutionMode.
-        foreach (NeslEntryPoint entryPoint in EntryPoints) {
-            SpirVFunction function = GetSpirVFunction(entryPoint.Method);
-
-            Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
+            switch (entryPoint.ExecutionModel) {
+                case ExecutionModel.Vertex:
+                case ExecutionModel.Fragment:
+                    Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
+                    break;
+                case ExecutionModel.GLCompute:
+                    SpirVLiteral literal = 1u.ToSpirVLiteral() + 1u.ToSpirVLiteral() + 1u.ToSpirVLiteral();
+                    Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.LocalSize, literal);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         // Construct result.

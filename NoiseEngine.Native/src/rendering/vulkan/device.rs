@@ -31,7 +31,8 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
             return Err(InvalidOperationError::with_str("VulkanDevice is already initialized.").into())
         }
 
-        let queue_create_infos = self.create_queue_create_infos();
+        let (queue_create_infos, _queue_create_info_priorities) =
+            self.create_queue_create_infos();
         let physical_device_features = vk::PhysicalDeviceFeatures {
             ..Default::default()
         };
@@ -53,7 +54,9 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
             Rc::new(self.instance().create_device(self.physical_device, &create_info, None)?)
         };
 
-        let queue_families = Self::create_queue_families(self.instance, self.physical_device, device.clone());
+        let queue_families = Self::create_queue_families(
+            self.instance, self.physical_device, device.clone()
+        );
         let instance = self.instance;
 
         self.initialized = Some(VulkanDeviceInitialized {
@@ -91,18 +94,18 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
         }
     }
 
-    fn create_queue_create_infos(&self) -> Vec<vk::DeviceQueueCreateInfo> {
+    fn create_queue_create_infos(&self) -> (Vec<vk::DeviceQueueCreateInfo>, Vec<f32>) {
         let queue_families = unsafe {
             self.instance().get_physical_device_queue_family_properties(self.physical_device)
         };
 
         let mut queue_create_infos = Vec::with_capacity(queue_families.len());
 
+        let mut queues = Vec::new();
         for
             (queue_family_index, queue_family) in (0u32..).zip(queue_families.into_iter())
         {
-            let mut queues = Vec::new();
-            for _ in 0..queue_family.queue_count {
+            for _ in queues.len()..queue_family.queue_count as usize {
                 queues.push(1.0)
             }
 
@@ -116,7 +119,7 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
             });
         }
 
-        queue_create_infos
+        (queue_create_infos, queues)
     }
 
     fn create_queue_families(
@@ -161,7 +164,7 @@ pub(crate) struct VulkanDeviceInitialized<'init> {
     device: Rc<ash::Device>,
     queue_families: ManuallyDrop<Vec<VulkanQueueFamily<'init>>>,
     allocator: ManuallyDrop<MemoryAllocator>,
-    pool: VulkanDevicePool,
+    pool: VulkanDevicePool<'init>,
 }
 
 impl<'init> VulkanDeviceInitialized<'init> {
@@ -173,7 +176,7 @@ impl<'init> VulkanDeviceInitialized<'init> {
         &self.allocator
     }
 
-    pub fn pool(&self) -> &VulkanDevicePool {
+    pub fn pool(&self) -> &VulkanDevicePool<'init> {
         &self.pool
     }
 

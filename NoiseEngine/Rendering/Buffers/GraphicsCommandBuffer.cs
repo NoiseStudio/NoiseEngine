@@ -1,7 +1,12 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Buffers;
+using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
+using NoiseEngine.Rendering.Exceptions;
+using NoiseEngine.Rendering.Vulkan;
+using NoiseEngine.Rendering.Vulkan.Buffers;
+using NoiseEngine.Rendering.Vulkan.Descriptors;
 using NoiseEngine.Serialization;
 using System;
 using System.Linq;
@@ -14,6 +19,7 @@ namespace NoiseEngine.Rendering.Buffers;
 /// <remarks>Must be externally synchronized.</remarks>
 public class GraphicsCommandBuffer {
 
+    private readonly GraphicsCommandBufferDelegation delegation;
     private readonly FastList<object> references = new FastList<object>();
     private readonly SerializationWriter writer = new SerializationWriter(BitConverter.IsLittleEndian);
     private readonly FastList<GraphicsFence> fences = new FastList<GraphicsFence>();
@@ -23,7 +29,7 @@ public class GraphicsCommandBuffer {
     private InteropHandle<GraphicsCommandBuffer> handle;
 
     private bool graphics = false;
-    private bool computing = false;
+    private bool computing;
     private bool transfer;
 
     public GraphicsDevice Device { get; }
@@ -49,6 +55,11 @@ public class GraphicsCommandBuffer {
 
         Device = device;
         this.simultaneousExecute = simultaneousExecute;
+
+        delegation = device.Instance.Api switch {
+            GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(writer),
+            _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
+        };
     }
 
     ~GraphicsCommandBuffer() {
@@ -208,6 +219,23 @@ public class GraphicsCommandBuffer {
         });
     }
 
+    /// <summary>
+    /// Dispatches <paramref name="kernel"/> with number of local workgroups defined in
+    /// <paramref name="groupCount"/>.
+    /// </summary>
+    /// <param name="kernel"><see cref="ComputeKernel"/> to dispatch.</param>
+    /// <param name="groupCount">Number of local workgroups.</param>
+    /// <exception cref="ArgumentException">Some unit of <paramref name="groupCount"/> is a zero.</exception>
+    public void Dispatch(ComputeKernel kernel, Vector3<uint> groupCount) {
+        if (kernel.Device != Device)
+            throw CreateInvalidDeviceException(nameof(kernel), "Compute kernel");
+
+        if (groupCount.X == 0 || groupCount.Y == 0 || groupCount.Z == 0)
+            throw new ArgumentException("Group count cannot have zero on any unit.", nameof(groupCount));
+
+        DispatchUnchecked(kernel, groupCount);
+    }
+
     internal void CopyUnchecked<T1, T2>(
         GraphicsReadOnlyBuffer<T1> sourceBuffer, GraphicsBuffer<T2> destinationBuffer,
         ReadOnlySpan<BufferCopyRegion> regions
@@ -229,6 +257,12 @@ public class GraphicsCommandBuffer {
             writer.WriteUInt64(region.DestinationOffset);
             writer.WriteUInt64(region.Size);
         }
+    }
+
+    internal void DispatchUnchecked(ComputeKernel kernel, Vector3<uint> groupCount) {
+        computing = true;
+        references.Add(kernel);
+        delegation.DispatchWorker(kernel, groupCount);
     }
 
 }

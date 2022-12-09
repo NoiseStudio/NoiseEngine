@@ -1,5 +1,8 @@
-﻿namespace NoiseEngine.Rendering.Buffers;
+﻿using System;
 
+namespace NoiseEngine.Rendering.Buffers;
+
+[Flags]
 public enum GraphicsBufferUsage : uint {
     TransferSource = 1 << 0,
     TransferDestination = 1 << 1,

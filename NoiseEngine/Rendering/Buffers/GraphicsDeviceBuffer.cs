@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Rendering.Buffers.CommandBuffers;
+﻿using NoiseEngine.Interop;
+using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using System;
 
 namespace NoiseEngine.Rendering.Buffers;
@@ -20,7 +21,9 @@ public class GraphicsDeviceBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="count">Capacity of new <see cref="GraphicsDeviceBuffer{T}"/>.</param>
     public GraphicsDeviceBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count
-    ) : base(device, usage, count, GraphicsBufferHelper<T>.CreateHandle(device, usage, GetSize(count), false)) {
+    ) : base(device, usage, count, GraphicsBufferHelper<T>.CreateHandle(
+        device, usage, GetSize(count), false, out InteropHandle<GraphicsReadOnlyBuffer<T>> innerHandle
+    ), innerHandle) {
     }
 
     /// <summary>
