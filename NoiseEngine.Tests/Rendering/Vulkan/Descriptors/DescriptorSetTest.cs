@@ -2,6 +2,7 @@
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Vulkan;
 using NoiseEngine.Rendering.Vulkan.Descriptors;
+using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System;
 using System.Runtime.InteropServices;
@@ -9,7 +10,10 @@ using System.Runtime.InteropServices;
 namespace NoiseEngine.Tests.Rendering.Vulkan.Descriptors;
 
 [Collection(nameof(ApplicationCollection))]
-public class DescriptorSetTest {
+public class DescriptorSetTest : GraphicsTestEnvironment {
+
+    public DescriptorSetTest(ApplicationFixture fixture) : base(fixture) {
+    }
 
     [FactRequire(TestRequirements.Vulkan)]
     public unsafe void Update() {
@@ -22,10 +26,7 @@ public class DescriptorSetTest {
 
         ReadOnlySpan<byte> data = stackalloc byte[Marshal.SizeOf<DescriptorBufferInfo>()];
 
-        foreach (GraphicsDevice d in Application.GraphicsInstance.Devices) {
-            if (d is not VulkanDevice device)
-                continue;
-
+        foreach (VulkanDevice device in Fixture.VulkanDevices) {
             DescriptorSetLayout layout = new DescriptorSetLayout(device, bindings);
             DescriptorSet set = new DescriptorSet(layout);
             DescriptorUpdateTemplate template = new DescriptorUpdateTemplate(layout, entries);
