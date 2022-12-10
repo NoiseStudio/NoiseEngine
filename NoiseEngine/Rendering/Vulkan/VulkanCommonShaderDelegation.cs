@@ -59,20 +59,24 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
         }
     }
 
-    private VulkanCommonShaderDelegation(
-        ICommonShader shader, ShaderModule module, DescriptorSetLayout layout,
-        Dictionary<NeslField, ShaderProperty> properties
-    ) : base(shader) {
-        this.module = module;
-        this.layout = layout;
+    private VulkanCommonShaderDelegation(ICommonShader newShader, VulkanCommonShaderDelegation old) : base(newShader) {
+        module = old.module;
+        layout = old.layout;
 
         DescriptorSet = new DescriptorSet(layout);
 
-        propertiesToUpdate = new (bool, VulkanShaderProperty)[properties.Count];
-        foreach ((NeslField field, ShaderProperty property) in properties) {
+        propertiesToUpdate = new (bool, VulkanShaderProperty)[old.Properties.Count];
+        foreach ((NeslField field, ShaderProperty property) in old.Properties) {
             VulkanShaderProperty n = (VulkanShaderProperty)property.Clone(this);
-            this.Properties.Add(field, n);
+            Properties.Add(field, n);
             propertiesToUpdate[n.Index].property = n;
+        }
+
+        if (Shader is ComputeShader computeShader) {
+            Kernels = new Dictionary<NeslMethod, ComputeKernel>();
+            foreach ((NeslMethod method, ComputeKernel kernel) in old.Kernels!) {
+                Kernels.Add(method, kernel.Clone(computeShader));
+            }
         }
     }
 
@@ -154,8 +158,8 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
         }
     }
 
-    internal override VulkanCommonShaderDelegation Clone() {
-        return new VulkanCommonShaderDelegation(Shader, module, layout, Properties);
+    internal override VulkanCommonShaderDelegation Clone(ICommonShader newShader) {
+        return new VulkanCommonShaderDelegation(newShader, this);
     }
 
 }

@@ -21,6 +21,12 @@ public class ComputeShader : ICommonShader {
         };
     }
 
+    private ComputeShader(GraphicsDevice device, NeslType classData, CommonShaderDelegation delegation) {
+        Device = device;
+        ClassData = classData;
+        Delegation = delegation.Clone(this);
+    }
+
     /// <summary>
     /// Tries return <see cref="ShaderProperty"/> created from given <paramref name="neslProperty"/>.
     /// </summary>
@@ -43,6 +49,14 @@ public class ComputeShader : ICommonShader {
     /// </returns>
     public ComputeKernel? GetKernel(NeslMethod neslMethod) {
         return Delegation.Kernels!.TryGetValue(neslMethod, out ComputeKernel? kernel) ? kernel : null;
+    }
+
+    /// <summary>
+    /// Clones this <see cref="ComputeShader"/>.
+    /// </summary>
+    /// <returns>Clone of this <see cref="ComputeShader"/> with no properties specified.</returns>
+    public ComputeShader Clone() {
+        return new ComputeShader(Device, ClassData, Delegation);
     }
 
 }

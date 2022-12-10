@@ -12,4 +12,8 @@ internal class VulkanComputeKernel : ComputeKernel {
         Pipeline = pipeline;
     }
 
+    internal override VulkanComputeKernel Clone(ComputeShader newShader) {
+        return new VulkanComputeKernel(Method, newShader, Pipeline);
+    }
+
 }

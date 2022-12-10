@@ -15,4 +15,6 @@ public abstract class ComputeKernel {
         Shader = shader;
     }
 
+    internal abstract ComputeKernel Clone(ComputeShader newShader);
+
 }
