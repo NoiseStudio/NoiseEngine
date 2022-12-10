@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Rendering.Vulkan.Descriptors;
 using System;
 using System.Collections.Generic;
@@ -25,10 +26,12 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
     internal DescriptorSet DescriptorSet { get; }
 
     public VulkanCommonShaderDelegation(ICommonShader shader) : base(shader) {
-        NeslMethod main = shader.ClassData.GetMethod("Main") ?? throw new NullReferenceException();
-        SpirVCompilationResult result = SpirVCompiler.Compile(new NeslEntryPoint[] {
-            new NeslEntryPoint(main, ExecutionModel.GLCompute)
-        });
+        NeslMethod[] kernels = shader.ClassData.Methods
+            .Where(x => x.Attributes.HasAnyAttribute(nameof(KernelAttribute))).ToArray();
+
+        SpirVCompilationResult result = SpirVCompiler.Compile(kernels
+            .Select(x => new NeslEntryPoint(x, ExecutionModel.GLCompute))
+        );
 
         module = new ShaderModule(Device, result.GetCode());
 
@@ -52,10 +55,12 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
             Kernels = new Dictionary<NeslMethod, ComputeKernel>();
             PipelineLayout pipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { layout });
 
-            ComputePipeline pipeline = new ComputePipeline(pipelineLayout, new PipelineShaderStage(
-                ShaderStageFlags.Compute, module, main.Guid.ToString()
-            ), PipelineCreateFlags.None);
-            Kernels.Add(main, new VulkanComputeKernel(main, computeShader, pipeline));
+            foreach (NeslMethod kernel in kernels) {
+                ComputePipeline pipeline = new ComputePipeline(pipelineLayout, new PipelineShaderStage(
+                    ShaderStageFlags.Compute, module, kernel.Guid.ToString()
+                ), PipelineCreateFlags.None);
+                Kernels.Add(kernel, new VulkanComputeKernel(kernel, computeShader, pipeline));
+            }
         }
     }
 

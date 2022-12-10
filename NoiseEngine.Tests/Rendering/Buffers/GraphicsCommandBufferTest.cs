@@ -76,6 +76,7 @@ public class GraphicsCommandBufferTest : GraphicsTestEnvironment {
         buffer.AddAttribute(StaticAttribute.Create());
 
         NeslMethodBuilder main = shaderType.DefineMethod("Main");
+        main.AddAttribute(KernelAttribute.Create(Vector3<uint>.One));
         IlGenerator il = main.IlGenerator;
 
         il.Emit(OpCode.LoadFloat32, 0u, Value);
