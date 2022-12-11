@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Rendering.Vulkan.Descriptors;
 using System;
 using System.Collections.Generic;
@@ -25,54 +26,73 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
     internal DescriptorSet DescriptorSet { get; }
 
     public VulkanCommonShaderDelegation(ICommonShader shader) : base(shader) {
-        NeslMethod main = shader.ClassData.GetMethod("Main") ?? throw new NullReferenceException();
-        SpirVCompilationResult result = SpirVCompiler.Compile(new NeslEntryPoint[] {
-            new NeslEntryPoint(main, ExecutionModel.GLCompute)
-        });
+        NeslMethod[] kernels = shader.ClassData.Methods
+            .Where(x => x.Attributes.HasAnyAttribute(nameof(KernelAttribute))).ToArray();
+
+        SpirVCompilationResult result = SpirVCompiler.Compile(kernels
+            .Select(x => new NeslEntryPoint(x, ExecutionModel.GLCompute))
+        );
 
         module = new ShaderModule(Device, result.GetCode());
 
-        ReadOnlySpan<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[] {
-            new DescriptorSetLayoutBinding(0, DescriptorType.Storage, 1, ShaderStageFlags.Compute, 0)
-        };
-        layout = new DescriptorSetLayout(Device, bindings);
+        int i = 0;
+        Span<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[result.Bindings.Count];
+        foreach ((NeslField field, uint binding) in result.Bindings) {
+            bindings[i++] = new DescriptorSetLayoutBinding(
+                binding, DescriptorType.Storage, 1, ShaderStageFlags.Compute, 0
+            );
+        }
 
+        layout = new DescriptorSetLayout(Device, bindings);
         DescriptorSet = new DescriptorSet(layout);
 
-        propertiesToUpdate = new (bool, VulkanShaderProperty)[1];
-        VulkanShaderProperty property = new VulkanShaderProperty(this, 0, ShaderPropertyType.Buffer, "buffer");
-        Properties.Add(
-            shader.ClassData.GetField("buffer")!,
-            property
-        );
-        propertiesToUpdate[0].property = property;
+        propertiesToUpdate = new (bool, VulkanShaderProperty)[result.Bindings.Count];
+        nuint dataIndex = 0;
+
+        i = 0;
+        foreach ((NeslField field, uint binding) in result.Bindings) {
+            VulkanShaderProperty property = new VulkanShaderProperty(
+                this, i, ShaderPropertyType.Buffer, field.Name, binding, dataIndex
+            );
+
+            dataIndex += (nuint)property.UpdateTemplateDataSize;
+
+            Properties.Add(field, property);
+            propertiesToUpdate[i++].property = property;
+        }
 
         // Pipelines.
         if (Shader is ComputeShader computeShader) {
             Kernels = new Dictionary<NeslMethod, ComputeKernel>();
             PipelineLayout pipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { layout });
 
-            ComputePipeline pipeline = new ComputePipeline(pipelineLayout, new PipelineShaderStage(
-                ShaderStageFlags.Compute, module, main.Guid.ToString()
-            ), PipelineCreateFlags.None);
-            Kernels.Add(main, new VulkanComputeKernel(main, computeShader, pipeline));
+            foreach (NeslMethod kernel in kernels) {
+                ComputePipeline pipeline = new ComputePipeline(pipelineLayout, new PipelineShaderStage(
+                    ShaderStageFlags.Compute, module, kernel.Guid.ToString()
+                ), PipelineCreateFlags.None);
+                Kernels.Add(kernel, new VulkanComputeKernel(kernel, computeShader, pipeline));
+            }
         }
     }
 
-    private VulkanCommonShaderDelegation(
-        ICommonShader shader, ShaderModule module, DescriptorSetLayout layout,
-        Dictionary<NeslField, ShaderProperty> properties
-    ) : base(shader) {
-        this.module = module;
-        this.layout = layout;
+    private VulkanCommonShaderDelegation(ICommonShader newShader, VulkanCommonShaderDelegation old) : base(newShader) {
+        module = old.module;
+        layout = old.layout;
 
         DescriptorSet = new DescriptorSet(layout);
 
-        propertiesToUpdate = new (bool, VulkanShaderProperty)[properties.Count];
-        foreach ((NeslField field, ShaderProperty property) in properties) {
+        propertiesToUpdate = new (bool, VulkanShaderProperty)[old.Properties.Count];
+        foreach ((NeslField field, ShaderProperty property) in old.Properties) {
             VulkanShaderProperty n = (VulkanShaderProperty)property.Clone(this);
-            this.Properties.Add(field, n);
+            Properties.Add(field, n);
             propertiesToUpdate[n.Index].property = n;
+        }
+
+        if (Shader is ComputeShader computeShader) {
+            Kernels = new Dictionary<NeslMethod, ComputeKernel>();
+            foreach ((NeslMethod method, ComputeKernel kernel) in old.Kernels!) {
+                Kernels.Add(method, kernel.Clone(computeShader));
+            }
         }
     }
 
@@ -154,8 +174,8 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
         }
     }
 
-    internal override VulkanCommonShaderDelegation Clone() {
-        return new VulkanCommonShaderDelegation(Shader, module, layout, Properties);
+    internal override VulkanCommonShaderDelegation Clone(ICommonShader newShader) {
+        return new VulkanCommonShaderDelegation(newShader, this);
     }
 
 }

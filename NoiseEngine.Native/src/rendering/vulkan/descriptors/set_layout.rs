@@ -1,4 +1,4 @@
-use std::ptr;
+use std::{ptr, sync::Arc, collections::{HashMap, hash_map::Entry}};
 
 use ash::vk;
 
@@ -6,9 +6,12 @@ use crate::rendering::vulkan::{
     device::{VulkanDeviceInitialized, VulkanDevice}, errors::universal::VulkanUniversalError
 };
 
+use super::pool_sizes::DescriptorPoolSizes;
+
 pub struct DescriptorSetLayout<'init> {
     initialized: &'init VulkanDeviceInitialized<'init>,
-    inner: vk::DescriptorSetLayout
+    inner: vk::DescriptorSetLayout,
+    pool_sizes: Arc<DescriptorPoolSizes>
 }
 
 impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
@@ -29,11 +32,30 @@ impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
             initialized.vulkan_device().create_descriptor_set_layout(&create_info, None)
         }?;
 
-        Ok(Self { initialized, inner })
+        let mut pool_sizes = HashMap::new();
+        let mut sum_count = 0;
+
+        for binding in bindings.iter() {
+            let count = binding.descriptor_count;
+            sum_count += count;
+
+            match pool_sizes.entry(binding.descriptor_type) {
+                Entry::Occupied(mut o) => _ = o.insert(o.get() + count),
+                Entry::Vacant(v) => _ = v.insert(count),
+            };
+        }
+
+        Ok(Self {
+            initialized, inner, pool_sizes: Arc::new(DescriptorPoolSizes { map: pool_sizes, count: sum_count })
+        })
     }
 
     pub fn inner(&self) -> vk::DescriptorSetLayout {
         self.inner
+    }
+
+    pub fn pool_sizes(&self) -> &Arc<DescriptorPoolSizes> {
+        &self.pool_sizes
     }
 
     pub(crate) fn initialized(&self) ->  &'init VulkanDeviceInitialized<'init> {

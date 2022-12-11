@@ -17,6 +17,6 @@ internal abstract class CommonShaderDelegation {
         Shader = shader;
     }
 
-    internal abstract CommonShaderDelegation Clone();
+    internal abstract CommonShaderDelegation Clone(ICommonShader newShader);
 
 }

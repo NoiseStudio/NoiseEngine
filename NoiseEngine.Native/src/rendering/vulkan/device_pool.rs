@@ -1,10 +1,13 @@
-use std::{ptr, rc::Rc};
+use std::{ptr, rc::Rc, sync::Arc};
 
 use ash::vk;
 
 use crate::common::pool::{Pool, PoolItem};
 
-use super::{errors::universal::VulkanUniversalError, fence::VulkanFence, pool_wrappers::VulkanDescriptorPool};
+use super::{
+    errors::universal::VulkanUniversalError, fence::VulkanFence, pool_wrappers::VulkanDescriptorPool,
+    descriptors::pool_sizes::DescriptorPoolSizes
+};
 
 pub struct VulkanDevicePool<'devpool> {
     vulkan_device: Rc<ash::Device>,
@@ -38,28 +41,55 @@ impl<'devpool> VulkanDevicePool<'devpool> {
     }
 
     pub fn get_descriptor_pool(
-        &'devpool self
+        &'devpool self, pool_sizes: &Arc<DescriptorPoolSizes>
     ) -> Result<PoolItem<'devpool, VulkanDescriptorPool<'devpool>>, VulkanUniversalError> {
-        self.descriptor_pools.get_or_create(|| {
-            let pool_size = vk::DescriptorPoolSize {
-                ty: vk::DescriptorType::UNIFORM_BUFFER,
-                descriptor_count: 1,
-            };
+        self.descriptor_pools.get_or_create_where(
+            |obj| {
+                let obj_pool_sizes = obj.pool_sizes();
 
-            let pool_info = vk::DescriptorPoolCreateInfo {
-                s_type: vk::StructureType::DESCRIPTOR_POOL_CREATE_INFO,
-                p_next: ptr::null(),
-                flags: vk::DescriptorPoolCreateFlags::default(),
-                max_sets: 1,
-                pool_size_count: 1,
-                p_pool_sizes: &pool_size,
-            };
+                if pool_sizes.count > obj_pool_sizes.count {
+                    return false
+                }
 
-            let pool = unsafe {
-                self.vulkan_device.create_descriptor_pool(&pool_info, None)
-            }?;
+                for (ty, count) in pool_sizes.map.iter() {
+                    match obj_pool_sizes.map.get(ty) {
+                        Some(c) => {
+                            if c >= count {
+                                continue
+                            }
+                        },
+                        None => (),
+                    };
 
-            Ok(VulkanDescriptorPool::new(self, pool))
-        })
+                    return false
+                }
+
+                true
+            },
+            || {
+                let mut final_pool_sizes = Vec::with_capacity(pool_sizes.map.len());
+                for (ty, count) in pool_sizes.map.iter() {
+                    final_pool_sizes.push(vk::DescriptorPoolSize {
+                        ty: *ty,
+                        descriptor_count: *count,
+                    });
+                }
+
+                let pool_info = vk::DescriptorPoolCreateInfo {
+                    s_type: vk::StructureType::DESCRIPTOR_POOL_CREATE_INFO,
+                    p_next: ptr::null(),
+                    flags: vk::DescriptorPoolCreateFlags::default(),
+                    max_sets: 1,
+                    pool_size_count: final_pool_sizes.len() as u32,
+                    p_pool_sizes: final_pool_sizes.as_ptr(),
+                };
+
+                let pool = unsafe {
+                    self.vulkan_device.create_descriptor_pool(&pool_info, None)
+                }?;
+
+                Ok(VulkanDescriptorPool::new(self, pool, pool_sizes.clone()))
+            }
+        )
     }
 }

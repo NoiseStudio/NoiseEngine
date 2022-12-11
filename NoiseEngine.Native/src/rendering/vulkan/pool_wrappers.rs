@@ -1,6 +1,8 @@
+use std::sync::Arc;
+
 use ash::vk;
 
-use super::device_pool::VulkanDevicePool;
+use super::{device_pool::VulkanDevicePool, descriptors::pool_sizes::DescriptorPoolSizes};
 
 pub struct VulkanCommandPool<'init> {
     vulkan_device: &'init ash::Device,
@@ -27,16 +29,24 @@ impl Drop for VulkanCommandPool<'_> {
 
 pub struct VulkanDescriptorPool<'devpool> {
     pool: &'devpool VulkanDevicePool<'devpool>,
-    inner: vk::DescriptorPool
+    inner: vk::DescriptorPool,
+    pool_sizes: Arc<DescriptorPoolSizes>
 }
 
 impl<'devpool> VulkanDescriptorPool<'devpool> {
-    pub(super) fn new(pool: &'devpool VulkanDevicePool<'devpool>, inner: vk::DescriptorPool) -> Self {
-        Self { pool, inner }
+    pub(super) fn new(
+        pool: &'devpool VulkanDevicePool<'devpool>, inner: vk::DescriptorPool,
+        pool_sizes: Arc<DescriptorPoolSizes>
+    ) -> Self {
+        Self { pool, inner, pool_sizes }
     }
 
     pub fn inner(&self) -> vk::DescriptorPool {
         self.inner
+    }
+
+    pub fn pool_sizes(&self) -> &Arc<DescriptorPoolSizes> {
+        &self.pool_sizes
     }
 }
 

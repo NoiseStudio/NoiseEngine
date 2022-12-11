@@ -8,11 +8,14 @@ namespace NoiseEngine.Rendering.Vulkan;
 
 internal class VulkanShaderProperty : ShaderProperty {
 
+    public uint Binding { get; }
+    public nuint Offset { get; }
+
     public new VulkanCommonShaderDelegation ShaderDelegation =>
         Unsafe.As<VulkanCommonShaderDelegation>(base.ShaderDelegation);
 
     public DescriptorUpdateTemplateEntry UpdateTemplateEntry =>
-        new DescriptorUpdateTemplateEntry(0, 0, 1, DescriptorType.Storage, 0, 0);
+        new DescriptorUpdateTemplateEntry(Binding, 0, 1, DescriptorType.Storage, Offset, 0);
 
     public int UpdateTemplateDataSize {
         get {
@@ -24,8 +27,11 @@ internal class VulkanShaderProperty : ShaderProperty {
     }
 
     public VulkanShaderProperty(
-        VulkanCommonShaderDelegation shaderDelegation, int index, ShaderPropertyType type, string name
+        VulkanCommonShaderDelegation shaderDelegation, int index, ShaderPropertyType type, string name, uint binding,
+        nuint offset
     ) : base(shaderDelegation, index, type, name) {
+        Binding = binding;
+        Offset = offset;
     }
 
     public unsafe void WriteUpdateTemplateData(Span<byte> buffer) {
@@ -43,7 +49,9 @@ internal class VulkanShaderProperty : ShaderProperty {
     }
 
     internal override VulkanShaderProperty Clone(CommonShaderDelegation newShaderDelegation) {
-        return new VulkanShaderProperty((VulkanCommonShaderDelegation)newShaderDelegation, Index, Type, Name);
+        return new VulkanShaderProperty(
+            (VulkanCommonShaderDelegation)newShaderDelegation, Index, Type, Name, Binding, Offset
+        );
     }
 
     private protected override void SetBufferUnchecked<T>(GraphicsBuffer<T> buffer) {
