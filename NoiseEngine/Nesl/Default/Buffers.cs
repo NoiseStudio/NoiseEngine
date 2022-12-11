@@ -20,7 +20,8 @@ internal static class Buffers {
         NeslTypeBuilder type = Manager.AssemblyBuilder.DefineType($"{Manager.AssemblyBuilder.Name}.ReadWriteBuffer`1");
         NeslGenericTypeParameterBuilder genericTypeParameter = type.DefineGenericTypeParameter("T");
         type.AddAttribute(PlatformDependentTypeRepresentationAttribute.Create(
-            $"{{{genericTypeParameter.Name}}}[]", null));
+            $"{{{genericTypeParameter.Name}}}[]"
+        ));
         type.AddAttribute(SizeAttribute.Create((uint)Marshal.SizeOf<nuint>() * 8));
 
         return type;

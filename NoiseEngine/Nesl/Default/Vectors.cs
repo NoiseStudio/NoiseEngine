@@ -17,7 +17,8 @@ internal static class Vectors {
         NeslTypeBuilder result = Manager.AssemblyBuilder.DefineType($"{Manager.AssemblyBuilder.Name}.Vector{size}");
         result.AddAttribute(ValueTypeAttribute.Create());
         result.AddAttribute(PlatformDependentTypeRepresentationAttribute.Create(
-            null, $"OpTypeVector`{type.FullName}`{size}"));
+            $"OpTypeVector`{type.FullName}`{size}"
+        ));
         result.AddAttribute(SizeAttribute.Create(32 * size));
 
         return result;

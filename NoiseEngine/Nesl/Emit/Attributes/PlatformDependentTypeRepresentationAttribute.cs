@@ -11,19 +11,16 @@ public class PlatformDependentTypeRepresentationAttribute : NeslAttribute {
     private const string ExpectedFullName = nameof(PlatformDependentTypeRepresentationAttribute);
     private const AttributeTargets ExpectedTargets = AttributeTargets.Type;
 
-    public string? CilTargetName => AttributeHelper.ReadString(Bytes.AsSpan());
-    public string? SpirVTargetName => AttributeHelper.ReadString(AttributeHelper.JumpToNextBytes(Bytes.AsSpan()));
+    public string? SpirVTargetName => AttributeHelper.ReadString(Bytes.AsSpan());
 
     /// <summary>
     /// Creates new <see cref="PlatformDependentTypeRepresentationAttribute"/>.
     /// </summary>
-    /// <param name="cilTargetName">Target name in CIL.</param>
     /// <param name="spirVTargetName">Target name in SPIR-V.</param>
     /// <returns><see cref="PlatformDependentTypeRepresentationAttribute"/> with given parameters.</returns>
-    public static PlatformDependentTypeRepresentationAttribute Create(string? cilTargetName, string? spirVTargetName) {
+    public static PlatformDependentTypeRepresentationAttribute Create(string? spirVTargetName) {
         FastList<byte> buffer = new FastList<byte>();
 
-        AttributeHelper.WriteString(buffer, cilTargetName);
         AttributeHelper.WriteString(buffer, spirVTargetName);
 
         return new PlatformDependentTypeRepresentationAttribute {
@@ -55,17 +52,15 @@ public class PlatformDependentTypeRepresentationAttribute : NeslAttribute {
     ) {
         bool isEquals = true;
 
-        string? cilTargetName = ReplaceGenericsInTargetName(CilTargetName, targetTypes, true, ref isEquals);
-        string? spirVTargetName = ReplaceGenericsInTargetName(SpirVTargetName, targetTypes, true, ref isEquals);
+        string? spirVTargetName = ReplaceGenericsInTargetName(SpirVTargetName, targetTypes, ref isEquals);
 
         if (isEquals)
             return this;
-        return Create(cilTargetName, spirVTargetName);
+        return Create(spirVTargetName);
     }
 
     private string? ReplaceGenericsInTargetName(
-        string? targetName, IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes, bool isCilTarget,
-        ref bool isEquals
+        string? targetName, IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes, ref bool isEquals
     ) {
         if (targetName is null)
             return null;
@@ -82,7 +77,7 @@ public class PlatformDependentTypeRepresentationAttribute : NeslAttribute {
             if (b is null)
                 name = type.Name;
             else
-                name = (isCilTarget ? b.CilTargetName : b.SpirVTargetName) ?? type.Name;
+                name = b.SpirVTargetName ?? type.Name;
 
             builder.Replace($"{{{genericTypeParameter.Name}}}", name);
         }
