@@ -44,6 +44,10 @@ impl<T> Pool<T> {
         F: FnOnce() -> Result<T, E>
     {
         let length = self.length.load(Ordering::Relaxed);
+
+        // TODO: Remove this Vec to not occupy the entire pool.
+        let mut vec = Vec::with_capacity(length);
+
         for _ in 0..length {
             let obj = match self.try_get() {
                 Some(s) => s,
@@ -53,6 +57,8 @@ impl<T> Pool<T> {
             if predicate(&obj) {
                 return Ok(obj)
             }
+
+            vec.push(obj)
         }
 
         let obj = factory()?;
