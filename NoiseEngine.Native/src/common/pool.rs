@@ -1,16 +1,20 @@
-use std::{mem::ManuallyDrop, ptr, ops::{Deref, DerefMut}};
+use std::{mem::ManuallyDrop, ptr, ops::{Deref, DerefMut}, sync::atomic::{AtomicUsize, Ordering}};
 
 use lockfree::stack::Stack;
 
 pub struct Pool<T> {
-    objects: Stack<T>
+    objects: Stack<T>,
+    length: AtomicUsize
 }
 
 impl<T> Pool<T> {
     pub fn try_get(&self) -> Option<PoolItem<T>> {
-        self.objects.pop().map(|inner| PoolItem {
-            pool: self,
-            inner: ManuallyDrop::new(inner)
+        self.objects.pop().map(|inner| {
+            self.length.fetch_sub(1, Ordering::Relaxed);
+            PoolItem {
+                pool: self,
+                inner: ManuallyDrop::new(inner)
+            }
         })
     }
 
@@ -33,11 +37,32 @@ impl<T> Pool<T> {
             }
         }
     }
+
+    pub fn get_or_create_where<E, W, F>(&self, predicate: W, factory: F) -> Result<PoolItem<T>, E>
+    where
+        W: Fn(&T) -> bool,
+        F: FnOnce() -> Result<T, E>
+    {
+        let length = self.length.load(Ordering::Relaxed);
+        for _ in 0..length {
+            let obj = match self.try_get() {
+                Some(s) => s,
+                None => continue
+            };
+
+            if predicate(&obj) {
+                return Ok(obj)
+            }
+        }
+
+        let obj = factory()?;
+        Ok(self.wrap(obj))
+    }
 }
 
 impl<T> Default for Pool<T> {
     fn default() -> Self {
-        Self { objects: Stack::new() }
+        Self { objects: Stack::new(), length: AtomicUsize::new(0) }
     }
 }
 
@@ -53,6 +78,7 @@ impl<T> Drop for PoolItem<'_, T> {
         };
 
         self.pool.objects.push(t);
+        self.pool.length.fetch_add(1, Ordering::Relaxed);
     }
 }
 

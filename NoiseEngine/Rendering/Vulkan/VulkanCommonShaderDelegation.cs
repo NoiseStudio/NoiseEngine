@@ -35,20 +35,31 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
 
         module = new ShaderModule(Device, result.GetCode());
 
-        ReadOnlySpan<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[] {
-            new DescriptorSetLayoutBinding(0, DescriptorType.Storage, 1, ShaderStageFlags.Compute, 0)
-        };
-        layout = new DescriptorSetLayout(Device, bindings);
+        int i = 0;
+        Span<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[result.Bindings.Count];
+        foreach ((NeslField field, uint binding) in result.Bindings) {
+            bindings[i++] = new DescriptorSetLayoutBinding(
+                binding, DescriptorType.Storage, 1, ShaderStageFlags.Compute, 0
+            );
+        }
 
+        layout = new DescriptorSetLayout(Device, bindings);
         DescriptorSet = new DescriptorSet(layout);
 
-        propertiesToUpdate = new (bool, VulkanShaderProperty)[1];
-        VulkanShaderProperty property = new VulkanShaderProperty(this, 0, ShaderPropertyType.Buffer, "buffer");
-        Properties.Add(
-            shader.ClassData.GetField("buffer")!,
-            property
-        );
-        propertiesToUpdate[0].property = property;
+        propertiesToUpdate = new (bool, VulkanShaderProperty)[result.Bindings.Count];
+        nuint dataIndex = 0;
+
+        i = 0;
+        foreach ((NeslField field, uint binding) in result.Bindings) {
+            VulkanShaderProperty property = new VulkanShaderProperty(
+                this, i, ShaderPropertyType.Buffer, field.Name, binding, dataIndex
+            );
+
+            dataIndex += (nuint)property.UpdateTemplateDataSize;
+
+            Properties.Add(field, property);
+            propertiesToUpdate[i++].property = property;
+        }
 
         // Pipelines.
         if (Shader is ComputeShader computeShader) {

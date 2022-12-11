@@ -13,11 +13,14 @@ namespace NoiseEngine.Tests.Rendering;
 
 public class ComputeShaderTest : GraphicsTestEnvironment {
 
-    private const float ValueA = 18.64f;
-    private const float ValueB = 1324f;
+    private const float ValueAA = 18.64f;
+    private const float ValueAB = 1324f;
+    private const float ValueBA = 21.07f;
+    private const float ValueBB = 2022f;
 
     private NeslTypeBuilder ShaderType { get; }
-    private NeslFieldBuilder ShaderBuffer { get; }
+    private NeslFieldBuilder ShaderBufferA { get; }
+    private NeslFieldBuilder ShaderBufferB { get; }
     private NeslMethodBuilder ShaderMethodA { get; }
     private NeslMethodBuilder ShaderMethodB { get; }
 
@@ -25,15 +28,18 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
         // Create shader.
         ShaderType = TestEmitHelper.NewType();
 
-        ShaderBuffer = ShaderType.DefineField("buffer", BuiltInTypes.Float32);
-        ShaderBuffer.AddAttribute(StaticAttribute.Create());
+        ShaderBufferA = ShaderType.DefineField("bufferA", BuiltInTypes.Float32);
+        ShaderBufferA.AddAttribute(UniformAttribute.Create());
+        ShaderBufferB = ShaderType.DefineField("bufferB", BuiltInTypes.Float32);
+        ShaderBufferB.AddAttribute(UniformAttribute.Create());
 
         // Method A.
         ShaderMethodA = ShaderType.DefineMethod("TestA");
         ShaderMethodA.AddAttribute(KernelAttribute.Create(Vector3<uint>.One));
         IlGenerator il = ShaderMethodA.IlGenerator;
 
-        il.Emit(OpCode.LoadFloat32, 0u, ValueA);
+        il.Emit(OpCode.LoadFloat32, 0u, ValueAA);
+        il.Emit(OpCode.LoadFloat32, 1u, ValueAB);
         il.Emit(OpCode.Return);
 
         // Method B.
@@ -41,21 +47,26 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
         ShaderMethodB.AddAttribute(KernelAttribute.Create(Vector3<uint>.One));
         il = ShaderMethodB.IlGenerator;
 
-        il.Emit(OpCode.LoadFloat32, 0u, ValueB);
+        il.Emit(OpCode.LoadFloat32, 0u, ValueBA);
+        il.Emit(OpCode.LoadFloat32, 1u, ValueBB);
         il.Emit(OpCode.Return);
     }
 
     [Fact]
     public void Clone() {
         float[] readData = new float[1];
+        float[] readDataB = new float[1];
 
         foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             // Create original shader.
-            GraphicsHostBuffer<float> bufferA =
+            GraphicsHostBuffer<float> bufferAA =
+               new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
+            GraphicsHostBuffer<float> bufferAB =
                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
 
             ComputeShader shaderA = new ComputeShader(device, ShaderType);
-            shaderA.GetProperty(ShaderBuffer)!.SetBuffer(bufferA);
+            shaderA.GetProperty(ShaderBufferA)!.SetBuffer(bufferAA);
+            shaderA.GetProperty(ShaderBufferB)!.SetBuffer(bufferAB);
 
             GraphicsCommandBuffer commandBuffer = Fixture.GetCommandBuffer(device);
             commandBuffer.Dispatch(shaderA.GetKernel(ShaderMethodA)!, Vector3<uint>.One);
@@ -63,8 +74,11 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
             commandBuffer.Clear();
 
             // Assert.
-            bufferA.GetData(readData);
-            Assert.Equal(new float[] { ValueA }, readData);
+            bufferAA.GetData(readData);
+            bufferAB.GetData(readDataB);
+            Assert.Equal(new float[] { ValueAA }, readData);
+            bufferAB.GetData(readData);
+            Assert.Equal(new float[] { ValueAB }, readData);
 
             // Clone.
             ComputeShader shaderB = shaderA.Clone();
@@ -78,13 +92,19 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
             commandBuffer.Clear();
 
             // Assert.
-            bufferA.GetData(readData);
-            Assert.Equal(new float[] { ValueA }, readData);
+            bufferAA.GetData(readData);
+            Assert.Equal(new float[] { ValueAA }, readData);
+            bufferAB.GetData(readData);
+            Assert.Equal(new float[] { ValueAB }, readData);
 
             // Dispatch with setting properties.
-            GraphicsHostBuffer<float> bufferB =
+            GraphicsHostBuffer<float> bufferBA =
                 new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
-            shaderB.GetProperty(ShaderBuffer)!.SetBuffer(bufferB);
+            GraphicsHostBuffer<float> bufferBB =
+                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
+
+            shaderB.GetProperty(ShaderBufferA)!.SetBuffer(bufferBA);
+            shaderB.GetProperty(ShaderBufferB)!.SetBuffer(bufferBB);
 
             commandBuffer.Dispatch(shaderA.GetKernel(ShaderMethodA)!, Vector3<uint>.One);
             commandBuffer.Dispatch(shaderB.GetKernel(ShaderMethodB)!, Vector3<uint>.One);
@@ -92,10 +112,14 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
             commandBuffer.Clear();
 
             // Assert.
-            bufferA.GetData(readData);
-            Assert.Equal(new float[] { ValueA }, readData);
-            bufferB.GetData(readData);
-            Assert.Equal(new float[] { ValueB }, readData);
+            bufferAA.GetData(readData);
+            Assert.Equal(new float[] { ValueAA }, readData);
+            bufferAB.GetData(readData);
+            Assert.Equal(new float[] { ValueAB }, readData);
+            bufferBA.GetData(readData);
+            Assert.Equal(new float[] { ValueBA }, readData);
+            bufferBB.GetData(readData);
+            Assert.Equal(new float[] { ValueBB }, readData);
         }
     }
 

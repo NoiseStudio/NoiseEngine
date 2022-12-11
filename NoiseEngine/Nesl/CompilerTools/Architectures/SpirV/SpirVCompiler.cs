@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Collections;
+using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
@@ -7,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,6 +24,8 @@ internal class SpirVCompiler {
         new ConcurrentDictionary<NeslMethod, Lazy<SpirVFunction>>();
     private readonly ConcurrentDictionary<object, Lazy<SpirVId>> consts =
         new ConcurrentDictionary<object, Lazy<SpirVId>>();
+    private readonly ConcurrentDictionary<uint, Lazy<SpirVDescriptorSet>> descriptorSets =
+        new ConcurrentDictionary<uint, Lazy<SpirVDescriptorSet>>();
 
     private readonly ConcurrentBag<SpirVVariable> allVariables = new ConcurrentBag<SpirVVariable>();
 
@@ -81,6 +85,10 @@ internal class SpirVCompiler {
             }
             return id;
         })).Value;
+    }
+
+    internal SpirVDescriptorSet GetDescriptorSet(uint index) {
+        return descriptorSets.GetOrAdd(index, _ => new Lazy<SpirVDescriptorSet>(() => new SpirVDescriptorSet())).Value;
     }
 
     internal void AddVariable(SpirVVariable variable) {
@@ -165,7 +173,10 @@ internal class SpirVCompiler {
                     Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
                     break;
                 case ExecutionModel.GLCompute:
-                    SpirVLiteral literal = 1u.ToSpirVLiteral() + 1u.ToSpirVLiteral() + 1u.ToSpirVLiteral();
+                    entryPoint.Method.Attributes.TryCastAnyAttribute(out KernelAttribute? k);
+                    Vector3<uint> size = k!.LocalSize;
+
+                    SpirVLiteral literal = size.X.ToSpirVLiteral() + size.Y.ToSpirVLiteral() + size.Z.ToSpirVLiteral();
                     Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.LocalSize, literal);
                     break;
                 default:
@@ -188,6 +199,10 @@ internal class SpirVCompiler {
         BinaryPrimitives.WriteUInt32LittleEndian(generator.Writer.AsSpan(12), GetNextId().RawId);
 
         ResultBuilder.Code = generator.Writer.ToArray();
+
+        // Set bindings.
+        foreach ((NeslField field, Lazy<SpirVVariable> variable) in variables)
+            ResultBuilder.Bindings.Add(field, variable.Value.Binding);
     }
 
     /// <summary>

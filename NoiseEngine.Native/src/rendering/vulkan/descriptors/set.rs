@@ -22,7 +22,10 @@ impl<'init: 'setl, 'setl> DescriptorSet<'init> {
     pub fn new(layout: &'setl DescriptorSetLayout<'init>) -> Result<Self, VulkanUniversalError> {
         let initialized = layout.initialized();
 
-        let pool = initialized.pool().get_descriptor_pool()?;
+        let pool = initialized.pool().get_descriptor_pool(
+            layout.pool_sizes()
+        )?;
+
         let allocate_info = vk::DescriptorSetAllocateInfo {
             s_type: vk::StructureType::DESCRIPTOR_SET_ALLOCATE_INFO,
             p_next: ptr::null(),

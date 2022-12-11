@@ -73,7 +73,7 @@ public class GraphicsCommandBufferTest : GraphicsTestEnvironment {
         NeslTypeBuilder shaderType = assembly.DefineType("Shader");
 
         NeslFieldBuilder buffer = shaderType.DefineField("buffer", BuiltInTypes.Float32);
-        buffer.AddAttribute(StaticAttribute.Create());
+        buffer.AddAttribute(UniformAttribute.Create());
 
         NeslMethodBuilder main = shaderType.DefineMethod("Main");
         main.AddAttribute(KernelAttribute.Create(Vector3<uint>.One));
