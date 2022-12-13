@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
+using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
@@ -47,12 +48,14 @@ internal class SpirVFunction {
 
         SpirVGenerator.Emit(SpirVOpCode.OpLabel, Compiler.GetNextId());
 
-        Compiler.Jit.CompileCode(NeslMethod.GetInstructions(), NeslMethod, SpirVGenerator);
+        new IlCompiler(Compiler, NeslMethod.GetInstructions(), NeslMethod, SpirVGenerator).Compile();
     }
 
     private SpirVType BeginFunctionFragment() {
         if (NeslMethod.ReturnType is not null) {
-            SpirVVariable variable = new SpirVVariable(Compiler, NeslMethod.ReturnType, StorageClass.Output);
+            SpirVVariable variable = new SpirVVariable(
+                Compiler, NeslMethod.ReturnType, StorageClass.Output, Compiler.TypesAndVariables
+            );
             Compiler.AddVariable(variable);
 
             lock (Compiler.Annotations) {
@@ -64,7 +67,9 @@ internal class SpirVFunction {
 
         uint location = 0;
         foreach (NeslType parameterType in NeslMethod.ParameterTypes) {
-            SpirVVariable variable = new SpirVVariable(Compiler, parameterType, StorageClass.Input);
+            SpirVVariable variable = new SpirVVariable(
+                Compiler, parameterType, StorageClass.Input, Compiler.TypesAndVariables
+            );
             Compiler.AddVariable(variable);
 
             lock (Compiler.Annotations) {

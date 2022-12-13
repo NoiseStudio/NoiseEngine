@@ -41,9 +41,7 @@ public class NeslTypeTest {
             genericType.DefineMethod(MethodName, null, Buffers.GetReadWriteBuffer(genericTypeParameter));
         IlGenerator il = genericMethod.IlGenerator;
 
-        il.Emit(OpCode.LoadArg, (byte)0);
-        il.Emit(OpCode.LoadUInt32, 0u, 0u);
-        il.Emit(OpCode.SetElement, genericTypeParameter);
+        il.Emit(OpCode.Load, 0u, 0u);
         il.Emit(OpCode.Return);
 
         // Construct final type.

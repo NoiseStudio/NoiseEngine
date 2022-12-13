@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Mathematics;
+using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
@@ -8,7 +9,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,7 +34,6 @@ internal class SpirVCompiler {
     internal IEnumerable<NeslEntryPoint> EntryPoints { get; }
 
     internal SpirVCompilationResultBuilder ResultBuilder { get; }
-    internal SpirVJit Jit { get; }
     internal SpirVBuiltInTypes BuiltInTypes { get; }
 
     internal SpirVGenerator Header { get; }
@@ -45,7 +44,6 @@ internal class SpirVCompiler {
         EntryPoints = entryPoints;
 
         ResultBuilder = new SpirVCompilationResultBuilder();
-        Jit = new SpirVJit(this);
         BuiltInTypes = new SpirVBuiltInTypes(this);
 
         Header = new SpirVGenerator(this);

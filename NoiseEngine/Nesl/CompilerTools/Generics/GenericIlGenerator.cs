@@ -19,7 +19,8 @@ internal static class GenericIlGenerator {
         foreach ((OpCode opCode, uint tailIndex) in container.GetRawInstructions()) {
             Instruction instruction = new Instruction(opCode, tailIndex, container);
 
-            switch (opCode) {
+            // TODO: implement.
+            /*switch (opCode) {
                 case OpCode.SetElement:
                     if (
                         genericMethod.Assembly.GetType(instruction.ReadUInt64()) is
@@ -33,7 +34,7 @@ internal static class GenericIlGenerator {
 
                     changes++;
                     break;
-            }
+            }*/
         }
 
         return changes == 0 ? genericMethod.GetIlContainer() : container;

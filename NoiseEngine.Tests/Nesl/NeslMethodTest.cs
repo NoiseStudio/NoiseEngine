@@ -21,7 +21,7 @@ public class NeslMethodTest {
         genericMethod.SetParameters(genericTypeParameter);
 
         IlGenerator il = genericMethod.IlGenerator;
-        il.Emit(OpCode.LoadArg, (byte)0);
+        il.Emit(OpCode.Load, 0u, 0u);
         il.Emit(OpCode.Return);
 
         // Construct final type.
@@ -54,7 +54,7 @@ public class NeslMethodTest {
         genericMethod.SetParameters(genericTypeParameter2, genericTypeParameter1);
 
         IlGenerator il = genericMethod.IlGenerator;
-        il.Emit(OpCode.LoadArg, (byte)0);
+        il.Emit(OpCode.Load, 0u, 0u);
         il.Emit(OpCode.Return);
 
         // Construct final type.
