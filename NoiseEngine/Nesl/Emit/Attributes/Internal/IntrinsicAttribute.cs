@@ -1,16 +1,16 @@
-﻿namespace NoiseEngine.Nesl.Emit.Attributes;
+﻿namespace NoiseEngine.Nesl.Emit.Attributes.Internal;
 
-public class ValueTypeAttribute : NeslAttribute {
+internal class IntrinsicAttribute : NeslAttribute {
 
-    private const string ExpectedFullName = nameof(ValueTypeAttribute);
-    private const AttributeTargets ExpectedTargets = AttributeTargets.Type;
+    private const string ExpectedFullName = nameof(IntrinsicAttribute);
+    private const AttributeTargets ExpectedTargets = AttributeTargets.Method;
 
     /// <summary>
-    /// Creates new <see cref="ValueTypeAttribute"/>.
+    /// Creates new <see cref="IntrinsicAttribute"/>.
     /// </summary>
-    /// <returns><see cref="ValueTypeAttribute"/> with given parameters.</returns>
-    public static ValueTypeAttribute Create() {
-        return new ValueTypeAttribute {
+    /// <returns><see cref="IntrinsicAttribute"/> with given parameters.</returns>
+    public static IntrinsicAttribute Create() {
+        return new IntrinsicAttribute {
             FullName = ExpectedFullName,
             Targets = ExpectedTargets,
         };

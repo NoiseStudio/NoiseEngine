@@ -155,6 +155,15 @@ internal class SpirVGenerator {
     }
 
     public void Emit(
+        SpirVOpCode opCode, SpirVId argument1, SpirVId argument2, SpirVId argument3
+    ) {
+        EmitWorker(opCode, 4, typeof(SpirVId), typeof(SpirVId), typeof(SpirVId));
+        Writer.WriteUInt32(argument1.RawId);
+        Writer.WriteUInt32(argument2.RawId);
+        Writer.WriteUInt32(argument3.RawId);
+    }
+
+    public void Emit(
         SpirVOpCode opCode, SpirVId argument1, SpirVId argument2, SpirVId argument3, ReadOnlySpan<SpirVId> argument4
     ) {
         EmitWorker(
