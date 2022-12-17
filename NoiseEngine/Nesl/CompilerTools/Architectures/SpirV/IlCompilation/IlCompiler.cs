@@ -56,6 +56,9 @@ internal class IlCompiler {
                 case OpCode.Load:
                     LoadOperations.Load(instruction);
                     break;
+                case OpCode.LoadUInt32:
+                    LoadOperations.LoadUInt32(instruction);
+                    break;
                 case OpCode.LoadFloat32:
                     LoadOperations.LoadFloat32(instruction);
                     break;

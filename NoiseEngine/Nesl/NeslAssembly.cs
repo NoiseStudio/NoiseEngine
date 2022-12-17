@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace NoiseEngine.Nesl;
 
@@ -14,13 +16,32 @@ public abstract class NeslAssembly {
     }
 
     /// <summary>
-    /// Finds <see cref="NeslType"/> with given <paramref name="fullName"/> in this <see cref="NeslAssembly"/>.
+    /// Finds <see cref="NeslType"/> with given <paramref name="fullName"/> in this
+    /// <see cref="NeslAssembly"/> and their dependencies.
     /// </summary>
     /// <param name="fullName">Full name of the searched <see cref="NeslType"/>.</param>
     /// <returns><see cref="NeslType"/> when type was found, <see langword="null"/> when not.</returns>
     public NeslType? GetType(string fullName) {
+        int index = fullName.IndexOf("::");
+        if (index == -1)
+            return GetTypeLocal(fullName);
+
+        ReadOnlySpan<char> assemblyName = fullName.AsSpan(0, index);
+        ReadOnlySpan<char> fullNameWithoutAssembly = fullName.Substring(index + 2);
+        if (assemblyName.SequenceEqual(Name))
+            return GetTypeLocal(fullNameWithoutAssembly);
+
+        foreach (NeslAssembly dependency in Dependencies) {
+            if (assemblyName.SequenceEqual(dependency.Name))
+                return dependency.GetTypeLocal(fullNameWithoutAssembly);
+        }
+
+        return null;
+    }
+
+    private NeslType? GetTypeLocal(ReadOnlySpan<char> fullNameWithoutAssembly) {
         foreach (NeslType type in Types) {
-            if (type.FullName == fullName)
+            if (fullNameWithoutAssembly.SequenceEqual(type.FullName))
                 return type;
         }
 

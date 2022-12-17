@@ -19,17 +19,50 @@ internal class SpirVBuiltInTypes {
     }
 
     public bool TryGetTypeByName(NeslType neslType, string name, [NotNullWhen(true)] out SpirVType? type) {
-        string[] args = name.Split('`');
+        // Split name.
+        List<string> args = new List<string>();
 
+        int squareBrackets = 0;
+        int index = 0;
+
+        for (int i = 0; i < name.Length + 1; i++) {
+            switch (i < name.Length ? name[i] : '`') {
+                case '[':
+                    squareBrackets++;
+                    break;
+                case ']':
+                    squareBrackets--;
+                    break;
+                case '`':
+                    if (squareBrackets != 0)
+                        break;
+
+                    if (name[index] == '[')
+                        args.Add(name.Substring(index + 1, i - 2 - index));
+                    else
+                        args.Add(name.Substring(index, i - index));
+
+                    index = i + 1;
+                    break;
+            }
+        }
+
+        // Find name.
         switch (args[0]) {
             case nameof(SpirVOpCode.OpTypeVoid):
                 type = GetOpTypeVoid();
+                return true;
+            case nameof(SpirVOpCode.OpTypeInt):
+                type = GetOpTypeInt(ulong.Parse(args[1]), uint.Parse(args[2]) == 1);
                 return true;
             case nameof(SpirVOpCode.OpTypeFloat):
                 type = GetOpTypeFloat(ulong.Parse(args[1]));
                 return true;
             case nameof(SpirVOpCode.OpTypeVector):
                 type = GetOpTypeVector(neslType.Assembly.GetType(args[1])!, uint.Parse(args[2]));
+                return true;
+            case "OpTypeArray":
+                type = GetOpTypeRuntimeArray(neslType.Assembly.GetType(args[1])!);
                 return true;
             default:
                 type = null;
@@ -83,6 +116,21 @@ internal class SpirVBuiltInTypes {
                     return new SpirVType(Compiler, id);
                 }
             })).Value;
+    }
+
+    public SpirVType GetOpTypeRuntimeArray(NeslType elementType) {
+        return types.GetOrAdd(new object[] { SpirVOpCode.OpTypeRuntimeArray, elementType },
+            _ => new Lazy<SpirVType>(() => {
+                lock (Compiler.TypesAndVariables) {
+                    SpirVId id = Compiler.GetNextId();
+
+                    Compiler.TypesAndVariables.Emit(
+                        SpirVOpCode.OpTypeRuntimeArray, id, Compiler.GetSpirVType(elementType).Id
+                    );
+
+                    return new SpirVType(Compiler, id);
+                }
+        })).Value;
     }
 
     public SpirVType GetOpTypePointer(StorageClass storageClass, SpirVType type) {

@@ -69,17 +69,7 @@ public class PlatformDependentTypeRepresentationAttribute : NeslAttribute {
 
         foreach (NeslGenericTypeParameter genericTypeParameter in targetTypes.Keys) {
             NeslType type = targetTypes[genericTypeParameter];
-
-            PlatformDependentTypeRepresentationAttribute? b = type.Attributes
-                .OfType<PlatformDependentTypeRepresentationAttribute>().FirstOrDefault();
-
-            string name;
-            if (b is null)
-                name = type.Name;
-            else
-                name = b.SpirVTargetName ?? type.Name;
-
-            builder.Replace($"{{{genericTypeParameter.Name}}}", name);
+            builder.Replace($"{{{genericTypeParameter.Name}}}", $"[{type.FullNameWithAssembly}]");
         }
 
         if (builder.Equals(targetName))

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Emit.Attributes;
+using System;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
@@ -16,10 +18,13 @@ internal class BranchOperations : IlCompilerOperation {
         for (int i = 0; i < parameters.Length; i++)
             parameterIds[i] = parameters[i].Id;
 
+        bool isStatic = method.Attributes.HasAnyAttribute(nameof(StaticAttribute));
+        StorageClass? objectStorageClass = isStatic ? null : parameters[0].StorageClass;
+
         SpirVId id = Compiler.GetNextId();
         Generator.Emit(
             SpirVOpCode.OpFunctionCall, Compiler.GetSpirVType(method.ReturnType).Id, id,
-            Compiler.GetSpirVFunction(method).Id, parameterIds
+            Compiler.GetSpirVFunction(method, objectStorageClass).Id, parameterIds
         );
 
         if (result is not null)

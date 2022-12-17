@@ -22,6 +22,8 @@ internal enum SpirVOpCode : ushort {
     OpTypeFloat = 22,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral))]
     OpTypeVector = 23,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId))]
+    OpTypeRuntimeArray = 29,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId[]))]
     OpTypeStruct = 30,
     [OpCodeValidation(typeof(SpirVId), typeof(uint), typeof(SpirVId))]

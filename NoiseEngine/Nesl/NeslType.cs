@@ -27,6 +27,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
     public NeslAssembly Assembly { get; }
     public string FullName { get; }
+    public string FullNameWithAssembly => $"{Assembly.Name}::{FullName}";
 
     public bool IsGeneric => GenericTypeParameters.Any();
     public bool IsClass => !IsValueType;

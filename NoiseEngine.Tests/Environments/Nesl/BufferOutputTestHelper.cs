@@ -31,7 +31,7 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
 
         shaderType = TestEmitHelper.NewType();
 
-        shaderOutput = shaderType.DefineField("Output", neslType);
+        shaderOutput = shaderType.DefineField("Output", Buffers.GetReadWriteBuffer(neslType));
         shaderOutput.AddAttribute(UniformAttribute.Create());
     }
 

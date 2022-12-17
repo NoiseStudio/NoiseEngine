@@ -22,6 +22,10 @@ internal class LoadOperations : IlCompilerOperation {
         LoadConst(result, id);
     }
 
+    public void LoadUInt32(Instruction instruction) {
+        LoadConst(instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!, Compiler.GetConst(instruction.ReadUInt32()));
+    }
+
     public void LoadFloat32(Instruction instruction) {
         LoadConst(instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!, Compiler.GetConst(instruction.ReadFloat32()));
     }

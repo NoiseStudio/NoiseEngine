@@ -16,6 +16,8 @@ public enum OpCode : ushort {
     // Load operations.
     [OpCodeValidation(typeof(uint), typeof(uint))]
     Load,
+    [OpCodeValidation(typeof(uint), typeof(uint))]
+    LoadUInt32,
     [OpCodeValidation(typeof(uint), typeof(float))]
     LoadFloat32
 }
