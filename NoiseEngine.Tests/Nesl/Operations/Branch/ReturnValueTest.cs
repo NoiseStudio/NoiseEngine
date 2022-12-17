@@ -18,10 +18,11 @@ public class ReturnValueTest : NeslTestEnvironment {
     public void ReturnValueUniform() {
         const float Value = 730.6435f;
 
-        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>();
+        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>(true);
 
         // Get method.
         NeslMethodBuilder get = helper.DefineMethod(BuiltInTypes.Float32);
+        get.AddAttribute(StaticAttribute.Create());
         IlGenerator il = get.IlGenerator;
 
         il.Emit(OpCode.ReturnValue, 0u);
@@ -44,10 +45,11 @@ public class ReturnValueTest : NeslTestEnvironment {
     public void ReturnValueFunction() {
         const float Value = 0.123456789f;
 
-        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>();
+        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>(true);
 
         // Get method.
         NeslMethodBuilder get = helper.DefineMethod(BuiltInTypes.Float32);
+        get.AddAttribute(StaticAttribute.Create());
         IlGenerator il = get.IlGenerator;
 
         il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);

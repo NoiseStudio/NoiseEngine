@@ -31,6 +31,12 @@ internal static class Buffers {
         );
         indexerGet.AddAttribute(IntrinsicAttribute.Create());
 
+        // Indexer set.
+        NeslMethodBuilder indexerSet = type.DefineMethod(
+            NeslOperators.IndexerSet, null, BuiltInTypes.UInt32, genericTypeParameter
+        );
+        indexerSet.AddAttribute(IntrinsicAttribute.Create());
+
         return type;
     }
 

@@ -17,6 +17,9 @@ internal class ReadWriteBuffer : IntrinsicsContainer {
             case NeslOperators.IndexerGet:
                 IndexerGet();
                 break;
+            case NeslOperators.IndexerSet:
+                IndexerSet();
+                break;
             default:
                 throw NewUnableFindDefinitionException();
         }
@@ -45,6 +48,16 @@ internal class ReadWriteBuffer : IntrinsicsContainer {
         SpirVId result = Compiler.GetNextId();
         Generator.Emit(SpirVOpCode.OpLoad, Compiler.GetSpirVType(NeslMethod.ReturnType).Id, result, accessChain);
         Generator.Emit(SpirVOpCode.OpReturnValue, result);
+    }
+
+    private void IndexerSet() {
+        SpirVId value = Compiler.GetNextId();
+        Generator.Emit(SpirVOpCode.OpLoad, Compiler.GetSpirVType(Parameters[2].NeslType).Id, value, Parameters[2].Id);
+
+        SpirVId accessChain = GetAccessChainFromIndex();
+        Generator.Emit(SpirVOpCode.OpStore, accessChain, value);
+
+        Generator.Emit(SpirVOpCode.OpReturn);
     }
 
 }

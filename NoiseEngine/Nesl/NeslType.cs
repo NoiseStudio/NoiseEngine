@@ -184,4 +184,15 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
     internal abstract NeslField GetField(uint localFieldId);
 
+    internal ulong GetSize() {
+        if (Attributes.TryCastAnyAttribute(out SizeAttribute? attribute))
+            return attribute.Size;
+
+        ulong size = 0;
+        foreach (NeslField field in Fields)
+            size += field.FieldType.GetSize();
+
+        return size;
+    }
+
 }

@@ -121,6 +121,7 @@ internal class SpirVBuiltInTypes {
     public SpirVType GetOpTypeRuntimeArray(NeslType elementType) {
         return types.GetOrAdd(new object[] { SpirVOpCode.OpTypeRuntimeArray, elementType },
             _ => new Lazy<SpirVType>(() => {
+                SpirVType array;
                 lock (Compiler.TypesAndVariables) {
                     SpirVId id = Compiler.GetNextId();
 
@@ -128,8 +129,17 @@ internal class SpirVBuiltInTypes {
                         SpirVOpCode.OpTypeRuntimeArray, id, Compiler.GetSpirVType(elementType).Id
                     );
 
-                    return new SpirVType(Compiler, id);
+                    array = new SpirVType(Compiler, id);
                 }
+
+                lock (Compiler.Annotations) {
+                    Compiler.Annotations.Emit(
+                        SpirVOpCode.OpDecorate, array.Id, (uint)Decoration.ArrayStride,
+                        checked((uint)(elementType.GetSize() / 8)).ToSpirVLiteral()
+                    );
+                }
+
+                return array;
         })).Value;
     }
 

@@ -18,10 +18,11 @@ public class CallTest : NeslTestEnvironment {
     public void CallWithArguments() {
         const float Value = 7.7f;
 
-        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>();
+        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>(true);
 
         // Set method.
         NeslMethodBuilder set = helper.DefineMethod(null, BuiltInTypes.Float32);
+        set.AddAttribute(StaticAttribute.Create());
         IlGenerator il = set.IlGenerator;
 
         il.Emit(OpCode.Load, 0u, 1u);
@@ -45,10 +46,11 @@ public class CallTest : NeslTestEnvironment {
     public void CallWithoutArguments() {
         const float Value = 371.1667f;
 
-        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>();
+        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>(true);
 
         // Set method.
         NeslMethodBuilder set = helper.DefineMethod();
+        set.AddAttribute(StaticAttribute.Create());
         IlGenerator il = set.IlGenerator;
 
         il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);

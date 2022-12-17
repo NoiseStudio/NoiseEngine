@@ -17,7 +17,7 @@ public class LoadOperationsTest : NeslTestEnvironment {
     public void Load() {
         const float Value = 0.69201f;
 
-        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>();
+        BufferOutputTestHelper<float> helper = CreateBufferOutputTestHelper<float>(true);
 
         NeslMethodBuilder main = helper.DefineMethod();
         main.AddAttribute(KernelAttribute.Create(Vector3<uint>.One));

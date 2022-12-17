@@ -19,7 +19,7 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
     private readonly NeslTypeBuilder shaderType;
     private readonly NeslFieldBuilder shaderOutput;
 
-    internal BufferOutputTestHelper(ApplicationFixture fixture) {
+    internal BufferOutputTestHelper(ApplicationFixture fixture, bool singleOutput) {
         this.fixture = fixture;
 
         if (typeof(T) == typeof(float))
@@ -31,7 +31,7 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
 
         shaderType = TestEmitHelper.NewType();
 
-        shaderOutput = shaderType.DefineField("Output", Buffers.GetReadWriteBuffer(neslType));
+        shaderOutput = shaderType.DefineField("Output", singleOutput ? neslType : Buffers.GetReadWriteBuffer(neslType));
         shaderOutput.AddAttribute(UniformAttribute.Create());
     }
 
