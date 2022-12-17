@@ -11,18 +11,23 @@ internal class IlCompiler {
     public SpirVCompiler Compiler { get; }
     public NeslMethod NeslMethod { get; }
     public SpirVGenerator Generator { get; }
+    public IReadOnlyList<SpirVVariable> Parameters { get; }
 
+    public BranchOperations BranchOperations { get; }
     public DefOperations DefOperations { get; }
     public LoadOperations LoadOperations { get; }
 
     public IlCompiler(
-        SpirVCompiler compiler, IEnumerable<Instruction> instructions, NeslMethod neslMethod, SpirVGenerator generator
+        SpirVCompiler compiler, IEnumerable<Instruction> instructions, NeslMethod neslMethod, SpirVGenerator generator,
+        IReadOnlyList<SpirVVariable> parameters
     ) {
         Compiler = compiler;
         this.instructions = instructions;
         NeslMethod = neslMethod;
         Generator = generator;
+        Parameters = parameters;
 
+        BranchOperations = new BranchOperations(this);
         DefOperations = new DefOperations(this);
         LoadOperations = new LoadOperations(this);
     }
@@ -31,19 +36,25 @@ internal class IlCompiler {
         foreach (Instruction instruction in instructions) {
             switch (instruction.OpCode) {
 
+                // Branch operations.
+                case OpCode.Call:
+                    BranchOperations.Call(instruction);
+                    break;
+                case OpCode.Return:
+                    BranchOperations.Return();
+                    break;
+
+                // Def operations.
                 case OpCode.DefVariable:
                     DefOperations.DefVariable(instruction);
                     break;
 
+                // Load operations.
                 case OpCode.Load:
                     LoadOperations.Load(instruction);
                     break;
                 case OpCode.LoadFloat32:
                     LoadOperations.LoadFloat32(instruction);
-                    break;
-
-                case OpCode.Return:
-                    Generator.Emit(SpirVOpCode.OpReturn);
                     break;
 
                 default:

@@ -46,9 +46,21 @@ internal class SpirVFunction {
         // TODO: implement function control.
         SpirVGenerator.Emit(SpirVOpCode.OpFunction, returnType.Id, Id, 0, functionType.Id);
 
+        // Parameters.
+        SpirVVariable[] parameters = new SpirVVariable[NeslMethod.ParameterTypes.Count];
+        for (int i = 0; i < parameters.Length; i++) {
+            SpirVId id = Compiler.GetNextId();
+            NeslType neslType = NeslMethod.ParameterTypes[i];
+            SpirVType type = Compiler.GetSpirVType(neslType);
+
+            SpirVGenerator.Emit(SpirVOpCode.OpFunctionParameter, type.Id, id);
+            parameters[i] = SpirVVariable.CreateFromParameter(Compiler, neslType, id);
+        }
+
+        // Label and code.
         SpirVGenerator.Emit(SpirVOpCode.OpLabel, Compiler.GetNextId());
 
-        new IlCompiler(Compiler, NeslMethod.GetInstructions(), NeslMethod, SpirVGenerator).Compile();
+        new IlCompiler(Compiler, NeslMethod.GetInstructions(), NeslMethod, SpirVGenerator, parameters).Compile();
     }
 
     private SpirVType BeginFunctionFragment() {

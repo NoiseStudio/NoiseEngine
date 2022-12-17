@@ -39,6 +39,17 @@ internal class SpirVVariable {
         this(compiler, neslField.FieldType, GetStorageClass(neslField), compiler.TypesAndVariables) {
     }
 
+    private SpirVVariable(SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVId id) {
+        Compiler = compiler;
+        NeslType = neslType;
+        StorageClass = storageClass;
+        Id = id;
+    }
+
+    public static SpirVVariable CreateFromParameter(SpirVCompiler compiler, NeslType neslType, SpirVId id) {
+        return new SpirVVariable(compiler, neslType, StorageClass.Function, id);
+    }
+
     private static StorageClass GetStorageClass(NeslField neslField) {
         if (neslField.Attributes.HasAnyAttribute("InAttribute"))
             return StorageClass.Input;

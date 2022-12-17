@@ -14,7 +14,7 @@ public class LoadOperationsTest : NeslTestEnvironment {
     public void Load() {
         const float Value = 0.69201f;
 
-        AssertFloat32BufferOutput(il => {
+        CreateBufferOutputTestHelper<float>().Assert(il => {
             il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);
             il.Emit(OpCode.LoadFloat32, 1u, Value);
             il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);
