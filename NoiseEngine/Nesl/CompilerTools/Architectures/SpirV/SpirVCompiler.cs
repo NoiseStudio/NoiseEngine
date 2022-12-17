@@ -161,7 +161,9 @@ internal class SpirVCompiler {
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,
                 function.Id, entryPoint.Method.Guid.ToString().ToSpirVLiteral(),
-                allVariables.OrderBy(x => x.StorageClass).Select(x => x.Id).ToArray()
+                allVariables
+                    .Where(x => x.StorageClass == StorageClass.Input || x.StorageClass == StorageClass.Output)
+                    .OrderBy(x => x.StorageClass).Select(x => x.Id).ToArray()
             );
 
             // TODO: add support for another execution modes.

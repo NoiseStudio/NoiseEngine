@@ -96,17 +96,22 @@ internal class SpirVBuiltInTypes {
     }
 
     public SpirVType GetOpTypeFunction(SpirVType returnType, params SpirVType[] parameters) {
-        List<object> objects = new List<object> {
-            SpirVOpCode.OpTypeFunction, returnType
-        };
+        object[] objects = new object[2 + parameters.Length];
 
-        foreach (SpirVType type in parameters)
-            throw new NotImplementedException(); //objects.Add(id);
+        objects[0] = SpirVOpCode.OpTypeFunction;
+        objects[1] = returnType;
 
-        return types.GetOrAdd(objects.ToArray(), _ => new Lazy<SpirVType>(() => {
+        for (int i = 0; i < parameters.Length; i++)
+            objects[2 + i] = parameters[i];
+
+        return types.GetOrAdd(objects, _ => new Lazy<SpirVType>(() => {
             lock (Compiler.TypesAndVariables) {
+                Span<SpirVId> parameterIds = stackalloc SpirVId[parameters.Length];
+                for (int i = 0; i < parameterIds.Length; i++)
+                    parameterIds[i] = parameters[i].Id;
+
                 SpirVId id = Compiler.GetNextId();
-                Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypeFunction, id, returnType.Id);
+                Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypeFunction, id, returnType.Id, parameterIds);
                 return new SpirVType(Compiler, id);
             }
         })).Value;

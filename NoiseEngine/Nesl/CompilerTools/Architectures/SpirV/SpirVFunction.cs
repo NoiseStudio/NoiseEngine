@@ -41,20 +41,25 @@ internal class SpirVFunction {
             returnType = Compiler.GetSpirVType(NeslMethod.ReturnType);
         }
 
-        SpirVType functionType = Compiler.BuiltInTypes.GetOpTypeFunction(returnType);
+        // Create function type.
+        SpirVType[] typeFunctionParameters = new SpirVType[NeslMethod.ParameterTypes.Count];
+        for (int i = 0; i < typeFunctionParameters.Length; i++) {
+            typeFunctionParameters[i] = Compiler.BuiltInTypes.GetOpTypePointer(
+                StorageClass.Function, Compiler.GetSpirVType(NeslMethod.ParameterTypes[i])
+            );
+        }
+
+        SpirVType functionType = Compiler.BuiltInTypes.GetOpTypeFunction(returnType, typeFunctionParameters);
 
         // TODO: implement function control.
         SpirVGenerator.Emit(SpirVOpCode.OpFunction, returnType.Id, Id, 0, functionType.Id);
 
-        // Parameters.
+        // Parameter variables.
         SpirVVariable[] parameters = new SpirVVariable[NeslMethod.ParameterTypes.Count];
         for (int i = 0; i < parameters.Length; i++) {
             SpirVId id = Compiler.GetNextId();
-            NeslType neslType = NeslMethod.ParameterTypes[i];
-            SpirVType type = Compiler.GetSpirVType(neslType);
-
-            SpirVGenerator.Emit(SpirVOpCode.OpFunctionParameter, type.Id, id);
-            parameters[i] = SpirVVariable.CreateFromParameter(Compiler, neslType, id);
+            SpirVGenerator.Emit(SpirVOpCode.OpFunctionParameter, typeFunctionParameters[i].Id, id);
+            parameters[i] = SpirVVariable.CreateFromParameter(Compiler, NeslMethod.ParameterTypes[i], id);
         }
 
         // Label and code.
