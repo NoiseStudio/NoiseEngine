@@ -6,6 +6,8 @@ public enum OpCode : ushort {
     Call,
     [OpCodeValidation]
     Return,
+    [OpCodeValidation(typeof(uint))]
+    ReturnValue,
 
     // Def operations.
     [OpCodeValidation(typeof(NeslType))]

@@ -16,14 +16,23 @@ internal class BranchOperations : IlCompilerOperation {
         for (int i = 0; i < parameters.Length; i++)
             parameterIds[i] = parameters[i].Id;
 
+        SpirVId id = Compiler.GetNextId();
         Generator.Emit(
-            SpirVOpCode.OpFunctionCall, Compiler.GetSpirVType(method.ReturnType).Id, result?.Id ?? Compiler.GetNextId(),
+            SpirVOpCode.OpFunctionCall, Compiler.GetSpirVType(method.ReturnType).Id, id,
             Compiler.GetSpirVFunction(method).Id, parameterIds
         );
+
+        if (result is not null)
+            Generator.Emit(SpirVOpCode.OpStore, result.GetAccess(Generator), id);
     }
 
     public void Return() {
         Generator.Emit(SpirVOpCode.OpReturn);
+    }
+
+    public void ReturnValue(Instruction instruction) {
+        SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+        Generator.Emit(SpirVOpCode.OpReturnValue, IlCompiler.LoadOperations.SpirVLoad(result));
     }
 
 }

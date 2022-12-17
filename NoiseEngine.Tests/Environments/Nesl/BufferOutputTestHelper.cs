@@ -8,6 +8,7 @@ using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Fixtures;
 using NoiseEngine.Tests.Nesl;
 using System;
+using System.Linq;
 
 namespace NoiseEngine.Tests.Environments.Nesl;
 
@@ -38,20 +39,17 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
         return shaderType.DefineMethod(Guid.NewGuid().ToString(), returnType, parameterTypes);
     }
 
-    public void Assert(Action<IlGenerator> entryPointEmitFactory, params T[] expectedValues) {
-        // Done shader.
-        NeslMethodBuilder shaderMethod = shaderType.DefineMethod("Main");
-        shaderMethod.AddAttribute(KernelAttribute.Create(Vector3<uint>.One));
-        IlGenerator il = shaderMethod.IlGenerator;
+    public void ExecuteAndAssert(T[]? initialValues, params T[] expectedValues) {
+        NeslMethod shaderMethod = shaderType.Methods.Single(x => x.Attributes.HasAnyAttribute(nameof(KernelAttribute)));
 
-        entryPointEmitFactory(il);
-
-        // Run.
         T[] read = new T[expectedValues.Length];
 
         foreach (GraphicsDevice device in fixture.GraphicsDevices) {
             GraphicsHostBuffer<T> buffer =
                new GraphicsHostBuffer<T>(device, GraphicsBufferUsage.Storage, (ulong)expectedValues.Length);
+
+            if (initialValues is not null)
+                buffer.SetData(initialValues);
 
             ComputeShader shader = new ComputeShader(device, shaderType);
             shader.GetProperty(shaderOutput)!.SetBuffer(buffer);
@@ -63,7 +61,7 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
 
             // Assert.
             buffer.GetData(read);
-            Xunit.Assert.Equal(expectedValues, read);
+            Assert.Equal(expectedValues, read);
         }
     }
 

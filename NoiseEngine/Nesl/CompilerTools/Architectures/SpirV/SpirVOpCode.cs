@@ -61,4 +61,6 @@ internal enum SpirVOpCode : ushort {
     OpLabel = 248,
     [OpCodeValidation]
     OpReturn = 253,
+    [OpCodeValidation(typeof(SpirVId))]
+    OpReturnValue = 254
 }

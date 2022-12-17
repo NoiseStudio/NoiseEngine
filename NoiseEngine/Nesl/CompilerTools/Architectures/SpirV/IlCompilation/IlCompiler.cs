@@ -43,6 +43,9 @@ internal class IlCompiler {
                 case OpCode.Return:
                     BranchOperations.Return();
                     break;
+                case OpCode.ReturnValue:
+                    BranchOperations.ReturnValue(instruction);
+                    break;
 
                 // Def operations.
                 case OpCode.DefVariable:

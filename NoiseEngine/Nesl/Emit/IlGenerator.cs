@@ -32,6 +32,16 @@ public class IlGenerator : IlContainer {
     /// </summary>
     /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
     /// <param name="argument1">First argument.</param>
+    public void Emit(OpCode opCode, uint argument1) {
+        EmitWorker(opCode, typeof(uint));
+        tail.WriteUInt32(argument1);
+    }
+
+    /// <summary>
+    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
+    /// </summary>
+    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
+    /// <param name="argument1">First argument.</param>
     /// <param name="argument2">Second argument.</param>
     public void Emit(OpCode opCode, uint argument1, uint argument2) {
         EmitWorker(opCode, typeof(uint), typeof(uint));

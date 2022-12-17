@@ -5,6 +5,14 @@ internal class LoadOperations : IlCompilerOperation {
     public LoadOperations(IlCompiler ilCompiler) : base(ilCompiler) {
     }
 
+    public SpirVId SpirVLoad(SpirVVariable variable) {
+        SpirVId id = Compiler.GetNextId();
+        Generator.Emit(
+            SpirVOpCode.OpLoad, Compiler.GetSpirVType(variable.NeslType).Id, id, variable.GetAccess(Generator)
+        );
+        return id;
+    }
+
     public void Load(Instruction instruction) {
         SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
         SpirVVariable value = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
