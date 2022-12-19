@@ -32,16 +32,6 @@ public class IlGenerator : IlContainer {
     /// </summary>
     /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
     /// <param name="argument1">First argument.</param>
-    public void Emit(OpCode opCode, byte argument1) {
-        EmitWorker(opCode, typeof(byte));
-        tail.WriteUInt8(argument1);
-    }
-
-    /// <summary>
-    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
-    /// </summary>
-    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
-    /// <param name="argument1">First argument.</param>
     public void Emit(OpCode opCode, uint argument1) {
         EmitWorker(opCode, typeof(uint));
         tail.WriteUInt32(argument1);
@@ -56,7 +46,7 @@ public class IlGenerator : IlContainer {
     public void Emit(OpCode opCode, uint argument1, uint argument2) {
         EmitWorker(opCode, typeof(uint), typeof(uint));
         tail.WriteUInt32(argument1);
-        tail.WriteUInt64(argument2);
+        tail.WriteUInt32(argument2);
     }
 
     /// <summary>
@@ -65,10 +55,12 @@ public class IlGenerator : IlContainer {
     /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
     /// <param name="argument1">First argument.</param>
     /// <param name="argument2">Second argument.</param>
-    public void Emit(OpCode opCode, uint argument1, ulong argument2) {
-        EmitWorker(opCode, typeof(uint), typeof(ulong));
+    /// <param name="argument3">Third argument.</param>
+    public void Emit(OpCode opCode, uint argument1, uint argument2, uint argument3) {
+        EmitWorker(opCode, typeof(uint), typeof(uint), typeof(uint));
         tail.WriteUInt32(argument1);
-        tail.WriteUInt64(argument2);
+        tail.WriteUInt32(argument2);
+        tail.WriteUInt32(argument3);
     }
 
     /// <summary>
@@ -89,30 +81,15 @@ public class IlGenerator : IlContainer {
     /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
     /// <param name="argument1">First argument.</param>
     /// <param name="argument2">Second argument.</param>
-    public void Emit(OpCode opCode, uint argument1, NeslField argument2) {
-        EmitWorker(opCode, typeof(uint), typeof(NeslField));
+    /// <param name="argument3">Third argument.</param>
+    public void Emit(OpCode opCode, uint argument1, NeslMethod argument2, ReadOnlySpan<uint> argument3) {
+        EmitWorker(opCode, typeof(uint), typeof(NeslMethod), typeof(uint[]));
         tail.WriteUInt32(argument1);
-        tail.WriteUInt64(method.Type.GetLocalFieldId(argument2));
-    }
+        tail.WriteUInt64(assembly.GetLocalMethodId(argument2));
 
-    /// <summary>
-    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
-    /// </summary>
-    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
-    /// <param name="argument1">First argument.</param>
-    public void Emit(OpCode opCode, ulong argument1) {
-        EmitWorker(opCode, typeof(ulong));
-        tail.WriteUInt64(argument1);
-    }
-
-    /// <summary>
-    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
-    /// </summary>
-    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
-    /// <param name="argument1">First argument.</param>
-    public void Emit(OpCode opCode, float argument1) {
-        EmitWorker(opCode, typeof(float));
-        tail.WriteFloat32(argument1);
+        tail.WriteUInt32((uint)argument3.Length);
+        foreach (uint element in argument3)
+            tail.WriteUInt32(element);
     }
 
     /// <summary>
@@ -123,50 +100,6 @@ public class IlGenerator : IlContainer {
     public void Emit(OpCode opCode, NeslType argument1) {
         EmitWorker(opCode, typeof(NeslType));
         tail.WriteUInt64(assembly.GetLocalTypeId(argument1));
-    }
-
-    /// <summary>
-    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
-    /// </summary>
-    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
-    /// <param name="argument1">First argument.</param>
-    /// <param name="argument2">Second argument.</param>
-    public void Emit(OpCode opCode, NeslType argument1, uint argument2) {
-        EmitWorker(opCode, typeof(NeslType), typeof(uint));
-        tail.WriteUInt64(assembly.GetLocalTypeId(argument1));
-        tail.WriteUInt32(argument2);
-    }
-
-    /// <summary>
-    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
-    /// </summary>
-    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
-    /// <param name="argument1">First argument.</param>
-    public void Emit(OpCode opCode, NeslField argument1) {
-        EmitWorker(opCode, typeof(NeslField));
-        tail.WriteUInt64(method.Type.GetLocalFieldId(argument1));
-    }
-
-    /// <summary>
-    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
-    /// </summary>
-    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
-    /// <param name="argument1">First argument.</param>
-    /// <param name="argument2">Second argument.</param>
-    public void Emit(OpCode opCode, NeslField argument1, uint argument2) {
-        EmitWorker(opCode, typeof(NeslField), typeof(uint));
-        tail.WriteUInt64(method.Type.GetLocalFieldId(argument1));
-        tail.WriteUInt32(argument2);
-    }
-
-    /// <summary>
-    /// Puts <paramref name="opCode"/> with given arguments to stream of instructions.
-    /// </summary>
-    /// <param name="opCode">The NESIL instruction <see cref="OpCode"/>.</param>>
-    /// <param name="argument1">First argument.</param>
-    public void Emit(OpCode opCode, NeslMethod argument1) {
-        EmitWorker(opCode, typeof(NeslMethod));
-        tail.WriteUInt64(assembly.GetLocalMethodId(argument1));
     }
 
     internal override ReadOnlySpan<byte> GetTail(int start) {

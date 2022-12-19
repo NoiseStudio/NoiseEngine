@@ -27,6 +27,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
     public NeslAssembly Assembly { get; }
     public string FullName { get; }
+    public string FullNameWithAssembly => $"{Assembly.Name}::{FullName}";
 
     public bool IsGeneric => GenericTypeParameters.Any();
     public bool IsClass => !IsValueType;
@@ -182,5 +183,18 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     }
 
     internal abstract NeslField GetField(uint localFieldId);
+
+    internal ulong GetSize() {
+        if (Attributes.TryCastAnyAttribute(out SizeAttribute? attribute))
+            return attribute.Size;
+
+        ulong size = 0;
+        foreach (NeslField field in Fields) {
+            if (!field.IsStatic)
+                size += field.FieldType.GetSize();
+        }
+
+        return size;
+    }
 
 }

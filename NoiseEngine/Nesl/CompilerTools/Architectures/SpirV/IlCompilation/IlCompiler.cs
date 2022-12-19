@@ -11,41 +11,75 @@ internal class IlCompiler {
     public SpirVCompiler Compiler { get; }
     public NeslMethod NeslMethod { get; }
     public SpirVGenerator Generator { get; }
+    public IReadOnlyList<SpirVVariable> Parameters { get; }
 
+    public BranchOperations BranchOperations { get; }
     public DefOperations DefOperations { get; }
     public LoadOperations LoadOperations { get; }
+    public LoadElementOperations LoadElementOperations { get; }
 
     public IlCompiler(
-        SpirVCompiler compiler, IEnumerable<Instruction> instructions, NeslMethod neslMethod, SpirVGenerator generator
+        SpirVCompiler compiler, IEnumerable<Instruction> instructions, NeslMethod neslMethod, SpirVGenerator generator,
+        IReadOnlyList<SpirVVariable> parameters
     ) {
         Compiler = compiler;
         this.instructions = instructions;
         NeslMethod = neslMethod;
         Generator = generator;
+        Parameters = parameters;
 
+        BranchOperations = new BranchOperations(this);
         DefOperations = new DefOperations(this);
         LoadOperations = new LoadOperations(this);
+        LoadElementOperations = new LoadElementOperations(this);
     }
 
     public void Compile() {
         foreach (Instruction instruction in instructions) {
             switch (instruction.OpCode) {
+                #region BranchOperations
+
+                case OpCode.Call:
+                    BranchOperations.Call(instruction);
+                    break;
+                case OpCode.Return:
+                    BranchOperations.Return();
+                    break;
+                case OpCode.ReturnValue:
+                    BranchOperations.ReturnValue(instruction);
+                    break;
+
+                #endregion
+                #region DefOperations
 
                 case OpCode.DefVariable:
                     DefOperations.DefVariable(instruction);
                     break;
 
+                #endregion
+                #region LoadOperations
+
                 case OpCode.Load:
                     LoadOperations.Load(instruction);
+                    break;
+                case OpCode.LoadUInt32:
+                    LoadOperations.LoadUInt32(instruction);
                     break;
                 case OpCode.LoadFloat32:
                     LoadOperations.LoadFloat32(instruction);
                     break;
 
-                case OpCode.Return:
-                    Generator.Emit(SpirVOpCode.OpReturn);
+                #endregion
+                #region LoadElementOperations
+
+                case OpCode.LoadElement:
+                    LoadElementOperations.LoadElement(instruction);
+                    break;
+                case OpCode.SetElement:
+                    LoadElementOperations.SetElement(instruction);
                     break;
 
+                #endregion
                 default:
                     throw new NotImplementedException();
             }
