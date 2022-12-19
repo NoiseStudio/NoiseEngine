@@ -16,6 +16,7 @@ internal class IlCompiler {
     public BranchOperations BranchOperations { get; }
     public DefOperations DefOperations { get; }
     public LoadOperations LoadOperations { get; }
+    public LoadElementOperations LoadElementOperations { get; }
 
     public IlCompiler(
         SpirVCompiler compiler, IEnumerable<Instruction> instructions, NeslMethod neslMethod, SpirVGenerator generator,
@@ -30,13 +31,14 @@ internal class IlCompiler {
         BranchOperations = new BranchOperations(this);
         DefOperations = new DefOperations(this);
         LoadOperations = new LoadOperations(this);
+        LoadElementOperations = new LoadElementOperations(this);
     }
 
     public void Compile() {
         foreach (Instruction instruction in instructions) {
             switch (instruction.OpCode) {
+                #region BranchOperations
 
-                // Branch operations.
                 case OpCode.Call:
                     BranchOperations.Call(instruction);
                     break;
@@ -47,12 +49,16 @@ internal class IlCompiler {
                     BranchOperations.ReturnValue(instruction);
                     break;
 
-                // Def operations.
+                #endregion
+                #region DefOperations
+
                 case OpCode.DefVariable:
                     DefOperations.DefVariable(instruction);
                     break;
 
-                // Load operations.
+                #endregion
+                #region LoadOperations
+
                 case OpCode.Load:
                     LoadOperations.Load(instruction);
                     break;
@@ -63,6 +69,17 @@ internal class IlCompiler {
                     LoadOperations.LoadFloat32(instruction);
                     break;
 
+                #endregion
+                #region LoadElementOperations
+
+                case OpCode.LoadElement:
+                    LoadElementOperations.LoadElement(instruction);
+                    break;
+                case OpCode.SetElement:
+                    LoadElementOperations.SetElement(instruction);
+                    break;
+
+                #endregion
                 default:
                     throw new NotImplementedException();
             }

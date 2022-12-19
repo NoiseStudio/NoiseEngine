@@ -1,22 +1,21 @@
 ﻿using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl.Default;
-using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Environments.Nesl;
 using NoiseEngine.Tests.Fixtures;
-using NoiseEngine.Nesl;
 using System;
 
-namespace NoiseEngine.Tests.Nesl.Intrinsics;
+namespace NoiseEngine.Tests.Nesl.Operations;
 
-public class ReadWriteBufferTest : NeslTestEnvironment {
+public class LoadElementOperationsTest : NeslTestEnvironment {
 
-    public ReadWriteBufferTest(ApplicationFixture fixture) : base(fixture) {
+    public LoadElementOperationsTest(ApplicationFixture fixture) : base(fixture) {
     }
 
     [Fact]
-    public void Indexer() {
+    public void LoadAndSetElement() {
         const float Value = 18.64f;
         const uint IndexInitial = 5;
         const uint IndexExpected = 2;
@@ -31,19 +30,12 @@ public class ReadWriteBufferTest : NeslTestEnvironment {
         il.Emit(OpCode.DefVariable, BuiltInTypes.UInt32);
         il.Emit(OpCode.LoadUInt32, 1u, IndexInitial);
         il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);
-        il.Emit(
-            OpCode.Call, 2u, Buffers.GetReadWriteBuffer(BuiltInTypes.Float32).GetMethod(NeslOperators.IndexerGet)!,
-            stackalloc uint[] { 0u, 1u }
-        );
+        il.Emit(OpCode.LoadElement, 2u, 0u, 1u);
 
         // Set.
         il.Emit(OpCode.DefVariable, BuiltInTypes.UInt32);
         il.Emit(OpCode.LoadUInt32, 3u, IndexExpected);
-        il.Emit(
-            OpCode.Call, uint.MaxValue,
-            Buffers.GetReadWriteBuffer(BuiltInTypes.Float32).GetMethod(NeslOperators.IndexerSet)!,
-            stackalloc uint[] { 0u, 3u, 2u }
-        );
+        il.Emit(OpCode.SetElement, 0u, 3u, 2u);
 
         il.Emit(OpCode.Return);
 

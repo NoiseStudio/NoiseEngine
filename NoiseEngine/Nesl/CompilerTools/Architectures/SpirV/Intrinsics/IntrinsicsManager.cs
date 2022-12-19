@@ -19,9 +19,10 @@ internal static class IntrinsicsManager {
         }
 
         switch (neslMethod.Type.FullName) {
-            case $"{DefaultAssembly}.{nameof(ReadWriteBuffer)}`1":
-                new ReadWriteBuffer(compiler,neslMethod, generator, parameters).Process();
-                break;
+            // TODO: Remove this. This temporarily shows how to use it.
+            // case $"{DefaultAssembly}.{nameof(ReadWriteBuffer)}`1":
+            //     new ReadWriteBuffer(compiler,neslMethod, generator, parameters).Process();
+            //     break;
             default:
                 throw new InvalidOperationException($"Unable to find given {nameof(IntrinsicAttribute)} definition.");
         }

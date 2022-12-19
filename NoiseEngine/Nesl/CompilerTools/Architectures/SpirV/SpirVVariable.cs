@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
+using System.Reflection;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -125,10 +126,7 @@ internal class SpirVVariable {
         );
 
         SpirVId id = Compiler.GetNextId();
-        generator.Emit(
-            SpirVOpCode.OpAccessChain, pointer.Id, id, Id,
-            new SpirVId[] { Compiler.GetConst(0) }
-        );
+        generator.Emit(SpirVOpCode.OpAccessChain, pointer.Id, id, Id, stackalloc SpirVId[] { Compiler.GetConst(0) });
 
         return id;
     }
