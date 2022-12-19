@@ -1,14 +1,12 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 
 internal class ReadWriteBuffer : IntrinsicsContainer {
 
     public ReadWriteBuffer(
-        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator,
-        IReadOnlyList<SpirVVariable> parameters
+        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator, IReadOnlyList<SpirVVariable> parameters
     ) : base(compiler, neslMethod, generator, parameters) {
     }
 
@@ -25,13 +23,11 @@ internal class ReadWriteBuffer : IntrinsicsContainer {
         }
     }
 
-    private SpirVId GetAccessChainFromIndex() {
+    private SpirVId GetAccessChainFromIndex(SpirVType elementType) {
         SpirVId index = Compiler.GetNextId();
         Generator.Emit(SpirVOpCode.OpLoad, Compiler.GetSpirVType(Parameters[1].NeslType).Id, index, Parameters[1].Id);
 
-        SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(
-            StorageClass.Uniform, Compiler.GetSpirVType(Parameters[0].NeslType)
-        );
+        SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(Parameters[0].StorageClass, elementType);
 
         SpirVId id = Compiler.GetNextId();
         Generator.Emit(
@@ -43,18 +39,21 @@ internal class ReadWriteBuffer : IntrinsicsContainer {
     }
 
     private void IndexerGet() {
-        SpirVId accessChain = GetAccessChainFromIndex();
+        SpirVType elementType = Compiler.GetSpirVType(NeslMethod.ReturnType);
+        SpirVId accessChain = GetAccessChainFromIndex(elementType);
 
         SpirVId result = Compiler.GetNextId();
-        Generator.Emit(SpirVOpCode.OpLoad, Compiler.GetSpirVType(NeslMethod.ReturnType).Id, result, accessChain);
+        Generator.Emit(SpirVOpCode.OpLoad, elementType.Id, result, accessChain);
         Generator.Emit(SpirVOpCode.OpReturnValue, result);
     }
 
     private void IndexerSet() {
-        SpirVId value = Compiler.GetNextId();
-        Generator.Emit(SpirVOpCode.OpLoad, Compiler.GetSpirVType(Parameters[2].NeslType).Id, value, Parameters[2].Id);
+        SpirVType elementType = Compiler.GetSpirVType(Parameters[2].NeslType);
 
-        SpirVId accessChain = GetAccessChainFromIndex();
+        SpirVId value = Compiler.GetNextId();
+        Generator.Emit(SpirVOpCode.OpLoad, elementType.Id, value, Parameters[2].Id);
+
+        SpirVId accessChain = GetAccessChainFromIndex(elementType);
         Generator.Emit(SpirVOpCode.OpStore, accessChain, value);
 
         Generator.Emit(SpirVOpCode.OpReturn);

@@ -3,6 +3,7 @@ using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
+using System.Reflection.Metadata.Ecma335;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -15,14 +16,14 @@ internal class SpirVFunction {
 
     public SpirVId Id { get; }
 
-    public SpirVFunction(SpirVCompiler compiler, NeslMethod neslMethod, StorageClass? objectStorageClass) {
+    public SpirVFunction(SpirVCompiler compiler, SpirVFunctionIdentifier identifier) {
         Compiler = compiler;
-        NeslMethod = neslMethod;
+        NeslMethod = identifier.NeslMethod;
 
         SpirVGenerator = new SpirVGenerator(Compiler);
         Id = Compiler.GetNextId();
 
-        BeginFunction(objectStorageClass);
+        BeginFunction(identifier);
     }
 
     internal void Construct(SpirVGenerator generator) {
@@ -30,7 +31,7 @@ internal class SpirVFunction {
         generator.Emit(SpirVOpCode.OpFunctionEnd);
     }
 
-    private void BeginFunction(StorageClass? objectStorageClass) {
+    private void BeginFunction(SpirVFunctionIdentifier identifier) {
         SpirVType returnType;
 
         if (Compiler.TryGetEntryPoint(NeslMethod, out NeslEntryPoint entryPoint)) {
@@ -44,39 +45,43 @@ internal class SpirVFunction {
         }
 
         // Create function type.
-        int addedIndex = objectStorageClass.HasValue ? 1 : 0;
-        SpirVType[] typeFunctionParameters = new SpirVType[NeslMethod.ParameterTypes.Count + addedIndex];
+        SpirVVariable[] parameters = new SpirVVariable[identifier.Parameters.Count];
+        SpirVVariable[] dynamicParameters = new SpirVVariable[identifier.DynamicParameters];
+        SpirVType[] typeFunctionParameterPointers = new SpirVType[identifier.DynamicParameters];
+        bool isStatic = identifier.IsStatic;
 
-        if (objectStorageClass.HasValue) {
-            SpirVType structure = Compiler.GetSpirVStruct(new SpirVType[] { Compiler.GetSpirVType(NeslMethod.Type) });
-            typeFunctionParameters[0] = Compiler.BuiltInTypes.GetOpTypePointer(objectStorageClass.Value, structure);
+        int j = 0;
+        for (int i = 0; i < parameters.Length; i++) {
+            SpirVVariable? parameter = identifier.Parameters[i];
+
+            if (parameter is null) {
+                NeslType neslType;
+                if (isStatic)
+                    neslType = NeslMethod.ParameterTypes[i];
+                else if (i == 0)
+                    neslType = NeslMethod.Type;
+                else
+                    neslType = NeslMethod.ParameterTypes[i - 1];
+
+                SpirVId id = Compiler.GetNextId();
+                parameter = SpirVVariable.CreateFromParameter(Compiler, neslType, id);
+
+                typeFunctionParameterPointers[j] = parameter.PointerType;
+                dynamicParameters[j] = parameter;
+                j++;
+            }
+
+            parameters[i] = parameter;
         }
 
-        for (int i = 0; i < NeslMethod.ParameterTypes.Count; i++) {
-            typeFunctionParameters[i + addedIndex] = Compiler.BuiltInTypes.GetOpTypePointer(
-                StorageClass.Function, Compiler.GetSpirVType(NeslMethod.ParameterTypes[i])
-            );
-        }
-
-        SpirVType functionType = Compiler.BuiltInTypes.GetOpTypeFunction(returnType, typeFunctionParameters);
+        SpirVType functionType = Compiler.BuiltInTypes.GetOpTypeFunction(returnType, typeFunctionParameterPointers);
 
         // TODO: implement function control.
         SpirVGenerator.Emit(SpirVOpCode.OpFunction, returnType.Id, Id, 0, functionType.Id);
 
-        // Parameter variables.
-        SpirVVariable[] parameters = new SpirVVariable[NeslMethod.ParameterTypes.Count + addedIndex];
-
-        if (objectStorageClass.HasValue) {
-            SpirVId id = Compiler.GetNextId();
-            SpirVGenerator.Emit(SpirVOpCode.OpFunctionParameter, typeFunctionParameters[0].Id, id);
-            parameters[0] = SpirVVariable.CreateFromParameter(Compiler, NeslMethod.Type, id);
-        }
-
-        for (int i = 0; i < NeslMethod.ParameterTypes.Count; i++) {
-            SpirVId id = Compiler.GetNextId();
-            SpirVGenerator.Emit(SpirVOpCode.OpFunctionParameter, typeFunctionParameters[i + addedIndex].Id, id);
-            parameters[i + addedIndex] = SpirVVariable.CreateFromParameter(Compiler, NeslMethod.ParameterTypes[i], id);
-        }
+        // Emit dynamic parameters.
+        foreach (SpirVVariable parameter in dynamicParameters)
+            SpirVGenerator.Emit(SpirVOpCode.OpFunctionParameter, parameter.PointerType.Id, parameter.Id);
 
         // Label and code.
         SpirVGenerator.Emit(SpirVOpCode.OpLabel, Compiler.GetNextId());

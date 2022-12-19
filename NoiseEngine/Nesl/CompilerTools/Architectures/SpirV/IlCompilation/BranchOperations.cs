@@ -1,6 +1,4 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
-using NoiseEngine.Nesl.Emit.Attributes;
-using System;
+﻿using System;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
@@ -14,17 +12,19 @@ internal class BranchOperations : IlCompilerOperation {
         NeslMethod method = Assembly.GetMethod(instruction.ReadUInt64());
         Span<SpirVVariable> parameters = instruction.ReadRangeSpirVVariable(IlCompiler, NeslMethod);
 
-        Span<SpirVId> parameterIds = stackalloc SpirVId[parameters.Length];
-        for (int i = 0; i < parameters.Length; i++)
-            parameterIds[i] = parameters[i].Id;
+        SpirVFunctionIdentifier identifier = new SpirVFunctionIdentifier(method, parameters);
+        Span<SpirVId> parameterIds = stackalloc SpirVId[identifier.DynamicParameters];
 
-        bool isStatic = method.Attributes.HasAnyAttribute(nameof(StaticAttribute));
-        StorageClass? objectStorageClass = isStatic ? null : parameters[0].StorageClass;
+        int i = 0;
+        for (int j = 0; j < parameters.Length; j++) {
+            if (identifier.Parameters[j] is null)
+                parameterIds[i++] = parameters[j].Id;
+        }
 
         SpirVId id = Compiler.GetNextId();
         Generator.Emit(
             SpirVOpCode.OpFunctionCall, Compiler.GetSpirVType(method.ReturnType).Id, id,
-            Compiler.GetSpirVFunction(method, objectStorageClass).Id, parameterIds
+            Compiler.GetSpirVFunction(identifier).Id, parameterIds
         );
 
         if (result is not null)

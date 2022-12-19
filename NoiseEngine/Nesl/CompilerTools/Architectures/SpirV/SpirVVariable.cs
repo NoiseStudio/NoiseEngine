@@ -11,6 +11,7 @@ internal class SpirVVariable {
     public StorageClass StorageClass { get; }
 
     public SpirVId Id { get; }
+    public SpirVType PointerType { get; }
     public uint Binding { get; }
 
     public SpirVVariable(
@@ -21,33 +22,46 @@ internal class SpirVVariable {
         StorageClass = storageClass;
 
         SpirVType type = Compiler.GetSpirVType(neslType);
+        SpirVVariableCreationOutput output;
 
         switch (storageClass) {
             case StorageClass.Uniform:
-                Id = CreateUniformStorage(generator, type, out uint binding);
+                output = CreateUniformStorage(generator, type, out uint binding);
                 Binding = binding;
                 break;
             case StorageClass.Function:
-                Id = CreateFunctionStorage(generator, type);
+                output = CreateFunctionStorage(generator, type);
                 break;
             default:
                 throw new NotImplementedException();
         }
+
+        Id = output.Id;
+        PointerType = output.PointerType;
     }
 
     public SpirVVariable(SpirVCompiler compiler, NeslField neslField) :
         this(compiler, neslField.FieldType, GetStorageClass(neslField), compiler.TypesAndVariables) {
     }
 
-    private SpirVVariable(SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVId id) {
+    private SpirVVariable(
+        SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVId id, SpirVType pointerType
+    ) {
         Compiler = compiler;
         NeslType = neslType;
         StorageClass = storageClass;
         Id = id;
+        PointerType = pointerType;
     }
 
-    public static SpirVVariable CreateFromParameter(SpirVCompiler compiler, NeslType neslType, SpirVId id) {
-        return new SpirVVariable(compiler, neslType, StorageClass.Function, id);
+    public static SpirVVariable CreateFromParameter(
+        SpirVCompiler compiler, NeslType neslType, SpirVId id
+    ) {
+        SpirVType pointerType = compiler.BuiltInTypes.GetOpTypePointer(
+            StorageClass.Function, compiler.GetSpirVType(neslType)
+        );
+
+        return new SpirVVariable(compiler, neslType, StorageClass.Function, id, pointerType);
     }
 
     private static StorageClass GetStorageClass(NeslField neslField) {
@@ -68,38 +82,41 @@ internal class SpirVVariable {
         };
     }
 
-    private SpirVId CreateVariableFromPointer(SpirVGenerator generator, SpirVType pointer) {
+    private SpirVId CreateVariableFromPointer(SpirVGenerator generator, SpirVType pointer, StorageClass storageClass) {
         SpirVId id = Compiler.GetNextId();
-        generator.Emit(SpirVOpCode.OpVariable, pointer.Id, id, (uint)StorageClass);
+        generator.Emit(SpirVOpCode.OpVariable, pointer.Id, id, (uint)storageClass);
         return id;
     }
 
-    private SpirVId CreateUniformStorage(SpirVGenerator generator, SpirVType type, out uint binding) {
-        SpirVType structure = Compiler.GetSpirVStruct(new SpirVType[] { type });
-        SpirVType structurePointer = Compiler.BuiltInTypes.GetOpTypePointer(StorageClass, structure);
+    private SpirVVariableCreationOutput CreateUniformStorage(
+        SpirVGenerator generator, SpirVType type, out uint binding
+    ) {
+        SpirVType content = Compiler.GetSpirVStruct(new SpirVType[] { type });
+        SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(StorageClass, content);
 
         SpirVId id;
         lock (generator)
-            id = CreateVariableFromPointer(generator, structurePointer);
+            id = CreateVariableFromPointer(generator, pointer, StorageClass);
 
         lock (Compiler.Annotations) {
             Compiler.Annotations.Emit(
-                SpirVOpCode.OpMemberDecorate, structure.Id, 0u.ToSpirVLiteral(), (uint)Decoration.Offset,
+                SpirVOpCode.OpMemberDecorate, content.Id, 0u.ToSpirVLiteral(), (uint)Decoration.Offset,
                 0u.ToSpirVLiteral()
             );
-            Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, structure.Id, (uint)Decoration.BufferBlock);
+            Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, content.Id, (uint)Decoration.BufferBlock);
             Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, id, (uint)Decoration.DescriptorSet, 0u.ToSpirVLiteral());
 
             binding = Compiler.GetDescriptorSet(0u).NextBinding();
             Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, id, (uint)Decoration.Binding, binding.ToSpirVLiteral());
         }
 
-        return id;
+        return new SpirVVariableCreationOutput(id, pointer);
     }
 
-    private SpirVId CreateFunctionStorage(SpirVGenerator generator, SpirVType type) {
+    private SpirVVariableCreationOutput CreateFunctionStorage(SpirVGenerator generator, SpirVType type) {
         SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(StorageClass, type);
-        return CreateVariableFromPointer(generator, pointer);
+        SpirVId id = CreateVariableFromPointer(generator, pointer, StorageClass);
+        return new SpirVVariableCreationOutput(id, pointer);
     }
 
     private SpirVId GetAccessUniformStorage(SpirVGenerator generator) {

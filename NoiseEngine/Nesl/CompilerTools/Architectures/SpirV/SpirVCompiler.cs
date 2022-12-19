@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Mathematics;
-using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
@@ -10,7 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -20,8 +18,8 @@ internal class SpirVCompiler {
         new ConcurrentDictionary<object, Lazy<SpirVType>>();
     private readonly ConcurrentDictionary<NeslField, Lazy<SpirVVariable>> variables =
         new ConcurrentDictionary<NeslField, Lazy<SpirVVariable>>();
-    private readonly ConcurrentDictionary<(NeslMethod, StorageClass?), Lazy<SpirVFunction>> functions =
-        new ConcurrentDictionary<(NeslMethod, StorageClass?), Lazy<SpirVFunction>>();
+    private readonly ConcurrentDictionary<SpirVFunctionIdentifier, Lazy<SpirVFunction>> functions =
+        new ConcurrentDictionary<SpirVFunctionIdentifier, Lazy<SpirVFunction>>();
     private readonly ConcurrentDictionary<object, Lazy<SpirVId>> consts =
         new ConcurrentDictionary<object, Lazy<SpirVId>>();
     private readonly ConcurrentDictionary<uint, Lazy<SpirVDescriptorSet>> descriptorSets =
@@ -149,9 +147,10 @@ internal class SpirVCompiler {
         })).Value;
     }
 
-    internal SpirVFunction GetSpirVFunction(NeslMethod neslMethod, StorageClass? objectStorageClass) {
-        return functions.GetOrAdd((neslMethod, objectStorageClass),
-            _ => new Lazy<SpirVFunction>(() => new SpirVFunction(this, neslMethod, objectStorageClass))).Value;
+    internal SpirVFunction GetSpirVFunction(SpirVFunctionIdentifier identifier) {
+        return functions.GetOrAdd(identifier,
+            _ => new Lazy<SpirVFunction>(() => new SpirVFunction(this, identifier))
+        ).Value;
     }
 
     internal bool TryGetEntryPoint(NeslMethod neslMethod, [NotNullWhen(true)] out NeslEntryPoint entryPoint) {
@@ -168,7 +167,9 @@ internal class SpirVCompiler {
 
         // Emit OpEntryPoint.
         foreach (NeslEntryPoint entryPoint in EntryPoints) {
-            SpirVFunction function = GetSpirVFunction(entryPoint.Method, null);
+            SpirVFunction function = GetSpirVFunction(new SpirVFunctionIdentifier(
+                entryPoint.Method, Array.Empty<SpirVVariable>()
+            ));
 
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,

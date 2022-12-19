@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.Emit.Attributes.Internal;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
 
@@ -12,8 +13,7 @@ internal abstract class IntrinsicsContainer {
     public IReadOnlyList<SpirVVariable> Parameters { get; }
 
     protected IntrinsicsContainer(
-        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator,
-        IReadOnlyList<SpirVVariable> parameters
+        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator, IReadOnlyList<SpirVVariable> parameters
     ) {
         Compiler = compiler;
         NeslMethod = neslMethod;

@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.Emit.Attributes.Internal;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
 
@@ -9,8 +10,7 @@ internal static class IntrinsicsManager {
     private const string DefaultAssembly = "System";
 
     public static void Process(
-        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator,
-        IReadOnlyList<SpirVVariable> parameters
+        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator, IReadOnlyList<SpirVVariable> parameters
     ) {
         if (neslMethod.Assembly.Name != DefaultAssembly) {
             throw new InvalidOperationException(
