@@ -189,8 +189,10 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
             return attribute.Size;
 
         ulong size = 0;
-        foreach (NeslField field in Fields)
-            size += field.FieldType.GetSize();
+        foreach (NeslField field in Fields) {
+            if (!field.IsStatic)
+                size += field.FieldType.GetSize();
+        }
 
         return size;
     }
