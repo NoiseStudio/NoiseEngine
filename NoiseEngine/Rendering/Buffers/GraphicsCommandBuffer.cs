@@ -4,12 +4,11 @@ using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using NoiseEngine.Rendering.Exceptions;
-using NoiseEngine.Rendering.Vulkan;
 using NoiseEngine.Rendering.Vulkan.Buffers;
-using NoiseEngine.Rendering.Vulkan.Descriptors;
 using NoiseEngine.Serialization;
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Buffers;
 
@@ -23,6 +22,7 @@ public class GraphicsCommandBuffer {
     private readonly FastList<object> references = new FastList<object>();
     private readonly SerializationWriter writer = new SerializationWriter(BitConverter.IsLittleEndian);
     private readonly FastList<GraphicsFence> fences = new FastList<GraphicsFence>();
+    private readonly GCHandle gcHandle;
 
     private bool simultaneousExecute;
     private int writerCountOnHandleCreation;
@@ -50,7 +50,6 @@ public class GraphicsCommandBuffer {
     }
 
     public GraphicsCommandBuffer(GraphicsDevice device, bool simultaneousExecute) {
-        GC.SuppressFinalize(this);
         device.Initialize();
 
         Device = device;
@@ -60,19 +59,25 @@ public class GraphicsCommandBuffer {
             GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(writer),
             _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
         };
+
+        // Create GC handle to prevent finalization of references and fences until this command buffer is alive.
+        gcHandle = GCHandle.Alloc(new object[] { references, fences });
     }
 
     ~GraphicsCommandBuffer() {
-        if (handle == InteropHandle<GraphicsCommandBuffer>.Zero)
+        if (handle == InteropHandle<GraphicsCommandBuffer>.Zero) {
+            gcHandle.Free();
             return;
+        }
 
         if (fences.Any(x => !x.IsSignaled)) {
             GraphicsCommandBufferCleaner.Enqueue(new GraphicsCommandBufferCleanData(
-                Device, handle, references, fences
+                Device, handle, gcHandle, references, fences
             ));
             return;
         }
 
+        gcHandle.Free();
         references.Clear();
         fences.Clear();
         DestroyHandle(handle);
@@ -156,8 +161,6 @@ public class GraphicsCommandBuffer {
                 return;
         }
 
-        GC.ReRegisterForFinalize(this);
-
         writerCountOnHandleCreation = writer.Count;
         handle = Device.CreateCommandBuffer(
             writer.AsSpan(), new GraphicsCommandBufferUsage(graphics, computing, transfer), SimultaneousExecute
@@ -173,8 +176,6 @@ public class GraphicsCommandBuffer {
 
         GraphicsFence.WaitAll(fences);
         fences.Clear();
-
-        GC.SuppressFinalize(this);
 
         InteropHandle<GraphicsCommandBuffer> copy = handle;
         handle = InteropHandle<GraphicsCommandBuffer>.Zero;
