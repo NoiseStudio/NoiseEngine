@@ -114,6 +114,9 @@ public static class Application {
             EntitySchedule.Dispose();
 
             graphicsInstance = null;
+
+            // Tries to collect graphics resources. This is not required, but it relieves the operating system and
+            // allows to better control the engine.
             for (int i = 0; i < 16; i++) {
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
