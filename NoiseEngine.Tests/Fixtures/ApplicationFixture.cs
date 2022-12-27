@@ -14,8 +14,8 @@ public class ApplicationFixture : IDisposable {
     private readonly ConcurrentDictionary<GraphicsDevice, GraphicsCommandBuffer> commandBuffers =
         new ConcurrentDictionary<GraphicsDevice, GraphicsCommandBuffer>();
 
-    internal IReadOnlyList<GraphicsDevice> GraphicsDevices { get; }
-    internal IReadOnlyList<VulkanDevice> VulkanDevices { get; }
+    internal IReadOnlyList<GraphicsDevice> GraphicsDevices { get; private set; }
+    internal IReadOnlyList<VulkanDevice> VulkanDevices { get; private set; }
 
     public ApplicationFixture() {
         Application.Initialize(new ApplicationSettings {
@@ -36,6 +36,10 @@ public class ApplicationFixture : IDisposable {
     }
 
     public void Dispose() {
+        commandBuffers.Clear();
+        GraphicsDevices = Array.Empty<GraphicsDevice>();
+        VulkanDevices = Array.Empty<VulkanDevice>();
+
         Application.Exit();
     }
 

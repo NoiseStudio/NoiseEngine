@@ -1,10 +1,10 @@
-use std::{sync::Mutex, ptr, mem::ManuallyDrop, cell::UnsafeCell, rc::Rc};
+use std::{sync::{Mutex, Arc}, ptr, mem::ManuallyDrop, cell::UnsafeCell, rc::Rc};
 
 use ash::vk;
 use gpu_alloc::{Config, Request, UsageFlags};
 use gpu_alloc_ash::AshMemoryDevice;
 
-use super::errors::universal::VulkanUniversalError;
+use super::{errors::universal::VulkanUniversalError, instance::VulkanInstance};
 
 pub(crate) struct MemoryAllocator {
     device: Rc<ash::Device>,
@@ -13,12 +13,12 @@ pub(crate) struct MemoryAllocator {
 
 impl MemoryAllocator {
     pub fn new(
-        instance: &ash::Instance,
+        instance: &Arc<VulkanInstance>,
         device: Rc<ash::Device>,
         physical_device: vk::PhysicalDevice,
     ) -> Result<Self, VulkanUniversalError> {
         let props = unsafe {
-            gpu_alloc_ash::device_properties(instance, 0, physical_device)?
+            gpu_alloc_ash::device_properties(&instance.inner(), 0, physical_device)?
         };
 
         // TODO: implement best suitable config.

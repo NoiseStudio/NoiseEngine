@@ -6,7 +6,7 @@ use crate::common::pool::{Pool, PoolItem};
 
 use super::{
     errors::universal::VulkanUniversalError, fence::VulkanFence, pool_wrappers::VulkanDescriptorPool,
-    descriptors::pool_sizes::DescriptorPoolSizes
+    descriptors::pool_sizes::DescriptorPoolSizes, device::VulkanDevice
 };
 
 pub struct VulkanDevicePool<'devpool> {
@@ -14,7 +14,7 @@ pub struct VulkanDevicePool<'devpool> {
     descriptor_pools: Pool<VulkanDescriptorPool<'devpool>>
 }
 
-impl<'devpool> VulkanDevicePool<'devpool> {
+impl<'init: 'devpool, 'devpool> VulkanDevicePool<'devpool> {
     pub(super) fn new(device: Rc<ash::Device>) -> Self {
         Self {
             vulkan_device: device,
@@ -26,7 +26,9 @@ impl<'devpool> VulkanDevicePool<'devpool> {
         &self.vulkan_device
     }
 
-    pub fn get_fence(&'devpool self) -> Result<VulkanFence, VulkanUniversalError> {
+    pub fn get_fence(
+        &'devpool self, device: &Arc<VulkanDevice<'init>>
+    ) -> Result<VulkanFence<'init>, VulkanUniversalError> {
         let create_info = vk::FenceCreateInfo {
             s_type: vk::StructureType::FENCE_CREATE_INFO,
             p_next: ptr::null(),
@@ -37,7 +39,7 @@ impl<'devpool> VulkanDevicePool<'devpool> {
             self.vulkan_device.create_fence(&create_info, None)
         }?;
 
-        Ok(VulkanFence::new(self, fence))
+        Ok(VulkanFence::new(device, fence))
     }
 
     pub fn get_descriptor_pool(

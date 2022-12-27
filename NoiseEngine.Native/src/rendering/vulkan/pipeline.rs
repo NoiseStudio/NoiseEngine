@@ -1,4 +1,4 @@
-use std::{ptr, ffi::CString};
+use std::{ptr, ffi::CString, sync::Arc};
 
 use ash::vk;
 
@@ -9,14 +9,14 @@ use super::{
     pipeline_shader_stage::PipelineShaderStage
 };
 
-pub struct Pipeline<'init: 'pipl, 'pipl> {
+pub struct Pipeline<'init> {
     inner: vk::Pipeline,
-    layout: &'pipl PipelineLayout<'init>
+    layout: Arc<PipelineLayout<'init>>
 }
 
-impl<'init: 'pipl, 'pipl> Pipeline<'init, 'pipl> {
+impl<'init> Pipeline<'init> {
     pub fn with_compute(
-        layout: &'pipl PipelineLayout<'init>, stage: PipelineShaderStage, flags: vk::PipelineCreateFlags
+        layout: &Arc<PipelineLayout<'init>>, stage: PipelineShaderStage, flags: vk::PipelineCreateFlags
     ) -> Result<Self, VulkanUniversalError> {
         let stage_name = match CString::new(String::from(stage.name)) {
             Ok(s) => s,
@@ -45,7 +45,7 @@ impl<'init: 'pipl, 'pipl> Pipeline<'init, 'pipl> {
             base_pipeline_index: 0,
         };
 
-        let initialized = layout.initialized();
+        let initialized = layout.device().initialized()?;
         let inner = match unsafe {
             initialized.vulkan_device().create_compute_pipelines(
                 vk::PipelineCache::null(), &[create_info], None
@@ -55,22 +55,24 @@ impl<'init: 'pipl, 'pipl> Pipeline<'init, 'pipl> {
             Err((_, err)) => return Err(err.into())
         };
 
-        Ok(Self { inner, layout })
+        Ok(Self { inner, layout: layout.clone() })
     }
 
     pub fn inner(&self) -> vk::Pipeline {
         self.inner
     }
 
-    pub fn layout(&self) -> &'pipl PipelineLayout<'init> {
+    pub fn layout(&self) -> &Arc<PipelineLayout<'init>> {
         &self.layout
     }
 }
 
-impl Drop for Pipeline<'_, '_> {
+impl Drop for Pipeline<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.layout.initialized().vulkan_device().destroy_pipeline(self.inner, None);
+            self.layout.device().initialized().unwrap().vulkan_device().destroy_pipeline(
+                self.inner, None
+            );
         }
     }
 }

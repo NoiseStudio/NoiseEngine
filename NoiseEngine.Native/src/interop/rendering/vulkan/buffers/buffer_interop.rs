@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use ash::vk;
 
 use crate::{
@@ -16,14 +18,9 @@ struct VulkanBufferCreateReturnValue<'buf> {
 
 #[no_mangle]
 extern "C" fn rendering_vulkan_buffers_buffer_interop_create<'dev: 'init, 'init: 'buf, 'buf>(
-    device: &'dev VulkanDevice<'_, 'init>, usage: vk::BufferUsageFlags, size: u64, map: bool
+    device: &'dev Arc<VulkanDevice<'init>>, usage: vk::BufferUsageFlags, size: u64, map: bool
 ) -> InteropResult<VulkanBufferCreateReturnValue<'buf>> {
-    let initialized = match device.initialized() {
-        Ok(initialized) => initialized,
-        Err(err) => return InteropResult::with_err(err.into())
-    };
-
-    match VulkanBuffer::new(initialized, usage, size, map) {
+    match VulkanBuffer::new(device, usage, size, map) {
         Ok(buffer) => {
             let inner = buffer.inner();
             InteropResult::with_ok(VulkanBufferCreateReturnValue {

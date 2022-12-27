@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     rendering::{vulkan::{
         device::VulkanDevice, device_support::VulkanDeviceSupport, buffers::command_buffer::VulkanCommandBuffer
@@ -7,14 +9,18 @@ use crate::{
 };
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_device_interop_destroy(_handle: Box<VulkanDevice>) {
+extern "C" fn rendering_vulkan_device_interop_destroy(_handle: Box<Arc<VulkanDevice>>) {
 }
 
 /// # SAFETY
 /// This function must be synchronized by caller.
 #[no_mangle]
-extern "C" fn rendering_vulkan_device_interop_initialize(device: &mut VulkanDevice) -> InteropResult<()> {
-    match device.initialize() {
+extern "C" fn rendering_vulkan_device_interop_initialize(device: &Arc<VulkanDevice>) -> InteropResult<()> {
+    let reference = unsafe {
+        &mut *(Arc::as_ptr(device) as *mut VulkanDevice)
+    };
+
+    match reference.initialize() {
         Ok(()) => InteropResult::with_ok(()),
         Err(err) => InteropResult::with_err(err.into())
     }
@@ -22,7 +28,7 @@ extern "C" fn rendering_vulkan_device_interop_initialize(device: &mut VulkanDevi
 
 #[no_mangle]
 extern "C" fn rendering_vulkan_device_interop_create_command_buffer<'dev: 'init, 'init: 'cbuf, 'cbuf>(
-    device: &'dev VulkanDevice<'_, 'init>,
+    device: &'dev Arc<VulkanDevice<'init>>,
     data: InteropReadOnlySpan<u8>,
     usage: VulkanDeviceSupport,
     simultaneous_execute: bool,

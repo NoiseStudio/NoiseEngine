@@ -1,4 +1,4 @@
-use std::ptr;
+use std::{ptr, sync::Arc};
 
 use ash::vk;
 
@@ -21,11 +21,12 @@ pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     inner: vk::CommandBuffer,
     queue_family: &'fam VulkanQueueFamily<'init>,
     command_pool: PoolItem<'fam, VulkanCommandPool<'init>>,
+    device: Arc<VulkanDevice<'init>>,
 }
 
 impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
     pub fn new(
-        device: &'dev VulkanDevice<'_, 'init>,
+        device: &'dev Arc<VulkanDevice<'init>>,
         data: SerializationReader,
         usage: VulkanDeviceSupport,
         simultaneous_execute: bool,
@@ -53,6 +54,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             inner: command_buffer,
             queue_family,
             command_pool,
+            device: device.clone(),
         };
 
         result.record(data, simultaneous_execute)?;
@@ -80,7 +82,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             p_signal_semaphores: ptr::null(),
         };
 
-        let fence = initialized.pool().get_fence()?;
+        let fence = initialized.pool().get_fence(&self.device)?;
         unsafe {
             vulkan_device.queue_submit(
                 self.queue_family.get_queue().queue, &[submit_info], fence.inner()

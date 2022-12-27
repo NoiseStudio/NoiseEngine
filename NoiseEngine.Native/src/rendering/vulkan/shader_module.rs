@@ -1,4 +1,4 @@
-use std::{mem, ptr};
+use std::{mem, ptr, sync::Arc};
 
 use ash::vk;
 
@@ -8,11 +8,12 @@ use super::{errors::universal::VulkanUniversalError, device::{VulkanDevice, Vulk
 
 pub struct ShaderModule<'init> {
     initialized: &'init VulkanDeviceInitialized<'init>,
-    inner: vk::ShaderModule
+    inner: vk::ShaderModule,
+    _device: Arc<VulkanDevice<'init>>,
 }
 
 impl<'dev: 'init, 'init> ShaderModule<'init> {
-    pub fn new(device: &'dev VulkanDevice<'_, 'init>, code: &[u8]) -> Result<Self, VulkanUniversalError> {
+    pub fn new(device: &'dev Arc<VulkanDevice<'init>>, code: &[u8]) -> Result<Self, VulkanUniversalError> {
         let size = mem::size_of::<u32>();
         if code.len() % size != 0 {
             return Err(InvalidOperationError::new(
@@ -33,7 +34,7 @@ impl<'dev: 'init, 'init> ShaderModule<'init> {
             initialized.vulkan_device().create_shader_module(&create_info, None)
         }?;
 
-        Ok(Self { initialized, inner })
+        Ok(Self { initialized, inner, _device: device.clone() })
     }
 
     pub fn inner(&self) -> vk::ShaderModule {

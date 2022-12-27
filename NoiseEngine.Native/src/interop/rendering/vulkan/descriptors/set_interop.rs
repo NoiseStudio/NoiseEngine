@@ -1,11 +1,13 @@
+use std::sync::Arc;
+
 use crate::{
     rendering::vulkan::descriptors::{set_layout::DescriptorSetLayout, set::DescriptorSet, update_template::DescriptorUpdateTemplate},
     interop::{prelude::InteropResult, interop_read_only_span::InteropReadOnlySpan}
 };
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_descriptors_set_create<'setl: 'set, 'set>(
-    layout: &'setl DescriptorSetLayout<'set>
+extern "C" fn rendering_vulkan_descriptors_set_create<'set>(
+    layout: &'set Arc<DescriptorSetLayout<'set>>
 ) -> InteropResult<Box<DescriptorSet<'set>>> {
     match DescriptorSet::new(layout) {
         Ok(d) => InteropResult::with_ok(Box::new(d)),

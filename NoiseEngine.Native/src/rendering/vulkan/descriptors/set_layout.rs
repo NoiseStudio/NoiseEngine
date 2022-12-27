@@ -3,20 +3,20 @@ use std::{ptr, sync::Arc, collections::{HashMap, hash_map::Entry}};
 use ash::vk;
 
 use crate::rendering::vulkan::{
-    device::{VulkanDeviceInitialized, VulkanDevice}, errors::universal::VulkanUniversalError
+    device::VulkanDevice, errors::universal::VulkanUniversalError
 };
 
 use super::pool_sizes::DescriptorPoolSizes;
 
 pub struct DescriptorSetLayout<'init> {
-    initialized: &'init VulkanDeviceInitialized<'init>,
     inner: vk::DescriptorSetLayout,
-    pool_sizes: Arc<DescriptorPoolSizes>
+    pool_sizes: Arc<DescriptorPoolSizes>,
+    device: Arc<VulkanDevice<'init>>,
 }
 
 impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
     pub fn new(
-        device: &'dev VulkanDevice<'_, 'init>, flags: vk::DescriptorSetLayoutCreateFlags,
+        device: &'dev Arc<VulkanDevice<'init>>, flags: vk::DescriptorSetLayoutCreateFlags,
         bindings: &[vk::DescriptorSetLayoutBinding]
     ) -> Result<Self, VulkanUniversalError> {
         let create_info = vk::DescriptorSetLayoutCreateInfo {
@@ -46,7 +46,9 @@ impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
         }
 
         Ok(Self {
-            initialized, inner, pool_sizes: Arc::new(DescriptorPoolSizes { map: pool_sizes, count: sum_count })
+            inner,
+            pool_sizes: Arc::new(DescriptorPoolSizes { map: pool_sizes, count: sum_count }),
+            device: device.clone(),
         })
     }
 
@@ -58,15 +60,15 @@ impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
         &self.pool_sizes
     }
 
-    pub(crate) fn initialized(&self) ->  &'init VulkanDeviceInitialized<'init> {
-        self.initialized
+    pub fn device(&self) -> &Arc<VulkanDevice<'init>> {
+        &self.device
     }
 }
 
 impl Drop for DescriptorSetLayout<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.initialized.vulkan_device().destroy_descriptor_set_layout(
+            self.device.initialized().unwrap().vulkan_device().destroy_descriptor_set_layout(
                 self.inner, None
             );
         }

@@ -3,6 +3,7 @@ using NoiseEngine.Interop.Logging;
 using NoiseEngine.Jobs;
 using NoiseEngine.Logging;
 using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.Vulkan;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
@@ -111,6 +112,12 @@ public static class Application {
                 scene.Dispose();
 
             EntitySchedule.Dispose();
+
+            graphicsInstance = null;
+            for (int i = 0; i < 16; i++) {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
 
             Log.Info($"{nameof(Application)} exited with code {exitCode}.");
             Log.Logger.Flush();
