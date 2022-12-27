@@ -5,7 +5,7 @@ namespace NoiseEngine.Interop.Rendering.Vulkan;
 internal static partial class VulkanInstanceInterop {
 
     [InteropImport("rendering_vulkan_instance_interop_create")]
-    public static partial InteropResult<InteropHandle<VulkanInstance>> Create(
+    public static partial InteropResult<VulkanInstanceCreateReturnValue> Create(
         InteropHandle<VulkanLibrary> library, VulkanApplicationInfo createInfo,
         VulkanLogSeverity logSeverity, VulkanLogType logType, bool validation
     );

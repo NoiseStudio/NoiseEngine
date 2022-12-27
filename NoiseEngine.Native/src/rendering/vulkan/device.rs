@@ -4,7 +4,7 @@ use ash::vk::{self, QueueFlags};
 use lockfree::stack::Stack;
 use rsevents::{AutoResetEvent, Awaitable, EventState};
 
-use crate::{errors::invalid_operation::InvalidOperationError, common::pool::{Pool, PoolItem}};
+use crate::{errors::invalid_operation::InvalidOperationError, common::pool::{Pool, PoolItem}, logging::log};
 
 use super::{
     device_support::VulkanDeviceSupport, errors::universal::VulkanUniversalError, memory_allocator::MemoryAllocator,
@@ -69,6 +69,7 @@ impl<'init> VulkanDevice<'init> {
             pool: ManuallyDrop::new(VulkanDevicePool::new(device.clone())),
         });
 
+        log::info(format!("Initialized VulkanDevice {{ InnerHandle = {:p} }}.", device.handle()).as_str());
         Ok(())
     }
 
@@ -200,8 +201,6 @@ impl<'init> VulkanDeviceInitialized<'init> {
 
 impl Drop for VulkanDeviceInitialized<'_> {
     fn drop(&mut self) {
-        crate::logging::log::debug("Drop VulkanDeviceInitialized");
-
         unsafe {
             ManuallyDrop::drop(&mut self.pool);
             ManuallyDrop::drop(&mut self.queue_families);
@@ -209,6 +208,10 @@ impl Drop for VulkanDeviceInitialized<'_> {
 
             self.device.destroy_device(None);
         }
+
+        log::info(format!(
+            "Dropped initialized VulkanDevice {{ InnerHandle = {:p} }}.", self.device.handle()
+        ).as_str());
     }
 }
 

@@ -149,11 +149,11 @@ impl VulkanInstance {
 
 impl Drop for VulkanInstance {
     fn drop(&mut self) {
-        crate::logging::log::debug("Drop VulkanInstance");
-
         unsafe {
             self.inner.destroy_instance(None);
         }
+
+        log::info(format!("Dropped VulkanInstance {{ InnerHandle = {:p} }}.", self.inner.handle()).as_str());
     }
 }
 

@@ -20,6 +20,8 @@ internal sealed class VulkanInstance : GraphicsInstance {
 
     protected override IReadOnlyList<GraphicsDevice> ProtectedDevices { get; set; }
 
+    private InteropHandle<VulkanInstance> InnerHandle { get; }
+
     public VulkanInstance(
         VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType, bool validation
     ) {
@@ -37,13 +39,14 @@ internal sealed class VulkanInstance : GraphicsInstance {
             new VulkanVersion(Application.EngineVersion ?? new Version())
         );
 
-        InteropResult<InteropHandle<VulkanInstance>> result = VulkanInstanceInterop.Create(
+        if (!VulkanInstanceInterop.Create(
             Library.Handle, createInfo, logSeverity, logType, validation
-        );
-        if (!result.TryGetValue(out InteropHandle<VulkanInstance> nativeInstance, out ResultError error))
+        ).TryGetValue(out VulkanInstanceCreateReturnValue returnValue, out ResultError error)) {
             error.ThrowAndDispose();
+        }
 
-        Handle = nativeInstance;
+        Handle = returnValue.Handle;
+        InnerHandle = returnValue.InnerHandle;
         Log.Info($"Created new {this}.");
 
         if (!VulkanInstanceInterop.GetDevices(Handle).TryGetValue(
@@ -61,11 +64,10 @@ internal sealed class VulkanInstance : GraphicsInstance {
             return;
 
         VulkanInstanceInterop.Destroy(Handle);
-        Log.Info($"Disposed {this}.");
     }
 
     public override string ToString() {
-        return $"{nameof(VulkanInstance)} {{ {nameof(Handle)} = {Handle} }}";
+        return $"{nameof(VulkanInstance)} {{ {nameof(InnerHandle)} = {InnerHandle} }}";
     }
 
 }
