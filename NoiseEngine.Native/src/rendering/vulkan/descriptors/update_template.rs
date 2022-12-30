@@ -1,19 +1,19 @@
-use std::ptr;
+use std::{ptr, sync::Arc};
 
 use ash::vk;
 
-use crate::rendering::vulkan::{device::VulkanDeviceInitialized, errors::universal::VulkanUniversalError};
+use crate::rendering::vulkan::errors::universal::VulkanUniversalError;
 
 use super::set_layout::DescriptorSetLayout;
 
 pub struct DescriptorUpdateTemplate<'init> {
-    initialized: &'init VulkanDeviceInitialized<'init>,
+    layout: Arc<DescriptorSetLayout<'init>>,
     inner: vk::DescriptorUpdateTemplate
 }
 
-impl<'init: 'setl, 'setl> DescriptorUpdateTemplate<'init> {
+impl<'init> DescriptorUpdateTemplate<'init> {
     pub fn new(
-        layout: &'setl DescriptorSetLayout<'init>, entries: &[vk::DescriptorUpdateTemplateEntry]
+        layout: &Arc<DescriptorSetLayout<'init>>, entries: &[vk::DescriptorUpdateTemplateEntry]
     ) -> Result<Self, VulkanUniversalError> {
         let create_info = vk::DescriptorUpdateTemplateCreateInfo {
             s_type: vk::StructureType::DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO,
@@ -28,12 +28,12 @@ impl<'init: 'setl, 'setl> DescriptorUpdateTemplate<'init> {
             set: 0,
         };
 
-        let initialized = layout.initialized();
+        let initialized = layout.device().initialized()?;
         let inner = unsafe {
             initialized.vulkan_device().create_descriptor_update_template(&create_info, None)
         }?;
 
-        Ok(Self { initialized, inner })
+        Ok(Self { layout: layout.clone(), inner })
     }
 
     pub fn inner(&self) -> vk::DescriptorUpdateTemplate {
@@ -44,7 +44,7 @@ impl<'init: 'setl, 'setl> DescriptorUpdateTemplate<'init> {
 impl Drop for DescriptorUpdateTemplate<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.initialized.vulkan_device().destroy_descriptor_update_template(
+            self.layout.device().initialized().unwrap().vulkan_device().destroy_descriptor_update_template(
                 self.inner, None
             );
         }

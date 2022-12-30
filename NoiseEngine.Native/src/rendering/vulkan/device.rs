@@ -1,25 +1,25 @@
-use std::{ptr, mem::ManuallyDrop, rc::Rc};
+use std::{ptr, mem::ManuallyDrop, rc::Rc, sync::Arc};
 
 use ash::vk::{self, QueueFlags};
 use lockfree::stack::Stack;
 use rsevents::{AutoResetEvent, Awaitable, EventState};
 
-use crate::{errors::invalid_operation::InvalidOperationError, common::pool::{Pool, PoolItem}};
+use crate::{errors::invalid_operation::InvalidOperationError, common::pool::{Pool, PoolItem}, logging::log};
 
 use super::{
     device_support::VulkanDeviceSupport, errors::universal::VulkanUniversalError, memory_allocator::MemoryAllocator,
-    device_pool::VulkanDevicePool, pool_wrappers::VulkanCommandPool
+    device_pool::VulkanDevicePool, pool_wrappers::VulkanCommandPool, instance::VulkanInstance
 };
 
-pub struct VulkanDevice<'inst: 'init, 'init> {
-    instance: &'inst ash::Instance,
+pub struct VulkanDevice<'init> {
+    initialized: Option<VulkanDeviceInitialized<'init>>,
     physical_device: vk::PhysicalDevice,
-    initialized: Option<VulkanDeviceInitialized<'init>>
+    instance: Arc<VulkanInstance>,
 }
 
-impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
-    pub fn new(instance: &'inst ash::Instance, physical_device: vk::PhysicalDevice) -> Self {
-        Self { instance, physical_device, initialized: None }
+impl<'init> VulkanDevice<'init> {
+    pub fn new(instance: &Arc<VulkanInstance>, physical_device: vk::PhysicalDevice) -> Self {
+        Self { initialized: None, physical_device, instance: instance.clone() }
     }
 
     fn create_not_initialized_error() -> InvalidOperationError {
@@ -51,26 +51,30 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
         };
 
         let device = unsafe {
-            Rc::new(self.instance().create_device(self.physical_device, &create_info, None)?)
+            Rc::new(self.instance().inner().create_device(
+                self.physical_device, &create_info, None)?
+            )
         };
 
         let queue_families = Self::create_queue_families(
-            self.instance, self.physical_device, device.clone()
+            &self.instance, self.physical_device, device.clone()
         );
-        let instance = self.instance;
 
         self.initialized = Some(VulkanDeviceInitialized {
             device: device.clone(),
             queue_families: ManuallyDrop::new(queue_families),
-            allocator: ManuallyDrop::new(MemoryAllocator::new(instance, device.clone(), self.physical_device())?),
-            pool: VulkanDevicePool::new(device.clone()),
+            allocator: ManuallyDrop::new(MemoryAllocator::new(
+                self.instance(), device.clone(), self.physical_device()
+            )?),
+            pool: ManuallyDrop::new(VulkanDevicePool::new(device.clone())),
         });
 
+        log::info(format!("Initialized VulkanDevice {{ InnerHandle = {:p} }}.", device.handle()).as_str());
         Ok(())
     }
 
-    pub fn instance(&self) -> &ash::Instance {
-        self.instance
+    pub fn instance(&self) -> &Arc<VulkanInstance> {
+        &self.instance
     }
 
     pub fn physical_device(&self) -> vk::PhysicalDevice {
@@ -96,7 +100,7 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
 
     fn create_queue_create_infos(&self) -> (Vec<vk::DeviceQueueCreateInfo>, Vec<f32>) {
         let queue_families = unsafe {
-            self.instance().get_physical_device_queue_family_properties(self.physical_device)
+            self.instance().inner().get_physical_device_queue_family_properties(self.physical_device)
         };
 
         let mut queue_create_infos = Vec::with_capacity(queue_families.len());
@@ -123,13 +127,13 @@ impl<'inst: 'init, 'init> VulkanDevice<'inst, 'init> {
     }
 
     fn create_queue_families(
-        instance: &'inst ash::Instance,
+        instance: &Arc<VulkanInstance>,
         physical_device: vk::PhysicalDevice,
         device: Rc<ash::Device>
     ) -> Vec<VulkanQueueFamily<'init>> {
         let mut queue_family_index = 0;
         let mut families: Vec<_> = unsafe {
-            instance.get_physical_device_queue_family_properties(physical_device)
+            instance.inner().get_physical_device_queue_family_properties(physical_device)
         }.into_iter().map(|family| {
             let result = VulkanQueueFamily {
                 vulkan_device: device.clone(),
@@ -164,7 +168,7 @@ pub(crate) struct VulkanDeviceInitialized<'init> {
     device: Rc<ash::Device>,
     queue_families: ManuallyDrop<Vec<VulkanQueueFamily<'init>>>,
     allocator: ManuallyDrop<MemoryAllocator>,
-    pool: VulkanDevicePool<'init>,
+    pool: ManuallyDrop<VulkanDevicePool<'init>>,
 }
 
 impl<'init> VulkanDeviceInitialized<'init> {
@@ -198,10 +202,16 @@ impl<'init> VulkanDeviceInitialized<'init> {
 impl Drop for VulkanDeviceInitialized<'_> {
     fn drop(&mut self) {
         unsafe {
+            ManuallyDrop::drop(&mut self.pool);
             ManuallyDrop::drop(&mut self.queue_families);
             ManuallyDrop::drop(&mut self.allocator);
-            self.device.destroy_device(None)
+
+            self.device.destroy_device(None);
         }
+
+        log::info(format!(
+            "Dropped initialized VulkanDevice {{ InnerHandle = {:p} }}.", self.device.handle()
+        ).as_str());
     }
 }
 

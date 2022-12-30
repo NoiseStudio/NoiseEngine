@@ -1,10 +1,10 @@
-use std::ptr;
+use std::{ptr, sync::Arc};
 
 use ash::vk;
 
 use crate::{rendering::{
     vulkan::{
-        device::VulkanDeviceInitialized,
+        device::{VulkanDeviceInitialized, VulkanDevice},
         errors::universal::VulkanUniversalError,
         memory_allocator::MemoryBlock
     },
@@ -12,15 +12,16 @@ use crate::{rendering::{
 }, interop::prelude::InteropResult};
 
 pub(crate) struct VulkanBuffer<'init: 'ma, 'ma> {
-    vulkan_device: &'init ash::Device,
     buffer: vk::Buffer,
     memory: MemoryBlock<'ma>,
+    device: Arc<VulkanDevice<'init>>
 }
 
-impl<'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
+impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
     pub fn new(
-        initialized: &'init VulkanDeviceInitialized<'init>, usage: vk::BufferUsageFlags, size: u64, map: bool
+        device: &'dev Arc<VulkanDevice<'init>>, usage: vk::BufferUsageFlags, size: u64, map: bool
     ) -> Result<Self, VulkanUniversalError> {
+        let initialized = device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
 
         let buffer = Self::create_buffer(initialized, size, usage)?;
@@ -30,7 +31,7 @@ impl<'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
             vulkan_device.bind_buffer_memory(buffer, memory.memory(), memory.offset())
         }?;
 
-        Ok(VulkanBuffer { vulkan_device, buffer, memory })
+        Ok(VulkanBuffer { buffer, memory, device: device.clone() })
     }
 
     pub fn inner(&self) -> vk::Buffer {
@@ -82,7 +83,7 @@ impl<'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
 impl Drop for VulkanBuffer<'_, '_> {
     fn drop(&mut self) {
         unsafe {
-            self.vulkan_device.destroy_buffer(self.buffer, None);
+            self.device.initialized().unwrap().vulkan_device().destroy_buffer(self.buffer, None);
         }
     }
 }

@@ -40,7 +40,7 @@ public partial class InteropLoggingTest : IDisposable {
         string message = Guid.NewGuid().ToString();
         InteropDebug(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single(x => x.Message == message);
+        LogData data = sink.Logs.ToArray().Single(x => x.Message == message);
         Assert.Equal(LogLevel.Debug, data.Level);
         Assert.Equal(message, data.Message);
     }
@@ -50,7 +50,7 @@ public partial class InteropLoggingTest : IDisposable {
         string message = Guid.NewGuid().ToString();
         InteropTrace(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single(x => x.Message == message);
+        LogData data = sink.Logs.ToArray().Single(x => x.Message == message);
         Assert.Equal(LogLevel.Trace, data.Level);
         Assert.Equal(message, data.Message);
     }
@@ -60,7 +60,7 @@ public partial class InteropLoggingTest : IDisposable {
         string message = Guid.NewGuid().ToString();
         InteropInfo(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single(x => x.Message == message);
+        LogData data = sink.Logs.ToArray().Single(x => x.Message == message);
         Assert.Equal(LogLevel.Info, data.Level);
         Assert.Equal(message, data.Message);
     }
@@ -70,7 +70,7 @@ public partial class InteropLoggingTest : IDisposable {
         string message = Guid.NewGuid().ToString();
         InteropWarning(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single(x => x.Message == message);
+        LogData data = sink.Logs.ToArray().Single(x => x.Message == message);
         Assert.Equal(LogLevel.Warning, data.Level);
         Assert.Equal(message, data.Message);
     }
@@ -80,7 +80,7 @@ public partial class InteropLoggingTest : IDisposable {
         string message = Guid.NewGuid().ToString();
         InteropError(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single(x => x.Message == message);
+        LogData data = sink.Logs.ToArray().Single(x => x.Message == message);
         Assert.Equal(LogLevel.Error, data.Level);
         Assert.Equal(message, data.Message);
     }
@@ -90,7 +90,7 @@ public partial class InteropLoggingTest : IDisposable {
         string message = Guid.NewGuid().ToString();
         InteropFatal(message);
         Log.Logger.Flush();
-        LogData data = sink.Logs.Single(x => x.Message == message);
+        LogData data = sink.Logs.ToArray().Single(x => x.Message == message);
         Assert.Equal(LogLevel.Fatal, data.Level);
         Assert.Equal(message, data.Message);
     }

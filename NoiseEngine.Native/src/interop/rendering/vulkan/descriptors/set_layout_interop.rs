@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use ash::vk;
 
 use crate::{
@@ -7,15 +9,15 @@ use crate::{
 
 #[no_mangle]
 extern "C" fn rendering_vulkan_descriptors_set_layout_create<'dev: 'init, 'init: 'setl, 'setl>(
-    device: &'dev VulkanDevice<'_, 'init>, flags: vk::DescriptorSetLayoutCreateFlags,
+    device: &'dev Arc<VulkanDevice<'init>>, flags: vk::DescriptorSetLayoutCreateFlags,
     bindings: InteropReadOnlySpan<vk::DescriptorSetLayoutBinding>
-) -> InteropResult<Box<DescriptorSetLayout<'init>>> {
+) -> InteropResult<Box<Arc<DescriptorSetLayout<'init>>>> {
     match DescriptorSetLayout::new(device, flags, bindings.into()) {
-        Ok(d) => InteropResult::with_ok(Box::new(d)),
+        Ok(d) => InteropResult::with_ok(Box::new(Arc::new(d))),
         Err(err) => InteropResult::with_err(err.into())
     }
 }
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_descriptors_set_layout_destroy(_handle: Box<DescriptorSetLayout>) {
+extern "C" fn rendering_vulkan_descriptors_set_layout_destroy(_handle: Box<Arc<DescriptorSetLayout>>) {
 }

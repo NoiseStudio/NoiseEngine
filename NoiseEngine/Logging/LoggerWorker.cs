@@ -32,9 +32,11 @@ internal class LoggerWorker : IDisposable {
 
     public void Flush() {
         // This should probably flush the sinks, but flushing is not implemented for ILogSink.
-        flushResetEvent.Reset();
-        queueResetEvent.Set();
-        flushResetEvent.WaitOne();
+        lock (flushResetEvent) {
+            flushResetEvent.Reset();
+            queueResetEvent.Set();
+            flushResetEvent.WaitOne();
+        }
     }
 
     public void Dispose() {
