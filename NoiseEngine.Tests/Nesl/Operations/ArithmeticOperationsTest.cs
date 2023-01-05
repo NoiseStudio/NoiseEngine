@@ -7,6 +7,7 @@ using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Environments.Nesl;
 using NoiseEngine.Tests.Fixtures;
 using System;
+using System.Numerics;
 
 namespace NoiseEngine.Tests.Nesl.Operations;
 
@@ -18,6 +19,12 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
     [Fact]
     public void Negate() {
         ArithmeticHelper(il => il.Emit(OpCode.Negate, 1u, 1u), new object[][] {
+            Array.Empty<object>(),
+            new object[] {
+                5, 1, -22, -29,
+                0, 0, 0, 0,
+                -5, -1, 22, 29
+            },
             new object[] {
                 4.14359f, 6.10783f, -4.64661f, float.NegativeInfinity,
                 0f, 0f, 0f, 0f,
@@ -26,28 +33,45 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
         });
     }
 
+    /*[Fact]
+    public void Add() {
+        ArithmeticHelper(il => il.Emit(OpCode.Add, 1u, 1u, 2u), new object[][] {
+            new object[] {
+                3.51834f, 4.60347f, 5.26284f, 4.37281f,
+                1.30167f, 6.68611f, 7.74374f, 9.32226f,
+                -4.14359f, -6.10783f, 4.64661f, float.PositiveInfinity
+            }
+        });
+    }*/
+
     private void ArithmeticHelper(Action<IlGenerator> ilFactory, object[][] values) {
         if (values[0].Length != 0)
-            ArithmeticHelperWorkerFloat32(ilFactory, values[0]);
+            ArithmeticHelperWorker<uint>(ilFactory, values[0]);
+        if (values[1].Length != 0)
+            ArithmeticHelperWorker<int>(ilFactory, values[1]);
+        if (values[2].Length != 0)
+            ArithmeticHelperWorker<float>(ilFactory, values[2]);
     }
 
-    private void ArithmeticHelperWorkerFloat32(Action<IlGenerator> ilFactory, object[] values) {
+    private void ArithmeticHelperWorker<T>(
+        Action<IlGenerator> ilFactory, object[] values
+    ) where T : unmanaged, INumber<T> {
+        NeslType neslType = GetNeslTypeFromT<T>();
+
         // Scalar.
-        BufferOutputTestHelper<float> helperA = CreateBufferOutputTestHelper<float>();
-        ArithmeticHelperWorkerMethodFactory(helperA.DefineMethod(), ilFactory, BuiltInTypes.Float32);
-        helperA.ExecuteAndAssert(new float[] { (float)values[0], (float)values[4] }, (float)values[8]);
+        BufferOutputTestHelper<T> helperA = CreateBufferOutputTestHelper<T>();
+        ArithmeticHelperWorkerMethodFactory(helperA.DefineMethod(), ilFactory, neslType);
+        helperA.ExecuteAndAssert(new T[] { (T)values[0], (T)values[4] }, (T)values[8]);
 
         // Vector4.
-        BufferOutputTestHelper<Vector4<float>> helperB = CreateBufferOutputTestHelper<Vector4<float>>();
-        ArithmeticHelperWorkerMethodFactory(
-            helperB.DefineMethod(), ilFactory, Vectors.GetVector4(BuiltInTypes.Float32)
-        );
+        BufferOutputTestHelper<Vector4<T>> helperB = CreateBufferOutputTestHelper<Vector4<T>>();
+        ArithmeticHelperWorkerMethodFactory(helperB.DefineMethod(), ilFactory, Vectors.GetVector4(neslType));
         helperB.ExecuteAndAssert(
-            new Vector4<float>[] {
-                new Vector4<float>((float)values[0], (float)values[1], (float)values[2], (float)values[3]),
-                new Vector4<float>((float)values[4], (float)values[5], (float)values[6], (float)values[7])
+            new Vector4<T>[] {
+                new Vector4<T>((T)values[0], (T)values[1], (T)values[2], (T)values[3]),
+                new Vector4<T>((T)values[4], (T)values[5], (T)values[6], (T)values[7])
             },
-            new Vector4<float>((float)values[8], (float)values[9], (float)values[10], (float)values[11])
+            new Vector4<T>((T)values[8], (T)values[9], (T)values[10], (T)values[11])
         );
     }
 

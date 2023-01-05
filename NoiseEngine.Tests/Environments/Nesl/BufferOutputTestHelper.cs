@@ -22,15 +22,7 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
     internal BufferOutputTestHelper(ApplicationFixture fixture, bool singleOutput) {
         this.fixture = fixture;
 
-        if (typeof(T) == typeof(float))
-            neslType = BuiltInTypes.Float32;
-        else if (typeof(T) == typeof(double))
-            neslType = BuiltInTypes.Float64;
-        else if (typeof(T) == typeof(Vector4<float>))
-            neslType = Vectors.GetVector4(BuiltInTypes.Float32);
-        else
-            throw new InvalidOperationException("Given generic T type is not supported.");
-
+        neslType = NeslTestEnvironment.GetNeslTypeFromT<T>();
         shaderType = TestEmitHelper.NewType();
 
         shaderOutput = shaderType.DefineField("Output", singleOutput ? neslType : Buffers.GetReadWriteBuffer(neslType));
