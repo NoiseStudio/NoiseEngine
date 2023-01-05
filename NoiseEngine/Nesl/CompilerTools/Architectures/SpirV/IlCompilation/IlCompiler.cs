@@ -13,6 +13,7 @@ internal class IlCompiler {
     public SpirVGenerator Generator { get; }
     public IReadOnlyList<SpirVVariable> Parameters { get; }
 
+    public ArithmeticOperations ArithmeticOperations { get; }
     public BranchOperations BranchOperations { get; }
     public DefOperations DefOperations { get; }
     public LoadOperations LoadOperations { get; }
@@ -29,6 +30,7 @@ internal class IlCompiler {
         Generator = generator;
         Parameters = parameters;
 
+        ArithmeticOperations = new ArithmeticOperations(this);
         BranchOperations = new BranchOperations(this);
         DefOperations = new DefOperations(this);
         LoadOperations = new LoadOperations(this);
@@ -39,6 +41,13 @@ internal class IlCompiler {
     public void Compile() {
         foreach (Instruction instruction in instructions) {
             switch (instruction.OpCode) {
+                #region ArithmeticOperations
+
+                case OpCode.Negate:
+                    ArithmeticOperations.Negate(instruction);
+                    break;
+
+                #endregion
                 #region BranchOperations
 
                 case OpCode.Call:

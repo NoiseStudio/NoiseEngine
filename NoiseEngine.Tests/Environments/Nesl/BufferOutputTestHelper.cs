@@ -47,8 +47,9 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
         T[] read = new T[expectedValues.Length];
 
         foreach (GraphicsDevice device in fixture.GraphicsDevices) {
-            GraphicsHostBuffer<T> buffer =
-               new GraphicsHostBuffer<T>(device, GraphicsBufferUsage.Storage, (ulong)expectedValues.Length);
+            GraphicsHostBuffer<T> buffer = new GraphicsHostBuffer<T>(
+                device, GraphicsBufferUsage.Storage, (ulong)Math.Max(initialValues?.Length ?? 0, expectedValues.Length)
+            );
 
             if (initialValues is not null)
                 buffer.SetData(initialValues);

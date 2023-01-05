@@ -59,6 +59,9 @@ internal enum SpirVOpCode : ushort {
     [OpCodeValidationOptional(typeof(SpirVLiteral))]
     OpMemberDecorate = 72,
 
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFNegate = 127,
+
     [OpCodeValidation(typeof(SpirVId))]
     OpLabel = 248,
     [OpCodeValidation]
