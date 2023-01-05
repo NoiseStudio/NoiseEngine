@@ -43,7 +43,7 @@ public abstract class GraphicsReadOnlyBuffer<T> : GraphicsReadOnlyBuffer where T
     /// <param name="count">T object count.</param>
     /// <returns>Size in bytes of <paramref name="count"/>.</returns>
     public static ulong GetSize(ulong count) {
-        return checked(count * (ulong)Marshal.SizeOf<T>());
+        return checked(count * (ulong)Marshal.SizeOf(default(T)));
     }
 
     /// <summary>

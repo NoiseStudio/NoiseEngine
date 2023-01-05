@@ -34,15 +34,7 @@ internal class LoadElementOperations : IlCompilerOperation {
 
     private SpirVId GetAccessChainFromIndex(SpirVType elementType, SpirVVariable buffer, SpirVVariable index) {
         SpirVId indexId = IlCompiler.LoadOperations.SpirVLoad(index);
-        SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(buffer.StorageClass, elementType);
-
-        SpirVId id = Compiler.GetNextId();
-        Generator.Emit(
-            SpirVOpCode.OpAccessChain, pointer.Id, id, buffer.Id,
-            stackalloc SpirVId[] { Compiler.GetConst(0), indexId }
-        );
-
-        return id;
+        return IlCompiler.LoadOperations.GetAccessChainFromIndex(elementType, buffer, indexId);
     }
 
 }
