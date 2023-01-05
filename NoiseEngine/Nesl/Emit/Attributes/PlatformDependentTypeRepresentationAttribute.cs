@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 
 namespace NoiseEngine.Nesl.Emit.Attributes;
@@ -69,7 +68,9 @@ public class PlatformDependentTypeRepresentationAttribute : NeslAttribute {
 
         foreach (NeslGenericTypeParameter genericTypeParameter in targetTypes.Keys) {
             NeslType type = targetTypes[genericTypeParameter];
-            builder.Replace($"{{{genericTypeParameter.Name}}}", $"[{type.FullNameWithAssembly}]");
+            ulong typeId = type.Assembly.GetLocalTypeId(type);
+
+            builder.Replace($"{{&{genericTypeParameter.Name}}}", $"[{typeId:x}]");
         }
 
         if (builder.Equals(targetName))

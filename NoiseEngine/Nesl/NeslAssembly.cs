@@ -21,12 +21,16 @@ public abstract class NeslAssembly {
     /// <param name="fullName">Full name of the searched <see cref="NeslType"/>.</param>
     /// <returns><see cref="NeslType"/> when type was found, <see langword="null"/> when not.</returns>
     public NeslType? GetType(string fullName) {
+        return GetType(fullName.AsSpan());
+    }
+
+    private NeslType? GetType(ReadOnlySpan<char> fullName) {
         int index = fullName.IndexOf("::");
         if (index == -1)
             return GetTypeLocal(fullName);
 
-        ReadOnlySpan<char> assemblyName = fullName.AsSpan(0, index);
-        ReadOnlySpan<char> fullNameWithoutAssembly = fullName.Substring(index + 2);
+        ReadOnlySpan<char> assemblyName = fullName[..index];
+        ReadOnlySpan<char> fullNameWithoutAssembly = fullName[(index + 2)..];
         if (assemblyName.SequenceEqual(Name))
             return GetTypeLocal(fullNameWithoutAssembly);
 

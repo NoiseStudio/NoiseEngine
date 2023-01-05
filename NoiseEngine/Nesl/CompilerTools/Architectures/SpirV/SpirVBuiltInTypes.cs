@@ -59,10 +59,10 @@ internal class SpirVBuiltInTypes {
                 type = GetOpTypeFloat(ulong.Parse(args[1]));
                 return true;
             case nameof(SpirVOpCode.OpTypeVector):
-                type = GetOpTypeVector(neslType.Assembly.GetType(args[1])!, uint.Parse(args[2]));
+                type = GetOpTypeVector(neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!, uint.Parse(args[2]));
                 return true;
             case "OpTypeArray":
-                type = GetOpTypeRuntimeArray(neslType.Assembly.GetType(args[1])!);
+                type = GetOpTypeRuntimeArray(neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!);
                 return true;
             default:
                 type = null;

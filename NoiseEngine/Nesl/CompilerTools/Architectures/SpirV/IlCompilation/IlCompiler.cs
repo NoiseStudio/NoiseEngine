@@ -17,6 +17,7 @@ internal class IlCompiler {
     public DefOperations DefOperations { get; }
     public LoadOperations LoadOperations { get; }
     public LoadElementOperations LoadElementOperations { get; }
+    public LoadFieldOperations LoadFieldOperations { get; }
 
     public IlCompiler(
         SpirVCompiler compiler, IEnumerable<Instruction> instructions, NeslMethod neslMethod, SpirVGenerator generator,
@@ -32,6 +33,7 @@ internal class IlCompiler {
         DefOperations = new DefOperations(this);
         LoadOperations = new LoadOperations(this);
         LoadElementOperations = new LoadElementOperations(this);
+        LoadFieldOperations = new LoadFieldOperations(this);
     }
 
     public void Compile() {
@@ -77,6 +79,16 @@ internal class IlCompiler {
                     break;
                 case OpCode.SetElement:
                     LoadElementOperations.SetElement(instruction);
+                    break;
+
+                #endregion
+                #region LoadFieldOperations
+
+                case OpCode.LoadField:
+                    LoadFieldOperations.LoadField(instruction);
+                    break;
+                case OpCode.SetField:
+                    LoadFieldOperations.SetField(instruction);
                     break;
 
                 #endregion

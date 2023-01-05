@@ -5,23 +5,30 @@ namespace NoiseEngine.Nesl.Default;
 
 internal static class Vectors {
 
-    public static NeslType Vector3 { get; }
-    public static NeslType Vector4 { get; }
+    private static readonly string[] units = new string[] { "x", "y", "z", "w", "v" };
+
+    private static readonly NeslType vector4;
 
     static Vectors() {
-        Vector3 = CreateVector(BuiltInTypes.Float32, 3);
-        Vector4 = CreateVector(BuiltInTypes.Float32, 4);
+        vector4 = CreateVector(4);
     }
 
-    private static NeslType CreateVector(NeslType type, uint size) {
-        NeslTypeBuilder result = Manager.AssemblyBuilder.DefineType($"{Manager.AssemblyBuilder.Name}.Vector{size}");
-        result.AddAttribute(ValueTypeAttribute.Create());
-        result.AddAttribute(PlatformDependentTypeRepresentationAttribute.Create(
-            $"OpTypeVector`{type.FullName}`{size}"
-        ));
-        result.AddAttribute(SizeAttribute.Create(32 * size));
+    public static NeslType GetVector4(NeslType type) {
+        return vector4.MakeGeneric(type);
+    }
 
-        return result;
+    private static NeslType CreateVector(uint size) {
+        NeslTypeBuilder type = Manager.AssemblyBuilder.DefineType($"{Manager.AssemblyBuilder.Name}.Vector{size}`1");
+        NeslGenericTypeParameterBuilder genericTypeParameter = type.DefineGenericTypeParameter("T");
+        type.AddAttribute(ValueTypeAttribute.Create());
+        type.AddAttribute(PlatformDependentTypeRepresentationAttribute.Create(
+            $"OpTypeVector`{{&{genericTypeParameter.Name}}}`{size}"
+        ));
+
+        for (int i = 0; i < size; i++)
+            type.DefineField(units[i], genericTypeParameter);
+
+        return type;
     }
 
 }

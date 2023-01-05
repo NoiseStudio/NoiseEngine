@@ -26,6 +26,8 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
             neslType = BuiltInTypes.Float32;
         else if (typeof(T) == typeof(double))
             neslType = BuiltInTypes.Float64;
+        else if (typeof(T) == typeof(Vector4<float>))
+            neslType = Vectors.GetVector4(BuiltInTypes.Float32);
         else
             throw new InvalidOperationException("Given generic T type is not supported.");
 

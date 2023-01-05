@@ -122,7 +122,34 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field/variable with the element type.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    SetElement
+    SetElement,
+
+    #endregion
+    #region LoadFieldOperations
+
+    /// <summary>
+    /// Loads to first argument, value from second argument at specified second argument object's field index given as
+    /// third argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable with type of third argument's field.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// Third argument - a valid index of a field with type of second argument.<br />
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    LoadField,
+
+    /// <summary>
+    /// Sets a specified in second argument object's field index in object given as first argument to the value of the
+    /// third argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field with type of second argument.<br />
+    /// Third argument - a valid index of a field/variable with type of second argument's field.<br />
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    SetField
 
     #endregion
 }
