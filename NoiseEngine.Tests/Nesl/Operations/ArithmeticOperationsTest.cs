@@ -45,7 +45,7 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
     [InlineData(new float[] {
         -3.51834f, 4.60347f, 5.26284f, 4.37281f,
         1.30167f, 6.68611f, -7.74374f, 9.32226f,
-        -2.21667f, 11.28958f, -2.4809f, 13.69507f
+        -2.21667f, 11.2895793914794921875f, -2.480900287628173828125f, 13.69507f
     })]
     public void Add(object values) {
         ArithmeticHelper(il => il.Emit(OpCode.Add, 1u, 1u, 2u), values);
@@ -105,8 +105,8 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
     [InlineData(new float[] {
         -3.51834f, 4.60347f, 5.26284f, 4.37281f,
         1.30167f, 6.68611f, -7.74374f, 9.32226f,
-        -2.7029431422710825324390974671f, 0.6885124534295726513623018466642f, -0.67962509071843837732155263477338f,
-        0.46907187742028220624612486671687f
+        -2.702943325042724609375f, 0.6885124534295726513623018466642f, -0.679625034332275390625f,
+        0.46907187f
     })]
     public void Divide(object values) {
         ArithmeticHelper(il => il.Emit(OpCode.Divide, 1u, 1u, 2u), values);

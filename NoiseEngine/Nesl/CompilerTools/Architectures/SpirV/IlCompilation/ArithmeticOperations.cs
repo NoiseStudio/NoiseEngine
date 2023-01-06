@@ -24,6 +24,46 @@ internal class ArithmeticOperations : IlCompilerOperation {
         IlCompiler.LoadOperations.SpirVStore(result, resultId);
     }
 
+    public void Add(Instruction instruction) {
+        TwoOperandHelper(instruction, SpirVOpCode.OpIAdd, SpirVOpCode.OpIAdd, SpirVOpCode.OpFAdd);
+    }
+
+    public void Subtract(Instruction instruction) {
+        TwoOperandHelper(instruction, SpirVOpCode.OpISub, SpirVOpCode.OpISub, SpirVOpCode.OpFSub);
+    }
+
+    public void Multiple(Instruction instruction) {
+        TwoOperandHelper(instruction, SpirVOpCode.OpIMul, SpirVOpCode.OpIMul, SpirVOpCode.OpFMul);
+    }
+
+    public void Divide(Instruction instruction) {
+        TwoOperandHelper(instruction, SpirVOpCode.OpUDiv, SpirVOpCode.OpSDiv, SpirVOpCode.OpFDiv);
+    }
+
+    public void Modulo(Instruction instruction) {
+        TwoOperandHelper(instruction, SpirVOpCode.OpUMod, SpirVOpCode.OpSMod, SpirVOpCode.OpFMod);
+    }
+
+    public void Remainder(Instruction instruction) {
+        TwoOperandHelper(instruction, SpirVOpCode.OpUMod, SpirVOpCode.OpSRem, SpirVOpCode.OpFRem);
+    }
+
+    private void TwoOperandHelper(
+        Instruction instruction, SpirVOpCode? uintOpCode, SpirVOpCode intOpCode, SpirVOpCode floatOpCode
+    ) {
+        SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+        SpirVVariable operand1 = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+        SpirVVariable operand2 = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+
+        SpirVId resultId = Compiler.GetNextId();
+        Generator.Emit(
+            OpCodeSelector(result, uintOpCode, intOpCode, floatOpCode), Compiler.GetSpirVType(result.NeslType).Id,
+            resultId, IlCompiler.LoadOperations.SpirVLoad(operand1), IlCompiler.LoadOperations.SpirVLoad(operand2)
+        );
+
+        IlCompiler.LoadOperations.SpirVStore(result, resultId);
+    }
+
     private SpirVOpCode OpCodeSelector(
         SpirVVariable variable, SpirVOpCode? uintOpCode, SpirVOpCode intOpCode, SpirVOpCode floatOpCode
     ) {

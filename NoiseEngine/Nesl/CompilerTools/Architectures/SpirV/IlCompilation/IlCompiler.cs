@@ -46,6 +46,24 @@ internal class IlCompiler {
                 case OpCode.Negate:
                     ArithmeticOperations.Negate(instruction);
                     break;
+                case OpCode.Add:
+                    ArithmeticOperations.Add(instruction);
+                    break;
+                case OpCode.Subtract:
+                    ArithmeticOperations.Subtract(instruction);
+                    break;
+                case OpCode.Multiple:
+                    ArithmeticOperations.Multiple(instruction);
+                    break;
+                case OpCode.Divide:
+                    ArithmeticOperations.Divide(instruction);
+                    break;
+                case OpCode.Modulo:
+                    ArithmeticOperations.Modulo(instruction);
+                    break;
+                case OpCode.Remainder:
+                    ArithmeticOperations.Remainder(instruction);
+                    break;
 
                 #endregion
                 #region BranchOperations
