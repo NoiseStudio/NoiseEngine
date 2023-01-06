@@ -16,21 +16,19 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
     public ArithmeticOperationsTest(ApplicationFixture fixture) : base(fixture) {
     }
 
-    [Fact]
-    public void Negate() {
-        ArithmeticHelper(il => il.Emit(OpCode.Negate, 1u, 1u), new object[][] {
-            Array.Empty<object>(),
-            new object[] {
-                5, 1, -22, -29,
-                0, 0, 0, 0,
-                -5, -1, 22, 29
-            },
-            new object[] {
-                4.14359f, 6.10783f, -4.64661f, float.NegativeInfinity,
-                0f, 0f, 0f, 0f,
-                -4.14359f, -6.10783f, 4.64661f, float.PositiveInfinity
-            }
-        });
+    [Theory]
+    [InlineData(new int[] {
+        5, 1, -22, -29,
+        0, 0, 0, 0,
+        -5, -1, 22, 29
+    })]
+    [InlineData(new float[] {
+        4.14359f, 6.10783f, -4.64661f, float.NegativeInfinity,
+        0f, 0f, 0f, 0f,
+        -4.14359f, -6.10783f, 4.64661f, float.PositiveInfinity
+    })]
+    public void Negate(object values) {
+        ArithmeticHelper(il => il.Emit(OpCode.Negate, 1u, 1u), values);
     }
 
     /*[Fact]
@@ -44,17 +42,21 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
         });
     }*/
 
-    private void ArithmeticHelper(Action<IlGenerator> ilFactory, object[][] values) {
-        if (values[0].Length != 0)
-            ArithmeticHelperWorker<uint>(ilFactory, values[0]);
-        if (values[1].Length != 0)
-            ArithmeticHelperWorker<int>(ilFactory, values[1]);
-        if (values[2].Length != 0)
-            ArithmeticHelperWorker<float>(ilFactory, values[2]);
+    private void ArithmeticHelper(Action<IlGenerator> ilFactory, object values) {
+        Type type = values.GetType();
+
+        if (type == typeof(uint[]))
+            ArithmeticHelperWorker(ilFactory, (uint[])values);
+        else if (type == typeof(int[]))
+            ArithmeticHelperWorker(ilFactory, (int[])values);
+        else if (type == typeof(float[]))
+            ArithmeticHelperWorker(ilFactory, (float[])values);
+        else
+            throw new InvalidOperationException("Given values type is not supported.");
     }
 
     private void ArithmeticHelperWorker<T>(
-        Action<IlGenerator> ilFactory, object[] values
+        Action<IlGenerator> ilFactory, T[] values
     ) where T : unmanaged, INumber<T> {
         NeslType neslType = GetNeslTypeFromT<T>();
 
