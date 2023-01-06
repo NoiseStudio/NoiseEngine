@@ -59,6 +59,42 @@ internal enum SpirVOpCode : ushort {
     [OpCodeValidationOptional(typeof(SpirVLiteral))]
     OpMemberDecorate = 72,
 
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFConvert = 115,
+
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpSNegate = 126,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFNegate = 127,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpIAdd = 128,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFAdd = 129,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpISub = 130,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFSub = 131,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpIMul = 132,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFMul = 133,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpUDiv = 134,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpSDiv = 135,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFDiv = 136,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpUMod = 137,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpSRem = 138,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpSMod = 139,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFRem = 140,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpFMod = 141,
+
     [OpCodeValidation(typeof(SpirVId))]
     OpLabel = 248,
     [OpCodeValidation]

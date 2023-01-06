@@ -11,14 +11,19 @@ public class ComputeShader : ICommonShader {
 
     internal CommonShaderDelegation Delegation { get; }
 
-    public ComputeShader(GraphicsDevice device, NeslType classData) {
+    public ComputeShader(GraphicsDevice device, NeslType classData, ShaderSettings settings) {
         Device = device;
         ClassData = classData;
 
         Delegation = device.Instance.Api switch {
-            GraphicsApi.Vulkan => new VulkanCommonShaderDelegation(this),
+            GraphicsApi.Vulkan => new VulkanCommonShaderDelegation(this, settings),
             _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
         };
+    }
+
+    public ComputeShader(GraphicsDevice device, NeslType classData) : this(
+        device, classData, ShaderSettings.Conformant
+    ) {
     }
 
     private ComputeShader(GraphicsDevice device, NeslType classData, CommonShaderDelegation delegation) {

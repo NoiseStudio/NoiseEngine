@@ -20,9 +20,108 @@
 ///         <term>supported index type</term>
 ///         <description>Currently only unsigned 32 bit integer.</description>
 ///     </item>
+///     <item>
+///         <term>arithmetic operation type</term>
+///         <description>
+///         Signed or unsigned any bit built in integer or any bit floats. And all built in Vectors from this.
+///         </description>
+///     </item>
 /// </list>
 /// </remarks>
 public enum OpCode : ushort {
+    #region ArithmeticOperations
+
+    /// <summary>
+    /// Subtracts the second argument from zero and loads the result into the first argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// <br />
+    /// All arguments must be the same arithmetic operation type. And type must not be unsigned.
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint))]
+    Negate,
+
+    /// <summary>
+    /// Adds the third argument to second argument and loads the result into the first argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// Third argument - a valid index of a field/variable.<br />
+    /// <br />
+    /// All arguments must be the same arithmetic operation type.
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    Add,
+
+    /// <summary>
+    /// Subtracts the third argument from second argument and loads the result into the first argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// Third argument - a valid index of a field/variable.<br />
+    /// <br />
+    /// All arguments must be the same arithmetic operation type.
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    Subtract,
+
+    /// <summary>
+    /// Multiplies the second argument by third argument and loads the result into the first argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// Third argument - a valid index of a field/variable.<br />
+    /// <br />
+    /// All arguments must be the same arithmetic operation type.
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    Multiple,
+
+    /// <summary>
+    /// Divides the second argument by third argument and loads the result into the first argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// Third argument - a valid index of a field/variable.<br />
+    /// <br />
+    /// All arguments must be the same arithmetic operation type.
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    Divide,
+
+    /// <summary>
+    /// Loads into first argument the modulo of second argument divided by third argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// Third argument - a valid index of a field/variable.<br />
+    /// <br />
+    /// All arguments must be the same arithmetic operation type.
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    Modulo,
+
+    /// <summary>
+    /// Loads into first argument the remainder of second argument divided by third argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// Third argument - a valid index of a field/variable.<br />
+    /// <br />
+    /// All arguments must be the same arithmetic operation type.
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    Remainder,
+
+    #endregion
     #region BranchOperations
 
     /// <summary>
@@ -149,7 +248,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field/variable with type of second argument's field.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    SetField
+    SetField,
 
     #endregion
 }

@@ -3,7 +3,6 @@ using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
-using System.Reflection.Metadata.Ecma335;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
