@@ -66,6 +66,13 @@ internal class SpirVGenerator {
         Writer.WriteUInt32(argument2);
     }
 
+    public void Emit(SpirVOpCode opCode, SpirVId argument1, uint argument2, uint argument3) {
+        EmitWorker(opCode, 4, typeof(SpirVId), typeof(uint), typeof(uint));
+        Writer.WriteUInt32(argument1.RawId);
+        Writer.WriteUInt32(argument2);
+        Writer.WriteUInt32(argument3);
+    }
+
     public void Emit(SpirVOpCode opCode, SpirVId argument1, uint argument2, SpirVLiteral argument3) {
         EmitWorker(opCode, (ushort)(3 + argument3.WordCount), typeof(SpirVId), typeof(uint), typeof(SpirVLiteral));
 

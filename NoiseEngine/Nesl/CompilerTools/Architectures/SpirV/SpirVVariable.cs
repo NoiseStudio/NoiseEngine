@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
+using NoiseEngine.Rendering;
 using System;
 using System.Reflection;
 

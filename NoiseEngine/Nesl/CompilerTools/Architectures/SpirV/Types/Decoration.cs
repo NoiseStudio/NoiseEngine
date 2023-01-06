@@ -10,5 +10,6 @@ internal enum Decoration : uint {
     Location = 30,
     Binding = 33,
     DescriptorSet = 34,
-    Offset = 35
+    Offset = 35,
+    FPRoundingMode = 39
 }

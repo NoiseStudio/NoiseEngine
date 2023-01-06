@@ -63,9 +63,9 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
         -2, -108, 41, -47
     })]
     [InlineData(new float[] {
-        -3.51834f, 4.60347f, 5.26284f, 4.37281f,
-        1.30167f, 6.68611f, -7.74374f, 9.32226f,
-        -4.82001f, -2.08264f, 13.00658f, -4.94945f
+        -3.51834f, 64.07903f, 5.26284f, 4.37281f,
+        1.30167f, 50.03454f, -7.74374f, 9.32226f,
+        -4.82001f, 14.044495f, 13.00658f, -4.94945f
     })]
     public void Substract(object values) {
         ArithmeticHelper(il => il.Emit(OpCode.Subtract, 1u, 1u, 2u), values);
@@ -83,9 +83,9 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
         8099, -1620, -310, 2100
     })]
     [InlineData(new float[] {
-        -3.51834f, 4.60347f, 5.26284f, 4.37281f,
-        1.30167f, 6.68611f, -7.74374f, 9.32226f,
-        -4.5797176278f, 30.7793068017f, -40.7540646216f, 40.7644717506f
+        -3.51834f, 4.60347f, 44.22299f, 67.55519f,
+        1.30167f, 6.68611f, -15.03752f, 55.65422f,
+        -4.5797176278f, 30.7793068017f, -665.004096585f, 3759.7314064f
     })]
     public void Multiple(object values) {
         ArithmeticHelper(il => il.Emit(OpCode.Multiple, 1u, 1u, 2u), values);
@@ -103,10 +103,10 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
         0, -5, 0, 0
     })]
     [InlineData(new float[] {
-        -3.51834f, 4.60347f, 5.26284f, 4.37281f,
-        1.30167f, 6.68611f, -7.74374f, 9.32226f,
+        -3.51834f, 4.60347f, 5.26284f, 52.61113f,
+        1.30167f, 6.68611f, -7.74374f, 25.45748f,
         -2.702943325042724609375f, 0.6885124534295726513623018466642f, -0.679625034332275390625f,
-        0.46907187f
+        2.06662756879f
     })]
     public void Divide(object values) {
         ArithmeticHelper(il => il.Emit(OpCode.Divide, 1u, 1u, 2u), values);
@@ -119,14 +119,14 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
         32, 9, 44, 21
     })]
     [InlineData(new int[] {
-        89, -90, 10, 28,
-        91, 18, -31, 75,
-        89, 0, -21, 28
+        89, 90, 18, 28,
+        91, 18, 51, 75,
+        89, 0, 18, 28
     })]
     [InlineData(new float[] {
-        -3.51834f, 4.60347f, 5.26284f, 4.37281f,
-        1.30167f, 6.68611f, -7.74374f, 9.32226f,
-        0.38667f, 4.60347f, -2.4809f, 4.37281f
+        -52.61113f, 4.60347f, 2.29993f, 4.37281f,
+        250.45748f, 6.68611f, -7.09268f, 9.32226f,
+        197.84635f, 4.60347f, -4.79275f, 4.37281f
     })]
     public void Modulo(object values) {
         ArithmeticHelper(il => il.Emit(OpCode.Modulo, 1u, 1u, 2u), values);
@@ -139,9 +139,9 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
         32, 9, 44, 21
     })]
     [InlineData(new int[] {
-        89, -90, 10, 28,
-        91, 18, -31, 75,
-        89, 0, 10, 28
+        89, 13, 10, 28,
+        91, 5, -31, 75,
+        89, 3, 10, 28
     })]
     [InlineData(new float[] {
         -3.51834f, 4.60347f, 5.26284f, 4.37281f,

@@ -2,6 +2,7 @@
 using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
+using NoiseEngine.Rendering;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -31,6 +32,7 @@ internal class SpirVCompiler {
     private uint nextId;
 
     internal IEnumerable<NeslEntryPoint> EntryPoints { get; }
+    internal ShaderSettings Settings { get; }
 
     internal SpirVCompilationResultBuilder ResultBuilder { get; }
     internal SpirVBuiltInTypes BuiltInTypes { get; }
@@ -39,8 +41,9 @@ internal class SpirVCompiler {
     internal SpirVGenerator Annotations { get; }
     internal SpirVGenerator TypesAndVariables { get; }
 
-    private SpirVCompiler(IEnumerable<NeslEntryPoint> entryPoints) {
+    private SpirVCompiler(IEnumerable<NeslEntryPoint> entryPoints, ShaderSettings settings) {
         EntryPoints = entryPoints;
+        Settings = settings;
 
         ResultBuilder = new SpirVCompilationResultBuilder();
         BuiltInTypes = new SpirVBuiltInTypes(this);
@@ -50,8 +53,8 @@ internal class SpirVCompiler {
         TypesAndVariables = new SpirVGenerator(this);
     }
 
-    public static SpirVCompilationResult Compile(IEnumerable<NeslEntryPoint> entryPoints) {
-        SpirVCompiler compiler = new SpirVCompiler(entryPoints);
+    public static SpirVCompilationResult Compile(IEnumerable<NeslEntryPoint> entryPoints, ShaderSettings settings) {
+        SpirVCompiler compiler = new SpirVCompiler(entryPoints, settings);
         compiler.CompileWorker();
         return compiler.ResultBuilder.Build();
     }

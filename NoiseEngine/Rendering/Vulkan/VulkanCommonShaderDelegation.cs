@@ -25,12 +25,12 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
 
     internal DescriptorSet DescriptorSet { get; }
 
-    public VulkanCommonShaderDelegation(ICommonShader shader) : base(shader) {
+    public VulkanCommonShaderDelegation(ICommonShader shader, ShaderSettings settings) : base(shader) {
         NeslMethod[] kernels = shader.ClassData.Methods
             .Where(x => x.Attributes.HasAnyAttribute(nameof(KernelAttribute))).ToArray();
 
-        SpirVCompilationResult result = SpirVCompiler.Compile(kernels
-            .Select(x => new NeslEntryPoint(x, ExecutionModel.GLCompute))
+        SpirVCompilationResult result = SpirVCompiler.Compile(
+            kernels.Select(x => new NeslEntryPoint(x, ExecutionModel.GLCompute)), settings
         );
 
         System.IO.File.WriteAllBytes("tak.spv", result.GetCode());
