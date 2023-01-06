@@ -1,8 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
-using NoiseEngine.Rendering;
 using System;
-using System.Reflection;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -14,7 +12,7 @@ internal class SpirVVariable {
 
     public SpirVId Id { get; }
     public SpirVType PointerType { get; }
-    public uint Binding { get; }
+    public uint? Binding { get; }
 
     public SpirVVariable(
         SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVGenerator generator
@@ -32,6 +30,7 @@ internal class SpirVVariable {
                 Binding = binding;
                 break;
             case StorageClass.Function:
+            case StorageClass.Input:
                 output = CreateFunctionStorage(generator, type);
                 break;
             default:
@@ -42,11 +41,12 @@ internal class SpirVVariable {
         PointerType = output.PointerType;
     }
 
-    public SpirVVariable(SpirVCompiler compiler, NeslField neslField) :
-        this(compiler, neslField.FieldType, GetStorageClass(neslField), compiler.TypesAndVariables) {
+    public SpirVVariable(SpirVCompiler compiler, NeslField neslField) : this(
+        compiler, neslField.FieldType, GetStorageClass(neslField), compiler.TypesAndVariables
+    ) {
     }
 
-    private SpirVVariable(
+    public SpirVVariable(
         SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVId id, SpirVType pointerType
     ) {
         Compiler = compiler;
@@ -78,6 +78,7 @@ internal class SpirVVariable {
 
     public SpirVId GetAccess(SpirVGenerator generator) {
         return StorageClass switch {
+            StorageClass.Input => Id,
             StorageClass.Uniform => GetAccessUniformStorage(generator),
             StorageClass.Function => Id,
             _ => throw new NotImplementedException()
@@ -117,7 +118,11 @@ internal class SpirVVariable {
 
     private SpirVVariableCreationOutput CreateFunctionStorage(SpirVGenerator generator, SpirVType type) {
         SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(StorageClass, type);
-        SpirVId id = CreateVariableFromPointer(generator, pointer, StorageClass);
+
+        SpirVId id;
+        lock (generator)
+            id = CreateVariableFromPointer(generator, pointer, StorageClass);
+
         return new SpirVVariableCreationOutput(id, pointer);
     }
 

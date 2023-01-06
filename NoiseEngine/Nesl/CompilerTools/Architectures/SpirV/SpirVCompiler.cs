@@ -167,9 +167,9 @@ internal class SpirVCompiler {
         Header.Emit(SpirVOpCode.OpMemoryModel, (uint)AddressingModel.Logical, (uint)MemoryModel.Glsl450);
 
         // Generate entry points.
-        Parallel.ForEach(EntryPoints, x => GetSpirVFunction(new SpirVFunctionIdentifier(
-            x.Method, Array.Empty<SpirVVariable>()
-        )));
+        //Parallel.ForEach(EntryPoints, x => GetSpirVFunction(new SpirVFunctionIdentifier(
+        //    x.Method, Array.Empty<SpirVVariable>()
+        //)));
 
         // Emit OpEntryPoint.
         foreach (NeslEntryPoint entryPoint in EntryPoints) {
@@ -220,8 +220,10 @@ internal class SpirVCompiler {
         ResultBuilder.Code = generator.Writer.ToArray();
 
         // Set bindings.
-        foreach ((NeslField field, Lazy<SpirVVariable> variable) in variables)
-            ResultBuilder.Bindings.Add(field, variable.Value.Binding);
+        foreach ((NeslField field, Lazy<SpirVVariable> variable) in variables) {
+            if (variable.Value.Binding.HasValue)
+                ResultBuilder.Bindings.Add(field, variable.Value.Binding.Value);
+        }
     }
 
     /// <summary>

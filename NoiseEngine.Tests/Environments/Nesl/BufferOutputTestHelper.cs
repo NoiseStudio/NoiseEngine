@@ -29,6 +29,10 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
         shaderOutput.AddAttribute(UniformAttribute.Create());
     }
 
+    public NeslFieldBuilder DefineField(NeslType type) {
+        return shaderType.DefineField(Guid.NewGuid().ToString().Replace("-", ""), type);
+    }
+
     public NeslMethodBuilder DefineMethod(NeslType? returnType = null, params NeslType[] parameterTypes) {
         return shaderType.DefineMethod(Guid.NewGuid().ToString(), returnType, parameterTypes);
     }
