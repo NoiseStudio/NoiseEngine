@@ -75,6 +75,14 @@ impl<'init> RenderPass<'init> {
 
         Ok(Self { inner, device: device.clone() })
     }
+
+    pub fn inner(&self) -> vk::RenderPass {
+        self.inner
+    }
+
+    pub fn device(&self) -> &Arc<VulkanDevice<'init>> {
+        &self.device
+    }
 }
 
 impl Drop for RenderPass<'_> {

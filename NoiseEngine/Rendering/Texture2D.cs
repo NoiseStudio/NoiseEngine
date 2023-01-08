@@ -9,6 +9,10 @@ public class Texture2D : Texture {
     public uint Width { get; }
     public uint Height { get; }
     public uint MipLevels { get; }
+    public uint SampleCount { get; }
+
+    internal override Vector3<uint> Extent => new Vector3<uint>(Width, Height, 1);
+    internal override uint SampleCountInternal => SampleCount;
 
     public Texture2D(
         GraphicsDevice device, uint width, uint height, TextureFormat format = TextureFormat.R8G8B8A8_SRGB,
@@ -22,6 +26,7 @@ public class Texture2D : Texture {
         Width = width;
         Height = height;
         MipLevels = mipLevels;
+        SampleCount = sampleCount;
     }
 
 }
