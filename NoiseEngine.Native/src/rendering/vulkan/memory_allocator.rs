@@ -48,6 +48,39 @@ impl MemoryAllocator {
         }
     }
 
+    pub fn alloc_memory_type(
+        &self, size: u64, _type_bits: u32, property_flags: vk::MemoryPropertyFlags
+    ) -> Result<MemoryBlock, VulkanUniversalError> {
+        let mut usage = UsageFlags::empty();
+        if property_flags.contains(vk::MemoryPropertyFlags::DEVICE_LOCAL) {
+            usage |= UsageFlags::FAST_DEVICE_ACCESS;
+        }
+        if property_flags.contains(vk::MemoryPropertyFlags::HOST_VISIBLE) {
+            usage |= UsageFlags::HOST_ACCESS;
+        }
+        if property_flags.contains(vk::MemoryPropertyFlags::HOST_COHERENT) {
+            usage |= UsageFlags::HOST_ACCESS;
+        }
+        if property_flags.contains(vk::MemoryPropertyFlags::HOST_CACHED) {
+            usage |= UsageFlags::HOST_ACCESS;
+        }
+        if property_flags.contains(vk::MemoryPropertyFlags::LAZILY_ALLOCATED) {
+            usage |= UsageFlags::DEVICE_ADDRESS;
+        }
+
+        match unsafe {
+            self.inner.lock().unwrap().alloc(self.memory_device(), Request {
+                size,
+                align_mask: 1,
+                usage,
+                memory_types: !0
+            })
+        } {
+            Ok(block) => Ok(MemoryBlock::new(self, block)),
+            Err(err) => Err(err.into())
+        }
+    }
+
     fn memory_device(&self) -> &AshMemoryDevice {
         AshMemoryDevice::wrap(&self.device)
     }

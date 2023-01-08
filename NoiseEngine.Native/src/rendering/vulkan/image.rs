@@ -1,0 +1,114 @@
+use std::{sync::Arc, ptr};
+
+use ash::vk;
+
+use crate::{errors::invalid_operation::InvalidOperationError, rendering::texture::Texture};
+
+use super::{
+    device::VulkanDevice, errors::universal::VulkanUniversalError, memory_allocator::MemoryBlock
+};
+
+#[repr(C)]
+pub struct VulkanImageCreateInfo {
+    flags: vk::ImageCreateFlags,
+    image_type: vk::ImageType,
+    extent: vk::Extent3D,
+    format: vk::Format,
+    mip_levels: u32,
+    array_layers: u32,
+    sample_count: u32,
+    linear: bool,
+    usage: vk::ImageUsageFlags,
+    concurrent: bool,
+    layout: vk::ImageLayout
+}
+
+pub struct VulkanImage<'init: 'ma, 'ma> {
+    inner: vk::Image,
+    _memory: MemoryBlock<'ma>,
+    device: Arc<VulkanDevice<'init>>
+}
+
+impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
+    pub fn new(
+        device: &'init Arc<VulkanDevice<'init>>, create_info: VulkanImageCreateInfo
+    ) -> Result<Self, VulkanUniversalError> {
+        let initialized = device.initialized()?;
+
+        let mut queue_family_indices = Vec::new();
+        if create_info.concurrent {
+            for family in initialized.get_families() {
+                if family.support().graphics || family.support().computing {
+                    queue_family_indices.push(family.index());
+                }
+            }
+
+            if queue_family_indices.is_empty() {
+                return Err(
+                    InvalidOperationError::with_str("Given graphics device is not support textures.").into()
+                )
+            }
+        }
+
+        let vk_create_info = vk::ImageCreateInfo {
+            s_type: vk::StructureType::IMAGE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: create_info.flags,
+            image_type: create_info.image_type,
+            format: create_info.format,
+            extent: create_info.extent,
+            mip_levels: create_info.mip_levels,
+            array_layers: create_info.array_layers,
+            samples: vk::SampleCountFlags::from_raw(create_info.sample_count),
+            tiling: match create_info.linear {
+                false => vk::ImageTiling::OPTIMAL,
+                true => vk::ImageTiling::LINEAR
+            },
+            usage: create_info.usage,
+            sharing_mode: match create_info.concurrent {
+                false => vk::SharingMode::EXCLUSIVE,
+                true => vk::SharingMode::CONCURRENT
+            },
+            queue_family_index_count: queue_family_indices.len() as u32,
+            p_queue_family_indices: queue_family_indices.as_ptr(),
+            initial_layout: create_info.layout,
+        };
+
+        let inner = unsafe {
+            initialized.vulkan_device().create_image(&vk_create_info, None)
+        }?;
+
+        // Memory.
+        let memory_requirements = unsafe {
+            initialized.vulkan_device().get_image_memory_requirements(inner)
+        };
+
+        let memory = initialized.allocator().alloc_memory_type(
+            memory_requirements.size, memory_requirements.memory_type_bits,
+            vk::MemoryPropertyFlags::DEVICE_LOCAL
+        )?;
+
+        unsafe {
+            initialized.vulkan_device().bind_image_memory(inner, memory.memory(), memory.offset())
+        }?;
+
+        Ok(Self { inner, _memory: memory, device: device.clone() })
+    }
+
+    pub fn inner(&self) -> vk::Image {
+        self.inner
+    }
+}
+
+impl Drop for VulkanImage<'_, '_> {
+    fn drop(&mut self) {
+        unsafe {
+            self.device.initialized().unwrap().vulkan_device().destroy_image(
+                self.inner, None
+            )
+        }
+    }
+}
+
+impl Texture for VulkanImage<'_, '_> {
+}

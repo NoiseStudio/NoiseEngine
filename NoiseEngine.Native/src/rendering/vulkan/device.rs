@@ -188,6 +188,10 @@ impl<'init> VulkanDeviceInitialized<'init> {
         self.queue_families.len()
     }
 
+    pub fn get_families(&self) -> &Vec<VulkanQueueFamily<'init>> {
+        &self.queue_families
+    }
+
     pub fn get_family(&self, support: VulkanDeviceSupport) -> Result<&VulkanQueueFamily<'init>, InvalidOperationError> {
         for family in &*self.queue_families {
             if support.is_suitable_to(&family.support) {
