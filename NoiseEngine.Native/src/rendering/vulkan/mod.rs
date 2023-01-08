@@ -16,4 +16,5 @@ pub mod pipeline_layout;
 pub mod pipeline_shader_stage;
 pub mod pipeline;
 pub mod pool_wrappers;
+pub mod render_pass;
 pub mod shader_module;
