@@ -15,9 +15,6 @@ public class PrimitiveCreator : IDisposable {
     private PrimitiveCreatorShared Shared { get; }
 
     internal PrimitiveCreator(ApplicationScene scene) {
-        // TODO: remove this. This temporary initializes primitive shared.
-        _ = scene.GraphicsDevice;
-
         this.scene = scene;
         Shared = ApplicationScene.primitiveShared!;
     }

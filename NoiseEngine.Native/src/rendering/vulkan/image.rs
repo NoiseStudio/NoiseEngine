@@ -25,6 +25,7 @@ pub struct VulkanImageCreateInfo {
 
 pub struct VulkanImage<'init: 'ma, 'ma> {
     inner: vk::Image,
+    format: vk::Format,
     _memory: MemoryBlock<'ma>,
     device: Arc<VulkanDevice<'init>>
 }
@@ -92,11 +93,19 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
             initialized.vulkan_device().bind_image_memory(inner, memory.memory(), memory.offset())
         }?;
 
-        Ok(Self { inner, _memory: memory, device: device.clone() })
+        Ok(Self { inner, format: create_info.format, _memory: memory, device: device.clone() })
+    }
+
+    pub fn format(&self) -> vk::Format {
+        self.format
     }
 
     pub fn inner(&self) -> vk::Image {
         self.inner
+    }
+
+    pub fn device(&self) -> &Arc<VulkanDevice<'init>> {
+        &self.device
     }
 }
 

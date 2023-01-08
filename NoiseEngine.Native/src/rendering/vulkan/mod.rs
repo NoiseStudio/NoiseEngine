@@ -6,6 +6,8 @@ pub mod device_pool;
 pub mod device_support;
 pub mod device;
 pub mod fence;
+pub mod framebuffer;
+pub mod image_view;
 pub mod image;
 pub mod instance;
 pub mod library;

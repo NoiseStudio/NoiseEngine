@@ -9,11 +9,11 @@ internal class VulkanCameraDelegation : CameraDelegation {
 
     public new VulkanDevice GraphicsDevice => Unsafe.As<VulkanDevice>(base.GraphicsDevice);
 
-    public RenderPass? RenderPass {
+    public RenderPass RenderPass {
         get {
             if (Camera.IsDirty)
                 Calculate();
-            return renderPass;
+            return renderPass!;
         }
     }
 
@@ -33,9 +33,12 @@ internal class VulkanCameraDelegation : CameraDelegation {
             throw new NullReferenceException("Camera's render target is null.");
         }
 
-        renderPass = new RenderPass(
-            GraphicsDevice, new RenderPassCreateInfo(renderTarget.Format, renderTarget.SampleCount, Camera.ClearFlags)
-        );
+        if (renderTarget is Texture) {
+            renderPass = new TextureRenderPass(GraphicsDevice, renderTarget, Camera.ClearFlags);
+            return;
+        }
+
+        throw new NotImplementedException("This camera's render target is not implemented.");
     }
 
 }

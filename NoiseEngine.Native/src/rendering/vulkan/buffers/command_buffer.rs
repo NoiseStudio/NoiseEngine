@@ -14,7 +14,7 @@ use crate::{
     serialization::reader::SerializationReader, interop::prelude::InteropResult, common::pool::PoolItem
 };
 
-use super::command_buffers::{memory_commands, compute_commands};
+use super::command_buffers::{memory_commands, compute_commands, camera_commands};
 
 pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     initialized: &'init VulkanDeviceInitialized<'init>,
@@ -116,6 +116,10 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
 
         while let Some(command) = data.read::<GraphicsCommandBufferCommand>() {
             match command {
+                GraphicsCommandBufferCommand::AttachCamera =>
+                    camera_commands::attach_camera(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::DetachCamera =>
+                    camera_commands::detach_camera(self, vulkan_device),
                 GraphicsCommandBufferCommand::CopyBuffer =>
                     memory_commands::copy_buffer(&mut data, self, vulkan_device),
                 GraphicsCommandBufferCommand::Dispatch =>

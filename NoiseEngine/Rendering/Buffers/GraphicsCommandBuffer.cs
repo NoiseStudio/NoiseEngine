@@ -28,11 +28,12 @@ public class GraphicsCommandBuffer {
     private int writerCountOnHandleCreation;
     private InteropHandle<GraphicsCommandBuffer> handle;
 
-    private bool graphics = false;
+    private bool graphics;
     private bool computing;
     private bool transfer;
 
     public GraphicsDevice Device { get; }
+    public Camera? AttachedCamera { get; private set; }
 
     /// <summary>
     /// Specifies that a <see cref="GraphicsCommandBuffer"/> can be simultaneous executed
@@ -56,7 +57,7 @@ public class GraphicsCommandBuffer {
         this.simultaneousExecute = simultaneousExecute;
 
         delegation = device.Instance.Api switch {
-            GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(writer),
+            GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(writer, references),
             _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
         };
 
@@ -264,6 +265,17 @@ public class GraphicsCommandBuffer {
         computing = true;
         references.Add(kernel);
         delegation.DispatchWorker(kernel, groupCount);
+    }
+
+    internal void AttachCameraUnchecked(Camera camera) {
+        graphics = true;
+        AttachedCamera = camera;
+        delegation.AttachCameraWorker(camera);
+    }
+
+    internal void DetachCameraUnchecked() {
+        AttachedCamera = null;
+        writer.WriteCommand(CommandBufferCommand.DetachCamera);
     }
 
 }
