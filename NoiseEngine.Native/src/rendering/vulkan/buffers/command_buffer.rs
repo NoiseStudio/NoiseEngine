@@ -116,14 +116,16 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
 
         while let Some(command) = data.read::<GraphicsCommandBufferCommand>() {
             match command {
+                GraphicsCommandBufferCommand::CopyBuffer =>
+                    memory_commands::copy_buffer(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::CopyTextureToBuffer =>
+                    memory_commands::copy_texture_to_buffer(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::Dispatch =>
+                    compute_commands::dispatch(&mut data, self, vulkan_device),
                 GraphicsCommandBufferCommand::AttachCamera =>
                     camera_commands::attach_camera(&mut data, self, vulkan_device),
                 GraphicsCommandBufferCommand::DetachCamera =>
                     camera_commands::detach_camera(self, vulkan_device),
-                GraphicsCommandBufferCommand::CopyBuffer =>
-                    memory_commands::copy_buffer(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::Dispatch =>
-                    compute_commands::dispatch(&mut data, self, vulkan_device)
             };
         };
 
