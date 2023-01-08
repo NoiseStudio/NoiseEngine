@@ -7,6 +7,7 @@ pub(crate) mod device_value;
 mod compute_pipeline_interop;
 mod conversions;
 mod device_interop;
+mod image_interop;
 mod instance_interop;
 mod library_interop;
 mod pipeline_interop;
