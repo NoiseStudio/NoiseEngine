@@ -28,6 +28,25 @@ pub fn copy_buffer(data: &mut SerializationReader, buffer: &VulkanCommandBuffer,
     };
 }
 
+pub fn copy_buffer_to_texture(
+    data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
+) {
+    let source_buffer = data.read_unchecked::<vk::Buffer>();
+    let destination_texture = data.read_unchecked::<&Arc<VulkanImage>>();
+
+    let mut regions = Vec::with_capacity(data.read_unchecked::<i32>() as usize);
+    for _ in 0..regions.capacity() {
+        regions.push(read_unchecked_buffer_image_copy(data));
+    }
+
+    unsafe {
+        vulkan_device.cmd_copy_buffer_to_image(
+            buffer.inner(), source_buffer, destination_texture.inner(),
+            destination_texture.layout(), &regions
+        )
+    };
+}
+
 pub fn copy_texture_to_buffer(
     data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
 ) {

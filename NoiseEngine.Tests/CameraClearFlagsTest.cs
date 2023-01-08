@@ -15,7 +15,7 @@ public class CameraClearFlagsTest : ApplicationTestEnvironment {
     [Fact]
     public void SolidColor() {
         ExecuteOnAllDevices(scene => {
-            Texture2D texture = new Texture2D(scene.GraphicsDevice, 1, 1);
+            Texture2D texture = new Texture2D(scene.GraphicsDevice, TextureUsage.TransferAll, 1, 1);
             Camera camera = new Camera(scene) {
                 RenderTarget = texture,
                 ClearFlags = CameraClearFlags.SolidColor,

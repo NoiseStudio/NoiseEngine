@@ -118,6 +118,8 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             match command {
                 GraphicsCommandBufferCommand::CopyBuffer =>
                     memory_commands::copy_buffer(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::CopyBufferToTexture =>
+                    memory_commands::copy_buffer_to_texture(&mut data, self, vulkan_device),
                 GraphicsCommandBufferCommand::CopyTextureToBuffer =>
                     memory_commands::copy_texture_to_buffer(&mut data, self, vulkan_device),
                 GraphicsCommandBufferCommand::Dispatch =>

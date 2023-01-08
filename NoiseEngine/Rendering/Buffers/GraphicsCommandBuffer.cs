@@ -262,6 +262,26 @@ public class GraphicsCommandBuffer {
     }
 
     internal void CopyUnchecked<T>(
+        GraphicsReadOnlyBuffer<T> sourceBuffer, Texture destinationTexture,
+        ReadOnlySpan<TextureBufferCopyRegion> regions
+    ) where T : unmanaged {
+        transfer = true;
+
+        FastList<object> references = this.references;
+        references.EnsureCapacity(references.Count + 2);
+        references.UnsafeAdd(sourceBuffer);
+        references.UnsafeAdd(destinationTexture);
+
+        writer.WriteCommand(CommandBufferCommand.CopyBufferToTexture);
+        writer.WriteIntN(sourceBuffer.InnerHandle.Pointer);
+        writer.WriteIntN(destinationTexture.Handle.Pointer);
+
+        writer.WriteInt32(regions.Length);
+        foreach (TextureBufferCopyRegion region in regions)
+            region.Write(writer);
+    }
+
+    internal void CopyUnchecked<T>(
         Texture sourceTexture, GraphicsBuffer<T> destinationBuffer,
         ReadOnlySpan<TextureBufferCopyRegion> regions
     ) where T : unmanaged {

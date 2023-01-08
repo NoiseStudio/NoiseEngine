@@ -1,8 +1,9 @@
 #[repr(u16)]
 pub enum GraphicsCommandBufferCommand {
     CopyBuffer = 0,
-    CopyTextureToBuffer = 1,
-    Dispatch = 2,
-    AttachCamera = 3,
-    DetachCamera = 4
+    CopyBufferToTexture = 1,
+    CopyTextureToBuffer = 2,
+    Dispatch = 3,
+    AttachCamera = 4,
+    DetachCamera = 5
 }
