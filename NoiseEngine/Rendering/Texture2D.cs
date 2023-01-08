@@ -6,6 +6,10 @@ namespace NoiseEngine.Rendering;
 
 public class Texture2D : Texture {
 
+    public uint Width { get; }
+    public uint Height { get; }
+    public uint MipLevels { get; }
+
     public Texture2D(
         GraphicsDevice device, uint width, uint height, TextureFormat format = TextureFormat.R8G8B8A8_SRGB,
         uint mipLevels = 1, bool linear = false, uint sampleCount = 1
@@ -15,6 +19,9 @@ public class Texture2D : Texture {
             0, VulkanImageType.Image2D, VulkanImageLayout.Undefined
         )), out InteropHandle<Texture> innerHandle
     ), innerHandle) {
+        Width = width;
+        Height = height;
+        MipLevels = mipLevels;
     }
 
 }
