@@ -40,6 +40,7 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
         writer.WriteCommand(CommandBufferCommand.AttachCamera);
         writer.WriteIntN(renderPass.Handle.Pointer);
         writer.WriteIntN(framebuffer.Handle.Pointer);
+        writer.WriteIntN(cameraDelegation.ClearColor);
     }
 
 }

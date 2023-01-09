@@ -13,9 +13,7 @@ pub fn attach_camera(data: &mut SerializationReader, buffer: &VulkanCommandBuffe
     let render_pass = data.read_unchecked::<&Arc<RenderPass>>();
     let framebuffer = data.read_unchecked::<&Framebuffer>();
 
-    let clear_color = vk::ClearValue { color: vk::ClearColorValue { float32: [
-        0.0, 1.0, 0.0, 1.0
-    ]}};
+    let clear_color = vk::ClearValue { color: *data.read_unchecked::<&vk::ClearColorValue>() };
 
     let render_pass_info = vk::RenderPassBeginInfo {
         s_type: vk::StructureType::RENDER_PASS_BEGIN_INFO,

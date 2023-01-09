@@ -11,6 +11,7 @@ internal abstract class CameraDelegation {
         Camera = camera;
     }
 
+    public abstract void UpdateClearColor();
     public abstract void ClearRenderTarget();
 
 }

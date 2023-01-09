@@ -2,7 +2,9 @@
 
 internal enum CommandBufferCommand : ushort {
     CopyBuffer = 0,
-    Dispatch = 1,
-    AttachCamera = 2,
-    DetachCamera = 3
+    CopyBufferToTexture = 1,
+    CopyTextureToBuffer = 2,
+    Dispatch = 3,
+    AttachCamera = 4,
+    DetachCamera = 5
 }

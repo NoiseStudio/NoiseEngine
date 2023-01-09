@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Vulkan;
 
@@ -17,11 +18,22 @@ internal class VulkanCameraDelegation : CameraDelegation {
         }
     }
 
+    internal IntPtr ClearColor { get; }
+
     public VulkanCameraDelegation(Camera camera) : base(camera) {
+        ClearColor = Marshal.AllocHGlobal(Marshal.SizeOf<Color>());
+    }
+
+    ~VulkanCameraDelegation() {
+        Marshal.FreeHGlobal(ClearColor);
     }
 
     public override void ClearRenderTarget() {
         renderPass = null;
+    }
+
+    public override void UpdateClearColor() {
+        Marshal.StructureToPtr(Camera.ClearColor, ClearColor, false);
     }
 
     private void Calculate() {

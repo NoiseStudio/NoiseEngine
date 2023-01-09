@@ -2,7 +2,7 @@ use std::{sync::Arc, ptr};
 
 use ash::vk;
 
-use crate::{errors::invalid_operation::InvalidOperationError, rendering::texture::Texture};
+use crate::rendering::texture::Texture;
 
 use super::{
     device::VulkanDevice, errors::universal::VulkanUniversalError, memory_allocator::MemoryBlock
@@ -26,6 +26,7 @@ pub struct VulkanImageCreateInfo {
 pub struct VulkanImage<'init: 'ma, 'ma> {
     inner: vk::Image,
     format: vk::Format,
+    layout: vk::ImageLayout,
     _memory: MemoryBlock<'ma>,
     device: Arc<VulkanDevice<'init>>
 }
@@ -36,19 +37,26 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
     ) -> Result<Self, VulkanUniversalError> {
         let initialized = device.initialized()?;
 
-        let mut queue_family_indices = Vec::new();
+        let mut queue_family_indices;
+        let sharing_mode;
+
         if create_info.concurrent {
-            for family in initialized.get_families() {
-                if family.support().graphics || family.support().computing {
+            let queue_families = initialized.get_families();
+
+            if queue_families.len() <= 1 {
+                queue_family_indices = Vec::new();
+                sharing_mode = vk::SharingMode::EXCLUSIVE;
+            } else {
+                queue_family_indices = Vec::with_capacity(queue_families.len());
+                sharing_mode = vk::SharingMode::CONCURRENT;
+
+                for family in queue_families {
                     queue_family_indices.push(family.index());
                 }
             }
-
-            if queue_family_indices.is_empty() {
-                return Err(
-                    InvalidOperationError::with_str("Given graphics device is not support textures.").into()
-                )
-            }
+        } else {
+            queue_family_indices = Vec::new();
+            sharing_mode = vk::SharingMode::EXCLUSIVE;
         }
 
         let vk_create_info = vk::ImageCreateInfo {
@@ -66,10 +74,7 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
                 true => vk::ImageTiling::LINEAR
             },
             usage: create_info.usage,
-            sharing_mode: match create_info.concurrent {
-                false => vk::SharingMode::EXCLUSIVE,
-                true => vk::SharingMode::CONCURRENT
-            },
+            sharing_mode,
             queue_family_index_count: queue_family_indices.len() as u32,
             p_queue_family_indices: queue_family_indices.as_ptr(),
             initial_layout: create_info.layout,
@@ -93,11 +98,21 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
             initialized.vulkan_device().bind_image_memory(inner, memory.memory(), memory.offset())
         }?;
 
-        Ok(Self { inner, format: create_info.format, _memory: memory, device: device.clone() })
+        Ok(Self {
+            inner,
+            format: create_info.format,
+            layout: create_info.layout,
+            _memory: memory,
+            device: device.clone()
+        })
     }
 
     pub fn format(&self) -> vk::Format {
         self.format
+    }
+
+    pub fn layout(&self) -> vk::ImageLayout {
+        self.layout
     }
 
     pub fn inner(&self) -> vk::Image {

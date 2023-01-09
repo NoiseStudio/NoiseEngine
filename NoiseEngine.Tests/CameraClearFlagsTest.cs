@@ -2,6 +2,7 @@
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
+using System;
 
 namespace NoiseEngine.Tests;
 
@@ -14,9 +15,11 @@ public class CameraClearFlagsTest : ApplicationTestEnvironment {
     [Fact]
     public void SolidColor() {
         ExecuteOnAllDevices(scene => {
-            Texture2D texture = new Texture2D(scene.GraphicsDevice, 16, 16);
+            Texture2D texture = new Texture2D(scene.GraphicsDevice, TextureUsage.TransferAll, 1, 1);
             Camera camera = new Camera(scene) {
-                RenderTarget = texture
+                RenderTarget = texture,
+                ClearFlags = CameraClearFlags.SolidColor,
+                ClearColor = Color.Red
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
@@ -25,6 +28,12 @@ public class CameraClearFlagsTest : ApplicationTestEnvironment {
 
             commandBuffer.Execute();
             commandBuffer.Clear();
+
+            // Assert.
+            Span<Color32> buffer = stackalloc Color32[1];
+            texture.GetPixels(buffer);
+
+            Assert.Equal((Color32)camera.ClearColor, buffer[0]);
         });
     }
 
