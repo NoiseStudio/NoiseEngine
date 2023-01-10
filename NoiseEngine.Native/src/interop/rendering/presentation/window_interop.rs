@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
 use crate::{
-    rendering::presentation::{windows::window::WindowWindows, window::Window},
-    interop::prelude::{InteropString, InteropResult}, errors::invalid_operation::InvalidOperationError
+    rendering::presentation::window::Window, interop::prelude::{InteropString, InteropResult},
+    errors::invalid_operation::InvalidOperationError
 };
+
+#[cfg(target_os = "windows")]
+use crate::rendering::presentation::windows::window::WindowWindows;
 
 #[no_mangle]
 extern "C" fn rendering_presentation_window_interop_create(
