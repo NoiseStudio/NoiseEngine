@@ -6,7 +6,6 @@ using System;
 
 namespace NoiseEngine.Tests;
 
-[Collection(nameof(ApplicationCollection))]
 public class CameraClearFlagsTest : ApplicationTestEnvironment {
 
     public CameraClearFlagsTest(ApplicationFixture fixture) : base(fixture) {
