@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[no_mangle]
+#[allow(unused_variables)]
 extern "C" fn rendering_presentation_window_interop_create(
     title: InteropString, width: u32, height: u32
 ) -> InteropResult<Box<Arc<dyn Window>>> {
