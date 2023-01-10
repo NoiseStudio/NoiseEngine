@@ -11,8 +11,7 @@ public class WindowTest : ApplicationTestEnvironment {
 
     [FactRequire(TestRequirements.Gui)]
     public void Create() {
-        Window window = new Window();
-        Thread.Sleep(100000);
+        using Window window = new Window();
     }
 
 }
