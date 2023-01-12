@@ -13,7 +13,7 @@ use super::{device::VulkanDevice, errors::universal::VulkanUniversalError};
 
 pub struct VulkanInstance {
     inner: ash::Instance,
-    _library: Arc<ash::Entry>
+    library: Arc<ash::Entry>
 }
 
 impl VulkanInstance {
@@ -39,7 +39,7 @@ impl VulkanInstance {
             };
 
             return match unsafe { library.create_instance(&create_info, None) } {
-                Ok(instance) => Ok(Self { inner: instance, _library: library.clone() }),
+                Ok(instance) => Ok(Self { inner: instance, library: library.clone() }),
                 Err(err) => Err(err.into())
             }
         }
@@ -80,7 +80,7 @@ impl VulkanInstance {
         };
 
         match unsafe { library.create_instance(&create_info, None) } {
-            Ok(instance) => Ok(Self { inner: instance, _library: library.clone() }),
+            Ok(instance) => Ok(Self { inner: instance, library: library.clone() }),
             Err(err) => Err(err.into())
         }
     }
@@ -88,62 +88,77 @@ impl VulkanInstance {
     pub(crate) fn get_vulkan_physical_devices(
         instance: &Arc<Self>
     ) -> Result<Vec<VulkanDeviceValue>, VulkanUniversalError> {
-        match unsafe { instance.inner.enumerate_physical_devices() } {
-            Ok(physical_devices) => {
-                let mut result = Vec::with_capacity(physical_devices.len());
+        let physical_devices = unsafe { instance.inner.enumerate_physical_devices() }?;
+        let mut result = Vec::with_capacity(physical_devices.len());
 
-                for physical_device in physical_devices {
-                    // Properties.
-                    let mut id_properties = vk::PhysicalDeviceIDProperties::default();
-                    let mut properties2 = vk::PhysicalDeviceProperties2 {
-                        s_type: vk::StructureType::PHYSICAL_DEVICE_PROPERTIES_2,
-                        p_next: &mut id_properties as *mut vk::PhysicalDeviceIDProperties as *mut c_void,
-                        properties: vk::PhysicalDeviceProperties::default(),
-                    };
+        for physical_device in physical_devices {
+            // Properties.
+            let mut id_properties = vk::PhysicalDeviceIDProperties::default();
+            let mut properties2 = vk::PhysicalDeviceProperties2 {
+                s_type: vk::StructureType::PHYSICAL_DEVICE_PROPERTIES_2,
+                p_next: &mut id_properties as *mut vk::PhysicalDeviceIDProperties as *mut c_void,
+                properties: vk::PhysicalDeviceProperties::default(),
+            };
 
-                    unsafe {
-                        instance.inner.get_physical_device_properties2(physical_device, &mut properties2)
-                    };
+            unsafe {
+                instance.inner.get_physical_device_properties2(physical_device, &mut properties2)
+            };
 
-                    let properties = properties2.properties;
+            let properties = properties2.properties;
 
-                    // Queue families.
-                    let queue_family_properties = unsafe {
-                        instance.inner.get_physical_device_queue_family_properties(physical_device)
-                    };
+            // Queue families.
+            let queue_family_properties = unsafe {
+                instance.inner.get_physical_device_queue_family_properties(physical_device)
+            };
 
-                    let mut supports_graphics = false;
-                    let mut supports_computing = false;
-                    for queue_family_properties in queue_family_properties {
-                        supports_graphics |= queue_family_properties.queue_flags.contains(vk::QueueFlags::GRAPHICS);
-                        supports_computing |= queue_family_properties.queue_flags.contains(vk::QueueFlags::COMPUTE);
-                    }
+            let mut supports_graphics = false;
+            let mut supports_computing = false;
+            for queue_family_properties in queue_family_properties {
+                supports_graphics |= queue_family_properties.queue_flags.contains(vk::QueueFlags::GRAPHICS);
+                supports_computing |= queue_family_properties.queue_flags.contains(vk::QueueFlags::COMPUTE);
+            }
 
-                    // Result.
-                    result.push(VulkanDeviceValue {
-                        name: match unsafe { CStr::from_ptr(properties.device_name.as_ptr()) }.to_str() {
-                            Ok(name) => name,
-                            Err(err) => return Err(err.into())
-                        }.into(),
-                        vendor: properties.vendor_id,
-                        device_type: unsafe { mem::transmute(properties.device_type) },
-                        api_version: properties.api_version,
-                        driver_version: properties.driver_version,
-                        guid: Uuid::from_bytes_le(id_properties.device_uuid),
-                        supports_graphics,
-                        supports_computing,
-                        handle: Box::new(Arc::new(VulkanDevice::new(instance, physical_device)))
-                    });
+            // Presentation.
+            let extensions = unsafe {
+                instance.inner.enumerate_device_extension_properties(physical_device)
+            }?;
+
+            let mut supports_presentation = false;
+            for extension in extensions {
+                let name = unsafe { CStr::from_ptr(extension.extension_name.as_ptr()) }.to_str()?;
+                if name == "VK_KHR_swapchain" {
+                    supports_presentation = true;
+                    break;
                 }
+            }
 
-                Ok(result)
-            },
-            Err(err) => Err(err.into())
+            // Result.
+            result.push(VulkanDeviceValue {
+                name: match unsafe { CStr::from_ptr(properties.device_name.as_ptr()) }.to_str() {
+                    Ok(name) => name,
+                    Err(err) => return Err(err.into())
+                }.into(),
+                vendor: properties.vendor_id,
+                device_type: unsafe { mem::transmute(properties.device_type) },
+                api_version: properties.api_version,
+                driver_version: properties.driver_version,
+                guid: Uuid::from_bytes_le(id_properties.device_uuid),
+                supports_graphics,
+                supports_computing,
+                supports_presentation,
+                handle: Box::new(Arc::new(VulkanDevice::new(instance, physical_device)))
+            });
         }
+
+        Ok(result)
     }
 
     pub fn inner(&self) -> &ash::Instance {
         &self.inner
+    }
+
+    pub fn library(&self) -> &Arc<ash::Entry> {
+        &self.library
     }
 }
 
@@ -175,7 +190,7 @@ unsafe extern "system" fn log_callback(
     };
 
     let prefix = match message_type {
-        vk::DebugUtilsMessageTypeFlagsEXT::GENERAL => "General",
+        vk::DebugUtilsMessageTypeFlagsEXT::GENERAL => "",
         vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION => "Validation",
         vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE => "Performance",
         _ => {
@@ -192,7 +207,11 @@ unsafe extern "system" fn log_callback(
         }
     };
 
-    logger::log(level, format!("{}: {}", prefix, message).as_str());
+    if prefix.is_empty() {
+        logger::log(level, message);
+    } else {
+        logger::log(level, format!("{}: {}", prefix, message).as_str());
+    }
 
     vk::FALSE
 }

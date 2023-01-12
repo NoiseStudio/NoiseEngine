@@ -20,3 +20,5 @@ pub mod pipeline;
 pub mod pool_wrappers;
 pub mod render_pass;
 pub mod shader_module;
+pub mod surface;
+pub mod swap_chain;
