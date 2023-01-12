@@ -59,10 +59,12 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
 
         foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             // Create original shader.
-            GraphicsHostBuffer<float> bufferAA =
-               new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
-            GraphicsHostBuffer<float> bufferAB =
-               new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
+            GraphicsHostBuffer<float> bufferAA = new GraphicsHostBuffer<float>(
+                device, GraphicsBufferUsage.TransferSource | GraphicsBufferUsage.Storage, 1
+            );
+            GraphicsHostBuffer<float> bufferAB = new GraphicsHostBuffer<float>(
+                device, GraphicsBufferUsage.TransferSource | GraphicsBufferUsage.Storage, 1
+            );
 
             ComputeShader shaderA = new ComputeShader(device, ShaderType);
             shaderA.GetProperty(ShaderBufferA)!.SetBuffer(bufferAA);
@@ -98,10 +100,12 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
             Assert.Equal(new float[] { ValueAB }, readData);
 
             // Dispatch with setting properties.
-            GraphicsHostBuffer<float> bufferBA =
-                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
-            GraphicsHostBuffer<float> bufferBB =
-                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
+            GraphicsHostBuffer<float> bufferBA = new GraphicsHostBuffer<float>(
+                device, GraphicsBufferUsage.TransferSource | GraphicsBufferUsage.Storage, 1
+            );
+            GraphicsHostBuffer<float> bufferBB = new GraphicsHostBuffer<float>(
+                device, GraphicsBufferUsage.TransferSource | GraphicsBufferUsage.Storage, 1
+            );
 
             shaderB.GetProperty(ShaderBufferA)!.SetBuffer(bufferBA);
             shaderB.GetProperty(ShaderBufferB)!.SetBuffer(bufferBB);

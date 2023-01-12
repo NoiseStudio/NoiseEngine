@@ -40,9 +40,20 @@ public abstract class Texture : ICameraRenderTarget {
         TextureInterop.Destroy(Handle);
     }
 
+    /// <summary>
+    /// Copies data from this <see cref="Texture"/> to given <paramref name="buffer"/>.
+    /// </summary>
+    /// <remarks>This <see cref="Texture"/> must have <see cref="TextureUsage.TransferSource"/> flag.</remarks>
+    /// <typeparam name="T">
+    /// Type of element in <paramref name="buffer"/>. Must have the same size as this <see cref="Texture"/> pixel.
+    /// </typeparam>
+    /// <param name="buffer">Buffer for copied data from this <see cref="Texture"/>.</param>
     public void GetPixels<T>(Span<T> buffer) where T : unmanaged {
+        if (!Usage.HasFlag(TextureUsage.TransferSource))
+            throw new InvalidOperationException("Texture has not TextureUsage.TransferSource flag.");
+
         GraphicsHostBuffer<T> host = Device.BufferPool.GetOrCreateHost<T>(
-            GraphicsBufferUsage.TransferDestination, (ulong)buffer.Length
+            GraphicsBufferUsage.TransferAll, (ulong)buffer.Length
         );
 
         GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(Device, false);
@@ -57,9 +68,20 @@ public abstract class Texture : ICameraRenderTarget {
         Device.BufferPool.UnsafeReturnHostToPool(host);
     }
 
+    /// <summary>
+    /// Copies <paramref name="data"/> to this <see cref="Texture"/>.
+    /// </summary>
+    /// <remarks>This <see cref="Texture"/> must have <see cref="TextureUsage.TransferDestination"/> flag.</remarks>
+    /// <typeparam name="T">
+    /// Type of element in <paramref name="data"/>. Must have the same size as this <see cref="Texture"/> pixel.
+    /// </typeparam>
+    /// <param name="data">Data to copy.</param>
     public void SetPixels<T>(ReadOnlySpan<T> data) where T : unmanaged {
+        if (!Usage.HasFlag(TextureUsage.TransferDestination))
+            throw new InvalidOperationException("Texture has not TextureUsage.TransferDestination flag.");
+
         GraphicsHostBuffer<T> host = Device.BufferPool.GetOrCreateHost<T>(
-            GraphicsBufferUsage.TransferDestination, (ulong)data.Length
+            GraphicsBufferUsage.TransferAll, (ulong)data.Length
         );
         host.SetData(data);
 

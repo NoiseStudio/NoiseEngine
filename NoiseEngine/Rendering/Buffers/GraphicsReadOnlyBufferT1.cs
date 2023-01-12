@@ -49,10 +49,19 @@ public abstract class GraphicsReadOnlyBuffer<T> : GraphicsReadOnlyBuffer where T
     /// <summary>
     /// Copies data from this <see cref="GraphicsBuffer{T}"/> to given <paramref name="buffer"/>.
     /// </summary>
+    /// <remarks>
+    /// This <see cref="GraphicsBuffer{T}"/> must have <see cref="GraphicsBufferUsage.TransferSource"/> flag.
+    /// </remarks>
     /// <param name="buffer">Buffer for copied data from this <see cref="GraphicsReadOnlyBuffer{T}"/>.</param>
     public void GetData(Span<T> buffer) {
         if ((ulong)buffer.Length > Count)
             throw new ArgumentOutOfRangeException(nameof(buffer));
+
+        if (!Usage.HasFlag(GraphicsBufferUsage.TransferSource)) {
+            throw new InvalidOperationException(
+                "GraphicsBuffer has not GraphicsBufferUsage.TransferSource flag."
+            );
+        }
 
         GetDataUnchecked(buffer, 0);
     }

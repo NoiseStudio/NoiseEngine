@@ -32,7 +32,7 @@ public class Camera {
 
     /// <summary>
     /// Sets camera render target. If setted render target is not null, texture usage of this render target must have
-    /// color attachment flag.
+    /// TextureUsage.ColorAttachment flag.
     /// </summary>
     public ICameraRenderTarget? RenderTarget {
         get => renderTarget;
@@ -66,7 +66,7 @@ public class Camera {
             return;
 
         if (!renderTarget.Usage.HasFlag(TextureUsage.ColorAttachment))
-            throw new InvalidOperationException("Camera render target must have color attachment texture usage.");
+            throw new InvalidOperationException("Camera render target must have TextureUsage.ColorAttachment flag.");
     }
 
 }

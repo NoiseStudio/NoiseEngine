@@ -44,7 +44,8 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
 
         foreach (GraphicsDevice device in fixture.GraphicsDevices) {
             GraphicsHostBuffer<T> buffer = new GraphicsHostBuffer<T>(
-                device, GraphicsBufferUsage.Storage, (ulong)Math.Max(initialValues?.Length ?? 0, expectedValues.Length)
+                device, GraphicsBufferUsage.TransferAll | GraphicsBufferUsage.Storage,
+                (ulong)Math.Max(initialValues?.Length ?? 0, expectedValues.Length)
             );
 
             if (initialValues is not null)

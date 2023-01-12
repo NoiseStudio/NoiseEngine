@@ -29,7 +29,7 @@ public class GraphicsHostBufferTest : GraphicsTestEnvironment {
 
         foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             Parallel.For(0, Threads, _ => {
-                GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
+                GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.TransferAll, Size);
 
                 int[] data = new int[Size];
                 for (int i = 0; i < (int)Size; i++)
@@ -52,7 +52,7 @@ public class GraphicsHostBufferTest : GraphicsTestEnvironment {
         foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             int[] read = new int[Size];
 
-            GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
+            GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.TransferAll, Size);
 
             buffer.SetData(data);
 
@@ -66,7 +66,7 @@ public class GraphicsHostBufferTest : GraphicsTestEnvironment {
         int[] data = Enumerable.Range(0, (int)Size).ToArray();
 
         foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
-            GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.Storage, Size);
+            GraphicsHostBuffer<int> buffer = new GraphicsHostBuffer<int>(device, GraphicsBufferUsage.TransferAll, Size);
 
             Parallel.For(0, Threads, _ => {
                 int[] read = new int[Size];

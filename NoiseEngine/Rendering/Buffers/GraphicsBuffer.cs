@@ -19,12 +19,21 @@ public abstract class GraphicsBuffer<T> : GraphicsReadOnlyBuffer<T> where T : un
         if ((ulong)data.Length > Count)
             throw new ArgumentOutOfRangeException(nameof(data));
 
+        if (!Usage.HasFlag(GraphicsBufferUsage.TransferDestination)) {
+            throw new InvalidOperationException(
+                "GraphicsBuffer has not GraphicsBufferUsage.TransferDestination flag."
+            );
+        }
+
         SetDataUnchecked(data, 0);
     }
 
     /// <summary>
     /// Copies <paramref name="data"/> to this <see cref="GraphicsBuffer{T}"/> starting with <paramref name="index"/>.
     /// </summary>
+    /// <remarks>
+    /// This <see cref="GraphicsBuffer{T}"/> must have <see cref="GraphicsBufferUsage.TransferDestination"/> flag.
+    /// </remarks>
     /// <param name="data">Data to copy.</param>
     /// <param name="index">Start index of copy.</param>
     public void SetData(ReadOnlySpan<T> data, ulong index) {
@@ -32,6 +41,12 @@ public abstract class GraphicsBuffer<T> : GraphicsReadOnlyBuffer<T> where T : un
             throw new ArgumentOutOfRangeException(nameof(index));
         if ((ulong)data.Length + index > Count)
             throw new ArgumentOutOfRangeException(nameof(data));
+
+        if (!Usage.HasFlag(GraphicsBufferUsage.TransferDestination)) {
+            throw new InvalidOperationException(
+                "GraphicsBuffer has not GraphicsBufferUsage.TransferDestination flag."
+            );
+        }
 
         SetDataUnchecked(data, index);
     }
