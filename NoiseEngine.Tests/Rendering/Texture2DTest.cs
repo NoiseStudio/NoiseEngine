@@ -35,7 +35,7 @@ public class Texture2DTest : GraphicsTestEnvironment {
 
         foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             factory(device, data, result);
-            Assert.Equal(result, data);
+            Assert.Equal(data, result);
         }
     }
 

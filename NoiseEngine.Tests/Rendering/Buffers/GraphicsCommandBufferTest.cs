@@ -35,10 +35,10 @@ public class GraphicsCommandBufferTest : GraphicsTestEnvironment {
             commandBuffer[i] = new GraphicsCommandBuffer(device, true);
 
             hostBufferA[i] = new GraphicsHostBuffer<int>(
-                device, GraphicsBufferUsage.TransferSource | GraphicsBufferUsage.Uniform, Size
+                device, GraphicsBufferUsage.TransferAll | GraphicsBufferUsage.Uniform, Size
             );
             hostBufferB[i] = new GraphicsHostBuffer<int>(
-                device, GraphicsBufferUsage.TransferDestination, Size
+                device, GraphicsBufferUsage.TransferAll, Size
             );
 
             i++;
@@ -88,7 +88,7 @@ public class GraphicsCommandBufferTest : GraphicsTestEnvironment {
         int i = 0;
         foreach (GraphicsDevice device in Fixture.GraphicsDevices) {
             GraphicsHostBuffer<float> hostBuffer =
-                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.Storage, 1);
+                new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.TransferSource, 1);
 
             ComputeShader shader = new ComputeShader(device, shaderType);
             shader.GetProperty(buffer)!.SetBuffer(hostBuffer);

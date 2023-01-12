@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Exceptions;
 using NoiseEngine.Rendering.Vulkan;
+using System;
 
 namespace NoiseEngine;
 
@@ -29,9 +30,15 @@ public class Camera {
         }
     }
 
+    /// <summary>
+    /// Sets camera render target. If setted render target is not null, texture usage of this render target must have
+    /// TextureUsage.ColorAttachment flag.
+    /// </summary>
     public ICameraRenderTarget? RenderTarget {
         get => renderTarget;
         set {
+            AssertRenderTarget(value);
+
             renderTarget = value;
             IsDirty = true;
 
@@ -52,6 +59,14 @@ public class Camera {
         };
 
         Delegation.UpdateClearColor();
+    }
+
+    private void AssertRenderTarget(ICameraRenderTarget? renderTarget) {
+        if (renderTarget is null)
+            return;
+
+        if (!renderTarget.Usage.HasFlag(TextureUsage.ColorAttachment))
+            throw new InvalidOperationException("Camera render target must have TextureUsage.ColorAttachment flag.");
     }
 
 }

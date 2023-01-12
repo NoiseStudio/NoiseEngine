@@ -47,9 +47,7 @@ public class GraphicsDeviceBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="buffer">Buffer for copied data from this <see cref="GraphicsDeviceBuffer{T}"/>.</param>
     /// <param name="index">Start index of copy.</param>
     protected override void GetDataUnchecked(Span<T> buffer, ulong index) {
-        GraphicsHostBuffer<T> host = Device.BufferPool.GetOrCreateHost<T>(
-            GraphicsBufferUsage.TransferDestination, Count
-        );
+        GraphicsHostBuffer<T> host = Device.BufferPool.GetOrCreateHost<T>(GraphicsBufferUsage.TransferAll, Count);
 
         GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(Device, false);
         commandBuffer.CopyUnchecked(this, host, stackalloc BufferCopyRegion[] {
@@ -69,7 +67,7 @@ public class GraphicsDeviceBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     /// <param name="data">Data to copy.</param>
     /// <param name="index">Start index of copy.</param>
     protected override void SetDataUnchecked(ReadOnlySpan<T> data, ulong index) {
-        GraphicsHostBuffer<T> host = Device.BufferPool.GetOrCreateHost<T>(GraphicsBufferUsage.TransferSource, Count);
+        GraphicsHostBuffer<T> host = Device.BufferPool.GetOrCreateHost<T>(GraphicsBufferUsage.TransferAll, Count);
         host.SetData(data);
 
         GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(Device, false);
