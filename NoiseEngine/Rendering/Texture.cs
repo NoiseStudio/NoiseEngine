@@ -27,6 +27,7 @@ public abstract class Texture : ICameraRenderTarget {
         InteropHandle<Texture> innerHandle
     ) {
         Device = device;
+        Usage = usage;
         Format = format;
         Handle = handle;
         InnerHandle = innerHandle;
