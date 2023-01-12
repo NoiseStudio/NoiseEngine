@@ -14,7 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Apt update
+      run: sudo apt-get update
     - name: Install Mesa Vulkan graphics drivers
       run: sudo apt install mesa-vulkan-drivers
     - name: Setup .NET
