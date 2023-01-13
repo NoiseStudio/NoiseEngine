@@ -1,10 +1,13 @@
-use std::{ptr, mem::ManuallyDrop, rc::Rc, sync::Arc};
+use std::{ptr, mem::ManuallyDrop, rc::Rc, sync::Arc, ffi::CString};
 
 use ash::vk::{self, QueueFlags};
 use lockfree::stack::Stack;
 use rsevents::{AutoResetEvent, Awaitable, EventState};
 
-use crate::{errors::invalid_operation::InvalidOperationError, common::pool::{Pool, PoolItem}, logging::log};
+use crate::{
+    errors::invalid_operation::InvalidOperationError, common::pool::{Pool, PoolItem}, logging::log,
+    interop::prelude::InteropString
+};
 
 use super::{
     device_support::VulkanDeviceSupport, errors::universal::VulkanUniversalError, memory_allocator::MemoryAllocator,
@@ -26,7 +29,7 @@ impl<'init> VulkanDevice<'init> {
         InvalidOperationError::with_str("VulkanDevice is not initialized.")
     }
 
-    pub fn initialize(&mut self) -> Result<(), VulkanUniversalError> {
+    pub fn initialize(&mut self, enabled_extensions: &[InteropString]) -> Result<(), VulkanUniversalError> {
         if self.initialized.is_some() {
             return Err(InvalidOperationError::with_str("VulkanDevice is already initialized.").into())
         }
@@ -37,6 +40,17 @@ impl<'init> VulkanDevice<'init> {
             ..Default::default()
         };
 
+        let mut enabled_extensions_c = Vec::new();
+        for extension in enabled_extensions {
+            let c = match CString::new(extension) {
+                Ok(c) => c,
+                Err(_) => return Err(
+                    InvalidOperationError::with_str("Extension name contains null character.").into()
+                )
+            };
+            enabled_extensions_c.push(c);
+        }
+
         let create_info = vk::DeviceCreateInfo {
             s_type: vk::StructureType::DEVICE_CREATE_INFO,
             p_next: ptr::null(),
@@ -45,8 +59,8 @@ impl<'init> VulkanDevice<'init> {
             p_queue_create_infos: queue_create_infos.as_ptr(),
             enabled_layer_count: 0,
             pp_enabled_layer_names: ptr::null(),
-            enabled_extension_count: 0,
-            pp_enabled_extension_names: ptr::null(),
+            enabled_extension_count: enabled_extensions_c.len() as u32,
+            pp_enabled_extension_names: enabled_extensions_c.as_ptr() as *const *const i8,
             p_enabled_features: &physical_device_features,
         };
 

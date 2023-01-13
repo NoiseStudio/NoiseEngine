@@ -17,7 +17,9 @@ public abstract class GraphicsInstance {
     /// <returns>New <see cref="GraphicsInstance"/>.</returns>
     public static GraphicsInstance Create() {
         VulkanLibrary library = new VulkanLibrary();
-        return new VulkanInstance(library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers);
+        return new VulkanInstance(
+            library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers, true
+        );
     }
 
 }

@@ -8,7 +8,7 @@ namespace NoiseEngine;
 public class Camera {
 
     private CameraClearFlags clearFlags = CameraClearFlags.SolidColor;
-    private Color clearColor = new Color(0.50588f, 0.62352f, 0.79215f);
+    private Color clearColor = new Color(0.26666f, 0.45882f, 0.87058f);
     private ICameraRenderTarget? renderTarget;
 
     public ApplicationScene Scene { get; }

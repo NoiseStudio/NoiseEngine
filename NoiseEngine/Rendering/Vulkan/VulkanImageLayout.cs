@@ -11,5 +11,7 @@ internal enum VulkanImageLayout : uint {
     DepthStencilReadOnlyOptimal = 4,
     TransferSourceOptimal = 5,
     TransferDestinationOptimal = 6,
-    Preinitialized = 7
+    Preinitialized = 7,
+
+    PresentSourceKHR = 1000001002
 }

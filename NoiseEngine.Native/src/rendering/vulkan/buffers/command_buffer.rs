@@ -14,13 +14,14 @@ use crate::{
     serialization::reader::SerializationReader, interop::prelude::InteropResult, common::pool::PoolItem
 };
 
-use super::command_buffers::{memory_commands, compute_commands, camera_commands};
+use super::command_buffers::{memory_commands, compute_commands, camera_commands::{self, AttachCameraWindowOutput}};
 
 pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     initialized: &'init VulkanDeviceInitialized<'init>,
     inner: vk::CommandBuffer,
     queue_family: &'fam VulkanQueueFamily<'init>,
     command_pool: PoolItem<'fam, VulkanCommandPool<'init>>,
+    attached_camera_windows: Vec<AttachCameraWindowOutput<'init>>,
     device: Arc<VulkanDevice<'init>>,
 }
 
@@ -49,11 +50,12 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             vulkan_device.allocate_command_buffers(&allocate_info)
         }?[0];
 
-        let result = VulkanCommandBuffer {
+        let mut result = VulkanCommandBuffer {
             initialized,
             inner: command_buffer,
             queue_family,
             command_pool,
+            attached_camera_windows: Vec::new(),
             device: device.clone(),
         };
 
@@ -70,16 +72,26 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
         let initialized = self.initialized;
         let vulkan_device = initialized.vulkan_device();
 
+        let mut wait_semaphores = Vec::new();
+        let mut wait_stages = Vec::new();
+        let mut signal_semaphores = Vec::new();
+
+        for output in &self.attached_camera_windows {
+            wait_semaphores.push(output.pass.get_image_available_semaphore().inner());
+            wait_stages.push(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
+            signal_semaphores.push(output.pass.get_render_finished_semaphore().inner());
+        }
+
         let submit_info = vk::SubmitInfo {
             s_type: vk::StructureType::SUBMIT_INFO,
             p_next: ptr::null(),
-            wait_semaphore_count: 0,
-            p_wait_semaphores: ptr::null(),
-            p_wait_dst_stage_mask: ptr::null(),
+            wait_semaphore_count: wait_semaphores.len() as u32,
+            p_wait_semaphores: wait_semaphores.as_ptr(),
+            p_wait_dst_stage_mask: wait_stages.as_ptr(),
             command_buffer_count: 1,
             p_command_buffers: &self.inner as *const vk::CommandBuffer,
-            signal_semaphore_count: 0,
-            p_signal_semaphores: ptr::null(),
+            signal_semaphore_count: signal_semaphores.len() as u32,
+            p_signal_semaphores: signal_semaphores.as_ptr(),
         };
 
         let fence = initialized.pool().get_fence(&self.device)?;
@@ -89,11 +101,41 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             )
         }?;
 
+        // Presentation.
+        if !self.attached_camera_windows.is_empty() {
+            let mut swapchains = Vec::new();
+            let mut image_indices = Vec::new();
+            let mut results = Vec::new();
+
+            for output in &self.attached_camera_windows {
+                swapchains.push(output.pass.inner());
+                image_indices.push(output.image_index);
+                results.push(vk::Result::default());
+            }
+
+            let present_info = vk::PresentInfoKHR {
+                s_type: vk::StructureType::PRESENT_INFO_KHR,
+                p_next: ptr::null(),
+                wait_semaphore_count: signal_semaphores.len() as u32,
+                p_wait_semaphores: signal_semaphores.as_ptr(),
+                swapchain_count: swapchains.len() as u32,
+                p_swapchains: swapchains.as_ptr(),
+                p_image_indices: image_indices.as_ptr(),
+                p_results: results.as_mut_ptr(),
+            };
+
+            unsafe {
+                self.attached_camera_windows[0].pass.ash_swapchain().queue_present(
+                    self.queue_family.get_queue().queue, &present_info
+                )
+            }?;
+        }
+
         Ok(fence)
     }
 
     fn record(
-        &self, mut data: SerializationReader, simultaneous_execute: bool
+        &mut self, mut data: SerializationReader, simultaneous_execute: bool
     ) -> Result<(), VulkanUniversalError> {
         let initialized = self.initialized;
         let vulkan_device = initialized.vulkan_device();
@@ -124,8 +166,11 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                     memory_commands::copy_texture_to_buffer(&mut data, self, vulkan_device),
                 GraphicsCommandBufferCommand::Dispatch =>
                     compute_commands::dispatch(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::AttachCamera =>
-                    camera_commands::attach_camera(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::AttachCameraWindow => self.attached_camera_windows.push(
+                    camera_commands::attach_camera_window(&mut data, self, vulkan_device)?
+                ),
+                GraphicsCommandBufferCommand::AttachCameraTexture =>
+                    camera_commands::attach_camera_texture(&mut data, self, vulkan_device),
                 GraphicsCommandBufferCommand::DetachCamera =>
                     camera_commands::detach_camera(self, vulkan_device),
             };

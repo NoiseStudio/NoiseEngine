@@ -18,9 +18,9 @@ struct VulkanInstanceCreateReturnValue {
 #[no_mangle]
 extern "C" fn rendering_vulkan_instance_interop_create(
     library: &Arc<ash::Entry>, create_info: VulkanApplicationInfo, log_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
-    log_type: vk::DebugUtilsMessageTypeFlagsEXT, validation: bool
+    log_type: vk::DebugUtilsMessageTypeFlagsEXT, validation: bool, surface: bool
 ) -> InteropResult<VulkanInstanceCreateReturnValue> {
-    match VulkanInstance::new(library, create_info, log_severity, log_type, validation) {
+    match VulkanInstance::new(library, create_info, log_severity, log_type, validation, surface) {
         Ok(instance) => {
             let inner = instance.inner().handle();
             InteropResult::with_ok(VulkanInstanceCreateReturnValue {

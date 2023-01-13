@@ -20,7 +20,7 @@ impl VulkanInstance {
     pub(crate) fn new(
         library: &Arc<ash::Entry>, application_info: VulkanApplicationInfo,
         log_severity: vk::DebugUtilsMessageSeverityFlagsEXT, log_type: vk::DebugUtilsMessageTypeFlagsEXT,
-        validation: bool
+        validation: bool, surface: bool
     ) -> Result<Self, VulkanUniversalError>  {
         let create_info;
         let p_application_info =
@@ -56,6 +56,16 @@ impl VulkanInstance {
                 Err(_) => return Err(NullReferenceError::default().into())
             };
             enabled_layers.push(validation_layer.as_ptr());
+        }
+
+        let surface_extension;
+        let surface_extension_platform;
+        if surface {
+            surface_extension = CString::new("VK_KHR_surface").unwrap();
+            enabled_extensions.push(surface_extension.as_ptr());
+
+            surface_extension_platform = CString::new("VK_KHR_win32_surface").unwrap();
+            enabled_extensions.push(surface_extension_platform.as_ptr());
         }
 
         let messenger_create_info = vk::DebugUtilsMessengerCreateInfoEXT {

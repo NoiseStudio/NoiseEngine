@@ -16,7 +16,7 @@ pub(crate) struct VulkanApplicationInfo {
 
 impl From<VulkanApplicationInfo> for Result<vk::ApplicationInfo, VulkanUniversalError> {
     fn from(create_info: VulkanApplicationInfo) -> Self {
-        let application_name = match CString::new(String::from(create_info.application_name)) {
+        let application_name = match CString::new(&create_info.application_name) {
             Ok(s) => s,
             Err(_) => return Err(
                 InvalidOperationError::with_str("Application name contains null character.").into()

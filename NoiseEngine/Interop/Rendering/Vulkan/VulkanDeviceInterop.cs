@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Interop.Rendering.Buffers;
+﻿using NoiseEngine.Interop.InteropMarshalling;
+using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using System;
@@ -15,9 +16,12 @@ internal static partial class VulkanDeviceInterop {
     /// </summary>
     /// <remarks>This method must be synchronized by caller.</remarks>
     /// <param name="device">Handle of existing device.</param>
+    /// <param name="enabledExtensions">Extensions to enable.</param>
     /// <returns><see cref="InteropResult{None}"/> with potential error.</returns>
     [InteropImport("rendering_vulkan_device_interop_initialize")]
-    public static partial InteropResult<None> Initialize(InteropHandle<GraphicsDevice> device);
+    public static partial InteropResult<None> Initialize(
+        InteropHandle<GraphicsDevice> device, ReadOnlySpan<InteropString> enabledExtensions
+    );
 
     [InteropImport("rendering_vulkan_device_interop_create_command_buffer")]
     public static partial InteropResult<InteropHandle<GraphicsCommandBuffer>> CreateCommandBuffer(

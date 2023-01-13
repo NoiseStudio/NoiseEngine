@@ -23,7 +23,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
     private InteropHandle<VulkanInstance> InnerHandle { get; }
 
     public VulkanInstance(
-        VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType, bool validation
+        VulkanLibrary library, VulkanLogSeverity logSeverity, VulkanLogType logType, bool validation, bool surface
     ) {
         if (logType.HasFlag(VulkanLogType.DeviceAddressBinding)) {
             throw new ArgumentException(
@@ -40,7 +40,7 @@ internal sealed class VulkanInstance : GraphicsInstance {
         );
 
         if (!VulkanInstanceInterop.Create(
-            Library.Handle, createInfo, logSeverity, logType, validation
+            Library.Handle, createInfo, logSeverity, logType, validation, surface
         ).TryGetValue(out VulkanInstanceCreateReturnValue returnValue, out ResultError error)) {
             error.ThrowAndDispose();
         }

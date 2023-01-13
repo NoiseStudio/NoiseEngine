@@ -3,6 +3,7 @@ using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using NoiseEngine.Serialization;
+using System;
 
 namespace NoiseEngine.Rendering.Vulkan.Buffers;
 
@@ -30,16 +31,24 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
     public override void AttachCameraWorker(Camera camera) {
         VulkanCameraDelegation cameraDelegation = (VulkanCameraDelegation)camera.Delegation;
         RenderPass renderPass = cameraDelegation.RenderPass;
-        Framebuffer framebuffer = renderPass.GetFramebuffer();
 
-        FastList<object> references = this.references;
-        references.EnsureCapacity(references.Count + 2);
-        references.UnsafeAdd(renderPass);
-        references.UnsafeAdd(framebuffer);
+        if (renderPass is WindowRenderPass window) {
+            references.Add(renderPass);
+            Swapchain swapchain = window.Swapchain;
 
-        writer.WriteCommand(CommandBufferCommand.AttachCamera);
-        writer.WriteIntN(renderPass.Handle.Pointer);
-        writer.WriteIntN(framebuffer.Handle.Pointer);
+            writer.WriteCommand(CommandBufferCommand.AttachCameraWindow);
+            writer.WriteIntN(renderPass.Handle.Pointer);
+            writer.WriteIntN(swapchain.Handle.Pointer);
+        } else if (renderPass is TextureRenderPass texture) {
+            references.Add(renderPass);
+            Framebuffer framebuffer = texture.Framebuffer;
+
+            writer.WriteCommand(CommandBufferCommand.AttachCameraTexture);
+            writer.WriteIntN(framebuffer.Handle.Pointer);
+        } else {
+            throw new NotImplementedException("Camera render target is not implemented.");
+        }
+
         writer.WriteIntN(cameraDelegation.ClearColor);
     }
 

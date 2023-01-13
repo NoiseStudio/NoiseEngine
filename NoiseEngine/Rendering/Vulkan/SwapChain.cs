@@ -1,19 +1,34 @@
 ﻿using NoiseEngine.Interop;
+using NoiseEngine.Interop.Rendering.Vulkan;
 
 namespace NoiseEngine.Rendering.Vulkan;
 
-internal class SwapChain {
+internal class Swapchain {
 
-    public GraphicsDevice Device { get; }
+    public VulkanDevice Device { get; }
+    public TextureFormat Format { get; }
 
-    internal InteropHandle<RenderPass> Handle { get; }
+    internal InteropHandle<Swapchain> Handle { get; }
 
-    public SwapChain(GraphicsDevice device, Window window) {
+    public Swapchain(VulkanDevice device, Window window) {
+        device.Initialize();
         Device = device;
+
+        if (!SwapchainInterop.Create(device.Handle, window.Handle).TryGetValue(
+            out SwapchainCreateReturnValue result, out ResultError error
+        )) {
+            error.ThrowAndDispose();
+        }
+
+        Handle = result.Handle;
+        Format = result.Format;
     }
 
-    ~SwapChain() {
+    ~Swapchain() {
+        if (Handle == InteropHandle<Swapchain>.Zero)
+            return;
 
+        SwapchainInterop.Destroy(Handle);
     }
 
 }

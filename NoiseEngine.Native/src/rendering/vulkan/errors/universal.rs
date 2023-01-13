@@ -5,7 +5,7 @@ use gpu_alloc::{AllocationError, MapError};
 
 use crate::{interop::prelude::ResultError, errors::{
     invalid_operation::InvalidOperationError, null_reference::NullReferenceError, overflow::OverflowError
-}};
+}, rendering::errors::window_not_supported::WindowNotSupportedError};
 
 #[derive(Debug)]
 pub enum VulkanUniversalError {
@@ -15,7 +15,8 @@ pub enum VulkanUniversalError {
     Utf8(Utf8Error),
     Vulkan(vk::Result),
     Allocation(AllocationError),
-    Map(MapError)
+    Map(MapError),
+    WindowNotSupported(WindowNotSupportedError),
 }
 
 impl Error for VulkanUniversalError {
@@ -27,7 +28,8 @@ impl Error for VulkanUniversalError {
             VulkanUniversalError::Utf8(err) => err.source(),
             VulkanUniversalError::Vulkan(err) => err.source(),
             VulkanUniversalError::Allocation(err) => err.source(),
-            VulkanUniversalError::Map(err) => err.source()
+            VulkanUniversalError::Map(err) => err.source(),
+            VulkanUniversalError::WindowNotSupported(err) => err.source()
         }
     }
 }
@@ -41,7 +43,8 @@ impl Display for VulkanUniversalError {
             VulkanUniversalError::Utf8(err) => err.to_string(),
             VulkanUniversalError::Vulkan(err) => err.to_string(),
             VulkanUniversalError::Allocation(err) => err.to_string(),
-            VulkanUniversalError::Map(err) => err.to_string()
+            VulkanUniversalError::Map(err) => err.to_string(),
+            VulkanUniversalError::WindowNotSupported(err) => err.to_string()
         })
     }
 }
@@ -88,6 +91,12 @@ impl From<MapError> for VulkanUniversalError {
     }
 }
 
+impl From<WindowNotSupportedError> for VulkanUniversalError {
+    fn from(err: WindowNotSupportedError) -> Self {
+        Self::WindowNotSupported(err)
+    }
+}
+
 impl From<VulkanUniversalError> for ResultError {
     fn from(err: VulkanUniversalError) -> Self {
         match err {
@@ -97,7 +106,8 @@ impl From<VulkanUniversalError> for ResultError {
             VulkanUniversalError::Utf8(err) => err.into(),
             VulkanUniversalError::Vulkan(err) => err.into(),
             VulkanUniversalError::Allocation(err) => err.into(),
-            VulkanUniversalError::Map(err) => err.into()
+            VulkanUniversalError::Map(err) => err.into(),
+            VulkanUniversalError::WindowNotSupported(err) => err.into()
         }
     }
 }
