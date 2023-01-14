@@ -8,13 +8,13 @@ use super::instance::VulkanInstance;
 
 pub struct VulkanSurface {
     instance: Arc<VulkanInstance>,
-    _window: Arc<dyn Window>,
+    window: Arc<dyn Window>,
     inner: vk::SurfaceKHR
 }
 
 impl VulkanSurface {
     pub fn new(instance: Arc<VulkanInstance>, window: Arc<dyn Window>, inner: vk::SurfaceKHR) -> Self {
-        Self { instance, _window: window, inner }
+        Self { instance, window, inner }
     }
 
     pub fn inner(&self) -> vk::SurfaceKHR {
@@ -23,6 +23,10 @@ impl VulkanSurface {
 
     pub fn instance(&self) -> &Arc<VulkanInstance> {
         &self.instance
+    }
+
+    pub fn window(&self) -> &Arc<dyn Window> {
+        &self.window
     }
 }
 

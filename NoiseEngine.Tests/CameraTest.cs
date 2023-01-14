@@ -27,6 +27,8 @@ public class CameraTest : ApplicationTestEnvironment {
 
             commandBuffer.Execute();
             commandBuffer.Clear();
+
+            Thread.Sleep(1000);
         });
     }
 

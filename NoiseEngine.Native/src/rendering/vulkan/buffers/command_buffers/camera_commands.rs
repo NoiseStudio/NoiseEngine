@@ -27,7 +27,7 @@ pub fn attach_camera_window<'init: 'fam, 'fam>(
 
     attach_camera_worker(
         data, buffer, vulkan_device, render_pass, framebuffer.inner(),
-        vk::Extent2D { width: 1264, height: 681 }
+        framebuffer.extent()
     );
 
     Ok(AttachCameraWindowOutput { pass, image_index })

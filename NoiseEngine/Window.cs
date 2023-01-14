@@ -12,24 +12,34 @@ public class Window : IDisposable, ICameraRenderTarget {
     private AtomicBool isDisposed;
 
     public bool IsDisposed => isDisposed;
+    public uint Width { get; }
+    public uint Height { get; }
 
     internal InteropHandle<Window> Handle { get; }
 
     TextureUsage ICameraRenderTarget.Usage => TextureUsage.ColorAttachment;
-    Vector3<uint> ICameraRenderTarget.Extent => new Vector3<uint>(1280, 720, 0);
+    Vector3<uint> ICameraRenderTarget.Extent => new Vector3<uint>(Width, Height, 0);
     uint ICameraRenderTarget.SampleCount => 1;
     TextureFormat ICameraRenderTarget.Format => throw new NotImplementedException();
 
-    public Window(string? title = null, uint width = 1280, uint height = 720) {
+    public Window(string? title, uint width, uint height, WindowSettings settings) {
         title ??= Application.Name;
 
-        if (!WindowInterop.Create(title, width, height).TryGetValue(
+        Width = width;
+        Height = height;
+
+        if (!WindowInterop.Create(title, width, height, new WindowSettingsRaw(settings)).TryGetValue(
             out InteropHandle<Window> handle, out ResultError error
         )) {
             error.ThrowAndDispose();
         }
 
         Handle = handle;
+    }
+
+    public Window(string? title = null, uint width = 1280, uint height = 720) : this(
+        title, width, height, new WindowSettings()
+    ) {
     }
 
     ~Window() {

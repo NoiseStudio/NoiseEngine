@@ -11,16 +11,10 @@ pub struct Win32Error {
 }
 
 impl Win32Error {
-    pub fn get_last() -> Option<Self> {
-        let code = unsafe {
+    pub fn get_last() -> Self {
+        Self { code: unsafe {
             GetLastError()
-        };
-
-        if code == 0 {
-            None
-        } else {
-            Some(Self { code })
-        }
+        }}
     }
 }
 

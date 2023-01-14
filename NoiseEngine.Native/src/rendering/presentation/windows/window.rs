@@ -2,17 +2,21 @@ use std::{ptr, sync::{Arc, Weak}};
 
 use ash::{vk, extensions::khr};
 use libc::{c_void, wchar_t};
+use uuid::Uuid;
 
 use crate::{
-    errors::{platform::windows::win32::Win32Error, null_reference::NullReferenceError}, interop::prelude::InteropResult,
+    errors::{
+        platform::{windows::win32::Win32Error, platform_universal::PlatformUniversalError},
+        null_reference::NullReferenceError
+    },
     logging::log,
     rendering::{
-        presentation::window::Window,
+        presentation::{window::Window, window_settings::{WindowSettings, WindowMode, WindowControls, WindowCoordinateMode}},
         vulkan::{surface::VulkanSurface, instance::VulkanInstance, errors::universal::VulkanUniversalError}
     }
 };
 
-use super::wnd_class_w::WndClassW;
+use super::{wnd_class_w::WndClassW, rect::Rect};
 
 fn wide_null(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(Some(0)).collect()
@@ -20,43 +24,59 @@ fn wide_null(s: &str) -> Vec<u16> {
 
 pub struct WindowWindows {
     weak: Weak<Self>,
-    h_wnd: *mut c_void
+    h_wnd: *mut c_void,
+    class_name: Vec<u16>,
+    width: u32,
+    height: u32,
+    settings: WindowSettings
 }
 
 impl WindowWindows {
-    pub fn new(title: &str, width: u32, height: u32) -> InteropResult<Box<Arc<dyn Window>>> {
+    pub fn new(
+        title: &str, width: u32, height: u32, settings: WindowSettings
+    ) -> Result<Arc<dyn Window>, PlatformUniversalError> {
         let h_instance = unsafe {
             GetModuleHandleW(ptr::null_mut())
         };
 
-        let wide_title = wide_null(title).as_ptr();
-
         // Create window class.
+        let class_name = wide_null(Uuid::new_v4().to_string().as_str());
+
         let window_class = WndClassW {
             lpfn_wnd_proc: Some(DefWindowProcW),
             h_instance,
-            lpsz_class_name: wide_title,
+            lpsz_class_name: class_name.as_ptr(),
             ..Default::default()
         };
 
         if unsafe { RegisterClassW(&window_class) } == 0 {
-            match Win32Error::get_last() {
-                Some(err) => return InteropResult::with_err(err.into()),
-                None => (),
-            }
+            return Err(Win32Error::get_last().into())
         }
 
+        // Construct.
+        let arc = Arc::new(Self {
+            weak: Weak::default(), h_wnd: ptr::null_mut(), class_name, width, height, settings
+        });
+        let reference = unsafe {
+            &mut *(Arc::as_ptr(&arc) as *mut WindowWindows)
+        };
+        reference.weak = Arc::downgrade(&arc);
+
         // Create window.
-        let h_wnd = unsafe {
+        let adjust = reference.get_adjust()?;
+        let (position_x, position_y) = reference.get_winapi_position(&adjust);
+        let wide_title = wide_null(title).as_ptr();
+
+        reference.h_wnd = unsafe {
             CreateWindowExW(
                 0,
+                reference.class_name.as_ptr(),
                 wide_title,
-                wide_title,
-                0,
-                300,
-                300,
-                width as i32,
-                height as i32,
+                reference.get_window_style(),
+                position_x,
+                position_y,
+                adjust.right - adjust.left,
+                adjust.bottom - adjust.top,
                 ptr::null_mut(),
                 ptr::null_mut(),
                 h_instance,
@@ -65,46 +85,108 @@ impl WindowWindows {
         };
 
         _ = unsafe {
-            ShowWindow(h_wnd, 5)
+            ShowWindow(reference.h_wnd, 5)
         };
 
-        // Construct.
-        let arc = Arc::new(Self { weak: Weak::default(), h_wnd });
-        let reference = unsafe {
-            &mut *(Arc::as_ptr(&arc) as *mut WindowWindows)
-        };
-        reference.weak = Arc::downgrade(&arc);
+        Ok(arc)
+    }
 
-        InteropResult::with_ok(Box::new(arc))
+    fn get_h_instance() -> *mut c_void {
+        unsafe {
+            GetModuleHandleW(ptr::null_mut())
+        }
+    }
+
+    // https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
+    fn get_window_style(&self) -> u32 {
+        let mut result = match self.settings.mode {
+            WindowMode::Windowed => {
+                let mut a = 0x00C00000 | 0x00080000; // WS_CAPTION | WS_SYSMENU
+
+                if self.settings.controls.contains(WindowControls::MinimizeButton) {
+                    a |= 0x00020000; // WS_MINIMIZEBOX
+                }
+                if self.settings.controls.contains(WindowControls::MaximizeButton) {
+                    a |= 0x00010000; // WS_MAXIMIZEBOX
+                }
+
+                a
+            },
+            WindowMode::Borderless => 0x80000000, // WS_POPUP
+        };
+
+        if self.settings.resizable {
+            result |= 0x00040000; // WS_THICKFRAME
+        }
+
+        result
+    }
+
+    fn get_adjust(&self) -> Result<Rect, Win32Error> {
+        let rect = Rect {
+            left: 0,
+            top: 0,
+            right: self.width as i32,
+            bottom: self.height as i32,
+        };
+
+        let result = unsafe {
+            AdjustWindowRectEx(&rect, self.get_window_style(), 0, 0)
+        };
+
+        if result == 0 {
+            return Err(Win32Error::get_last())
+        }
+
+        Ok(rect)
+    }
+
+    fn get_winapi_position(&self, adjust: &Rect) -> (i32, i32) {
+        const CW_USEDEFAULT: u32 = 0x80000000;
+
+        let x = match self.settings.position.x.mode {
+            WindowCoordinateMode::Default => CW_USEDEFAULT as i32,
+            WindowCoordinateMode::Value => self.settings.position.x.value + adjust.left,
+            WindowCoordinateMode::Center => unimplemented!(),
+        };
+
+        let y = match self.settings.position.y.mode {
+            WindowCoordinateMode::Default => CW_USEDEFAULT as i32,
+            WindowCoordinateMode::Value => self.settings.position.y.value + adjust.top,
+            WindowCoordinateMode::Center => unimplemented!(),
+        };
+
+        (x, y)
     }
 }
 
 impl Drop for WindowWindows {
     fn drop(&mut self) {
-        let result = unsafe {
+        let mut result = unsafe {
             DestroyWindow(self.h_wnd)
         };
 
         if result == 0 {
-            match Win32Error::get_last() {
-                Some(err) => log::error(err.to_string().as_str()),
-                None => (),
-            }
+            log::error(Win32Error::get_last().to_string().as_str());
+        }
+
+        result = unsafe {
+            UnregisterClassW(self.class_name.as_ptr(), Self::get_h_instance())
+        };
+
+        if result == 0 {
+            log::error(Win32Error::get_last().to_string().as_str());
         }
     }
 }
 
 impl Window for WindowWindows {
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
-        let h_instance = unsafe {
-            GetModuleHandleW(ptr::null_mut())
-        };
-
         let create_info = vk::Win32SurfaceCreateInfoKHR {
             s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
             p_next: ptr::null(),
             flags: vk::Win32SurfaceCreateFlagsKHR::empty(),
-            hinstance: h_instance,
+            hinstance: Self::get_h_instance(),
             hwnd: self.h_wnd,
         };
 
@@ -119,6 +201,14 @@ impl Window for WindowWindows {
         };
 
         Ok(VulkanSurface::new(instance.clone(), window_arc, inner))
+    }
+
+    fn get_width(&self) -> u32 {
+        self.width
+    }
+
+    fn get_height(&self) -> u32 {
+        self.height
     }
 }
 
@@ -137,9 +227,13 @@ extern "system" {
 
 #[link(name = "user32")]
 extern "system" {
+    fn UnregisterClassW(lp_class_name: *const wchar_t, h_instance: *mut c_void) -> u32;
+
+    fn DestroyWindow(h_wnd: *mut c_void) -> u32;
+
     fn DefWindowProcW(h_wnd: *mut c_void, msg: u32, w_param: usize, l_param: isize) -> isize;
 
     fn ShowWindow(h_wnd: *mut c_void, n_cmd_show: u32) -> u32;
 
-    fn DestroyWindow(h_wnd: *mut c_void) -> u32;
+    fn AdjustWindowRectEx(lp_rect: &Rect, dw_style: u32, b_menu: u32, dw_ex_style: u32) -> u32;
 }

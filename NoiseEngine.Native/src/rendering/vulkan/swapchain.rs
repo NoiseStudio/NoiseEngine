@@ -141,6 +141,10 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         &self.device
     }
 
+    pub fn extent(&self) -> vk::Extent2D {
+        self.shared.surface.window().get_vulkan_extent()
+    }
+
     pub fn get_swapchain_pass(
         &'init self, render_pass: &Arc<RenderPass<'init>>
     ) -> Result<Arc<SwapchainPass<'init, 'fam>>, VulkanUniversalError> {
@@ -167,7 +171,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
         let mut framebuffers = Vec::with_capacity(dynamic.image_views.len());
         for image_view in &dynamic.image_views {
-            framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view)?)
+            framebuffers.push(SwapchainFramebuffer::new(self, &render_pass, image_view)?)
         }
 
         let new_pass = Arc::new(SwapchainPass {
@@ -198,7 +202,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             min_image_count: self.capabilities.min_image_count,
             image_format: self.format.format,
             image_color_space: self.format.color_space,
-            image_extent: vk::Extent2D { width: 1264, height: 681 },
+            image_extent: self.extent(),
             image_array_layers: 1,
             image_usage: vk::ImageUsageFlags::COLOR_ATTACHMENT,
             image_sharing_mode: match family_indices.is_empty() {
