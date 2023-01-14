@@ -167,7 +167,7 @@ impl<'init> Swapchain<'init> {
             p_next: ptr::null(),
             flags: vk::SwapchainCreateFlagsKHR::empty(),
             surface: self.shared.surface.inner(),
-            min_image_count: self.capabilities.max_image_count,
+            min_image_count: self.capabilities.min_image_count,
             image_format: self.format.format,
             image_color_space: self.format.color_space,
             image_extent: vk::Extent2D { width: 1264, height: 681 },

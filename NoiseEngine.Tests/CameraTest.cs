@@ -2,7 +2,6 @@
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
-using System;
 using System.Threading;
 
 namespace NoiseEngine.Tests;
@@ -18,7 +17,8 @@ public class CameraTest : ApplicationTestEnvironment {
 
         ExecuteOnAllDevices(scene => {
             Camera camera = new Camera(scene) {
-                RenderTarget = window
+                RenderTarget = window,
+                ClearColor = Color.Random
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
@@ -27,8 +27,6 @@ public class CameraTest : ApplicationTestEnvironment {
 
             commandBuffer.Execute();
             commandBuffer.Clear();
-
-            Thread.Sleep(1000000);
         });
     }
 
