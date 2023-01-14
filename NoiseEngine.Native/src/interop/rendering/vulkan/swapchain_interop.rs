@@ -35,5 +35,5 @@ extern "C" fn rendering_vulkan_swapchain_interop_create<'init: 'fam, 'fam>(
 }
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_swapchain_interop_destroy(_handle: Box<Swapchain>) {
+extern "C" fn rendering_vulkan_swapchain_interop_destroy(_handle: Box<Arc<Swapchain>>) {
 }
