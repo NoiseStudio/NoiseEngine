@@ -3,8 +3,7 @@ use std::{sync::Arc, ptr};
 use ash::vk;
 
 use super::{
-    render_pass::RenderPass, errors::universal::VulkanUniversalError, swapchain_image_view::SwapchainImageView,
-    swapchain::Swapchain
+    render_pass::RenderPass, errors::universal::VulkanUniversalError, swapchain_image_view::SwapchainImageView
 };
 
 pub struct SwapchainFramebuffer<'init> {
@@ -16,10 +15,8 @@ pub struct SwapchainFramebuffer<'init> {
 
 impl<'init> SwapchainFramebuffer<'init> {
     pub fn new(
-        swapchain: &Swapchain, render_pass: &Arc<RenderPass<'init>>, image_view: &Arc<SwapchainImageView<'init>>
+        render_pass: &Arc<RenderPass<'init>>, image_view: &Arc<SwapchainImageView<'init>>, extent: vk::Extent2D
     ) -> Result<Self, VulkanUniversalError> {
-        let extent = swapchain.extent();
-
         let vk_create_info = vk::FramebufferCreateInfo {
             s_type: vk::StructureType::FRAMEBUFFER_CREATE_INFO,
             p_next: ptr::null(),

@@ -9,7 +9,7 @@ use crate::{
 
 #[repr(C)]
 struct SwapchainCreateReturnValue<'init: 'fam, 'fam> {
-    pub handle: Box<Swapchain<'init, 'fam>>,
+    pub handle: Box<Arc<Swapchain<'init, 'fam>>>,
     pub format: vk::Format
 }
 

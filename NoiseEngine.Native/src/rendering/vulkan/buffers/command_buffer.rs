@@ -1,4 +1,4 @@
-use std::{ptr, sync::Arc};
+use std::{ptr, sync::{Arc, Weak}};
 
 use ash::vk;
 
@@ -130,11 +130,24 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                 )
             };
 
+            let mut i = 0;
             for result in results {
-                if result != vk::Result::SUCCESS {
+                if result == vk::Result::SUCCESS {
+                    i = i + 1;
+                    continue;
+                }
+
+                if result != vk::Result::ERROR_OUT_OF_DATE_KHR || result != vk::Result::SUBOPTIMAL_KHR {
+                    match Weak::upgrade(self.attached_camera_windows[i].pass.swapchain()) {
+                        Some(swapchain) => swapchain.recreate()?,
+                        None => (),
+                    }
+                } else {
                     let a: Result<(), vk::Result> = Err(result);
                     a?;
                 }
+
+                i = i + 1;
             }
         }
 

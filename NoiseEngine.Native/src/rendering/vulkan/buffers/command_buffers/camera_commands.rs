@@ -19,10 +19,10 @@ pub fn attach_camera_window<'init: 'fam, 'fam>(
     data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
 ) -> Result<AttachCameraWindowOutput<'init, 'fam>, VulkanUniversalError> {
     let render_pass = data.read_unchecked::<&Arc<RenderPass>>();
-    let swapchain = data.read_unchecked::<&Swapchain>();
+    let swapchain = data.read_unchecked::<&Arc<Swapchain>>();
 
-    let pass = swapchain.get_swapchain_pass(render_pass)?;
-    let image_index = pass.accquire_next_image()?.0;
+    let (pass, image_index) =
+        swapchain.get_swapchain_pass_and_accquire_next_image(render_pass)?;
     let framebuffer = pass.get_framebuffer(image_index);
 
     attach_camera_worker(
