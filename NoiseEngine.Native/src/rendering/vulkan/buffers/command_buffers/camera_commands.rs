@@ -10,14 +10,14 @@ use crate::{
     serialization::reader::SerializationReader
 };
 
-pub struct AttachCameraWindowOutput<'init> {
-    pub pass: Arc<SwapchainPass<'init>>,
+pub struct AttachCameraWindowOutput<'init: 'fam, 'fam> {
+    pub pass: Arc<SwapchainPass<'init, 'fam>>,
     pub image_index: u32
 }
 
-pub fn attach_camera_window<'init>(
+pub fn attach_camera_window<'init: 'fam, 'fam>(
     data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
-) -> Result<AttachCameraWindowOutput<'init>, VulkanUniversalError> {
+) -> Result<AttachCameraWindowOutput<'init, 'fam>, VulkanUniversalError> {
     let render_pass = data.read_unchecked::<&Arc<RenderPass>>();
     let swapchain = data.read_unchecked::<&Swapchain>();
 

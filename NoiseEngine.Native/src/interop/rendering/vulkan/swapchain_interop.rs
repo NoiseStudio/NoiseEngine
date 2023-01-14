@@ -8,15 +8,15 @@ use crate::{
 };
 
 #[repr(C)]
-struct SwapchainCreateReturnValue<'init> {
-    pub handle: Box<Swapchain<'init>>,
+struct SwapchainCreateReturnValue<'init: 'fam, 'fam> {
+    pub handle: Box<Swapchain<'init, 'fam>>,
     pub format: vk::Format
 }
 
 #[no_mangle]
-extern "C" fn rendering_vulkan_swapchain_interop_create<'init>(
-    device: &Arc<VulkanDevice<'init>>, window: &Arc<dyn Window>
-) -> InteropResult<SwapchainCreateReturnValue<'init>> {
+extern "C" fn rendering_vulkan_swapchain_interop_create<'init: 'fam, 'fam>(
+    device: &'init Arc<VulkanDevice<'init>>, window: &Arc<dyn Window>
+) -> InteropResult<SwapchainCreateReturnValue<'init, 'fam>> {
     let surface = match window.create_vulkan_surface(device.instance()) {
         Ok(s) => s,
         Err(err) => return InteropResult::with_err(err.into())

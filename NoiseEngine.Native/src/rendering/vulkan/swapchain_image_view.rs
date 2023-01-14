@@ -10,7 +10,7 @@ pub struct SwapchainImageView<'init> {
 }
 
 impl<'init> SwapchainImageView<'init> {
-    pub fn new(swapchain: &Swapchain<'init>, image: vk::Image) -> Result<Self, VulkanUniversalError> {
+    pub fn new(swapchain: &Swapchain<'init, '_>, image: vk::Image) -> Result<Self, VulkanUniversalError> {
         let vk_create_info = vk::ImageViewCreateInfo {
             s_type: vk::StructureType::IMAGE_VIEW_CREATE_INFO,
             p_next: ptr::null(),

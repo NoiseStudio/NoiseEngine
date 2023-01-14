@@ -8,24 +8,25 @@ use crate::{
 };
 
 use super::{
-    surface::VulkanSurface, device::VulkanDevice, errors::universal::VulkanUniversalError, render_pass::RenderPass,
-    swapchain_image_view::SwapchainImageView, swapchain_framebuffer::SwapchainFramebuffer, semaphore::VulkanSemaphore
+    surface::VulkanSurface, device::{VulkanDevice, VulkanQueueFamily}, errors::universal::VulkanUniversalError,
+    render_pass::RenderPass, swapchain_image_view::SwapchainImageView, swapchain_framebuffer::SwapchainFramebuffer,
+    semaphore::VulkanSemaphore
 };
 
-pub struct Swapchain<'init> {
-    shared: Arc<SwapchainShared>,
+pub struct Swapchain<'init: 'fam, 'fam> {
+    shared: Arc<SwapchainShared<'init, 'fam>>,
     dynamic: ArcCell<SwapchainSharedDynamic<'init>>,
     capabilities: vk::SurfaceCapabilitiesKHR,
     format: vk::SurfaceFormatKHR,
     present_mode: vk::PresentModeKHR,
-    pass: AtomicCell<Option<Arc<SwapchainPass<'init>>>>,
+    pass: AtomicCell<Option<Arc<SwapchainPass<'init, 'fam>>>>,
     pass_mutex: Mutex<()>,
     inner: vk::SwapchainKHR,
     device: Arc<VulkanDevice<'init>>
 }
 
-impl<'init> Swapchain<'init> {
-    pub fn new(device: &Arc<VulkanDevice<'init>>, surface: VulkanSurface) -> Result<Self, VulkanUniversalError> {
+impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
+    pub fn new(device: &'init Arc<VulkanDevice<'init>>, surface: VulkanSurface) -> Result<Self, VulkanUniversalError> {
         let instance = device.instance();
         let initialized = device.initialized()?;
         let ash_surface = khr::Surface::new(instance.library(), instance.inner());
@@ -61,11 +62,38 @@ impl<'init> Swapchain<'init> {
 
         let present_mode = Self::choose_surface_present_mode(available_present_modes);
 
+        // Queue family.
+        let mut queue_family_option = None;
+
+        // Reverse the order of the families to find a matching family with the least feature coverage.
+        // Example: https://vulkan.gpuinfo.org/displayreport.php?id=18393#queuefamilies
+        //          This ensures that the compute family is used for this example GPU.
+        for family in initialized.get_families().iter().rev() {
+            let supports = unsafe {
+                ash_surface.get_physical_device_surface_support(
+                    device.physical_device(), family.index(), surface.inner()
+                )
+            }?;
+
+            if supports {
+                queue_family_option = Some(family);
+                break;
+            }
+        }
+
+        let queue_family = match queue_family_option {
+            Some(q) => q,
+            None => return Err(WindowNotSupportedError::with_entry_str(
+                "Graphics device and surface does not have compatible present queue families."
+            ).into()),
+        };
+
         // Construct.
         let mut swapchain = Self {
             shared: Arc::new(SwapchainShared {
                 surface,
                 ash_swapchain: khr::Swapchain::new(instance.inner(), initialized.vulkan_device()),
+                queue_family,
             }),
             dynamic: ArcCell::new(Arc::new(SwapchainSharedDynamic {
                 image_views: Vec::with_capacity(0),
@@ -115,7 +143,7 @@ impl<'init> Swapchain<'init> {
 
     pub fn get_swapchain_pass(
         &'init self, render_pass: &Arc<RenderPass<'init>>
-    ) -> Result<Arc<SwapchainPass<'init>>, VulkanUniversalError> {
+    ) -> Result<Arc<SwapchainPass<'init, 'fam>>, VulkanUniversalError> {
         // Check if pass is created.
         match self.pass.get() {
             Some(current_pass) => {
@@ -228,7 +256,7 @@ impl<'init> Swapchain<'init> {
     }
 }
 
-impl Drop for Swapchain<'_> {
+impl Drop for Swapchain<'_, '_> {
     fn drop(&mut self) {
         unsafe {
             self.shared.ash_swapchain.destroy_swapchain(self.inner, None)
@@ -236,9 +264,10 @@ impl Drop for Swapchain<'_> {
     }
 }
 
-struct SwapchainShared {
+struct SwapchainShared<'init: 'fam, 'fam> {
     surface: VulkanSurface,
-    ash_swapchain: khr::Swapchain
+    ash_swapchain: khr::Swapchain,
+    queue_family: &'fam VulkanQueueFamily<'init>
 }
 
 struct SwapchainSharedDynamic<'init> {
@@ -247,15 +276,15 @@ struct SwapchainSharedDynamic<'init> {
     render_finished_semaphores: Vec<VulkanSemaphore<'init>>
 }
 
-pub struct SwapchainPass<'init> {
-    shared: Arc<SwapchainShared>,
+pub struct SwapchainPass<'init: 'fam, 'fam> {
+    shared: Arc<SwapchainShared<'init, 'fam>>,
     dynamic: Arc<SwapchainSharedDynamic<'init>>,
     inner: vk::SwapchainKHR,
     framebuffers: Vec<SwapchainFramebuffer<'init>>,
     render_pass: Arc<RenderPass<'init>>
 }
 
-impl<'init> SwapchainPass<'init> {
+impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
     pub fn accquire_next_image(&self) -> Result<(u32, bool), VulkanUniversalError> {
         Ok(unsafe {
             self.shared.ash_swapchain.acquire_next_image(
@@ -283,5 +312,9 @@ impl<'init> SwapchainPass<'init> {
 
     pub fn ash_swapchain(&self) -> &khr::Swapchain {
         &self.shared.ash_swapchain
+    }
+
+    pub fn present_family(&self) -> &'fam VulkanQueueFamily<'init> {
+        self.shared.queue_family
     }
 }

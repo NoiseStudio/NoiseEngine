@@ -21,7 +21,7 @@ pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     inner: vk::CommandBuffer,
     queue_family: &'fam VulkanQueueFamily<'init>,
     command_pool: PoolItem<'fam, VulkanCommandPool<'init>>,
-    attached_camera_windows: Vec<AttachCameraWindowOutput<'init>>,
+    attached_camera_windows: Vec<AttachCameraWindowOutput<'init, 'fam>>,
     device: Arc<VulkanDevice<'init>>,
 }
 
@@ -126,7 +126,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
 
             _ = unsafe {
                 self.attached_camera_windows[0].pass.ash_swapchain().queue_present(
-                    self.queue_family.get_queue().queue, &present_info
+                    self.attached_camera_windows[0].pass.present_family().get_queue().queue, &present_info
                 )
             };
 
