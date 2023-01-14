@@ -1,6 +1,7 @@
 use enumflags2::{bitflags, BitFlags};
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct WindowSettings {
     pub mode: WindowMode,
     pub controls: BitFlags<WindowControls>,
@@ -9,6 +10,7 @@ pub struct WindowSettings {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum WindowMode {
     Windowed = 0,
     Borderless = 1
@@ -23,32 +25,21 @@ pub enum WindowControls {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct WindowPosition {
     pub x: WindowCoordinate,
     pub y: WindowCoordinate
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct WindowCoordinate {
     pub value: i32,
     pub mode: WindowCoordinateMode
 }
 
-impl WindowCoordinate {
-    pub fn compute<DF, CF>(&self, default_factory: DF, center_factory: CF) -> i32
-    where
-        DF: FnOnce() -> i32,
-        CF: FnOnce() -> i32
-    {
-        match self.mode {
-            WindowCoordinateMode::Default => default_factory(),
-            WindowCoordinateMode::Value => self.value,
-            WindowCoordinateMode::Center => center_factory()
-        }
-    }
-}
-
 #[repr(u8)]
+#[derive(Copy, Clone)]
 pub enum WindowCoordinateMode {
     Default = 0,
     Value = 1,

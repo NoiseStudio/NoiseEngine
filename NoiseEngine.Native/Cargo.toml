@@ -16,6 +16,7 @@ rsevents = "0.3.1"
 gpu-alloc = "0.5.3"
 gpu-alloc-ash = "0.5.0"
 arc-cell = "0.3.3"
+const-utf16 = "0.2.1"
 
 [dependencies.uuid]
 version = "1.2.2"

@@ -7,10 +7,13 @@ use crate::rendering::vulkan::{
 };
 
 pub trait Window {
-    fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError>;
-
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
+
+    fn pool_events(&self);
+    fn hide(&self);
+
+    fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError>;
 
     fn get_vulkan_extent(&self) -> vk::Extent2D {
         vk::Extent2D {

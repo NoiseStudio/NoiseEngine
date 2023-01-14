@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Rendering;
+﻿using NoiseEngine.Interop.Rendering.Presentation;
+using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
@@ -22,13 +23,15 @@ public class CameraTest : ApplicationTestEnvironment {
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
-            commandBuffer.AttachCameraUnchecked(camera);
-            commandBuffer.DetachCameraUnchecked();
+            while (!window.IsDisposed) {
+                WindowInterop.PoolEvents(window.Handle);
 
-            commandBuffer.Execute();
-            commandBuffer.Clear();
+                commandBuffer.AttachCameraUnchecked(camera);
+                commandBuffer.DetachCameraUnchecked();
 
-            Thread.Sleep(1000);
+                commandBuffer.Execute();
+                commandBuffer.Clear();
+            }
         });
     }
 
