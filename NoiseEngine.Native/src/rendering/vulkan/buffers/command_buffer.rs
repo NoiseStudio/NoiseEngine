@@ -124,11 +124,18 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                 p_results: results.as_mut_ptr(),
             };
 
-            unsafe {
+            _ = unsafe {
                 self.attached_camera_windows[0].pass.ash_swapchain().queue_present(
                     self.queue_family.get_queue().queue, &present_info
                 )
-            }?;
+            };
+
+            for result in results {
+                if result != vk::Result::SUCCESS {
+                    let a: Result<(), vk::Result> = Err(result);
+                    a?;
+                }
+            }
         }
 
         Ok(fence)
