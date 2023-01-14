@@ -7,5 +7,6 @@ pub mod common;
 pub mod errors;
 pub mod interop;
 pub mod logging;
+pub mod platform;
 pub mod rendering;
 pub mod serialization;

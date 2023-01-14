@@ -1,7 +1,7 @@
-use std::{ptr, sync::{Arc, Mutex}, mem};
+use std::{ptr, sync::{Arc, Mutex, MutexGuard, Weak}, mem};
 
 use arc_cell::{AtomicCell, ArcCell};
-use ash::{vk, extensions::khr};
+use ash::{vk, extensions::khr, prelude::VkResult};
 
 use crate::{
     rendering::errors::window_not_supported::WindowNotSupportedError, errors::invalid_operation::InvalidOperationError
@@ -15,18 +15,19 @@ use super::{
 
 pub struct Swapchain<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
-    dynamic: ArcCell<SwapchainSharedDynamic<'init>>,
+    dynamic: ArcCell<SwapchainSharedDynamic<'init, 'fam>>,
     capabilities: vk::SurfaceCapabilitiesKHR,
     format: vk::SurfaceFormatKHR,
     present_mode: vk::PresentModeKHR,
     pass: AtomicCell<Option<Arc<SwapchainPass<'init, 'fam>>>>,
-    pass_mutex: Mutex<()>,
-    inner: vk::SwapchainKHR,
+    mutex: Mutex<()>,
     device: Arc<VulkanDevice<'init>>
 }
 
 impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
-    pub fn new(device: &'init Arc<VulkanDevice<'init>>, surface: VulkanSurface) -> Result<Self, VulkanUniversalError> {
+    pub fn new(
+        device: &'init Arc<VulkanDevice<'init>>, surface: VulkanSurface
+    ) -> Result<Arc<Self>, VulkanUniversalError> {
         let instance = device.instance();
         let initialized = device.initialized()?;
         let ash_surface = khr::Surface::new(instance.library(), instance.inner());
@@ -89,13 +90,19 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         };
 
         // Construct.
-        let mut swapchain = Self {
-            shared: Arc::new(SwapchainShared {
-                surface,
-                ash_swapchain: khr::Swapchain::new(instance.inner(), initialized.vulkan_device()),
-                queue_family,
-            }),
+        let shared = Arc::new(SwapchainShared {
+            swapchain: Weak::default(),
+            surface,
+            ash_swapchain: khr::Swapchain::new(instance.inner(), initialized.vulkan_device()),
+            queue_family,
+        });
+
+        let swapchain = Arc::new(Self {
+            shared: shared.clone(),
             dynamic: ArcCell::new(Arc::new(SwapchainSharedDynamic {
+                shared: shared.clone(),
+                inner: unsafe { mem::zeroed() },
+                extent: vk::Extent2D::default(),
                 image_views: Vec::with_capacity(0),
                 image_available_semaphores: Vec::with_capacity(0),
                 render_finished_semaphores: Vec::with_capacity(0),
@@ -104,10 +111,15 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             format,
             present_mode,
             pass: AtomicCell::new(None),
-            pass_mutex: Mutex::new(()),
-            inner: unsafe { mem::zeroed() },
+            mutex: Mutex::new(()),
             device: device.clone()
+        });
+
+        let reference = unsafe {
+            &mut *(Arc::as_ptr(&shared) as *mut SwapchainShared)
         };
+        reference.swapchain = Arc::downgrade(&swapchain);
+
         swapchain.recreate()?;
 
         Ok(swapchain)
@@ -141,6 +153,10 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         &self.device
     }
 
+    pub fn extent(&self) -> vk::Extent2D {
+        self.shared.surface.window().get_vulkan_extent()
+    }
+
     pub fn get_swapchain_pass(
         &'init self, render_pass: &Arc<RenderPass<'init>>
     ) -> Result<Arc<SwapchainPass<'init, 'fam>>, VulkanUniversalError> {
@@ -154,35 +170,35 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             None => (),
         }
 
-        // Lock pass mutex.
-        let _lock = match self.pass_mutex.lock() {
-            Ok(l) => l,
-            Err(_) => return Err(
-                InvalidOperationError::with_str("Another thread holding the mutex panicked.").into()
-            ),
-        };
-
-        // Create new pass.
-        let dynamic = self.dynamic.get();
-
-        let mut framebuffers = Vec::with_capacity(dynamic.image_views.len());
-        for image_view in &dynamic.image_views {
-            framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view)?)
-        }
-
-        let new_pass = Arc::new(SwapchainPass {
-            shared: self.shared.clone(),
-            dynamic,
-            inner: self.inner,
-            framebuffers,
-            render_pass: render_pass.clone(),
-        });
-
-        self.pass.set(Some(new_pass.clone()));
-        Ok(new_pass)
+        self.create_pass(render_pass)
     }
 
-    fn recreate(&mut self) -> Result<(), VulkanUniversalError> {
+    pub fn get_swapchain_pass_and_accquire_next_image(
+        &'init self, render_pass: &Arc<RenderPass<'init>>) -> Result<(Arc<SwapchainPass<'init, 'fam>>, u32
+    ), VulkanUniversalError> {
+        loop {
+            let swapchain_pass = self.get_swapchain_pass(render_pass)?;
+            match swapchain_pass.accquire_next_image() {
+                Ok((i, b)) => {
+                    if !b {
+                        return Ok((swapchain_pass, i));
+                    }
+                },
+                Err(result) => {
+                    if result != vk::Result::ERROR_OUT_OF_DATE_KHR {
+                        return Err(result.into())
+                    }
+                },
+            }
+
+            self.recreate()?;
+        }
+    }
+
+    pub fn recreate(&self) -> Result<(), VulkanUniversalError> {
+        // Lock mutex.
+        let _lock = self.lock_mutex()?;
+
         let initialized = self.device.initialized()?;
 
         let mut family_indices = Vec::new();
@@ -198,7 +214,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             min_image_count: self.capabilities.min_image_count,
             image_format: self.format.format,
             image_color_space: self.format.color_space,
-            image_extent: vk::Extent2D { width: 1264, height: 681 },
+            image_extent: self.extent(),
             image_array_layers: 1,
             image_usage: vk::ImageUsageFlags::COLOR_ATTACHMENT,
             image_sharing_mode: match family_indices.is_empty() {
@@ -211,22 +227,23 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             composite_alpha: vk::CompositeAlphaFlagsKHR::OPAQUE,
             present_mode: self.present_mode,
             clipped: 1,
-            old_swapchain: self.inner
+            old_swapchain: self.dynamic.get().inner
         };
 
-        self.inner = unsafe {
+        let inner = unsafe {
             self.shared.ash_swapchain.create_swapchain(&create_info, None)
         }?;
 
-        self.create_dynamic()?;
+        self.create_dynamic(inner, create_info.image_extent)?;
+        self.pass.set(None);
 
         Ok(())
     }
 
-    fn create_dynamic(&self) -> Result<(), VulkanUniversalError> {
+    fn create_dynamic(&self, inner: vk::SwapchainKHR, extent: vk::Extent2D) -> Result<(), VulkanUniversalError> {
         // Images.
         let images = unsafe {
-            self.shared.ash_swapchain.get_swapchain_images(self.inner)
+            self.shared.ash_swapchain.get_swapchain_images(inner)
         }?;
 
         let mut image_views = Vec::with_capacity(images.len());
@@ -247,6 +264,9 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
         // Construct.
         self.dynamic.set(Arc::new(SwapchainSharedDynamic {
+            shared: self.shared.clone(),
+            inner,
+            extent,
             image_views,
             image_available_semaphores,
             render_finished_semaphores,
@@ -254,9 +274,57 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
         Ok(())
     }
+
+    fn create_pass(
+        &'init self, render_pass: &Arc<RenderPass<'init>>
+    ) -> Result<Arc<SwapchainPass<'init, 'fam>>, VulkanUniversalError> {
+        // Lock mutex.
+        let _lock = self.lock_mutex()?;
+
+        // Create new pass.
+        let dynamic = self.dynamic.get();
+
+        let mut framebuffers = Vec::with_capacity(dynamic.image_views.len());
+        for image_view in &dynamic.image_views {
+            framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent)?)
+        }
+
+        let new_pass = Arc::new(SwapchainPass {
+            shared: self.shared.clone(),
+            dynamic,
+            framebuffers,
+            render_pass: render_pass.clone(),
+        });
+
+        self.pass.set(Some(new_pass.clone()));
+        Ok(new_pass)
+    }
+
+    fn lock_mutex(&self) -> Result<MutexGuard<()>, InvalidOperationError> {
+        match self.mutex.lock() {
+            Ok(l) => Ok(l),
+            Err(_) => Err(InvalidOperationError::with_str("Another thread holding the mutex panicked.")),
+        }
+    }
 }
 
-impl Drop for Swapchain<'_, '_> {
+struct SwapchainShared<'init: 'fam, 'fam> {
+    swapchain: Weak<Swapchain<'init, 'fam>>,
+    surface: VulkanSurface,
+    ash_swapchain: khr::Swapchain,
+    queue_family: &'fam VulkanQueueFamily<'init>,
+}
+
+struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
+    shared: Arc<SwapchainShared<'init, 'fam>>,
+    inner: vk::SwapchainKHR,
+    extent: vk::Extent2D,
+    image_views: Vec<Arc<SwapchainImageView<'init>>>,
+    image_available_semaphores: Vec<VulkanSemaphore<'init>>,
+    render_finished_semaphores: Vec<VulkanSemaphore<'init>>
+}
+
+impl Drop for SwapchainSharedDynamic<'_, '_> {
     fn drop(&mut self) {
         unsafe {
             self.shared.ash_swapchain.destroy_swapchain(self.inner, None)
@@ -264,31 +332,18 @@ impl Drop for Swapchain<'_, '_> {
     }
 }
 
-struct SwapchainShared<'init: 'fam, 'fam> {
-    surface: VulkanSurface,
-    ash_swapchain: khr::Swapchain,
-    queue_family: &'fam VulkanQueueFamily<'init>
-}
-
-struct SwapchainSharedDynamic<'init> {
-    image_views: Vec<Arc<SwapchainImageView<'init>>>,
-    image_available_semaphores: Vec<VulkanSemaphore<'init>>,
-    render_finished_semaphores: Vec<VulkanSemaphore<'init>>
-}
-
 pub struct SwapchainPass<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
-    dynamic: Arc<SwapchainSharedDynamic<'init>>,
-    inner: vk::SwapchainKHR,
+    dynamic: Arc<SwapchainSharedDynamic<'init, 'fam>>,
     framebuffers: Vec<SwapchainFramebuffer<'init>>,
     render_pass: Arc<RenderPass<'init>>
 }
 
 impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
-    pub fn accquire_next_image(&self) -> Result<(u32, bool), VulkanUniversalError> {
+    pub fn accquire_next_image(&self) -> VkResult<(u32, bool)> {
         Ok(unsafe {
             self.shared.ash_swapchain.acquire_next_image(
-                self.inner, u64::MAX, self.get_image_available_semaphore().inner(),
+                self.inner(), u64::MAX, self.get_image_available_semaphore().inner(),
                 vk::Fence::null()
             )
         }?)
@@ -307,7 +362,11 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
     }
 
     pub fn inner(&self) -> vk::SwapchainKHR {
-        self.inner
+        self.dynamic.inner
+    }
+
+    pub fn swapchain(&self) -> &Weak<Swapchain<'init, 'fam>> {
+        &self.shared.swapchain
     }
 
     pub fn ash_swapchain(&self) -> &khr::Swapchain {
