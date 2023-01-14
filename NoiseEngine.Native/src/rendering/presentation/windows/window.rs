@@ -102,7 +102,8 @@ impl WindowWindows {
             )
         };
 
-        if unsafe { SetPropW(reference.h_wnd, PROP_NAME.as_ptr(), reference) } == 0 {
+        let h_data = reference as *const WindowWindows as *const c_void;
+        if unsafe { SetPropW(reference.h_wnd, PROP_NAME.as_ptr(), h_data) } == 0 {
             return Err(Win32Error::get_last().into())
         }
 
@@ -274,7 +275,7 @@ unsafe extern "system" fn window_procedure(
     h_wnd: *mut c_void, msg: u32, w_param: usize, l_param: isize
 ) -> isize {
     let event_handler = WindowEventHandler::get();
-    let window = GetPropW(h_wnd, PROP_NAME.as_ptr());
+    let window = &*(GetPropW(h_wnd, PROP_NAME.as_ptr()) as *const WindowWindows);
     let data = window.data_mut();
 
     match msg {
@@ -321,9 +322,9 @@ extern "system" {
 
     fn DestroyWindow(h_wnd: *mut c_void) -> u32;
 
-    fn SetPropW(h_wnd: *mut c_void, lp_string: *const wchar_t, h_data: &WindowWindows) -> u32;
+    fn SetPropW(h_wnd: *mut c_void, lp_string: *const wchar_t, h_data: *const c_void) -> u32;
 
-    fn GetPropW<'a>(h_wnd: *mut c_void, lp_string: *const wchar_t) -> &'a WindowWindows;
+    fn GetPropW(h_wnd: *mut c_void, lp_string: *const wchar_t) -> *const c_void;
 
     fn DefWindowProcW(h_wnd: *mut c_void, msg: u32, w_param: usize, l_param: isize) -> isize;
 

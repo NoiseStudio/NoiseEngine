@@ -3,7 +3,6 @@ using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
-using System.Threading;
 
 namespace NoiseEngine.Tests;
 
