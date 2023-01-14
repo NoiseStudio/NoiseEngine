@@ -71,18 +71,18 @@ public class Camera {
         if (renderTarget is Window) {
             if (!GraphicsDevice.Instance.PresentationEnabled) {
                 if (!GraphicsDevice.Instance.SupportsPresentation) {
-                    throw new InvalidOperationException(
+                    throw new PresentationNotSupportedException(
                         $"{nameof(GraphicsInstance)} used by {nameof(Camera)} is not support presentation."
                     );
                 } else {
-                    throw new InvalidOperationException(
+                    throw new PresentationNotSupportedException(
                         $"{nameof(GraphicsInstance)} used by {nameof(Camera)} has disabled presentation."
                     );
                 }
             }
 
             if (!GraphicsDevice.SupportsPresentation) {
-                throw new InvalidOperationException(
+                throw new PresentationNotSupportedException(
                     $"{nameof(GraphicsDevice)} used by {nameof(Camera)} is not support presentation."
                 );
             }
