@@ -41,6 +41,8 @@ impl<'init> VulkanDevice<'init> {
         };
 
         let mut enabled_extensions_c = Vec::new();
+        let mut enabled_extensions_result = Vec::new();
+
         for extension in enabled_extensions {
             let c = match CString::new(extension) {
                 Ok(c) => c,
@@ -48,6 +50,7 @@ impl<'init> VulkanDevice<'init> {
                     InvalidOperationError::with_str("Extension name contains null character.").into()
                 )
             };
+            enabled_extensions_result.push(c.as_ptr());
             enabled_extensions_c.push(c);
         }
 
@@ -59,8 +62,8 @@ impl<'init> VulkanDevice<'init> {
             p_queue_create_infos: queue_create_infos.as_ptr(),
             enabled_layer_count: 0,
             pp_enabled_layer_names: ptr::null(),
-            enabled_extension_count: enabled_extensions_c.len() as u32,
-            pp_enabled_extension_names: enabled_extensions_c.as_ptr() as *const *const i8,
+            enabled_extension_count: enabled_extensions_result.len() as u32,
+            pp_enabled_extension_names: enabled_extensions_result.as_ptr(),
             p_enabled_features: &physical_device_features,
         };
 

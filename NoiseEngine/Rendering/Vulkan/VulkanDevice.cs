@@ -38,11 +38,18 @@ internal sealed class VulkanDevice : GraphicsDevice {
     }
 
     protected override void InitializeWorker() {
-        Span<InteropString> enabledExtensions = stackalloc InteropString[SupportsPresentation ? 1 : 0];
-        if (SupportsPresentation)
+        bool activatePresentation = Instance.PresentationEnabled && SupportsPresentation;
+        Span<InteropString> enabledExtensions = stackalloc InteropString[activatePresentation ? 1 : 0];
+        if (activatePresentation)
             enabledExtensions[0] = new InteropString("VK_KHR_swapchain");
 
-        if (!VulkanDeviceInterop.Initialize(Handle, enabledExtensions).TryGetValue(out _, out ResultError error))
+        InteropResult<None> result = VulkanDeviceInterop.Initialize(Handle, enabledExtensions);
+
+        // Dispose extensions.
+        foreach (InteropString extension in enabledExtensions)
+            extension.Dispose();
+
+        if (!result.TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
     }
 

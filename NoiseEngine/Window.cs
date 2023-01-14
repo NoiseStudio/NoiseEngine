@@ -36,6 +36,12 @@ public class Window : IDisposable, ICameraRenderTarget {
         WindowInterop.Destroy(Handle);
     }
 
+    internal static WindowApi GetWindowApi() {
+        if (OperatingSystem.IsWindows())
+            return WindowApi.WindowsApi;
+        return WindowApi.None;
+    }
+
     /// <summary>
     /// Disposes this <see cref="Window"/>.
     /// </summary>

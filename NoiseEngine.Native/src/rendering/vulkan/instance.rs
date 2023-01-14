@@ -5,8 +5,11 @@ use libc::c_void;
 use uuid::Uuid;
 
 use crate::{
-    interop::rendering::vulkan::{application_info::VulkanApplicationInfo, device_value::VulkanDeviceValue},
-    logging::{logger, log_level::LogLevel, log}, errors::null_reference::NullReferenceError
+    interop::{
+        rendering::vulkan::{application_info::VulkanApplicationInfo, device_value::VulkanDeviceValue},
+        prelude::InteropString
+    },
+    logging::{logger, log_level::LogLevel, log}, errors::invalid_operation::InvalidOperationError
 };
 
 use super::{device::VulkanDevice, errors::universal::VulkanUniversalError};
@@ -20,73 +23,64 @@ impl VulkanInstance {
     pub(crate) fn new(
         library: &Arc<ash::Entry>, application_info: VulkanApplicationInfo,
         log_severity: vk::DebugUtilsMessageSeverityFlagsEXT, log_type: vk::DebugUtilsMessageTypeFlagsEXT,
-        validation: bool, surface: bool
+        validation: bool, enabled_extensions: &[InteropString]
     ) -> Result<Self, VulkanUniversalError>  {
-        let create_info;
         let p_application_info =
             Result::<vk::ApplicationInfo, VulkanUniversalError>::from(application_info)?;
 
-        if (log_severity.is_empty() || log_type.is_empty()) && !validation {
-            create_info = vk::InstanceCreateInfo {
-                s_type: vk::StructureType::INSTANCE_CREATE_INFO,
-                p_next: ptr::null(),
-                flags: vk::InstanceCreateFlags::empty(),
-                p_application_info: &p_application_info,
-                enabled_layer_count: 0,
-                pp_enabled_layer_names: ptr::null(),
-                enabled_extension_count: 0,
-                pp_enabled_extension_names: ptr::null(),
-            };
-
-            return match unsafe { library.create_instance(&create_info, None) } {
-                Ok(instance) => Ok(Self { inner: instance, library: library.clone() }),
-                Err(err) => Err(err.into())
-            }
-        }
-
-        let mut enabled_extensions: Vec<*const i8> = Vec::new();
-        let mut enabled_layers: Vec<*const i8> = Vec::new();
+        let mut enabled_extensions_c = Vec::new();
+        let mut enabled_extensions_result = Vec::new();
+        let mut enabled_layers_result: Vec<*const i8> = Vec::new();
 
         let validation_layer;
         if validation {
-            enabled_extensions.push(ash::extensions::ext::DebugUtils::name().as_ptr());
+            let debug_utils = CString::new("VK_EXT_debug_utils").unwrap();
+            enabled_extensions_result.push(debug_utils.as_ptr());
+            enabled_extensions_c.push(debug_utils);
 
-            validation_layer = match CString::new("VK_LAYER_KHRONOS_validation") {
-                Ok(str) => str,
-                Err(_) => return Err(NullReferenceError::default().into())
+            validation_layer = CString::new("VK_LAYER_KHRONOS_validation").unwrap();
+            enabled_layers_result.push(validation_layer.as_ptr());
+        }
+
+        for extension in enabled_extensions {
+            let c = match CString::new(extension) {
+                Ok(c) => c,
+                Err(_) => return Err(
+                    InvalidOperationError::with_str("Extension name contains null character.").into()
+                )
             };
-            enabled_layers.push(validation_layer.as_ptr());
+            enabled_extensions_result.push(c.as_ptr());
+            enabled_extensions_c.push(c);
         }
 
-        let surface_extension;
-        let surface_extension_platform;
-        if surface {
-            surface_extension = CString::new("VK_KHR_surface").unwrap();
-            enabled_extensions.push(surface_extension.as_ptr());
+        let messenger_create_info;
+        let messenger_create_info_ptr;
+        if !log_severity.is_empty() && !log_type.is_empty() {
+            messenger_create_info = vk::DebugUtilsMessengerCreateInfoEXT {
+                s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+                p_next: ptr::null(),
+                flags: vk::DebugUtilsMessengerCreateFlagsEXT::empty(),
+                message_severity: log_severity,
+                message_type: log_type,
+                pfn_user_callback: Some(log_callback),
+                p_user_data: ptr::null_mut(),
+            };
 
-            surface_extension_platform = CString::new("VK_KHR_win32_surface").unwrap();
-            enabled_extensions.push(surface_extension_platform.as_ptr());
+            messenger_create_info_ptr =
+                &messenger_create_info as *const vk::DebugUtilsMessengerCreateInfoEXT as *const c_void;
+        } else {
+            messenger_create_info_ptr = ptr::null();
         }
 
-        let messenger_create_info = vk::DebugUtilsMessengerCreateInfoEXT {
-            s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-            p_next: ptr::null(),
-            flags: vk::DebugUtilsMessengerCreateFlagsEXT::empty(),
-            message_severity: log_severity,
-            message_type: log_type,
-            pfn_user_callback: Some(log_callback),
-            p_user_data: ptr::null_mut(),
-        };
-
-        create_info = vk::InstanceCreateInfo {
+        let create_info = vk::InstanceCreateInfo {
             s_type: vk::StructureType::INSTANCE_CREATE_INFO,
-            p_next: &messenger_create_info as *const vk::DebugUtilsMessengerCreateInfoEXT as *const c_void,
+            p_next: messenger_create_info_ptr,
             flags: vk::InstanceCreateFlags::empty(),
             p_application_info: &p_application_info,
-            enabled_layer_count: enabled_layers.len() as u32,
-            pp_enabled_layer_names: enabled_layers.as_ptr(),
-            enabled_extension_count: enabled_extensions.len() as u32,
-            pp_enabled_extension_names: enabled_extensions.as_ptr(),
+            enabled_layer_count: enabled_layers_result.len() as u32,
+            pp_enabled_layer_names: enabled_layers_result.as_ptr(),
+            enabled_extension_count: enabled_extensions_result.len() as u32,
+            pp_enabled_extension_names: enabled_extensions_result.as_ptr(),
         };
 
         match unsafe { library.create_instance(&create_info, None) } {

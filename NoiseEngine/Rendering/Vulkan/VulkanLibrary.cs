@@ -1,5 +1,7 @@
 ﻿using NoiseEngine.Interop;
+using NoiseEngine.Interop.InteropMarshalling;
 using NoiseEngine.Interop.Rendering.Vulkan;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -64,6 +66,25 @@ internal class VulkanLibrary {
     public bool SupportsDebugUtils => ExtensionProperties.Any(x => x.Name == VulkanExtensions.DebugUtils);
     public bool SupportsValidationLayers =>
         SupportsDebugUtils && LayerProperties.Any(x => x.Name == VulkanLayers.KhronosValidation);
+
+    public bool SupportsPresentation {
+        get {
+            bool hasSurface = ExtensionProperties.Any(x => x.Name == VulkanExtensions.Surface);
+            if (!hasSurface)
+                return false;
+
+            string extension;
+            switch(Window.GetWindowApi()) {
+                case WindowApi.WindowsApi:
+                    extension = VulkanExtensions.SurfaceWin32;
+                    break;
+                default:
+                    return false;
+            };
+
+            return ExtensionProperties.Any(x => x.Name == extension);
+        }
+    }
 
     public VulkanLibrary() {
         InteropResult<InteropHandle<VulkanLibrary>> result = VulkanLibraryInterop.Create();

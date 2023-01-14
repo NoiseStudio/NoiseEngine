@@ -67,6 +67,26 @@ public class Camera {
 
         if (!renderTarget.Usage.HasFlag(TextureUsage.ColorAttachment))
             throw new InvalidOperationException("Camera render target must have TextureUsage.ColorAttachment flag.");
+
+        if (renderTarget is Window) {
+            if (!GraphicsDevice.Instance.PresentationEnabled) {
+                if (!GraphicsDevice.Instance.SupportsPresentation) {
+                    throw new InvalidOperationException(
+                        $"{nameof(GraphicsInstance)} used by {nameof(Camera)} is not support presentation."
+                    );
+                } else {
+                    throw new InvalidOperationException(
+                        $"{nameof(GraphicsInstance)} used by {nameof(Camera)} has disabled presentation."
+                    );
+                }
+            }
+
+            if (!GraphicsDevice.SupportsPresentation) {
+                throw new InvalidOperationException(
+                    $"{nameof(GraphicsDevice)} used by {nameof(Camera)} is not support presentation."
+                );
+            }
+        }
     }
 
 }
