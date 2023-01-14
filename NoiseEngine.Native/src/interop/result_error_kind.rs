@@ -12,7 +12,8 @@ pub enum ResultErrorKind {
     GraphicsInstanceCreate = 1001,
     GraphicsOutOfHostMemory = 1002,
     GraphicsOutOfDeviceMemory = 1003,
-    GraphicsDeviceLost = 1004
+    GraphicsDeviceLost = 1004,
+    WindowNotSupported = 1005
 }
 
 impl From<&(dyn Error + 'static)> for ResultErrorKind {

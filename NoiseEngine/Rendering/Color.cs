@@ -20,6 +20,13 @@ public readonly record struct Color(float R, float G, float B, float A) {
     public static Color Cyan => new Color(0.0f, 1.0f, 1.0f);
     public static Color Magenta => new Color(1.0f, 0.0f, 1.0f);
 
+    public static Color Random {
+        get {
+            Random random = System.Random.Shared;
+            return new Color(random.NextSingle(), random.NextSingle(), random.NextSingle());
+        }
+    }
+
     public Color(float r, float g, float b) : this(r, g, b, 1) {
     }
 

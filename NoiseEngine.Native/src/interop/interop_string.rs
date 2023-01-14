@@ -1,4 +1,4 @@
-use std::mem;
+use std::{mem, str};
 
 use super::prelude::InteropArray;
 
@@ -12,6 +12,21 @@ impl From<InteropString> for String {
         // SAFETY: String is guaranteed to be valid UTF-8.
         unsafe {
             String::from_utf8_unchecked(interop_string.array.into())
+        }
+    }
+}
+
+impl From<&InteropString> for Vec<u8> {
+    fn from(interop_string: &InteropString) -> Self {
+        interop_string.array.as_slice().to_vec()
+    }
+}
+
+impl<'a> From<&'a InteropString> for &'a str {
+    fn from(interop_string: &'a InteropString) -> Self {
+        // SAFETY: String is guaranteed to be valid UTF-8.
+        unsafe {
+            str::from_utf8_unchecked((&interop_string.array).into())
         }
     }
 }

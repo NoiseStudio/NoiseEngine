@@ -1,10 +1,15 @@
-use std::{ptr, sync::Arc};
+use std::{ptr, sync::{Arc, Weak}};
 
+use ash::{vk, extensions::khr};
 use libc::{c_void, wchar_t};
 
 use crate::{
-    errors::platform::windows::win32::Win32Error, interop::prelude::InteropResult, logging::log,
-    rendering::presentation::window::Window
+    errors::{platform::windows::win32::Win32Error, null_reference::NullReferenceError}, interop::prelude::InteropResult,
+    logging::log,
+    rendering::{
+        presentation::window::Window,
+        vulkan::{surface::VulkanSurface, instance::VulkanInstance, errors::universal::VulkanUniversalError}
+    }
 };
 
 use super::wnd_class_w::WndClassW;
@@ -14,6 +19,7 @@ fn wide_null(s: &str) -> Vec<u16> {
 }
 
 pub struct WindowWindows {
+    weak: Weak<Self>,
     h_wnd: *mut c_void
 }
 
@@ -62,7 +68,14 @@ impl WindowWindows {
             ShowWindow(h_wnd, 5)
         };
 
-        InteropResult::with_ok(Box::new(Arc::new(Self { h_wnd })))
+        // Construct.
+        let arc = Arc::new(Self { weak: Weak::default(), h_wnd });
+        let reference = unsafe {
+            &mut *(Arc::as_ptr(&arc) as *mut WindowWindows)
+        };
+        reference.weak = Arc::downgrade(&arc);
+
+        InteropResult::with_ok(Box::new(arc))
     }
 }
 
@@ -82,7 +95,31 @@ impl Drop for WindowWindows {
 }
 
 impl Window for WindowWindows {
+    fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
+        let h_instance = unsafe {
+            GetModuleHandleW(ptr::null_mut())
+        };
 
+        let create_info = vk::Win32SurfaceCreateInfoKHR {
+            s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
+            p_next: ptr::null(),
+            flags: vk::Win32SurfaceCreateFlagsKHR::empty(),
+            hinstance: h_instance,
+            hwnd: self.h_wnd,
+        };
+
+        let creator = khr::Win32Surface::new(instance.library(), instance.inner());
+        let inner = unsafe {
+            creator.create_win32_surface(&create_info, None)
+        }?;
+
+        let window_arc = match Weak::upgrade(&self.weak) {
+            Some(a) => a,
+            None => return Err(NullReferenceError::with_str("WindowWindows weak is null.").into()),
+        };
+
+        Ok(VulkanSurface::new(instance.clone(), window_arc, inner))
+    }
 }
 
 #[link(name = "kernel32")]

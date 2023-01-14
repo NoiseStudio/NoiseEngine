@@ -12,5 +12,6 @@ internal record struct GraphicsDeviceValue(
     Guid Guid,
     bool SupportGraphics,
     bool SupportComputing,
+    bool SupportPresentation,
     InteropHandle<GraphicsDevice> Handle
 );

@@ -6,5 +6,6 @@ namespace NoiseEngine.Rendering.Vulkan;
 internal readonly record struct RenderPassCreateInfo(
     TextureFormat Format,
     uint SampleCount,
-    CameraClearFlags ClearFlags
+    CameraClearFlags ClearFlags,
+    VulkanImageLayout FinalLayout
 );

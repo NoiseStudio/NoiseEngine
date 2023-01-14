@@ -4,6 +4,7 @@ pub enum GraphicsCommandBufferCommand {
     CopyBufferToTexture = 1,
     CopyTextureToBuffer = 2,
     Dispatch = 3,
-    AttachCamera = 4,
-    DetachCamera = 5
+    AttachCameraWindow = 4,
+    AttachCameraTexture = 5,
+    DetachCamera = 6
 }

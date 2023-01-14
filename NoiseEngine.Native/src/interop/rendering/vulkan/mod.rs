@@ -15,3 +15,4 @@ mod pipeline_interop;
 mod pipeline_layout_interop;
 mod render_pass_interop;
 mod shader_module_interop;
+mod swapchain_interop;

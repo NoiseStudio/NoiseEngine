@@ -9,12 +9,12 @@ internal abstract class RenderPass {
 
     internal InteropHandle<RenderPass> Handle { get; }
 
-    protected RenderPass(VulkanDevice device, ICameraRenderTarget renderTarget, CameraClearFlags clearFlags) {
+    protected RenderPass(
+        VulkanDevice device, ICameraRenderTarget renderTarget, RenderPassCreateInfo createInfo
+    ) {
         RenderTarget = renderTarget;
 
-        if (!RenderPassInterop.Create(
-            device.Handle, new RenderPassCreateInfo(renderTarget.Format, renderTarget.SampleCount, clearFlags)
-        ).TryGetValue(
+        if (!RenderPassInterop.Create(device.Handle, createInfo).TryGetValue(
             out InteropHandle<RenderPass> handle, out ResultError error
         )) {
             error.ThrowAndDispose();
@@ -29,7 +29,5 @@ internal abstract class RenderPass {
 
         RenderPassInterop.Destroy(Handle);
     }
-
-    public abstract Framebuffer GetFramebuffer();
 
 }

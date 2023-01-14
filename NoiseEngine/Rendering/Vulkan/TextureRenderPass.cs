@@ -10,7 +10,9 @@ internal class TextureRenderPass : RenderPass {
 
     public TextureRenderPass(
         VulkanDevice device, ICameraRenderTarget renderTarget, CameraClearFlags clearFlags
-    ) : base(device, renderTarget, clearFlags) {
+    ) : base(device, renderTarget, new RenderPassCreateInfo(
+        renderTarget.Format, renderTarget.SampleCount, clearFlags, VulkanImageLayout.TransferDestinationOptimal
+    )) {
         Framebuffer = new Framebuffer(
             this, renderTarget.Extent.X, renderTarget.Extent.Y, 1, stackalloc VulkanImageViewCreateInfo[] {
                 new VulkanImageViewCreateInfo(
@@ -20,10 +22,6 @@ internal class TextureRenderPass : RenderPass {
                     ), VulkanImageAspect.Color, 0, 1, 0, 1
                 )
         });
-    }
-
-    public override Framebuffer GetFramebuffer() {
-        return Framebuffer;
     }
 
 }

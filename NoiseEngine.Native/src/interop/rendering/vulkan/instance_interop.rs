@@ -4,7 +4,7 @@ use ash::vk;
 
 use crate::{
     rendering::vulkan::instance::VulkanInstance,
-    interop::prelude::{InteropResult, ResultError, ResultErrorKind, InteropArray}
+    interop::{prelude::{InteropResult, ResultError, ResultErrorKind, InteropArray, InteropString}, interop_read_only_span::InteropReadOnlySpan}
 };
 
 use super::{application_info::VulkanApplicationInfo, device_value::VulkanDeviceValue};
@@ -18,9 +18,13 @@ struct VulkanInstanceCreateReturnValue {
 #[no_mangle]
 extern "C" fn rendering_vulkan_instance_interop_create(
     library: &Arc<ash::Entry>, create_info: VulkanApplicationInfo, log_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
-    log_type: vk::DebugUtilsMessageTypeFlagsEXT, validation: bool
+    log_type: vk::DebugUtilsMessageTypeFlagsEXT, validation: bool,
+    enabled_extensions: InteropReadOnlySpan<InteropString>
 ) -> InteropResult<VulkanInstanceCreateReturnValue> {
-    match VulkanInstance::new(library, create_info, log_severity, log_type, validation) {
+    match VulkanInstance::new(
+        library, create_info, log_severity, log_type, validation,
+        enabled_extensions.into()
+    ) {
         Ok(instance) => {
             let inner = instance.inner().handle();
             InteropResult::with_ok(VulkanInstanceCreateReturnValue {

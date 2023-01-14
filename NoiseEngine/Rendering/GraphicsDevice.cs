@@ -22,6 +22,7 @@ public abstract class GraphicsDevice {
     public Guid Guid { get; }
     public bool SupportsGraphics { get; }
     public bool SupportsComputing { get; }
+    public bool SupportsPresentation { get; }
 
     internal InteropHandle<GraphicsDevice> Handle { get; }
 
@@ -46,6 +47,7 @@ public abstract class GraphicsDevice {
         Guid = value.Guid;
         SupportsGraphics = value.SupportGraphics;
         SupportsComputing = value.SupportComputing;
+        SupportsPresentation = value.SupportPresentation;
         Handle = value.Handle;
     }
 

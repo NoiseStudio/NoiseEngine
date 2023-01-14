@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Interop;
+using NoiseEngine.Interop.InteropMarshalling;
 using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Interop.Rendering.Vulkan;
 using NoiseEngine.Rendering.Buffers;
@@ -37,7 +38,18 @@ internal sealed class VulkanDevice : GraphicsDevice {
     }
 
     protected override void InitializeWorker() {
-        if (!VulkanDeviceInterop.Initialize(Handle).TryGetValue(out _, out ResultError error))
+        bool activatePresentation = Instance.PresentationEnabled && SupportsPresentation;
+        Span<InteropString> enabledExtensions = stackalloc InteropString[activatePresentation ? 1 : 0];
+        if (activatePresentation)
+            enabledExtensions[0] = new InteropString("VK_KHR_swapchain");
+
+        InteropResult<None> result = VulkanDeviceInterop.Initialize(Handle, enabledExtensions);
+
+        // Dispose extensions.
+        foreach (InteropString extension in enabledExtensions)
+            extension.Dispose();
+
+        if (!result.TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
     }
 

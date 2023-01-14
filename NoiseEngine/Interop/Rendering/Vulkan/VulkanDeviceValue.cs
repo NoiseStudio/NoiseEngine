@@ -13,6 +13,7 @@ internal readonly record struct VulkanDeviceValue(
     Guid Guid,
     InteropBool SupportsGraphics,
     InteropBool SupportsComputing,
+    InteropBool SupportsPresentation,
     InteropHandle<GraphicsDevice> Handle
 ) : IDisposable {
 
@@ -46,6 +47,7 @@ internal readonly record struct VulkanDeviceValue(
             Guid,
             SupportsGraphics,
             SupportsComputing,
+            SupportsPresentation,
             Handle
         );
     }

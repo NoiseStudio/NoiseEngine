@@ -6,7 +6,7 @@ use crate::common::pool::{Pool, PoolItem};
 
 use super::{
     errors::universal::VulkanUniversalError, fence::VulkanFence, pool_wrappers::VulkanDescriptorPool,
-    descriptors::pool_sizes::DescriptorPoolSizes, device::VulkanDevice
+    descriptors::pool_sizes::DescriptorPoolSizes, device::VulkanDevice, semaphore::VulkanSemaphore
 };
 
 pub struct VulkanDevicePool<'devpool> {
@@ -27,7 +27,7 @@ impl<'init: 'devpool, 'devpool> VulkanDevicePool<'devpool> {
     }
 
     pub fn get_fence(
-        &'devpool self, device: &Arc<VulkanDevice<'init>>
+        &self, device: &Arc<VulkanDevice<'init>>
     ) -> Result<VulkanFence<'init>, VulkanUniversalError> {
         let create_info = vk::FenceCreateInfo {
             s_type: vk::StructureType::FENCE_CREATE_INFO,
@@ -40,6 +40,22 @@ impl<'init: 'devpool, 'devpool> VulkanDevicePool<'devpool> {
         }?;
 
         Ok(VulkanFence::new(device, fence))
+    }
+
+    pub fn get_semaphore(
+        &self, device: &Arc<VulkanDevice<'init>>
+    ) -> Result<VulkanSemaphore<'init>, VulkanUniversalError> {
+        let create_info = vk::SemaphoreCreateInfo {
+            s_type: vk::StructureType::SEMAPHORE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::SemaphoreCreateFlags::empty(),
+        };
+
+        let semaphore = unsafe {
+            self.vulkan_device.create_semaphore(&create_info, None)
+        }?;
+
+        Ok(VulkanSemaphore::new(device, semaphore))
     }
 
     pub fn get_descriptor_pool(

@@ -67,6 +67,10 @@ impl<'init: 'ma, 'ma> Framebuffer<'init, 'ma> {
     pub fn extent(&self) -> vk::Extent2D {
         self.extent
     }
+
+    pub fn render_pass(&self) -> &Arc<RenderPass<'init>> {
+        &self.render_pass
+    }
 }
 
 impl Drop for Framebuffer<'_, '_> {

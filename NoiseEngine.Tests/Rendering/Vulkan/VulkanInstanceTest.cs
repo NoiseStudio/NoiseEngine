@@ -7,9 +7,11 @@ namespace NoiseEngine.Tests.Rendering.Vulkan;
 public class VulkanInstanceTest {
 
     [FactRequire(TestRequirements.Vulkan)]
-    public void CreateAndDispose() {
+    public void CreateAndDestroy() {
         VulkanLibrary library = new VulkanLibrary();
-        _ = new VulkanInstance(library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers);
+        _ = new VulkanInstance(
+            library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers, false
+        );
     }
 
 }

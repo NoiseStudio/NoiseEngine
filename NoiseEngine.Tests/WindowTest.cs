@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
-using System.Threading;
 
 namespace NoiseEngine.Tests;
 
@@ -10,7 +9,7 @@ public class WindowTest : ApplicationTestEnvironment {
     }
 
     [FactRequire(TestRequirements.Gui)]
-    public void Create() {
+    public void CreateAndDispose() {
         using Window window = new Window();
     }
 

@@ -8,7 +8,7 @@ namespace NoiseEngine;
 public class Camera {
 
     private CameraClearFlags clearFlags = CameraClearFlags.SolidColor;
-    private Color clearColor = new Color(0.50588f, 0.62352f, 0.79215f);
+    private Color clearColor = new Color(0.26666f, 0.45882f, 0.87058f);
     private ICameraRenderTarget? renderTarget;
 
     public ApplicationScene Scene { get; }
@@ -67,6 +67,26 @@ public class Camera {
 
         if (!renderTarget.Usage.HasFlag(TextureUsage.ColorAttachment))
             throw new InvalidOperationException("Camera render target must have TextureUsage.ColorAttachment flag.");
+
+        if (renderTarget is Window) {
+            if (!GraphicsDevice.Instance.PresentationEnabled) {
+                if (!GraphicsDevice.Instance.SupportsPresentation) {
+                    throw new PresentationNotSupportedException(
+                        $"{nameof(GraphicsInstance)} used by {nameof(Camera)} is not support presentation."
+                    );
+                } else {
+                    throw new PresentationNotSupportedException(
+                        $"{nameof(GraphicsInstance)} used by {nameof(Camera)} has disabled presentation."
+                    );
+                }
+            }
+
+            if (!GraphicsDevice.SupportsPresentation) {
+                throw new PresentationNotSupportedException(
+                    $"{nameof(GraphicsDevice)} used by {nameof(Camera)} is not support presentation."
+                );
+            }
+        }
     }
 
 }

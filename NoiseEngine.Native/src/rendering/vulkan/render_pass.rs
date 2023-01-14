@@ -10,7 +10,8 @@ use super::{device::VulkanDevice, errors::universal::VulkanUniversalError};
 pub struct RenderPassCreateInfo {
     format: vk::Format,
     sample_count: vk::SampleCountFlags,
-    clear_flags: CameraClearFlags
+    clear_flags: CameraClearFlags,
+    final_layout: vk::ImageLayout
 }
 
 pub struct RenderPass<'init> {
@@ -35,7 +36,7 @@ impl<'init> RenderPass<'init> {
             stencil_load_op: vk::AttachmentLoadOp::DONT_CARE,
             stencil_store_op: vk::AttachmentStoreOp::DONT_CARE,
             initial_layout: vk::ImageLayout::UNDEFINED,
-            final_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            final_layout: create_info.final_layout,
         };
 
         let color_attachment_reference = vk::AttachmentReference {
