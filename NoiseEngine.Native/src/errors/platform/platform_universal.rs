@@ -2,6 +2,7 @@ use std::{error::Error, fmt::Display};
 
 use crate::interop::prelude::ResultError;
 
+#[cfg(target_os = "windows")]
 use super::windows::win32::Win32Error;
 
 #[derive(Debug)]
@@ -24,7 +25,7 @@ impl Error for PlatformUniversalError {
 impl Display for PlatformUniversalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            PlatformUniversalError::None => unimplemented!(),
+            PlatformUniversalError::None => "None (unimplemented)".to_string(),
             #[cfg(target_os = "windows")]
             PlatformUniversalError::Windows(err) => err.to_string()
         })
