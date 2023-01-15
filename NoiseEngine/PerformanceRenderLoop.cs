@@ -1,13 +1,13 @@
 ﻿using NoiseEngine.Rendering.Buffers;
 using System;
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace NoiseEngine;
 
 public sealed class PerformanceRenderLoop : RenderLoop {
 
+    private readonly object framesInFlightLocker = new object();
     private readonly ConcurrentStack<GraphicsCommandBuffer> commandBuffers =
         new ConcurrentStack<GraphicsCommandBuffer>();
 
@@ -15,6 +15,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
     private AutoResetEvent? signalResetEvent;
     private GraphicsCommandBuffer? currentCommandBuffer;
     private bool executeFrameThreadWork;
+    private uint rendererSignaler;
 
     private uint framesInFlight = 1;
 
@@ -27,7 +28,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
                 );
             }
 
-            framesInFlight = value;
+            ChangeFramesInFlightCount(value);
         }
     }
 
@@ -36,6 +37,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
     /// </summary>
     protected override void Initialize() {
         executeFrameThreadWork = true;
+        rendererSignaler = 16;
 
         signalResetEvent = new AutoResetEvent(true);
         executeFrameResetEvent = new AutoResetEvent(false);
@@ -46,11 +48,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
             Name = $"{ToString()} Renderer"
         }.Start();
 
-        new Thread(ExecuteFrameWorker) {
-            IsBackground = true,
-            Priority = ThreadPriority.Normal,
-            Name = $"{ToString()} Executor"
-        }.Start();
+        ChangeFramesInFlightCount(FramesInFlight);
     }
 
     /// <summary>
@@ -58,6 +56,25 @@ public sealed class PerformanceRenderLoop : RenderLoop {
     /// </summary>
     protected override void Deinitialize() {
         throw new NotImplementedException();
+    }
+
+    private void ChangeFramesInFlightCount(uint targetFramesInFlightCount) {
+        lock (framesInFlightLocker) {
+            if (Camera is null) {
+                framesInFlight = targetFramesInFlightCount;
+                return;
+            }
+
+            framesInFlight = Camera.Delegation.ChangeFramesInFlightCount(targetFramesInFlightCount);
+
+            for (int i = 1; i < framesInFlight + 1; i++) {
+                new Thread(ExecuteFrameWorker) {
+                    IsBackground = true,
+                    Priority = ThreadPriority.Normal,
+                    Name = $"{ToString()} Executor #{i}"
+                }.Start();
+            }
+        }
     }
 
     private void RenderWorker() {
@@ -69,7 +86,10 @@ public sealed class PerformanceRenderLoop : RenderLoop {
 
         while (!window.IsDisposed) {
             //WindowInterop.PoolEvents(window.Handle);
-            signalResetEvent.WaitOne();
+            //signalResetEvent.WaitOne();
+            while (rendererSignaler == 0)
+                Thread.Sleep(0);
+            Interlocked.Decrement(ref rendererSignaler);
 
             if (!commandBuffers.TryPop(out GraphicsCommandBuffer? commandBuffer))
                 commandBuffer = new GraphicsCommandBuffer(camera.GraphicsDevice, false);
@@ -97,7 +117,8 @@ public sealed class PerformanceRenderLoop : RenderLoop {
 
         while (executeFrameThreadWork) {
             executeFrameResetEvent.WaitOne();
-            signalResetEvent.Set();
+            Interlocked.Increment(ref rendererSignaler);
+            //signalResetEvent.Set();
 
             GraphicsCommandBuffer? current = Interlocked.Exchange(ref currentCommandBuffer, null);
             if (current is null) {

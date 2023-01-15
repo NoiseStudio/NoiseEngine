@@ -14,7 +14,7 @@ public class SwapchainTest : ApplicationTestEnvironment {
         using Window window = new Window(nameof(SwapchainTest));
 
         foreach (VulkanDevice device in VulkanDevices)
-            _ = new Swapchain(device, window);
+            _ = new Swapchain(device, window, 1);
     }
 
 }

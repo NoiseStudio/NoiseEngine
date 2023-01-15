@@ -10,11 +10,11 @@ internal class Swapchain {
 
     internal InteropHandle<Swapchain> Handle { get; }
 
-    public Swapchain(VulkanDevice device, Window window) {
+    public Swapchain(VulkanDevice device, Window window, uint targetMinImageCount) {
         device.Initialize();
         Device = device;
 
-        if (!SwapchainInterop.Create(device.Handle, window.Handle).TryGetValue(
+        if (!SwapchainInterop.Create(device.Handle, window.Handle, targetMinImageCount).TryGetValue(
             out SwapchainCreateReturnValue result, out ResultError error
         )) {
             error.ThrowAndDispose();
@@ -29,6 +29,16 @@ internal class Swapchain {
             return;
 
         SwapchainInterop.Destroy(Handle);
+    }
+
+    public uint ChangeMinImageCount(uint targetCount) {
+        if (!SwapchainInterop.ChangeMinImageCount(Handle, targetCount).TryGetValue(
+            out uint result, out ResultError error
+        )) {
+            error.ThrowAndDispose();
+        }
+
+        return result;
     }
 
 }

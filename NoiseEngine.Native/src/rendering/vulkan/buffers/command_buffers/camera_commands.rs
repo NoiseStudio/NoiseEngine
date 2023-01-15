@@ -12,6 +12,7 @@ use crate::{
 
 pub struct AttachCameraWindowOutput<'init: 'fam, 'fam> {
     pub pass: Arc<SwapchainPass<'init, 'fam>>,
+    pub frame_index: usize,
     pub image_index: u32
 }
 
@@ -21,7 +22,7 @@ pub fn attach_camera_window<'init: 'fam, 'fam>(
     let render_pass = data.read_unchecked::<&Arc<RenderPass>>();
     let swapchain = data.read_unchecked::<&Arc<Swapchain>>();
 
-    let (pass, image_index) =
+    let (pass, frame_index, image_index) =
         swapchain.get_swapchain_pass_and_accquire_next_image(render_pass)?;
     let framebuffer = pass.get_framebuffer(image_index);
 
@@ -30,7 +31,7 @@ pub fn attach_camera_window<'init: 'fam, 'fam>(
         framebuffer.extent()
     );
 
-    Ok(AttachCameraWindowOutput { pass, image_index })
+    Ok(AttachCameraWindowOutput { pass, frame_index, image_index })
 }
 
 pub fn attach_camera_texture(

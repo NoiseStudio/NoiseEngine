@@ -77,9 +77,9 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
         let mut signal_semaphores = Vec::new();
 
         for output in &self.attached_camera_windows {
-            wait_semaphores.push(output.pass.get_image_available_semaphore().inner());
+            wait_semaphores.push(output.pass.get_image_available_semaphore(output.frame_index).inner());
             wait_stages.push(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
-            signal_semaphores.push(output.pass.get_render_finished_semaphore().inner());
+            signal_semaphores.push(output.pass.get_render_finished_semaphore(output.frame_index).inner());
         }
 
         let submit_info = vk::SubmitInfo {
@@ -139,7 +139,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
 
                 if result != vk::Result::ERROR_OUT_OF_DATE_KHR || result != vk::Result::SUBOPTIMAL_KHR {
                     match Weak::upgrade(self.attached_camera_windows[i].pass.swapchain()) {
-                        Some(swapchain) => swapchain.recreate()?,
+                        Some(swapchain) => swapchain.recreate(None)?,
                         None => (),
                     }
                 } else {

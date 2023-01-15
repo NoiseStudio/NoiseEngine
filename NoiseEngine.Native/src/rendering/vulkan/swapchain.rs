@@ -1,4 +1,4 @@
-use std::{ptr, sync::{Arc, Mutex, MutexGuard, Weak}, mem};
+use std::{ptr, sync::{Arc, Mutex, MutexGuard, Weak, atomic::{AtomicUsize, Ordering}}, mem};
 
 use arc_cell::{AtomicCell, ArcCell};
 use ash::{vk, extensions::khr, prelude::VkResult};
@@ -26,7 +26,7 @@ pub struct Swapchain<'init: 'fam, 'fam> {
 
 impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
     pub fn new(
-        device: &'init Arc<VulkanDevice<'init>>, surface: VulkanSurface
+        device: &'init Arc<VulkanDevice<'init>>, surface: VulkanSurface, target_min_image_count: u32
     ) -> Result<Arc<Self>, VulkanUniversalError> {
         let instance = device.instance();
         let initialized = device.initialized()?;
@@ -103,6 +103,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
                 shared: shared.clone(),
                 inner: unsafe { mem::zeroed() },
                 extent: vk::Extent2D::default(),
+                min_image_count: 0,
                 image_views: Vec::with_capacity(0),
                 image_available_semaphores: Vec::with_capacity(0),
                 render_finished_semaphores: Vec::with_capacity(0),
@@ -120,7 +121,9 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         };
         reference.swapchain = Arc::downgrade(&swapchain);
 
-        swapchain.recreate()?;
+        swapchain.recreate(Some(Self::get_supported_min_image_count_by_capabilities(
+            capabilities, target_min_image_count
+        )))?;
 
         Ok(swapchain)
     }
@@ -145,6 +148,21 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         available_present_modes[0]
     }
 
+    fn get_supported_min_image_count_by_capabilities(
+        capabilities: vk::SurfaceCapabilitiesKHR, target_count: u32
+    ) -> u32 {
+        let used_count;
+        if target_count < capabilities.min_image_count {
+            used_count = capabilities.min_image_count;
+        } else if target_count > capabilities.max_image_count && capabilities.max_image_count != 0 {
+            used_count = capabilities.max_image_count;
+        } else {
+            used_count = target_count;
+        }
+
+        used_count
+    }
+
     pub fn format(&self) -> vk::SurfaceFormatKHR {
         self.format
     }
@@ -155,6 +173,19 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
     pub fn extent(&self) -> vk::Extent2D {
         self.shared.surface.window().get_vulkan_extent()
+    }
+
+    pub fn get_supported_min_image_count(&self, target_count: u32) -> u32 {
+        Self::get_supported_min_image_count_by_capabilities(self.capabilities, target_count)
+    }
+
+    pub fn change_min_image_count(&self, target_count: u32) -> Result<u32, VulkanUniversalError> {
+        let used = self.get_supported_min_image_count(target_count);
+        if used != self.dynamic.get().min_image_count {
+            self.recreate(Some(used))?;
+        }
+
+        Ok(self.dynamic.get().image_views.len() as u32)
     }
 
     pub fn get_swapchain_pass(
@@ -174,14 +205,15 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
     }
 
     pub fn get_swapchain_pass_and_accquire_next_image(
-        &'init self, render_pass: &Arc<RenderPass<'init>>) -> Result<(Arc<SwapchainPass<'init, 'fam>>, u32
-    ), VulkanUniversalError> {
+        &'init self, render_pass: &Arc<RenderPass<'init>>
+    ) -> Result<(Arc<SwapchainPass<'init, 'fam>>, usize, u32), VulkanUniversalError> {
         loop {
             let swapchain_pass = self.get_swapchain_pass(render_pass)?;
-            match swapchain_pass.accquire_next_image() {
+            let frame_index = swapchain_pass.next_frame();
+            match swapchain_pass.accquire_next_image(frame_index) {
                 Ok((i, b)) => {
                     if !b {
-                        return Ok((swapchain_pass, i));
+                        return Ok((swapchain_pass, frame_index, i));
                     }
                 },
                 Err(result) => {
@@ -191,11 +223,11 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
                 },
             }
 
-            self.recreate()?;
+            self.recreate(None)?;
         }
     }
 
-    pub fn recreate(&self) -> Result<(), VulkanUniversalError> {
+    pub fn recreate(&self, min_image_count: Option<u32>) -> Result<(), VulkanUniversalError> {
         // Lock mutex.
         let _lock = self.lock_mutex()?;
 
@@ -206,12 +238,17 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             family_indices.push(family.index());
         }
 
+        let used_min_image_count = match min_image_count {
+            Some(c) => c,
+            None => self.dynamic.get().min_image_count,
+        };
+
         let create_info = vk::SwapchainCreateInfoKHR {
             s_type: vk::StructureType::SWAPCHAIN_CREATE_INFO_KHR,
             p_next: ptr::null(),
             flags: vk::SwapchainCreateFlagsKHR::empty(),
             surface: self.shared.surface.inner(),
-            min_image_count: self.capabilities.min_image_count,
+            min_image_count: used_min_image_count,
             image_format: self.format.format,
             image_color_space: self.format.color_space,
             image_extent: self.extent(),
@@ -234,13 +271,15 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             self.shared.ash_swapchain.create_swapchain(&create_info, None)
         }?;
 
-        self.create_dynamic(inner, create_info.image_extent)?;
+        self.create_dynamic(inner, create_info.image_extent, used_min_image_count)?;
         self.pass.set(None);
 
         Ok(())
     }
 
-    fn create_dynamic(&self, inner: vk::SwapchainKHR, extent: vk::Extent2D) -> Result<(), VulkanUniversalError> {
+    fn create_dynamic(
+        &self, inner: vk::SwapchainKHR, extent: vk::Extent2D, min_image_count: u32
+    ) -> Result<(), VulkanUniversalError> {
         // Images.
         let images = unsafe {
             self.shared.ash_swapchain.get_swapchain_images(inner)
@@ -267,6 +306,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             shared: self.shared.clone(),
             inner,
             extent,
+            min_image_count,
             image_views,
             image_available_semaphores,
             render_finished_semaphores,
@@ -293,6 +333,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             shared: self.shared.clone(),
             dynamic,
             framebuffers,
+            frame_index: AtomicUsize::new(0),
             render_pass: render_pass.clone(),
         });
 
@@ -319,6 +360,7 @@ struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
     inner: vk::SwapchainKHR,
     extent: vk::Extent2D,
+    min_image_count: u32,
     image_views: Vec<Arc<SwapchainImageView<'init>>>,
     image_available_semaphores: Vec<VulkanSemaphore<'init>>,
     render_finished_semaphores: Vec<VulkanSemaphore<'init>>
@@ -336,14 +378,20 @@ pub struct SwapchainPass<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
     dynamic: Arc<SwapchainSharedDynamic<'init, 'fam>>,
     framebuffers: Vec<SwapchainFramebuffer<'init>>,
+    frame_index: AtomicUsize,
     render_pass: Arc<RenderPass<'init>>
 }
 
 impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
-    pub fn accquire_next_image(&self) -> VkResult<(u32, bool)> {
+    pub fn next_frame(&self) -> usize {
+        self.frame_index.fetch_add(1, Ordering::Relaxed) % self.framebuffers.len()
+    }
+
+    pub fn accquire_next_image(&self, frame_index: usize) -> VkResult<(u32, bool)> {
         Ok(unsafe {
             self.shared.ash_swapchain.acquire_next_image(
-                self.inner(), u64::MAX, self.get_image_available_semaphore().inner(),
+                self.inner(), u64::MAX,
+                self.get_image_available_semaphore(frame_index).inner(),
                 vk::Fence::null()
             )
         }?)
@@ -353,12 +401,12 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
         &self.framebuffers[index as usize]
     }
 
-    pub fn get_image_available_semaphore(&self) -> &VulkanSemaphore<'init> {
-        &self.dynamic.image_available_semaphores[0]
+    pub fn get_image_available_semaphore(&self, frame_index: usize) -> &VulkanSemaphore<'init> {
+        &self.dynamic.image_available_semaphores[frame_index]
     }
 
-    pub fn get_render_finished_semaphore(&self) -> &VulkanSemaphore<'init> {
-        &self.dynamic.render_finished_semaphores[0]
+    pub fn get_render_finished_semaphore(&self, frame_index: usize) -> &VulkanSemaphore<'init> {
+        &self.dynamic.render_finished_semaphores[frame_index]
     }
 
     pub fn inner(&self) -> vk::SwapchainKHR {
