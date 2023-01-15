@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Interop.Rendering.Presentation;
 using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 
@@ -18,10 +17,14 @@ public class CameraTest : ApplicationTestEnvironment {
         ExecuteOnAllDevices(scene => {
             Camera camera = new Camera(scene) {
                 RenderTarget = window,
+                RenderLoop = new PerformanceRenderLoop(),
                 ClearColor = Color.Random
             };
 
-            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
+            while (!window.IsDisposed)
+                WindowInterop.PoolEvents(window.Handle);
+
+            /*GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
             while (!window.IsDisposed) {
                 WindowInterop.PoolEvents(window.Handle);
 
@@ -30,7 +33,7 @@ public class CameraTest : ApplicationTestEnvironment {
 
                 commandBuffer.Execute();
                 commandBuffer.Clear();
-            }
+            }*/
         });
     }
 

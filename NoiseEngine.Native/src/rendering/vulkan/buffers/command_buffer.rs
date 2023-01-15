@@ -208,11 +208,18 @@ impl Drop for VulkanCommandBuffer<'_, '_> {
     fn drop(&mut self) {
         let initialized = self.initialized;
 
-        unsafe {
+        // https://arm-software.github.io/vulkan_best_practice_for_mobile_developers/samples/performance/command_buffer_usage/command_buffer_usage_tutorial.html#allocate-and-free
+        /*unsafe {
             initialized.vulkan_device().reset_command_pool(
                 self.command_pool.inner(), vk::CommandPoolResetFlags::empty()
             )
-        }.unwrap();
+        }.unwrap();*/
+
+        unsafe {
+            initialized.vulkan_device().free_command_buffers(
+                self.command_pool.inner(), &[self.inner]
+            )
+        }
     }
 }
 

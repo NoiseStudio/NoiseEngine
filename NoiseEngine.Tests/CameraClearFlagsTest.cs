@@ -13,17 +13,19 @@ public class CameraClearFlagsTest : ApplicationTestEnvironment {
 
     [Fact]
     public void SolidColor() {
-        ExecuteOnAllDevices(scene => {
+        Span<Color32> buffer = stackalloc Color32[1];
+
+        foreach (GraphicsDevice device in GraphicsDevices) {
             Texture2D texture = new Texture2D(
-                scene.GraphicsDevice, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 1, 1
+                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 1, 1
             );
-            Camera camera = new Camera(scene) {
+            SimpleCamera camera = new SimpleCamera(device) {
                 RenderTarget = texture,
                 ClearFlags = CameraClearFlags.SolidColor,
                 ClearColor = Color.Red
             };
 
-            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
+            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
             commandBuffer.AttachCameraUnchecked(camera);
             commandBuffer.DetachCameraUnchecked();
 
@@ -31,11 +33,9 @@ public class CameraClearFlagsTest : ApplicationTestEnvironment {
             commandBuffer.Clear();
 
             // Assert.
-            Span<Color32> buffer = stackalloc Color32[1];
             texture.GetPixels(buffer);
-
             Assert.Equal((Color32)camera.ClearColor, buffer[0]);
-        });
+        }
     }
 
 }

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Vulkan;
 
-internal class VulkanCameraDelegation : CameraDelegation {
+internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
 
     private readonly object calculateLocker = new object();
 
@@ -22,11 +22,11 @@ internal class VulkanCameraDelegation : CameraDelegation {
 
     internal IntPtr ClearColor { get; }
 
-    public VulkanCameraDelegation(Camera camera) : base(camera) {
+    public VulkanSimpleCameraDelegation(SimpleCamera camera) : base(camera) {
         ClearColor = Marshal.AllocHGlobal(Marshal.SizeOf<Color>());
     }
 
-    ~VulkanCameraDelegation() {
+    ~VulkanSimpleCameraDelegation() {
         Marshal.FreeHGlobal(ClearColor);
     }
 
@@ -36,6 +36,10 @@ internal class VulkanCameraDelegation : CameraDelegation {
 
     public override void UpdateClearColor() {
         Marshal.StructureToPtr(Camera.ClearColor, ClearColor, false);
+    }
+
+    public override uint SetFramesInFlight(uint newValue) {
+        throw new NotImplementedException();
     }
 
     private void Calculate() {

@@ -33,7 +33,7 @@ public class GraphicsCommandBuffer {
     private bool transfer;
 
     public GraphicsDevice Device { get; }
-    public Camera? AttachedCamera { get; private set; }
+    public SimpleCamera? AttachedCamera { get; private set; }
 
     /// <summary>
     /// Specifies that a <see cref="GraphicsCommandBuffer"/> can be simultaneous executed
@@ -307,7 +307,7 @@ public class GraphicsCommandBuffer {
         delegation.DispatchWorker(kernel, groupCount);
     }
 
-    internal void AttachCameraUnchecked(Camera camera) {
+    internal void AttachCameraUnchecked(SimpleCamera camera) {
         graphics = true;
         AttachedCamera = camera;
         delegation.AttachCameraWorker(camera);
