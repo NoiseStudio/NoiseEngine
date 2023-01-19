@@ -5,7 +5,7 @@ use ash::vk;
 use crate::{
     rendering::vulkan::{
         buffers::command_buffer::VulkanCommandBuffer, render_pass::RenderPass, framebuffer::Framebuffer,
-        swapchain::{Swapchain, SwapchainPass}, errors::universal::VulkanUniversalError
+        swapchain::{Swapchain, SwapchainPass}, errors::universal::VulkanUniversalError, fence::VulkanFence
     },
     serialization::reader::SerializationReader
 };
@@ -17,13 +17,14 @@ pub struct AttachCameraWindowOutput<'init: 'fam, 'fam> {
 }
 
 pub fn attach_camera_window<'init: 'fam, 'fam>(
-    data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
+    data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device,
+    used_fence: &Arc<VulkanFence<'init>>
 ) -> Result<AttachCameraWindowOutput<'init, 'fam>, VulkanUniversalError> {
     let render_pass = data.read_unchecked::<&Arc<RenderPass>>();
     let swapchain = data.read_unchecked::<&Arc<Swapchain>>();
 
     let (pass, frame_index, image_index) =
-        swapchain.get_swapchain_pass_and_accquire_next_image(render_pass)?;
+        swapchain.get_swapchain_pass_and_accquire_next_image(render_pass, used_fence)?;
     let framebuffer = pass.get_framebuffer(image_index);
 
     attach_camera_worker(

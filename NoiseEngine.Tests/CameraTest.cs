@@ -17,12 +17,14 @@ public class CameraTest : ApplicationTestEnvironment {
         ExecuteOnAllDevices(scene => {
             Camera camera = new Camera(scene) {
                 RenderTarget = window,
-                RenderLoop = new PerformanceRenderLoop(),
+                RenderLoop = new PerformanceRenderLoop() { FramesInFlight = 2 },
                 ClearColor = Color.Random
             };
 
-            while (!window.IsDisposed)
+            while (!window.IsDisposed) {
+                camera.ClearColor = Color.Random;
                 WindowInterop.PoolEvents(window.Handle);
+            }
 
             /*GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
             while (!window.IsDisposed) {

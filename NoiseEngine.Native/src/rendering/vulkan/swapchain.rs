@@ -1,16 +1,16 @@
 use std::{ptr, sync::{Arc, Mutex, MutexGuard, Weak, atomic::{AtomicUsize, Ordering}}, mem};
 
-use arc_cell::{AtomicCell, ArcCell};
-use ash::{vk, extensions::khr, prelude::VkResult};
+use arc_cell::{AtomicCell, ArcCell, WeakCell};
+use ash::{vk, extensions::khr};
 
 use crate::{
-    rendering::errors::window_not_supported::WindowNotSupportedError, errors::invalid_operation::InvalidOperationError
+    rendering::{errors::window_not_supported::WindowNotSupportedError, fence::GraphicsFence}, errors::invalid_operation::InvalidOperationError
 };
 
 use super::{
     surface::VulkanSurface, device::{VulkanDevice, VulkanQueueFamily}, errors::universal::VulkanUniversalError,
     render_pass::RenderPass, swapchain_image_view::SwapchainImageView, swapchain_framebuffer::SwapchainFramebuffer,
-    semaphore::VulkanSemaphore
+    semaphore::VulkanSemaphore, fence::VulkanFence
 };
 
 pub struct Swapchain<'init: 'fam, 'fam> {
@@ -205,21 +205,24 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
     }
 
     pub fn get_swapchain_pass_and_accquire_next_image(
-        &'init self, render_pass: &Arc<RenderPass<'init>>
+        &'init self, render_pass: &Arc<RenderPass<'init>>, new_fence: &Arc<VulkanFence<'init>>
     ) -> Result<(Arc<SwapchainPass<'init, 'fam>>, usize, u32), VulkanUniversalError> {
         loop {
             let swapchain_pass = self.get_swapchain_pass(render_pass)?;
-            let frame_index = swapchain_pass.next_frame();
+            let frame_index = swapchain_pass.next_frame(new_fence);
             match swapchain_pass.accquire_next_image(frame_index) {
                 Ok((i, b)) => {
                     if !b {
                         return Ok((swapchain_pass, frame_index, i));
                     }
                 },
-                Err(result) => {
-                    if result != vk::Result::ERROR_OUT_OF_DATE_KHR {
-                        return Err(result.into())
-                    }
+                Err(result) => match result {
+                    VulkanUniversalError::Vulkan(vk_result) => {
+                        if vk_result != vk::Result::ERROR_OUT_OF_DATE_KHR {
+                            return Err(result);
+                        }
+                    },
+                    _ => return Err(result)
                 },
             }
 
@@ -325,14 +328,17 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         let dynamic = self.dynamic.get();
 
         let mut framebuffers = Vec::with_capacity(dynamic.image_views.len());
+        let mut in_flight_fences = Vec::with_capacity(dynamic.image_views.len());
         for image_view in &dynamic.image_views {
-            framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent)?)
+            framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent)?);
+            in_flight_fences.push(WeakCell::new(Weak::new()));
         }
 
         let new_pass = Arc::new(SwapchainPass {
             shared: self.shared.clone(),
             dynamic,
             framebuffers,
+            in_flight_fences,
             frame_index: AtomicUsize::new(0),
             render_pass: render_pass.clone(),
         });
@@ -378,21 +384,41 @@ pub struct SwapchainPass<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
     dynamic: Arc<SwapchainSharedDynamic<'init, 'fam>>,
     framebuffers: Vec<SwapchainFramebuffer<'init>>,
+    in_flight_fences: Vec<WeakCell<VulkanFence<'init>>>,
     frame_index: AtomicUsize,
     render_pass: Arc<RenderPass<'init>>
 }
 
 impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
-    pub fn next_frame(&self) -> usize {
-        self.frame_index.fetch_add(1, Ordering::Relaxed) % self.framebuffers.len()
+    pub fn next_frame(&self, new_fence: &Arc<VulkanFence<'init>>) -> usize {
+        let frame_index = self.frame_index.fetch_add(1, Ordering::Relaxed) % self.framebuffers.len();
+
+        let old_fence = self.in_flight_fences[frame_index].set(Arc::downgrade(&new_fence));
+        match Weak::upgrade(&old_fence) {
+            Some(old_fence_arc) => _ = old_fence_arc.wait(u64::MAX),
+            None => crate::logging::log::error("hello"),
+        }
+
+        frame_index
     }
 
-    pub fn accquire_next_image(&self, frame_index: usize) -> VkResult<(u32, bool)> {
+    pub fn accquire_next_image(&self, frame_index: usize) -> Result<(u32, bool), VulkanUniversalError> {
+        let semaphore = self.get_image_available_semaphore(frame_index).inner();
+
+        // Lock mutex.
+        let swapchain;
+        let _lock;
+        match Weak::upgrade(&self.shared.swapchain) {
+            Some(s) => {
+                swapchain = s;
+                _lock = swapchain.lock_mutex()?;
+            },
+            None => (),
+        }
+
         Ok(unsafe {
             self.shared.ash_swapchain.acquire_next_image(
-                self.inner(), u64::MAX,
-                self.get_image_available_semaphore(frame_index).inner(),
-                vk::Fence::null()
+                self.inner(), u64::MAX, semaphore, vk::Fence::null()
             )
         }?)
     }

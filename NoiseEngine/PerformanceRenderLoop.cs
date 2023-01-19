@@ -37,7 +37,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
     /// </summary>
     protected override void Initialize() {
         executeFrameThreadWork = true;
-        rendererSignaler = 16;
+        rendererSignaler = 1;
 
         signalResetEvent = new AutoResetEvent(true);
         executeFrameResetEvent = new AutoResetEvent(false);
@@ -113,8 +113,6 @@ public sealed class PerformanceRenderLoop : RenderLoop {
         AutoResetEvent executeFrameResetEvent = this.executeFrameResetEvent!;
         AutoResetEvent signalResetEvent = this.signalResetEvent!;
 
-        executeFrameResetEvent.Reset();
-
         while (executeFrameThreadWork) {
             executeFrameResetEvent.WaitOne();
             Interlocked.Increment(ref rendererSignaler);
@@ -122,11 +120,10 @@ public sealed class PerformanceRenderLoop : RenderLoop {
 
             GraphicsCommandBuffer? current = Interlocked.Exchange(ref currentCommandBuffer, null);
             if (current is null) {
-                if (!executeFrameThreadWork) {
+                if (!executeFrameThreadWork)
                     throw new InvalidOperationException("Frame was omitted.");
-                } else {
+                else
                     break;
-                }
             }
 
             current.Execute();

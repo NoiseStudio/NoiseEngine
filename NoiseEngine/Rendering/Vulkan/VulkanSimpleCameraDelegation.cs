@@ -45,9 +45,9 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
         if (!TryGetSwapchain(out Swapchain? swapchain))
             return 0;
 
-        uint result = swapchain.ChangeMinImageCount(targetFramesInFlightCount);
+        uint result = swapchain.ChangeMinImageCount(targetFramesInFlightCount + 1);
         imageCount = result;
-        return result;
+        return result - 1;
     }
 
     private void Calculate() {
