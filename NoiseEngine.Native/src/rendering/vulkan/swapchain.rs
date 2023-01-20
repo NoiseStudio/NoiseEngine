@@ -1,4 +1,4 @@
-use std::{ptr, sync::{Arc, Mutex, MutexGuard, Weak, atomic::{AtomicUsize, Ordering}}, mem};
+use std::{ptr, sync::{Arc, Mutex, MutexGuard, Weak, atomic::{AtomicUsize, Ordering}}, mem, cmp, cell::Cell};
 
 use arc_cell::{AtomicCell, ArcCell, WeakCell};
 use ash::{vk, extensions::khr};
@@ -101,6 +101,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             shared: shared.clone(),
             dynamic: ArcCell::new(Arc::new(SwapchainSharedDynamic {
                 shared: shared.clone(),
+                is_old: Cell::new(false),
                 inner: unsafe { mem::zeroed() },
                 extent: vk::Extent2D::default(),
                 min_image_count: 0,
@@ -194,7 +195,10 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         // Check if pass is created.
         match self.pass.get() {
             Some(current_pass) => {
-                if Arc::ptr_eq(&current_pass.render_pass, render_pass) {
+                if
+                    Arc::ptr_eq(&current_pass.render_pass, render_pass) &&
+                    !current_pass.dynamic.is_old.get()
+                {
                     return Ok(current_pass)
                 }
             },
@@ -275,7 +279,6 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         }?;
 
         self.create_dynamic(inner, create_info.image_extent, used_min_image_count)?;
-        self.pass.set(None);
 
         Ok(())
     }
@@ -305,8 +308,9 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         }
 
         // Construct.
-        self.dynamic.set(Arc::new(SwapchainSharedDynamic {
+        let old_dynamic = self.dynamic.set(Arc::new(SwapchainSharedDynamic {
             shared: self.shared.clone(),
+            is_old: Cell::new(false),
             inner,
             extent,
             min_image_count,
@@ -314,6 +318,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             image_available_semaphores,
             render_finished_semaphores,
         }));
+        old_dynamic.is_old.set(true);
 
         Ok(())
     }
@@ -328,9 +333,25 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         let dynamic = self.dynamic.get();
 
         let mut framebuffers = Vec::with_capacity(dynamic.image_views.len());
-        let mut in_flight_fences = Vec::with_capacity(dynamic.image_views.len());
         for image_view in &dynamic.image_views {
             framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent)?);
+        }
+
+        let old_pass = self.pass.get();
+        let mut in_flight_fences = Vec::with_capacity(dynamic.image_views.len());
+        let frame_index;
+
+        match old_pass {
+            Some(p) => {
+                for i in 0..cmp::min(p.in_flight_fences.len(), dynamic.image_views.len()) {
+                    in_flight_fences.push(p.in_flight_fences[i].clone());
+                }
+                frame_index = p.frame_index.load(Ordering::Relaxed);
+            },
+            None => frame_index = 0
+        };
+
+        while in_flight_fences.len() != dynamic.image_views.len() {
             in_flight_fences.push(WeakCell::new(Weak::new()));
         }
 
@@ -339,7 +360,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             dynamic,
             framebuffers,
             in_flight_fences,
-            frame_index: AtomicUsize::new(0),
+            frame_index: AtomicUsize::new(frame_index),
             render_pass: render_pass.clone(),
         });
 
@@ -364,6 +385,7 @@ struct SwapchainShared<'init: 'fam, 'fam> {
 
 struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
+    is_old: Cell<bool>,
     inner: vk::SwapchainKHR,
     extent: vk::Extent2D,
     min_image_count: u32,
