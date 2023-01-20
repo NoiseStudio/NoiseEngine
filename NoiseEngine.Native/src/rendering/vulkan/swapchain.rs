@@ -20,7 +20,7 @@ pub struct Swapchain<'init: 'fam, 'fam> {
     format: vk::SurfaceFormatKHR,
     present_mode: vk::PresentModeKHR,
     pass: AtomicCell<Option<Arc<SwapchainPass<'init, 'fam>>>>,
-    mutex: Mutex<()>,
+    pass_creation_mutex: Mutex<()>,
     device: Arc<VulkanDevice<'init>>
 }
 
@@ -94,6 +94,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             swapchain: Weak::default(),
             surface,
             ash_swapchain: khr::Swapchain::new(instance.inner(), initialized.vulkan_device()),
+            ash_swapchain_mutex: Mutex::new(()),
             queue_family,
         });
 
@@ -113,7 +114,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             format,
             present_mode,
             pass: AtomicCell::new(None),
-            mutex: Mutex::new(()),
+            pass_creation_mutex: Mutex::new(()),
             device: device.clone()
         });
 
@@ -236,7 +237,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
     pub fn recreate(&self, min_image_count: Option<u32>) -> Result<(), VulkanUniversalError> {
         // Lock mutex.
-        let _lock = self.lock_mutex()?;
+        let _lock = self.lock_pass_creation_mutex()?;
 
         let initialized = self.device.initialized()?;
 
@@ -274,9 +275,13 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             old_swapchain: self.dynamic.get().inner
         };
 
-        let inner = unsafe {
-            self.shared.ash_swapchain.create_swapchain(&create_info, None)
-        }?;
+        let inner;
+        {
+            let _swapchain_lock = self.shared.lock_ash_swapchain()?;
+            inner = unsafe {
+                self.shared.ash_swapchain.create_swapchain(&create_info, None)
+            }?;
+        }
 
         self.create_dynamic(inner, create_info.image_extent, used_min_image_count)?;
 
@@ -334,7 +339,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         &'init self, render_pass: &Arc<RenderPass<'init>>
     ) -> Result<Arc<SwapchainPass<'init, 'fam>>, VulkanUniversalError> {
         // Lock mutex.
-        let _lock = self.lock_mutex()?;
+        let _lock = self.lock_pass_creation_mutex()?;
 
         // Create new pass.
         let dynamic = self.dynamic.get();
@@ -368,7 +373,6 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             framebuffers,
             in_flight_fences,
             frame_index: AtomicUsize::new(frame_index),
-            mutex: Mutex::new(()),
             render_pass: render_pass.clone(),
         });
 
@@ -376,8 +380,8 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         Ok(new_pass)
     }
 
-    fn lock_mutex(&self) -> Result<MutexGuard<()>, InvalidOperationError> {
-        match self.mutex.lock() {
+    fn lock_pass_creation_mutex(&self) -> Result<MutexGuard<()>, InvalidOperationError> {
+        match self.pass_creation_mutex.lock() {
             Ok(l) => Ok(l),
             Err(_) => Err(InvalidOperationError::with_str("Another thread holding the mutex panicked.")),
         }
@@ -388,7 +392,17 @@ struct SwapchainShared<'init: 'fam, 'fam> {
     swapchain: Weak<Swapchain<'init, 'fam>>,
     surface: VulkanSurface,
     ash_swapchain: khr::Swapchain,
+    ash_swapchain_mutex: Mutex<()>,
     queue_family: &'fam VulkanQueueFamily<'init>,
+}
+
+impl<'init: 'fam, 'fam> SwapchainShared<'init, 'fam> {
+    pub fn lock_ash_swapchain(&self) -> Result<MutexGuard<()>, InvalidOperationError>  {
+        match self.ash_swapchain_mutex.lock() {
+            Ok(l) => Ok(l),
+            Err(_) => Err(InvalidOperationError::with_str("Another thread holding the mutex panicked.")),
+        }
+    }
 }
 
 struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
@@ -416,7 +430,6 @@ pub struct SwapchainPass<'init: 'fam, 'fam> {
     framebuffers: Vec<SwapchainFramebuffer<'init>>,
     in_flight_fences: Vec<WeakCell<VulkanFence<'init>>>,
     frame_index: AtomicUsize,
-    pub mutex: Mutex<()>,
     render_pass: Arc<RenderPass<'init>>
 }
 
@@ -437,15 +450,7 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
         let semaphore = self.get_image_available_semaphore(frame_index).inner();
 
         // Lock mutex.
-        let swapchain;
-        let _lock;
-        match Weak::upgrade(&self.shared.swapchain) {
-            Some(s) => {
-                swapchain = s;
-                _lock = swapchain.lock_mutex()?;
-            },
-            None => (),
-        }
+        let _swapchain_lock = self.lock_ash_swapchain()?;
 
         Ok(unsafe {
             self.shared.ash_swapchain.acquire_next_image(
@@ -472,6 +477,10 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
 
     pub fn swapchain(&self) -> &Weak<Swapchain<'init, 'fam>> {
         &self.shared.swapchain
+    }
+
+    pub fn lock_ash_swapchain(&self) -> Result<MutexGuard<()>, InvalidOperationError> {
+        self.shared.lock_ash_swapchain()
     }
 
     pub fn ash_swapchain(&self) -> &khr::Swapchain {
