@@ -298,17 +298,25 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
         // Semaphores.
         let initialized = self.device().initialized()?;
+        let old_dynamic = self.dynamic.get();
 
         let mut image_available_semaphores = Vec::with_capacity(image_views.len());
         let mut render_finished_semaphores = Vec::with_capacity(image_views.len());
 
-        for _ in 0..image_views.len() {
-            image_available_semaphores.push(initialized.pool().get_semaphore(&self.device)?);
-            render_finished_semaphores.push(initialized.pool().get_semaphore(&self.device)?);
+        for i in 0..cmp::min(old_dynamic.image_available_semaphores.len(), image_views.len()) {
+            image_available_semaphores.push(old_dynamic.image_available_semaphores[i].clone());
+            render_finished_semaphores.push(old_dynamic.render_finished_semaphores[i].clone());
+        }
+
+        while image_available_semaphores.len() != image_views.len() {
+            image_available_semaphores.push(Arc::new(initialized.pool().get_semaphore(&self.device)?));
+            render_finished_semaphores.push(Arc::new(initialized.pool().get_semaphore(&self.device)?));
         }
 
         // Construct.
-        let old_dynamic = self.dynamic.set(Arc::new(SwapchainSharedDynamic {
+        old_dynamic.is_old.set(true);
+
+        self.dynamic.set(Arc::new(SwapchainSharedDynamic {
             shared: self.shared.clone(),
             is_old: Cell::new(false),
             inner,
@@ -318,7 +326,6 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             image_available_semaphores,
             render_finished_semaphores,
         }));
-        old_dynamic.is_old.set(true);
 
         Ok(())
     }
@@ -361,6 +368,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             framebuffers,
             in_flight_fences,
             frame_index: AtomicUsize::new(frame_index),
+            mutex: Mutex::new(()),
             render_pass: render_pass.clone(),
         });
 
@@ -390,8 +398,8 @@ struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
     extent: vk::Extent2D,
     min_image_count: u32,
     image_views: Vec<Arc<SwapchainImageView<'init>>>,
-    image_available_semaphores: Vec<VulkanSemaphore<'init>>,
-    render_finished_semaphores: Vec<VulkanSemaphore<'init>>
+    image_available_semaphores: Vec<Arc<VulkanSemaphore<'init>>>,
+    render_finished_semaphores: Vec<Arc<VulkanSemaphore<'init>>>
 }
 
 impl Drop for SwapchainSharedDynamic<'_, '_> {
@@ -408,6 +416,7 @@ pub struct SwapchainPass<'init: 'fam, 'fam> {
     framebuffers: Vec<SwapchainFramebuffer<'init>>,
     in_flight_fences: Vec<WeakCell<VulkanFence<'init>>>,
     frame_index: AtomicUsize,
+    pub mutex: Mutex<()>,
     render_pass: Arc<RenderPass<'init>>
 }
 
@@ -418,7 +427,7 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
         let old_fence = self.in_flight_fences[frame_index].set(Arc::downgrade(&new_fence));
         match Weak::upgrade(&old_fence) {
             Some(old_fence_arc) => _ = old_fence_arc.wait(u64::MAX),
-            None => crate::logging::log::error("hello"),
+            None => (),
         }
 
         frame_index

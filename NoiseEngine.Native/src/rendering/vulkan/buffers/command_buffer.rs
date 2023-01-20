@@ -130,6 +130,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                 p_results: results.as_mut_ptr(),
             };
 
+            let _lock = self.attached_camera_windows[0].pass.mutex.lock().unwrap();
             _ = unsafe {
                 self.attached_camera_windows[0].pass.ash_swapchain().queue_present(
                     self.attached_camera_windows[0].pass.present_family().get_queue().queue, &present_info

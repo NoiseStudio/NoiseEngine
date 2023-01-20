@@ -18,6 +18,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
     private uint rendererSignaler;
 
     private uint framesInFlight = 1;
+    private uint? executionThreadCount;
 
     public uint FramesInFlight {
         get => framesInFlight;
@@ -29,6 +30,19 @@ public sealed class PerformanceRenderLoop : RenderLoop {
             }
 
             ChangeFramesInFlightCount(value);
+        }
+    }
+
+    public uint? ExecutionThreadCount {
+        get => executionThreadCount;
+        set {
+            if (value == 0) {
+                throw new ArgumentOutOfRangeException(
+                    nameof(ExecutionThreadCount), $"Minimum value of {nameof(ExecutionThreadCount)} is one."
+                );
+            }
+
+            executionThreadCount = value;
         }
     }
 
@@ -67,7 +81,8 @@ public sealed class PerformanceRenderLoop : RenderLoop {
 
             framesInFlight = Camera.Delegation.ChangeFramesInFlightCount(targetFramesInFlightCount);
 
-            for (int i = 1; i < framesInFlight + 1; i++) {
+            uint threadCount = (ExecutionThreadCount.HasValue ? ExecutionThreadCount.Value : framesInFlight) + 1;
+            for (int i = 1; i < threadCount; i++) {
                 new Thread(ExecuteFrameWorker) {
                     IsBackground = true,
                     Priority = ThreadPriority.Normal,
