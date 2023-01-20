@@ -24,4 +24,5 @@ pub mod shader_module;
 pub mod surface;
 pub mod swapchain_framebuffer;
 pub mod swapchain_image_view;
+pub mod swapchain_support;
 pub mod swapchain;
