@@ -12,7 +12,7 @@ public abstract class ApplicationTestEnvironment : GraphicsTestEnvironment {
     }
 
     public void ExecuteOnAllDevices(Action<ApplicationScene> executor) {
-        foreach (GraphicsDevice device in GraphicsDevices.Skip(1)) {
+        foreach (GraphicsDevice device in GraphicsDevices.Skip(0)) {
             using ApplicationScene scene = new ApplicationScene() { GraphicsDevice = device };
             executor(scene);
         }

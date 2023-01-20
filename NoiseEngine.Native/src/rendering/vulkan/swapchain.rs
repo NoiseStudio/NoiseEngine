@@ -8,7 +8,7 @@ use crate::{
 };
 
 use super::{
-    surface::VulkanSurface, device::{VulkanDevice, VulkanQueueFamily}, errors::universal::VulkanUniversalError,
+    surface::VulkanSurface, device::{VulkanDevice, VulkanQueueFamily}, errors::{universal::VulkanUniversalError, swapchain_accquire_next_image::SwapchainAccquireNextImageError},
     render_pass::RenderPass, swapchain_image_view::SwapchainImageView, swapchain_framebuffer::SwapchainFramebuffer,
     semaphore::VulkanSemaphore, fence::VulkanFence, swapchain_support::SwapchainSupport
 };
@@ -181,22 +181,16 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             let swapchain_pass = self.get_swapchain_pass(render_pass)?;
             let frame_index = swapchain_pass.next_frame(new_fence);
             match swapchain_pass.accquire_next_image(frame_index) {
-                Ok((i, b)) => {
-                    if !b {
-                        return Ok((swapchain_pass, frame_index, i));
-                    }
-                },
+                Ok(i) => return Ok((swapchain_pass, frame_index, i)),
                 Err(result) => match result {
-                    VulkanUniversalError::Vulkan(vk_result) => {
-                        if vk_result != vk::Result::ERROR_OUT_OF_DATE_KHR {
-                            return Err(result);
-                        }
-                    },
-                    _ => return Err(result)
+                    SwapchainAccquireNextImageError::Suboptimal => self.recreate(None)?,
+                    SwapchainAccquireNextImageError::OutOfDate => self.recreate(None)?,
+                    SwapchainAccquireNextImageError::Recreated => (),
+                    SwapchainAccquireNextImageError::InvalidOperation(err) =>
+                        return Err(err.into()),
+                    SwapchainAccquireNextImageError::Vulkan(err) => return Err(err.into()),
                 },
-            }
-
-            self.recreate(None)?;
+            };
         }
     }
 
@@ -436,17 +430,37 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
         frame_index % self.framebuffers.len()
     }
 
-    pub fn accquire_next_image(&self, frame_index: usize) -> Result<(u32, bool), VulkanUniversalError> {
-        let semaphore = self.get_image_available_semaphore(frame_index).inner();
+    pub fn accquire_next_image(&self, frame_index: usize) -> Result<u32, SwapchainAccquireNextImageError> {
+        let result = {
+            let semaphore = self.get_image_available_semaphore(frame_index).inner();
 
-        // Lock mutex.
-        let _swapchain_lock = self.lock_ash_swapchain()?;
+            // Lock mutex.
+            let _swapchain_lock = self.lock_ash_swapchain()?;
 
-        Ok(unsafe {
-            self.shared.ash_swapchain.acquire_next_image(
-                self.inner(), u64::MAX, semaphore, vk::Fence::null()
-            )
-        }?)
+            if self.dynamic.is_old.get() {
+                return Err(SwapchainAccquireNextImageError::Recreated)
+            }
+
+            unsafe {
+                self.shared.ash_swapchain.acquire_next_image(
+                    self.inner(), u64::MAX, semaphore, vk::Fence::null()
+                )
+            }
+        };
+
+        match result {
+            Ok((index, suboptimal)) => {
+                if suboptimal {
+                    Err(SwapchainAccquireNextImageError::Suboptimal)
+                } else {
+                    Ok(index)
+                }
+            },
+            Err(err) => match err {
+                vk::Result::ERROR_OUT_OF_DATE_KHR => Err(SwapchainAccquireNextImageError::Suboptimal),
+                _ => Err(SwapchainAccquireNextImageError::Vulkan(err))
+            },
+        }
     }
 
     pub fn get_framebuffer(&self, index: u32) -> &SwapchainFramebuffer<'init> {
