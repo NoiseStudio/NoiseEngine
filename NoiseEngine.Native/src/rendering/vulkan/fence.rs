@@ -20,9 +20,17 @@ impl<'init> VulkanFence<'init>{
         self.inner
     }
 
+    pub fn wait(&self, timeout: u64) -> Result<bool, VulkanUniversalError> {
+        unsafe {
+            self.wait_inner(&[self.inner], false, timeout)
+        }
+    }
+
     /// # Safety
     /// All fences must be from the same device.
-    unsafe fn wait(&self, fences: &[vk::Fence], wait_all: bool, timeout: u64) -> Result<bool, VulkanUniversalError> {
+    unsafe fn wait_inner(
+        &self, fences: &[vk::Fence], wait_all: bool, timeout: u64
+    ) -> Result<bool, VulkanUniversalError> {
         match self.device.initialized().unwrap().vulkan_device().wait_for_fences(fences, wait_all, timeout) {
             Ok(()) => Ok(true),
             Err(err) => match err {
@@ -45,9 +53,7 @@ impl Drop for VulkanFence<'_> {
 
 impl GraphicsFence for VulkanFence<'_> {
     fn wait(&self, timeout: u64) -> InteropResult<bool> {
-        match unsafe {
-            self.wait(&[self.inner], false, timeout)
-        } {
+        match self.wait(timeout) {
             Ok(is_signaled) => InteropResult::with_ok(is_signaled),
             Err(err) => InteropResult::with_err(err.into()),
         }
@@ -72,6 +78,6 @@ impl GraphicsFence for VulkanFence<'_> {
             vec.push(fence.inner);
         }
 
-        Ok(self.wait(&vec, wait_all, timeout)?)
+        Ok(self.wait_inner(&vec, wait_all, timeout)?)
     }
 }

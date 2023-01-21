@@ -114,6 +114,8 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             let mut results = Vec::new();
 
             for output in &self.attached_camera_windows {
+                output.synchronized_fence.set_reset_event();
+
                 swapchains.push(output.pass.inner());
                 image_indices.push(output.image_index);
                 results.push(vk::Result::default());
