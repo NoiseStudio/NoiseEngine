@@ -280,15 +280,16 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         let initialized = self.device().initialized()?;
         let old_dynamic = self.dynamic.get();
 
-        let mut image_available_semaphores = Vec::with_capacity(image_views.len());
-        let mut render_finished_semaphores = Vec::with_capacity(image_views.len());
+        let semaphores_length = image_views.len() - 1;
+        let mut image_available_semaphores = Vec::with_capacity(semaphores_length);
+        let mut render_finished_semaphores = Vec::with_capacity(semaphores_length);
 
-        for i in 0..cmp::min(old_dynamic.image_available_semaphores.len(), image_views.len()) {
+        for i in 0..cmp::min(old_dynamic.image_available_semaphores.len(), semaphores_length) {
             image_available_semaphores.push(old_dynamic.image_available_semaphores[i].clone());
             render_finished_semaphores.push(old_dynamic.render_finished_semaphores[i].clone());
         }
 
-        while image_available_semaphores.len() != image_views.len() {
+        while image_available_semaphores.len() != semaphores_length {
             image_available_semaphores.push(Arc::new(initialized.pool().get_semaphore(&self.device)?));
             render_finished_semaphores.push(Arc::new(initialized.pool().get_semaphore(&self.device)?));
         }
@@ -334,7 +335,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent)?);
         }
 
-        let in_flight_fences_length = dynamic.image_views.len() - 1;
+        let in_flight_fences_length = dynamic.image_available_semaphores.len();
         let mut in_flight_fences =
             Vec::with_capacity(in_flight_fences_length);
         let frame_index;
@@ -429,17 +430,18 @@ pub struct SwapchainPass<'init: 'fam, 'fam> {
 
 impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
     pub fn next_frame(&self, new_fence: &Arc<VulkanSynchronizedFence<'init>>) -> Result<usize, VulkanUniversalError> {
-        let frame_index = self.frame_index.fetch_add(1, Ordering::Relaxed);
+        let frame_index =
+            self.frame_index.fetch_add(1, Ordering::Relaxed) % self.in_flight_fences.len();
 
         let old_fence =
-            self.in_flight_fences[frame_index % self.in_flight_fences.len()].set(Arc::downgrade(&new_fence));
+            self.in_flight_fences[frame_index].set(Arc::downgrade(&new_fence));
 
         match Weak::upgrade(&old_fence) {
             Some(old_fence_arc) => _ = old_fence_arc.wait()?,
             None => (),
         }
 
-        Ok(frame_index % (self.framebuffers.len() - 1))
+        Ok(frame_index)
     }
 
     pub fn accquire_next_image(&self, frame_index: usize) -> Result<u32, SwapchainAccquireNextImageError> {
