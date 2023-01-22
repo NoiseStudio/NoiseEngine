@@ -1,11 +1,20 @@
-﻿namespace NoiseEngine;
+﻿using System;
+using System.Threading;
+
+namespace NoiseEngine;
 
 public abstract class RenderLoop {
 
-    public Camera? Camera { get; set; }
-    public Window? Window { get; set; }
+    private readonly object deinitializeLocker = new object();
 
-    /// <summary>Returns a string that represents the current <see cref="RenderLoop"/>.</summary>
+    private Camera? camera;
+
+    public Camera? Camera => camera;
+    public Window? Window { get; private set; }
+
+    /// <summary>
+    /// Returns a string that represents the current <see cref="RenderLoop"/>.
+    /// </summary>
     /// <returns>A string that represents the current <see cref="RenderLoop"/>.</returns>
     public override string ToString() {
         Window? window = Window;
@@ -15,14 +24,22 @@ public abstract class RenderLoop {
     }
 
     internal void InternalInitialize(Camera camera) {
-        Camera = camera;
-        Window = (Window)Camera.RenderTarget!;
+        Camera? exchanged = Interlocked.CompareExchange(ref this.camera, camera, null);
+        if (exchanged != null)
+            throw new InvalidOperationException($"This {nameof(RenderLoop)} is currently assigned to the {exchanged}.");
+
+        this.camera = camera;
+        Window = (Window)camera.RenderTarget!;
 
         Initialize();
     }
 
     internal void InternalDeinitialize() {
-        Deinitialize();
+        lock (deinitializeLocker)
+            Deinitialize();
+
+        camera = null;
+        Window = null;
     }
 
     /// <summary>

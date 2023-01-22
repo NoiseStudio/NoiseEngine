@@ -27,8 +27,8 @@ public class Camera : SimpleCamera {
                 }
 
                 renderLoop?.InternalDeinitialize();
+                value?.InternalInitialize(this);
                 renderLoop = value;
-                renderLoop?.InternalInitialize(this);
             }
         }
     }
@@ -40,8 +40,10 @@ public class Camera : SimpleCamera {
     private protected override void RaiseRenderTargetSet(ICameraRenderTarget? newRenderTarget) {
         lock (renderLoopLocker) {
             if (renderLoop is not null && newRenderTarget is not Window) {
-                renderLoop.InternalDeinitialize();
+                RenderLoop loop = renderLoop;
                 renderLoop = null;
+
+                loop.InternalDeinitialize();
             }
         }
     }
