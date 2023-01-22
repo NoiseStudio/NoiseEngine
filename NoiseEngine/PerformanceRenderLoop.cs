@@ -107,6 +107,9 @@ public sealed class PerformanceRenderLoop : RenderLoop {
     private void ChangeExecutionThreadCount(uint? newExecutionThreadCount) {
         lock (updateLocker) {
             executionThreadCount = newExecutionThreadCount;
+            if (!renderThreadWork)
+                return;
+
             uint threadCount = ExecutionThreadCount.HasValue ? ExecutionThreadCount.Value : Math.Min(
                 framesInFlight, (uint)Environment.ProcessorCount
             );

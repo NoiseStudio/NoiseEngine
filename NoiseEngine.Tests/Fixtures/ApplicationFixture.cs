@@ -14,6 +14,8 @@ public class ApplicationFixture : IDisposable {
     private readonly ConcurrentDictionary<GraphicsDevice, GraphicsCommandBuffer> commandBuffers =
         new ConcurrentDictionary<GraphicsDevice, GraphicsCommandBuffer>();
 
+    private Window? window;
+
     internal IReadOnlyList<GraphicsDevice> GraphicsDevices { get; private set; }
     internal IReadOnlyList<VulkanDevice> VulkanDevices { get; private set; }
 
@@ -37,6 +39,7 @@ public class ApplicationFixture : IDisposable {
 
     public void Dispose() {
         commandBuffers.Clear();
+        window?.Dispose();
         GraphicsDevices = Array.Empty<GraphicsDevice>();
         VulkanDevices = Array.Empty<VulkanDevice>();
 
@@ -49,6 +52,16 @@ public class ApplicationFixture : IDisposable {
 
         commandBuffer.Clear();
         return commandBuffer;
+    }
+
+    internal Window GetWindow(string title, uint? width = null, uint? height = null) {
+        if (window is null) {
+            window = new Window(title, width ?? 1280, height ?? 720);
+        } else {
+            window.Resize(width ?? window.Width, height ?? window.Height);
+        }
+
+        return window;
     }
 
 }

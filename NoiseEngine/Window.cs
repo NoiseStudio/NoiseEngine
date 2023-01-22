@@ -87,6 +87,15 @@ public class Window : IDisposable, ICameraRenderTarget {
             error.ThrowAndDispose();
     }
 
+    /// <summary>
+    /// Resizes this <see cref="Window"/>.
+    /// </summary>
+    /// <param name="width">New width.</param>
+    /// <param name="height">New height.</param>
+    public void Resize(uint width, uint height) {
+        WindowInterop.SetPosition(Handle, null, new Vector2<uint>(width, height));
+    }
+
     internal void ChangeAssignedCamera(SimpleCamera? camera) {
         lock (assignedCameraLocker) {
             if (assignedCamera is not null)
