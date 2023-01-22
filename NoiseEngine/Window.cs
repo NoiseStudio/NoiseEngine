@@ -63,7 +63,8 @@ public class Window : IDisposable, ICameraRenderTarget {
             return;
 
         WindowEventHandler.UnregisterWindow(Id);
-        WindowInterop.Destroy(Handle);
+        if (!WindowInterop.Destroy(Handle).TryGetValue(out _, out ResultError error))
+            error.ThrowAndDispose();
     }
 
     internal static WindowApi GetWindowApi() {
