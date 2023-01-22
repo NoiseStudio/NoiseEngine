@@ -1,6 +1,7 @@
 use std::{ptr, sync::{Arc, Weak}, cell::UnsafeCell};
 
 use ash::{vk, extensions::khr};
+use cgmath::Vector2;
 use libc::{c_void, wchar_t};
 use uuid::Uuid;
 
@@ -81,7 +82,12 @@ impl WindowWindows {
         reference.weak = Arc::downgrade(&arc);
 
         // Create window.
-        let adjust = reference.get_adjust()?;
+        let adjust = reference.get_adjust(Rect {
+            left: 0,
+            top: 0,
+            right: reference.get_width() as i32,
+            bottom: reference.get_height() as i32,
+        })?;
         let (position_x, position_y) = reference.get_winapi_position(&adjust);
         let wide_title = wide_null(title).as_ptr();
 
@@ -147,14 +153,7 @@ impl WindowWindows {
         result
     }
 
-    fn get_adjust(&self) -> Result<Rect, Win32Error> {
-        let rect = Rect {
-            left: 0,
-            top: 0,
-            right: self.get_width() as i32,
-            bottom: self.get_height() as i32,
-        };
-
+    fn get_adjust(&self, rect: Rect) -> Result<Rect, Win32Error> {
         let result = unsafe {
             AdjustWindowRectEx(&rect, self.get_window_style(), 0, 0)
         };
@@ -248,6 +247,53 @@ impl Window for WindowWindows {
         };
     }
 
+    fn set_position(
+        &self, position: Option<Vector2<i32>>, size: Option<Vector2<u32>>
+    ) -> Result<(), PlatformUniversalError> {
+        let mut flags = 0x0004; // SWP_NOZORDER
+
+        let x;
+        let y;
+        match position {
+            Some(p) => {
+                x = p.x;
+                y = p.y;
+            },
+            None => {
+                flags |= 0x0002; // SWP_NOMOVE
+                x = 0;
+                y = 0;
+            },
+        }
+
+        let cx;
+        let cy;
+        match size {
+            Some(s) => {
+                let adjust = self.get_adjust(Rect {
+                    left: 0,
+                    top: 0,
+                    right: s.x as i32,
+                    bottom: s.y as i32,
+                })?;
+
+                cx = adjust.right - adjust.left;
+                cy = adjust.bottom - adjust.top;
+            },
+            None => {
+                flags |= 0x0001; // SWP_NOSIZE
+                cx = 0;
+                cy = 0;
+            },
+        }
+
+        if unsafe { SetWindowPos(self.h_wnd, ptr::null_mut(), x, y, cx, cy, flags) } == 0 {
+            Err(Win32Error::get_last().into())
+        } else {
+            Ok(())
+        }
+    }
+
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
         let create_info = vk::Win32SurfaceCreateInfoKHR {
             s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
@@ -339,4 +385,8 @@ extern "system" {
     fn ShowWindow(h_wnd: *mut c_void, n_cmd_show: u32) -> u32;
 
     fn AdjustWindowRectEx(lp_rect: &Rect, dw_style: u32, b_menu: u32, dw_ex_style: u32) -> u32;
+
+    fn SetWindowPos(
+        h_wnd: *mut c_void, h_wnd_insert_after: *mut c_void, x: i32, y: i32, cx: i32, cy: i32, flags: u32
+    ) -> u32;
 }

@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Rendering.Buffers;
+﻿using NoiseEngine.Interop.Rendering.Presentation;
+using NoiseEngine.Rendering.Buffers;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -139,7 +140,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
 
         try {
             while (renderThreadWork) {
-                //WindowInterop.PoolEvents(window.Handle);
+                WindowInterop.PoolEvents(window.Handle);
 
                 if (rendererSignaler == 0)
                     rendererResetEvent.WaitOne();
