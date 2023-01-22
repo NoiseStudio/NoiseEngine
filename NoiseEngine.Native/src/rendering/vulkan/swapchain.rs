@@ -11,7 +11,8 @@ use super::{
     surface::VulkanSurface, device::{VulkanDevice, VulkanQueueFamily},
     errors::{universal::VulkanUniversalError, swapchain_accquire_next_image::SwapchainAccquireNextImageError},
     render_pass::RenderPass, swapchain_image_view::SwapchainImageView, swapchain_framebuffer::SwapchainFramebuffer,
-    semaphore::VulkanSemaphore, swapchain_support::SwapchainSupport, synchronized_fence::VulkanSynchronizedFence, fence::VulkanFence
+    semaphore::VulkanSemaphore, swapchain_support::SwapchainSupport, synchronized_fence::VulkanSynchronizedFence,
+    fence::VulkanFence
 };
 
 pub struct Swapchain<'init: 'fam, 'fam> {
@@ -189,17 +190,18 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
             match swapchain_pass.accquire_next_image(frame_index) {
                 Ok(i) => return Ok((swapchain_pass, synchronized_fence, frame_index, i)),
-                Err(result) => match result {
-                    SwapchainAccquireNextImageError::Suboptimal => self.recreate(None)?,
-                    SwapchainAccquireNextImageError::OutOfDate => self.recreate(None)?,
-                    SwapchainAccquireNextImageError::Recreated => (),
-                    SwapchainAccquireNextImageError::InvalidOperation(err) =>
-                        return Err(err.into()),
-                    SwapchainAccquireNextImageError::Vulkan(err) => return Err(err.into()),
+                Err(result) => {
+                    synchronized_fence.retire();
+                    match result {
+                        SwapchainAccquireNextImageError::Suboptimal => self.recreate(None)?,
+                        SwapchainAccquireNextImageError::OutOfDate => self.recreate(None)?,
+                        SwapchainAccquireNextImageError::Recreated => (),
+                        SwapchainAccquireNextImageError::InvalidOperation(err) =>
+                            return Err(err.into()),
+                        SwapchainAccquireNextImageError::Vulkan(err) => return Err(err.into()),
+                    }
                 },
             };
-
-            synchronized_fence.retire();
         }
     }
 
@@ -333,7 +335,8 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         }
 
         let in_flight_fences_length = dynamic.image_views.len() - 1;
-        let mut in_flight_fences = Vec::with_capacity(in_flight_fences_length);
+        let mut in_flight_fences =
+            Vec::with_capacity(in_flight_fences_length);
         let frame_index;
 
         match old_pass {
@@ -432,15 +435,11 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
             self.in_flight_fences[frame_index % self.in_flight_fences.len()].set(Arc::downgrade(&new_fence));
 
         match Weak::upgrade(&old_fence) {
-            Some(old_fence_arc) => {
-                if !Arc::ptr_eq(new_fence, &old_fence_arc) {
-                    old_fence_arc.wait()?;
-                }
-            },
+            Some(old_fence_arc) => _ = old_fence_arc.wait()?,
             None => (),
         }
 
-        Ok(frame_index % self.framebuffers.len())
+        Ok(frame_index % (self.framebuffers.len() - 1))
     }
 
     pub fn accquire_next_image(&self, frame_index: usize) -> Result<u32, SwapchainAccquireNextImageError> {

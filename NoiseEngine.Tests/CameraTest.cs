@@ -17,7 +17,7 @@ public class CameraTest : ApplicationTestEnvironment {
         ExecuteOnAllDevices(scene => {
             Camera camera = new Camera(scene) {
                 RenderTarget = window,
-                RenderLoop = new PerformanceRenderLoop() { FramesInFlight = 1 },
+                RenderLoop = new PerformanceRenderLoop() { FramesInFlight = 5 },
                 ClearColor = Color.Random
             };
 
