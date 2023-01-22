@@ -208,13 +208,29 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
     pub fn recreate(&self, image_count: Option<u32>) -> Result<(), VulkanUniversalError> {
         let old_dynamic = self.dynamic.get();
 
-        // Lock mutex.
-        let _lock = self.lock_pass_creation_mutex()?;
-        let _swapchain_lock = self.shared.lock_ash_swapchain()?;
+        // Lock pass creation mutex.
+        let _pass_creation_lock = self.lock_pass_creation_mutex()?;
 
+        // Check if swapchain was recreated after pass creation lock.
         if !Arc::ptr_eq(&old_dynamic, &self.dynamic.get()) {
             return Ok(())
         }
+
+        // Wait to frames in flight ends.
+        match self.pass.set(None) {
+            Some(pass) => {
+                for fence in &pass.in_flight_fences {
+                    match Weak::upgrade(&fence.get()) {
+                        Some(f) => _ = f.wait(),
+                        None => (),
+                    }
+                }
+            },
+            None => (),
+        };
+
+        // Lock swapchain mutex.
+        let _swapchain_lock = self.shared.lock_ash_swapchain()?;
 
         let initialized = self.device.initialized()?;
         let support = SwapchainSupport::new(&self.shared)?;

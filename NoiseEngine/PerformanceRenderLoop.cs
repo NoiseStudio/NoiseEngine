@@ -18,7 +18,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
     private uint rendererSignaler;
 
     private uint framesInFlight = 1;
-    private uint? executionThreadCount = 5;
+    private uint? executionThreadCount = 16;
 
     public uint FramesInFlight {
         get => framesInFlight;
