@@ -1,4 +1,6 @@
-﻿using NoiseEngine.Rendering;
+﻿using NoiseEngine.Interop.Rendering.Presentation;
+using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.Buffers;
 using System;
 
 namespace NoiseEngine;
@@ -35,6 +37,24 @@ public class Camera : SimpleCamera {
 
     public Camera(ApplicationScene scene) : base(scene.GraphicsDevice) {
         Scene = scene;
+    }
+
+    /// <summary>
+    /// Renders frame manually.
+    /// </summary>
+    public void Render() {
+        if (RenderTarget is Window window) {
+            lock (window.PoolEventsLocker)
+                WindowInterop.PoolEvents(window.Handle);
+        }
+
+        GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(GraphicsDevice, false);
+
+        commandBuffer.AttachCameraUnchecked(this);
+        commandBuffer.DetachCameraUnchecked();
+
+        commandBuffer.Execute();
+        commandBuffer.Clear();
     }
 
     private protected override void RaiseRenderTargetSet(ICameraRenderTarget? newRenderTarget) {
