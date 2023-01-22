@@ -14,7 +14,7 @@ extern "C" fn rendering_presentation_window_interop_create(
 ) -> InteropResult<Box<Arc<dyn Window>>> {
     #[cfg(target_os = "windows")]
     match crate::rendering::presentation::windows::window::WindowWindows::new(
-        id, String::from(title).as_str(), width, height, settings
+        id, String::from(title), width, height, settings
     ) {
         Ok(w) => return InteropResult::with_ok(Box::new(w)),
         Err(err) => return InteropResult::with_err(err.into())
@@ -27,8 +27,11 @@ extern "C" fn rendering_presentation_window_interop_create(
 }
 
 #[no_mangle]
-extern "C" fn rendering_presentation_window_interop_destroy(handle: Box<Arc<dyn Window>>) {
-    handle.hide();
+extern "C" fn rendering_presentation_window_interop_destroy(handle: Box<Arc<dyn Window>>) -> InteropResult<()> {
+    match handle.dispose() {
+        Ok(r) => InteropResult::with_ok(r),
+        Err(err) => InteropResult::with_err(err.into()),
+    }
 }
 
 #[no_mangle]

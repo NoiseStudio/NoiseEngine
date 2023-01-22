@@ -137,10 +137,12 @@ public sealed class PerformanceRenderLoop : RenderLoop {
         AutoResetEvent rendererResetEvent = this.rendererResetEvent ?? throw new NullReferenceException();
         AutoResetEvent executeResetEvent = this.executeResetEvent ?? throw new NullReferenceException();
         ConcurrentStack<GraphicsCommandBuffer> commandBuffers = this.commandBuffers;
+        object poolEventsLocker = window.PoolEventsLocker;
 
         try {
             while (renderThreadWork) {
-                WindowInterop.PoolEvents(window.Handle);
+                lock (poolEventsLocker)
+                    WindowInterop.PoolEvents(window.Handle);
 
                 if (rendererSignaler == 0)
                     rendererResetEvent.WaitOne();

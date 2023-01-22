@@ -22,6 +22,7 @@ public class Window : IDisposable, ICameraRenderTarget {
 
     internal ulong Id { get; }
     internal InteropHandle<Window> Handle { get; }
+    internal object PoolEventsLocker { get; } = new object();
 
     TextureUsage ICameraRenderTarget.Usage => TextureUsage.ColorAttachment;
     Vector3<uint> ICameraRenderTarget.Extent => new Vector3<uint>(Width, Height, 0);
@@ -76,8 +77,10 @@ public class Window : IDisposable, ICameraRenderTarget {
             return;
 
         WindowEventHandler.UnregisterWindow(Id);
-        WindowInterop.Destroy(Handle);
+
         GC.SuppressFinalize(this);
+        if (!WindowInterop.Destroy(Handle).TryGetValue(out _, out ResultError error))
+            error.ThrowAndDispose();
     }
 
     internal void RaiseUserClosed() {

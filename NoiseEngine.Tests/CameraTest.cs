@@ -26,7 +26,6 @@ public class CameraTest : ApplicationTestEnvironment {
             //uint x = 10;
             while (!window.IsDisposed) {
                 //camera.ClearColor = Color.Random;
-                WindowInterop.PoolEvents(window.Handle);
 
                 /*if (x < 1920) {
                     WindowInterop.SetPosition(window.Handle, null, new Vector2<uint>(x++, 720));
