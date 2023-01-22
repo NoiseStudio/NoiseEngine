@@ -6,6 +6,8 @@ namespace NoiseEngine.Rendering;
 
 public class SimpleCamera {
 
+    private readonly object renderTargetLocker = new object();
+
     private CameraClearFlags clearFlags = CameraClearFlags.SolidColor;
     private Color clearColor = new Color(0.26666f, 0.45882f, 0.87058f);
     private ICameraRenderTarget? renderTarget;
@@ -36,15 +38,22 @@ public class SimpleCamera {
     public ICameraRenderTarget? RenderTarget {
         get => renderTarget;
         set {
+            if (renderTarget == value)
+                return;
             AssertRenderTarget(value);
 
-            renderTarget = value;
-            IsDirty = true;
+            lock (renderTargetLocker) {
+                if (value is Window window)
+                    window.ChangeAssignedCamera(this);
 
-            if (value is null)
-                Delegation.ClearRenderTarget();
+                RaiseRenderTargetSet(value);
 
-            RaiseRenderTargetSet(value);
+                if (value is null)
+                    Delegation.ClearRenderTarget();
+
+                renderTarget = value;
+                IsDirty = true;
+            }
         }
     }
 

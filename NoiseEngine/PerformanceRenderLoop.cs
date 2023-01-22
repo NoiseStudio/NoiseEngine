@@ -165,12 +165,9 @@ public sealed class PerformanceRenderLoop : RenderLoop {
             Log.Error($"Thread terminated due to an exception. {exception}");
             throw;
         } finally {
-            Interlocked.Exchange(ref currentCommandBuffer, null);
-
-            for (int i = 0; i < executeThreadWork.Length; i++) {
+            for (int i = 0; i < executeThreadWork.Length; i++)
                 executeThreadWork[i] = false;
-                executeResetEvent.Set();
-            }
+            Interlocked.Exchange(ref currentCommandBuffer, null);
 
             while (executeWorkingThreadCount != 0) {
                 for (int i = 0; i < executeThreadWork.Length; i++)
@@ -206,7 +203,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
 
                 GraphicsCommandBuffer? current = Interlocked.Exchange(ref currentCommandBuffer, null);
                 if (current is null) {
-                    if (!executeThreadWork[id])
+                    if (executeThreadWork[id])
                         throw new InvalidOperationException("Frame was omitted.");
                     else
                         break;

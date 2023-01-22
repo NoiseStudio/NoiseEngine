@@ -1,9 +1,6 @@
-﻿using NoiseEngine.Interop.Rendering.Presentation;
-using NoiseEngine.Mathematics;
-using NoiseEngine.Rendering;
+﻿using NoiseEngine.Rendering;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
-using System.Threading;
 
 namespace NoiseEngine.Tests;
 

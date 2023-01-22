@@ -14,7 +14,10 @@ public class Window : IDisposable, ICameraRenderTarget {
 
     private static ulong nextId;
 
+    private readonly object assignedCameraLocker = new object();
+
     private AtomicBool isDisposed;
+    private SimpleCamera? assignedCamera;
 
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
@@ -81,6 +84,14 @@ public class Window : IDisposable, ICameraRenderTarget {
         GC.SuppressFinalize(this);
         if (!WindowInterop.Destroy(Handle).TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
+    }
+
+    internal void ChangeAssignedCamera(SimpleCamera? camera) {
+        lock (assignedCameraLocker) {
+            if (assignedCamera is not null)
+                assignedCamera.RenderTarget = null;
+            assignedCamera = camera;
+        }
     }
 
     internal void RaiseUserClosed() {
