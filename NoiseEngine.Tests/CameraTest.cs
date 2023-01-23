@@ -10,7 +10,7 @@ public class CameraTest : ApplicationTestEnvironment {
     public CameraTest(ApplicationFixture fixture) : base(fixture) {
     }
 
-    [FactRequire(TestRequirements.Graphics)]
+    [FactRequire(TestRequirements.Gui | TestRequirements.Graphics)]
     public void RenderToWindow() {
         Window window = Fixture.GetWindow(nameof(RenderToWindow));
         ExecuteOnAllDevices(scene => {
