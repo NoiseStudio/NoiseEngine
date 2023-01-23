@@ -364,7 +364,7 @@ impl Window for WindowWindows {
     fn set_position(
         &self, position: Option<Vector2<i32>>, size: Option<Vector2<u32>>
     ) -> Result<(), PlatformUniversalError> {
-        let mut flags = 0x0004; // SWP_NOZORDER
+        let mut flags = 0x0004 | 0x4000; // SWP_NOZORDER | SWP_ASYNCWINDOWPOS
 
         let x;
         let y;

@@ -103,7 +103,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
                 is_old: Cell::new(false),
                 inner: unsafe { mem::zeroed() },
                 extent: vk::Extent2D::default(),
-                min_image_count: 0,
+                used_min_image_count: 0,
                 image_views: Vec::with_capacity(0),
                 image_available_semaphores: Vec::with_capacity(0),
                 render_finished_semaphores: Vec::with_capacity(0),
@@ -154,10 +154,10 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
     }
 
     pub fn change_min_image_count(&self, target_count: u32) -> Result<u32, VulkanUniversalError> {
-        if target_count != self.dynamic.get().min_image_count {
+        if target_count != self.dynamic.get().used_min_image_count {
             self.recreate(Some(target_count))?;
         }
-        Ok(self.dynamic.get().min_image_count)
+        Ok(self.dynamic.get().used_min_image_count)
     }
 
     pub fn get_swapchain_pass(
@@ -242,7 +242,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
         let min_image_count = match image_count {
             Some(c) => c,
-            None => self.dynamic.get().min_image_count,
+            None => self.dynamic.get().used_min_image_count,
         };
         let used_min_image_count = support.get_supported_image_count(min_image_count);
 
@@ -274,13 +274,13 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             self.shared.ash_swapchain.create_swapchain(&create_info, None)
         }?;
 
-        self.create_dynamic(inner, create_info.image_extent, used_min_image_count)?;
+        self.create_dynamic(inner, create_info.image_extent, support, used_min_image_count)?;
 
         Ok(())
     }
 
     fn create_dynamic(
-        &self, inner: vk::SwapchainKHR, extent: vk::Extent2D, min_image_count: u32
+        &self, inner: vk::SwapchainKHR, extent: vk::Extent2D, support: SwapchainSupport, used_min_image_count: u32
     ) -> Result<(), VulkanUniversalError> {
         // Images.
         let images = unsafe {
@@ -296,7 +296,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         let initialized = self.device().initialized()?;
         let old_dynamic = self.dynamic.get();
 
-        let semaphores_length = image_views.len() - 1;
+        let semaphores_length = image_views.len() - support.capabilities.min_image_count as usize + 1;
         let mut image_available_semaphores = Vec::with_capacity(semaphores_length);
         let mut render_finished_semaphores = Vec::with_capacity(semaphores_length);
 
@@ -318,7 +318,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             is_old: Cell::new(false),
             inner,
             extent,
-            min_image_count,
+            used_min_image_count,
             image_views,
             image_available_semaphores,
             render_finished_semaphores,
@@ -421,7 +421,7 @@ struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
     is_old: Cell<bool>,
     inner: vk::SwapchainKHR,
     extent: vk::Extent2D,
-    min_image_count: u32,
+    used_min_image_count: u32,
     image_views: Vec<Arc<SwapchainImageView<'init>>>,
     image_available_semaphores: Vec<Arc<VulkanSemaphore<'init>>>,
     render_finished_semaphores: Vec<Arc<VulkanSemaphore<'init>>>

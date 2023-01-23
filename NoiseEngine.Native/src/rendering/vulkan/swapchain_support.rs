@@ -5,8 +5,8 @@ use ash::vk;
 use super::{errors::universal::VulkanUniversalError, swapchain::SwapchainShared};
 
 pub struct SwapchainSupport<'init: 'fam, 'fam> {
-    shared: Arc<SwapchainShared<'init, 'fam>>,
-    capabilities: vk::SurfaceCapabilitiesKHR
+    pub capabilities: vk::SurfaceCapabilitiesKHR,
+    shared: Arc<SwapchainShared<'init, 'fam>>
 }
 
 impl<'init: 'fam, 'fam> SwapchainSupport<'init, 'fam> {

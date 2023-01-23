@@ -55,6 +55,7 @@ public class ApplicationFixture : IDisposable {
     }
 
     internal Window GetWindow(string title, uint? width = null, uint? height = null) {
+        //return new Window(title, width ?? 1280, height ?? 720);
         if (window is null) {
             window = new Window(title, width ?? 1280, height ?? 720);
         } else {
