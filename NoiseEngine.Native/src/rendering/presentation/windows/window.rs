@@ -1,6 +1,6 @@
 use std::{
     ptr, sync::{Arc, Weak, atomic::{AtomicBool, Ordering}}, cell::{UnsafeCell, Cell},
-    thread::{self, JoinHandle, ThreadId}, mem, any::Any
+    thread::{self, JoinHandle, ThreadId}, mem
 };
 
 use ash::{vk, extensions::khr};
@@ -53,8 +53,7 @@ pub struct WindowWindows {
     thread_join_handle: Cell<Option<JoinHandle<()>>>,
     thread_task_queue: SegQueue<(WindowWindowsThreadTask, Option<Arc<AutoResetEvent>>)>,
     thread_reset_event: AutoResetEvent,
-    data: UnsafeCell<WindowWindowsData>,
-    storage: Cell<Option<Box<dyn Any>>>
+    data: UnsafeCell<WindowWindowsData>
 }
 
 impl WindowWindows {
@@ -142,8 +141,7 @@ impl WindowWindows {
             thread_join_handle: Cell::new(None),
             thread_task_queue: SegQueue::new(),
             thread_reset_event: AutoResetEvent::new(EventState::Unset),
-            data: UnsafeCell::new(WindowWindowsData { width, height, settings }),
-            storage: Cell::new(None),
+            data: UnsafeCell::new(WindowWindowsData { width, height, settings })
         });
 
         let reference = unsafe {
@@ -408,10 +406,6 @@ impl Window for WindowWindows {
         } else {
             Ok(())
         }
-    }
-
-    fn set_storage(&self, object: Box<dyn Any>) {
-        self.storage.set(Some(object));
     }
 
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
