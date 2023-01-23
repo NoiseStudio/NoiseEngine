@@ -15,7 +15,6 @@ public abstract class ApplicationTestEnvironment : GraphicsTestEnvironment {
         foreach (GraphicsDevice device in GraphicsDevices) {
             using ApplicationScene scene = new ApplicationScene() { GraphicsDevice = device };
             executor(scene);
-            return;
         }
     }
 
