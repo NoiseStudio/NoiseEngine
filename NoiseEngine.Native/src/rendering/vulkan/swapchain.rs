@@ -1,10 +1,13 @@
-use std::{ptr, sync::{Arc, Mutex, MutexGuard, Weak, atomic::{AtomicUsize, Ordering}}, mem, cmp, cell::Cell, rc::Rc};
+use std::{
+    ptr, sync::{Arc, Mutex, MutexGuard, Weak, atomic::{AtomicUsize, Ordering}}, mem::{self, ManuallyDrop}, cmp,
+    cell::Cell, rc::Rc, ops::Deref
+};
 
 use arc_cell::{AtomicCell, ArcCell, WeakCell};
 use ash::{vk, extensions::khr};
 
 use crate::{
-    rendering::errors::window_not_supported::WindowNotSupportedError, errors::invalid_operation::InvalidOperationError
+    rendering::{errors::window_not_supported::WindowNotSupportedError}, errors::invalid_operation::InvalidOperationError
 };
 
 use super::{
@@ -31,11 +34,12 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
     ) -> Result<Arc<Self>, VulkanUniversalError> {
         let instance = device.instance();
         let initialized = device.initialized()?;
-        let ash_surface = khr::Surface::new(instance.library(), instance.inner());
 
         // Format.
         let available_formats = unsafe {
-            ash_surface.get_physical_device_surface_formats(device.physical_device(), surface.inner())
+            surface.ash_surface().get_physical_device_surface_formats(
+                device.physical_device(), surface.inner()
+            )
         }?;
 
         if available_formats.is_empty() {
@@ -48,7 +52,9 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
         // Present modes.
         let available_present_modes = unsafe {
-            ash_surface.get_physical_device_surface_present_modes(device.physical_device(), surface.inner())
+            surface.ash_surface().get_physical_device_surface_present_modes(
+                device.physical_device(), surface.inner()
+            )
         }?;
 
         if available_present_modes.is_empty() {
@@ -67,7 +73,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         //          This ensures that the compute family is used for this example GPU.
         for family in initialized.get_families().iter().rev() {
             let supports = unsafe {
-                ash_surface.get_physical_device_surface_support(
+                surface.ash_surface().get_physical_device_surface_support(
                     device.physical_device(), family.index(), surface.inner()
                 )
             }?;
@@ -87,7 +93,6 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 
         // Construct.
         let shared = Arc::new(SwapchainShared {
-            ash_surface,
             device: device.clone(),
             swapchain: Weak::default(),
             surface,
@@ -104,7 +109,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
                 inner: unsafe { mem::zeroed() },
                 extent: vk::Extent2D::default(),
                 used_min_image_count: 0,
-                image_views: Vec::with_capacity(0),
+                image_views: ManuallyDrop::new(Vec::with_capacity(0)),
                 image_available_semaphores: Vec::with_capacity(0),
                 render_finished_semaphores: Vec::with_capacity(0),
             })),
@@ -319,7 +324,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             inner,
             extent,
             used_min_image_count,
-            image_views,
+            image_views: ManuallyDrop::new(image_views),
             image_available_semaphores,
             render_finished_semaphores,
         }));
@@ -347,7 +352,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         let dynamic = self.dynamic.get();
 
         let mut framebuffers = Vec::with_capacity(dynamic.image_views.len());
-        for image_view in &dynamic.image_views {
+        for image_view in dynamic.image_views.deref() {
             framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent)?);
         }
 
@@ -373,7 +378,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         let new_pass = Arc::new(SwapchainPass {
             shared: self.shared.clone(),
             dynamic,
-            framebuffers,
+            framebuffers: ManuallyDrop::new(framebuffers),
             in_flight_fences,
             frame_index: AtomicUsize::new(frame_index),
             render_pass: render_pass.clone(),
@@ -398,16 +403,27 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
 }
 
 pub struct SwapchainShared<'init: 'fam, 'fam> {
-    pub ash_surface: khr::Surface,
-    pub device: Arc<VulkanDevice<'init>>,
-    pub surface: VulkanSurface,
+    queue_family: &'fam VulkanQueueFamily<'init>,
+    device: Arc<VulkanDevice<'init>>,
+    surface: VulkanSurface,
     swapchain: Weak<Swapchain<'init, 'fam>>,
     ash_swapchain: khr::Swapchain,
     ash_swapchain_mutex: Mutex<()>,
-    queue_family: &'fam VulkanQueueFamily<'init>,
 }
 
 impl<'init: 'fam, 'fam> SwapchainShared<'init, 'fam> {
+    pub fn device(&self) -> &Arc<VulkanDevice<'init>> {
+        &self.device
+    }
+
+    pub fn surface(&self) -> &VulkanSurface {
+        &self.surface
+    }
+
+    pub fn swapchain(&self) -> &Weak<Swapchain<'init, 'fam>> {
+        &self.swapchain
+    }
+
     pub fn lock_ash_swapchain(&self) -> Result<MutexGuard<()>, InvalidOperationError>  {
         match self.ash_swapchain_mutex.lock() {
             Ok(l) => Ok(l),
@@ -422,7 +438,7 @@ struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
     inner: vk::SwapchainKHR,
     extent: vk::Extent2D,
     used_min_image_count: u32,
-    image_views: Vec<Arc<SwapchainImageView<'init>>>,
+    image_views: ManuallyDrop<Vec<Arc<SwapchainImageView<'init>>>>,
     image_available_semaphores: Vec<Arc<VulkanSemaphore<'init>>>,
     render_finished_semaphores: Vec<Arc<VulkanSemaphore<'init>>>
 }
@@ -430,7 +446,8 @@ struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
 impl Drop for SwapchainSharedDynamic<'_, '_> {
     fn drop(&mut self) {
         unsafe {
-            self.shared.ash_swapchain.destroy_swapchain(self.inner, None)
+            ManuallyDrop::drop(&mut self.image_views);
+            self.shared.ash_swapchain.destroy_swapchain(self.inner, None);
         }
     }
 }
@@ -438,7 +455,7 @@ impl Drop for SwapchainSharedDynamic<'_, '_> {
 pub struct SwapchainPass<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
     dynamic: Arc<SwapchainSharedDynamic<'init, 'fam>>,
-    framebuffers: Vec<SwapchainFramebuffer<'init>>,
+    framebuffers: ManuallyDrop<Vec<SwapchainFramebuffer<'init>>>,
     in_flight_fences: Vec<Rc<WeakCell<VulkanSynchronizedFence<'init>>>>,
     frame_index: AtomicUsize,
     render_pass: Arc<RenderPass<'init>>
@@ -523,5 +540,20 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
 
     pub fn present_family(&self) -> &'fam VulkanQueueFamily<'init> {
         self.shared.queue_family
+    }
+}
+
+impl Drop for SwapchainPass<'_, '_> {
+    fn drop(&mut self) {
+        for fence in &self.in_flight_fences {
+            match Weak::upgrade(&fence.get()) {
+                Some(arc) => _ = arc.wait(),
+                None => (),
+            }
+        }
+
+        unsafe {
+            ManuallyDrop::drop(&mut self.framebuffers);
+        }
     }
 }

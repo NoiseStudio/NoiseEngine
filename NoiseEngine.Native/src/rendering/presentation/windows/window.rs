@@ -1,6 +1,6 @@
 use std::{
     ptr, sync::{Arc, Weak, atomic::{AtomicBool, Ordering}}, cell::{UnsafeCell, Cell},
-    thread::{self, JoinHandle, ThreadId}, mem
+    thread::{self, JoinHandle, ThreadId}, mem, any::Any
 };
 
 use ash::{vk, extensions::khr};
@@ -53,7 +53,8 @@ pub struct WindowWindows {
     thread_join_handle: Cell<Option<JoinHandle<()>>>,
     thread_task_queue: SegQueue<(WindowWindowsThreadTask, Option<Arc<AutoResetEvent>>)>,
     thread_reset_event: AutoResetEvent,
-    data: UnsafeCell<WindowWindowsData>
+    data: UnsafeCell<WindowWindowsData>,
+    storage: Cell<Option<Box<dyn Any>>>
 }
 
 impl WindowWindows {
@@ -141,7 +142,8 @@ impl WindowWindows {
             thread_join_handle: Cell::new(None),
             thread_task_queue: SegQueue::new(),
             thread_reset_event: AutoResetEvent::new(EventState::Unset),
-            data: UnsafeCell::new(WindowWindowsData { width, height, settings })
+            data: UnsafeCell::new(WindowWindowsData { width, height, settings }),
+            storage: Cell::new(None),
         });
 
         let reference = unsafe {
@@ -408,6 +410,10 @@ impl Window for WindowWindows {
         }
     }
 
+    fn set_storage(&self, object: Box<dyn Any>) {
+        self.storage.set(Some(object));
+    }
+
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
         let create_info = vk::Win32SurfaceCreateInfoKHR {
             s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
@@ -427,7 +433,10 @@ impl Window for WindowWindows {
             None => return Err(NullReferenceError::with_str("WindowWindows weak is null.").into()),
         };
 
-        Ok(VulkanSurface::new(instance.clone(), window_arc, inner))
+        Ok(VulkanSurface::new(
+            instance.clone(), window_arc, inner,
+            khr::Surface::new(instance.library(), instance.inner())
+        ))
     }
 
     fn dispose(&self) -> Result<(), PlatformUniversalError> {

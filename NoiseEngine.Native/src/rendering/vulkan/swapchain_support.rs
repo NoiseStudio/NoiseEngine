@@ -12,8 +12,8 @@ pub struct SwapchainSupport<'init: 'fam, 'fam> {
 impl<'init: 'fam, 'fam> SwapchainSupport<'init, 'fam> {
     pub fn new(shared: &Arc<SwapchainShared<'init, 'fam>>) -> Result<Self, VulkanUniversalError> {
         let capabilities = unsafe {
-            shared.ash_surface.get_physical_device_surface_capabilities(
-                shared.device.physical_device(), shared.surface.inner()
+            shared.surface().ash_surface().get_physical_device_surface_capabilities(
+                shared.device().physical_device(), shared.surface().inner()
             )
         }?;
 
@@ -38,7 +38,7 @@ impl<'init: 'fam, 'fam> SwapchainSupport<'init, 'fam> {
             return self.capabilities.current_extent
         }
 
-        let actual_extent = self.shared.surface.window().get_vulkan_extent();
+        let actual_extent = self.shared.surface().window().get_vulkan_extent();
 
         vk::Extent2D {
             width: cmp::min(

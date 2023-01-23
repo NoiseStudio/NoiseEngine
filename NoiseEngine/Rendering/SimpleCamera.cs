@@ -49,10 +49,10 @@ public class SimpleCamera {
                 RaiseRenderTargetSet(value);
 
                 if (value is null)
-                    Delegation.ClearRenderTarget();
+                    Delegation.RaiseRenderTargetSet(value);
 
-                renderTarget = value;
                 IsDirty = true;
+                renderTarget = value;
             }
         }
     }

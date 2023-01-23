@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, any::Any};
 
 use ash::vk;
 use cgmath::Vector2;
@@ -18,8 +18,9 @@ pub trait Window {
     ) -> Result<(), PlatformUniversalError>;
     fn dispose(&self) -> Result<(), PlatformUniversalError>;
 
-    fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError>;
+    fn set_storage(&self, object: Box<dyn Any>);
 
+    fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError>;
     fn get_vulkan_extent(&self) -> vk::Extent2D {
         vk::Extent2D {
             width: self.get_width(),

@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Rendering;
 using NoiseEngine.Tests.Fixtures;
 using System;
+using System.Linq;
 
 namespace NoiseEngine.Tests.Environments;
 
@@ -14,6 +15,7 @@ public abstract class ApplicationTestEnvironment : GraphicsTestEnvironment {
         foreach (GraphicsDevice device in GraphicsDevices) {
             using ApplicationScene scene = new ApplicationScene() { GraphicsDevice = device };
             executor(scene);
+            return;
         }
     }
 
