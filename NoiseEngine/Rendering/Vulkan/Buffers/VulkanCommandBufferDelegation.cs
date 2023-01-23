@@ -28,8 +28,8 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
         writer.WriteUInt32(groupCount.Z);
     }
 
-    public override void AttachCameraWorker(Camera camera) {
-        VulkanCameraDelegation cameraDelegation = (VulkanCameraDelegation)camera.Delegation;
+    public override void AttachCameraWorker(SimpleCamera camera) {
+        VulkanSimpleCameraDelegation cameraDelegation = (VulkanSimpleCameraDelegation)camera.Delegation;
         RenderPass renderPass = cameraDelegation.RenderPass;
 
         if (renderPass is WindowRenderPass window) {

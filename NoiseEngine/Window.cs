@@ -14,7 +14,10 @@ public class Window : IDisposable, ICameraRenderTarget {
 
     private static ulong nextId;
 
+    private readonly object assignedCameraLocker = new object();
+
     private AtomicBool isDisposed;
+    private SimpleCamera? assignedCamera;
 
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
@@ -22,6 +25,7 @@ public class Window : IDisposable, ICameraRenderTarget {
 
     internal ulong Id { get; }
     internal InteropHandle<Window> Handle { get; }
+    internal object PoolEventsLocker { get; } = new object();
 
     TextureUsage ICameraRenderTarget.Usage => TextureUsage.ColorAttachment;
     Vector3<uint> ICameraRenderTarget.Extent => new Vector3<uint>(Width, Height, 0);
@@ -59,7 +63,8 @@ public class Window : IDisposable, ICameraRenderTarget {
             return;
 
         WindowEventHandler.UnregisterWindow(Id);
-        WindowInterop.Destroy(Handle);
+        if (!WindowInterop.Destroy(Handle).TryGetValue(out _, out ResultError error))
+            error.ThrowAndDispose();
     }
 
     internal static WindowApi GetWindowApi() {
@@ -76,8 +81,27 @@ public class Window : IDisposable, ICameraRenderTarget {
             return;
 
         WindowEventHandler.UnregisterWindow(Id);
-        WindowInterop.Destroy(Handle);
+
         GC.SuppressFinalize(this);
+        if (!WindowInterop.Destroy(Handle).TryGetValue(out _, out ResultError error))
+            error.ThrowAndDispose();
+    }
+
+    /// <summary>
+    /// Resizes this <see cref="Window"/>.
+    /// </summary>
+    /// <param name="width">New width.</param>
+    /// <param name="height">New height.</param>
+    public void Resize(uint width, uint height) {
+        WindowInterop.SetPosition(Handle, null, new Vector2<uint>(width, height));
+    }
+
+    internal void ChangeAssignedCamera(SimpleCamera? camera) {
+        lock (assignedCameraLocker) {
+            if (assignedCamera is not null)
+                assignedCamera.RenderTarget = null;
+            assignedCamera = camera;
+        }
     }
 
     internal void RaiseUserClosed() {

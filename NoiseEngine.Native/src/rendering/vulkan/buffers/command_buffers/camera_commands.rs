@@ -5,24 +5,29 @@ use ash::vk;
 use crate::{
     rendering::vulkan::{
         buffers::command_buffer::VulkanCommandBuffer, render_pass::RenderPass, framebuffer::Framebuffer,
-        swapchain::{Swapchain, SwapchainPass}, errors::universal::VulkanUniversalError
+        swapchain::{Swapchain, SwapchainPass}, errors::universal::VulkanUniversalError,
+        synchronized_fence::VulkanSynchronizedFence, fence::VulkanFence
     },
     serialization::reader::SerializationReader
 };
 
 pub struct AttachCameraWindowOutput<'init: 'fam, 'fam> {
     pub pass: Arc<SwapchainPass<'init, 'fam>>,
+    pub synchronized_fence: Arc<VulkanSynchronizedFence<'init>>,
+    pub frame_index: usize,
     pub image_index: u32
 }
 
 pub fn attach_camera_window<'init: 'fam, 'fam>(
-    data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
+    data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device,
+    used_fence: &Arc<VulkanFence<'init>>
 ) -> Result<AttachCameraWindowOutput<'init, 'fam>, VulkanUniversalError> {
     let render_pass = data.read_unchecked::<&Arc<RenderPass>>();
     let swapchain = data.read_unchecked::<&Arc<Swapchain>>();
 
-    let (pass, image_index) =
-        swapchain.get_swapchain_pass_and_accquire_next_image(render_pass)?;
+    let (
+        pass, synchronized_fence, frame_index, image_index
+    ) = swapchain.get_swapchain_pass_and_accquire_next_image(render_pass, &used_fence)?;
     let framebuffer = pass.get_framebuffer(image_index);
 
     attach_camera_worker(
@@ -30,7 +35,7 @@ pub fn attach_camera_window<'init: 'fam, 'fam>(
         framebuffer.extent()
     );
 
-    Ok(AttachCameraWindowOutput { pass, image_index })
+    Ok(AttachCameraWindowOutput { pass, synchronized_fence, frame_index, image_index })
 }
 
 pub fn attach_camera_texture(

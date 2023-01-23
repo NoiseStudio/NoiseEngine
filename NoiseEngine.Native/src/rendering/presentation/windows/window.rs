@@ -1,13 +1,19 @@
-use std::{ptr, sync::{Arc, Weak}, cell::UnsafeCell};
+use std::{
+    ptr, sync::{Arc, Weak, atomic::{AtomicBool, Ordering}}, cell::{UnsafeCell, Cell},
+    thread::{self, JoinHandle, ThreadId}, mem
+};
 
 use ash::{vk, extensions::khr};
+use cgmath::Vector2;
+use crossbeam_queue::SegQueue;
 use libc::{c_void, wchar_t};
+use rsevents::{ManualResetEvent, EventState, Awaitable, AutoResetEvent};
 use uuid::Uuid;
 
 use crate::{
     errors::{
         platform::{windows::win32::Win32Error, platform_universal::PlatformUniversalError},
-        null_reference::NullReferenceError
+        null_reference::NullReferenceError, invalid_operation::InvalidOperationError
     },
     logging::log,
     rendering::{
@@ -16,7 +22,7 @@ use crate::{
             window_event_handler::WindowEventHandler
         },
         vulkan::{surface::VulkanSurface, instance::VulkanInstance, errors::universal::VulkanUniversalError}
-    }, platform::windows::rect::Rect
+    }, platform::windows::rect::Rect, common::send_ptr::{SendPtrMut, SendPtr}
 };
 
 use super::{wnd_class_w::WndClassW, msg::Msg};
@@ -41,13 +47,70 @@ pub struct WindowWindows {
     weak: Weak<Self>,
     h_wnd: *mut c_void,
     class_name: Vec<u16>,
+    h_instance: *mut c_void,
+    thread_id: ThreadId,
+    thread_work: AtomicBool,
+    thread_join_handle: Cell<Option<JoinHandle<()>>>,
+    thread_task_queue: SegQueue<(WindowWindowsThreadTask, Option<Arc<AutoResetEvent>>)>,
+    thread_reset_event: AutoResetEvent,
     data: UnsafeCell<WindowWindowsData>
 }
 
 impl WindowWindows {
     pub fn new(
-        id: u64, title: &str, width: u32, height: u32, settings: WindowSettings
+        id: u64, title: String, width: u32, height: u32, settings: WindowSettings
     ) -> Result<Arc<dyn Window>, PlatformUniversalError> {
+        let mut result = unsafe { mem::zeroed() };
+        let reset_event = ManualResetEvent::new(EventState::Unset);
+
+        let result_ptr = SendPtrMut(&mut result);
+        let reset_event_ptr = SendPtr(&reset_event);
+        let join_handle = match thread::Builder::new().name(
+            format!("Window {{ Id = {id} }}")
+        ).spawn(move || {
+            {
+                let result =
+                    Self::new_worker(id, title, width, height, settings);
+
+                let _ = &result_ptr;
+                unsafe {
+                    ptr::copy(&result, result_ptr.0, 1)
+                };
+
+                let _ = &reset_event_ptr;
+                unsafe {
+                    reset_event_ptr.0.as_ref()
+                }.unwrap().set();
+
+                match result {
+                    Ok(w) => {
+                        mem::forget(w.clone());
+                        w
+                    },
+                    Err(_) => {
+                        mem::forget(result);
+                        return
+                    },
+                }
+            }.thread_worker();
+        }) {
+            Ok(j) => j,
+            Err(_) => return Err(InvalidOperationError::with_str("Unable to create window thread.").into()),
+        };
+
+        reset_event.wait();
+        match result {
+            Ok(window) => {
+                window.thread_join_handle.set(Some(join_handle));
+                Ok(window)
+            },
+            Err(err) => Err(err),
+        }
+    }
+
+    fn new_worker(
+        id: u64, title: String, width: u32, height: u32, settings: WindowSettings
+    ) -> Result<Arc<Self>, PlatformUniversalError> {
         let h_instance = unsafe {
             GetModuleHandleW(ptr::null_mut())
         };
@@ -72,6 +135,12 @@ impl WindowWindows {
             weak: Weak::default(),
             h_wnd: ptr::null_mut(),
             class_name,
+            h_instance,
+            thread_id: thread::current().id(),
+            thread_work: AtomicBool::new(true),
+            thread_join_handle: Cell::new(None),
+            thread_task_queue: SegQueue::new(),
+            thread_reset_event: AutoResetEvent::new(EventState::Unset),
             data: UnsafeCell::new(WindowWindowsData { width, height, settings })
         });
 
@@ -81,9 +150,14 @@ impl WindowWindows {
         reference.weak = Arc::downgrade(&arc);
 
         // Create window.
-        let adjust = reference.get_adjust()?;
+        let adjust = reference.get_adjust(Rect {
+            left: 0,
+            top: 0,
+            right: reference.get_width() as i32,
+            bottom: reference.get_height() as i32,
+        })?;
         let (position_x, position_y) = reference.get_winapi_position(&adjust);
-        let wide_title = wide_null(title).as_ptr();
+        let wide_title = wide_null(title.as_str()).as_ptr();
 
         reference.h_wnd = unsafe {
             CreateWindowExW(
@@ -114,12 +188,6 @@ impl WindowWindows {
         Ok(arc)
     }
 
-    fn get_h_instance() -> *mut c_void {
-        unsafe {
-            GetModuleHandleW(ptr::null_mut())
-        }
-    }
-
     // https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
     fn get_window_style(&self) -> u32 {
         let settings = self.data().settings;
@@ -147,14 +215,7 @@ impl WindowWindows {
         result
     }
 
-    fn get_adjust(&self) -> Result<Rect, Win32Error> {
-        let rect = Rect {
-            left: 0,
-            top: 0,
-            right: self.get_width() as i32,
-            bottom: self.get_height() as i32,
-        };
-
+    fn get_adjust(&self, rect: Rect) -> Result<Rect, Win32Error> {
         let result = unsafe {
             AdjustWindowRectEx(&rect, self.get_window_style(), 0, 0)
         };
@@ -193,38 +254,56 @@ impl WindowWindows {
     fn data_mut(&self) -> &mut WindowWindowsData {
         unsafe { &mut *self.data.get() }
     }
-}
 
-impl Drop for WindowWindows {
-    fn drop(&mut self) {
-        let mut result = unsafe {
-            DestroyWindow(self.h_wnd)
-        };
+    fn execute_task(&self, task: WindowWindowsThreadTask) {
+        self.thread_task_queue.push((task, None));
+        self.thread_reset_event.set();
+    }
 
-        if result == 0 {
-            log::error(Win32Error::get_last().to_string().as_str());
+    fn execute_task_wait(&self, task: WindowWindowsThreadTask) {
+        if self.thread_id == thread::current().id() {
+            self.thread_worker_task_invoker(task, None);
+            return;
         }
 
-        result = unsafe {
-            UnregisterClassW(self.class_name.as_ptr(), Self::get_h_instance())
-        };
+        let reset_event = Arc::new(AutoResetEvent::new(EventState::Unset));
+        self.thread_task_queue.push((task, Some(reset_event.clone())));
+        self.thread_reset_event.set();
+        reset_event.wait();
+    }
 
-        if result == 0 {
-            log::error(Win32Error::get_last().to_string().as_str());
+    fn thread_worker(&self) {
+        while self.thread_work.load(Ordering::Relaxed) {
+            self.thread_reset_event.wait();
+            self.thread_worker_iterator();
         }
     }
-}
 
-impl Window for WindowWindows {
-    fn get_width(&self) -> u32 {
-        self.data().width
+    #[inline(always)]
+    fn thread_worker_iterator(&self) {
+        for (task, signal) in self.thread_task_queue.pop() {
+            self.thread_worker_task_invoker(task, signal);
+        }
     }
 
-    fn get_height(&self) -> u32 {
-        self.data().height
+    #[inline(always)]
+    fn thread_worker_task_invoker(&self, task: WindowWindowsThreadTask, signal: Option<Arc<AutoResetEvent>>) {
+        match task {
+            WindowWindowsThreadTask::PoolEvents => self.pool_events_thread(),
+            WindowWindowsThreadTask::Hide => self.hide_thread(),
+            WindowWindowsThreadTask::Dispose => {
+                self.hide_thread();
+                self.thread_work.store(false, Ordering::Relaxed);
+            },
+        };
+
+        match signal {
+            Some(s) => s.set(),
+            None => (),
+        };
     }
 
-    fn pool_events(&self) {
+    fn pool_events_thread(&self) {
         let mut msg = Msg::default();
         loop {
             let result = unsafe {
@@ -242,10 +321,91 @@ impl Window for WindowWindows {
         }
     }
 
-    fn hide(&self) {
-        _ = unsafe {
+    fn hide_thread(&self) {
+        unsafe {
             ShowWindow(self.h_wnd, 0)
         };
+    }
+}
+
+impl Drop for WindowWindows {
+    fn drop(&mut self) {
+        if unsafe { DestroyWindow(self.h_wnd) } == 0 {
+            log::error(Win32Error::get_last().to_string().as_str());
+        }
+
+        if unsafe { UnregisterClassW(self.class_name.as_ptr(), self.h_instance) } == 0 {
+            log::error(Win32Error::get_last().to_string().as_str());
+        }
+
+        if unsafe { FreeLibrary(self.h_instance) } == 0 {
+            log::error(Win32Error::get_last().to_string().as_str());
+        }
+    }
+}
+
+impl Window for WindowWindows {
+    fn get_width(&self) -> u32 {
+        self.data().width
+    }
+
+    fn get_height(&self) -> u32 {
+        self.data().height
+    }
+
+    fn pool_events(&self) {
+        self.execute_task_wait(WindowWindowsThreadTask::PoolEvents);
+    }
+
+    fn hide(&self) {
+        self.execute_task(WindowWindowsThreadTask::Hide);
+    }
+
+    fn set_position(
+        &self, position: Option<Vector2<i32>>, size: Option<Vector2<u32>>
+    ) -> Result<(), PlatformUniversalError> {
+        let mut flags = 0x0004 | 0x4000; // SWP_NOZORDER | SWP_ASYNCWINDOWPOS
+
+        let x;
+        let y;
+        match position {
+            Some(p) => {
+                x = p.x;
+                y = p.y;
+            },
+            None => {
+                flags |= 0x0002; // SWP_NOMOVE
+                x = 0;
+                y = 0;
+            },
+        }
+
+        let cx;
+        let cy;
+        match size {
+            Some(s) => {
+                let adjust = self.get_adjust(Rect {
+                    left: 0,
+                    top: 0,
+                    right: s.x as i32,
+                    bottom: s.y as i32,
+                })?;
+
+                cx = adjust.right - adjust.left;
+                cy = adjust.bottom - adjust.top;
+            },
+            None => {
+                flags |= 0x0001; // SWP_NOSIZE
+                cx = 0;
+                cy = 0;
+            },
+        }
+
+        if unsafe { SetWindowPos(self.h_wnd, ptr::null_mut(), x, y, cx, cy, flags) } == 0 {
+            Err(Win32Error::get_last().into())
+        } else {
+            Ok(())
+        }
     }
 
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
@@ -253,7 +413,7 @@ impl Window for WindowWindows {
             s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
             p_next: ptr::null(),
             flags: vk::Win32SurfaceCreateFlagsKHR::empty(),
-            hinstance: Self::get_h_instance(),
+            hinstance: self.h_instance,
             hwnd: self.h_wnd,
         };
 
@@ -268,6 +428,25 @@ impl Window for WindowWindows {
         };
 
         Ok(VulkanSurface::new(instance.clone(), window_arc, inner))
+    }
+
+    fn dispose(&self) -> Result<(), PlatformUniversalError> {
+        self.execute_task(WindowWindowsThreadTask::Dispose);
+
+        if self.thread_id == thread::current().id() {
+            self.thread_worker_iterator();
+            return Ok(());
+        }
+
+        match self.thread_join_handle.take() {
+            Some(j) => match j.join() {
+                Ok(_) => (),
+                Err(_) => return Err(InvalidOperationError::with_str("Window thread has panicked.").into()),
+            },
+            None => (),
+        }
+
+        Ok(())
     }
 }
 
@@ -303,9 +482,17 @@ struct WindowWindowsData {
     pub settings: WindowSettings
 }
 
+enum WindowWindowsThreadTask {
+    PoolEvents,
+    Hide,
+    Dispose
+}
+
 #[link(name = "kernel32")]
 extern "system" {
     fn GetModuleHandleW(lp_module_name: *const wchar_t) -> *mut c_void;
+
+    fn FreeLibrary(h_module: *mut c_void) -> u32;
 
     fn RegisterClassW(lp_wnd_class: *const WndClassW) -> u16;
 
@@ -339,4 +526,8 @@ extern "system" {
     fn ShowWindow(h_wnd: *mut c_void, n_cmd_show: u32) -> u32;
 
     fn AdjustWindowRectEx(lp_rect: &Rect, dw_style: u32, b_menu: u32, dw_ex_style: u32) -> u32;
+
+    fn SetWindowPos(
+        h_wnd: *mut c_void, h_wnd_insert_after: *mut c_void, x: i32, y: i32, cx: i32, cy: i32, flags: u32
+    ) -> u32;
 }

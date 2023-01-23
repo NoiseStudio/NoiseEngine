@@ -161,7 +161,7 @@ impl<'init> VulkanDevice<'init> {
                     transfer: family.queue_flags.contains(QueueFlags::TRANSFER)
                 },
                 queues: Stack::new(),
-                reset_event: AutoResetEvent::new(EventState::Set),
+                reset_event: AutoResetEvent::new(EventState::Unset),
                 command_pools: Pool::default()
             };
 

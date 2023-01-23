@@ -1,90 +1,69 @@
-﻿using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Exceptions;
-using NoiseEngine.Rendering.Vulkan;
+﻿using NoiseEngine.Interop.Rendering.Presentation;
+using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.Buffers;
 using System;
 
 namespace NoiseEngine;
 
-public class Camera {
+public class Camera : SimpleCamera {
 
-    private CameraClearFlags clearFlags = CameraClearFlags.SolidColor;
-    private Color clearColor = new Color(0.26666f, 0.45882f, 0.87058f);
-    private ICameraRenderTarget? renderTarget;
+    private readonly object renderLoopLocker = new object();
+    private RenderLoop? renderLoop;
 
     public ApplicationScene Scene { get; }
-    public GraphicsDevice GraphicsDevice => Scene.GraphicsDevice;
 
-    public CameraClearFlags ClearFlags {
-        get => clearFlags;
+    /// <summary>
+    /// Assigns given <see cref="RenderLoop"/> to this <see cref="Camera"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// RenderTarget is not <see cref="Window"/> and render loop is not <see langword="null"/>.
+    /// </exception>
+    public RenderLoop? RenderLoop {
+        get => renderLoop;
         set {
-            clearFlags = value;
-            IsDirty = true;
+            lock (renderLoopLocker) {
+                if (value is not null && RenderTarget is not Window window) {
+                    throw new InvalidOperationException(
+                        $"{nameof(RenderTarget)} is not {nameof(Window)} and render queue is not null."
+                    );
+                }
+
+                renderLoop?.InternalDeinitialize();
+                value?.InternalInitialize(this);
+                renderLoop = value;
+            }
         }
     }
 
-    public Color ClearColor {
-        get => clearColor;
-        set {
-            clearColor = value;
-            Delegation.UpdateClearColor();
-        }
+    public Camera(ApplicationScene scene) : base(scene.GraphicsDevice) {
+        Scene = scene;
     }
 
     /// <summary>
-    /// Sets camera render target. If setted render target is not null, texture usage of this render target must have
-    /// TextureUsage.ColorAttachment flag.
+    /// Renders frame manually.
     /// </summary>
-    public ICameraRenderTarget? RenderTarget {
-        get => renderTarget;
-        set {
-            AssertRenderTarget(value);
-
-            renderTarget = value;
-            IsDirty = true;
-
-            if (value is null)
-                Delegation.ClearRenderTarget();
+    public void Render() {
+        if (RenderTarget is Window window) {
+            lock (window.PoolEventsLocker)
+                WindowInterop.PoolEvents(window.Handle);
         }
+
+        GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(GraphicsDevice, false);
+
+        commandBuffer.AttachCameraUnchecked(this);
+        commandBuffer.DetachCameraUnchecked();
+
+        commandBuffer.Execute();
+        commandBuffer.Clear();
     }
 
-    internal CameraDelegation Delegation { get; }
-    internal bool IsDirty { get; set; } = true;
+    private protected override void RaiseRenderTargetSet(ICameraRenderTarget? newRenderTarget) {
+        lock (renderLoopLocker) {
+            if (renderLoop is not null && newRenderTarget is not Window) {
+                RenderLoop loop = renderLoop;
+                renderLoop = null;
 
-    public Camera(ApplicationScene scene) {
-        Scene = scene;
-
-        Delegation = GraphicsDevice.Instance.Api switch {
-            GraphicsApi.Vulkan => new VulkanCameraDelegation(this),
-            _ => throw new GraphicsApiNotSupportedException(GraphicsDevice.Instance.Api),
-        };
-
-        Delegation.UpdateClearColor();
-    }
-
-    private void AssertRenderTarget(ICameraRenderTarget? renderTarget) {
-        if (renderTarget is null)
-            return;
-
-        if (!renderTarget.Usage.HasFlag(TextureUsage.ColorAttachment))
-            throw new InvalidOperationException("Camera render target must have TextureUsage.ColorAttachment flag.");
-
-        if (renderTarget is Window) {
-            if (!GraphicsDevice.Instance.PresentationEnabled) {
-                if (!GraphicsDevice.Instance.SupportsPresentation) {
-                    throw new PresentationNotSupportedException(
-                        $"{nameof(GraphicsInstance)} used by {nameof(Camera)} is not support presentation."
-                    );
-                } else {
-                    throw new PresentationNotSupportedException(
-                        $"{nameof(GraphicsInstance)} used by {nameof(Camera)} has disabled presentation."
-                    );
-                }
-            }
-
-            if (!GraphicsDevice.SupportsPresentation) {
-                throw new PresentationNotSupportedException(
-                    $"{nameof(GraphicsDevice)} used by {nameof(Camera)} is not support presentation."
-                );
+                loop.InternalDeinitialize();
             }
         }
     }
