@@ -19,7 +19,6 @@ pub trait Window {
     fn dispose(&self) -> Result<(), PlatformUniversalError>;
 
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError>;
-
     fn get_vulkan_extent(&self) -> vk::Extent2D {
         vk::Extent2D {
             width: self.get_width(),

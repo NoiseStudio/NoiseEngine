@@ -10,7 +10,7 @@ internal abstract class SimpleCameraDelegation {
     }
 
     public abstract void UpdateClearColor();
-    public abstract void ClearRenderTarget();
+    public abstract void RaiseRenderTargetSet(ICameraRenderTarget? newRenderTarget);
 
     public abstract uint ChangeFramesInFlightCount(uint targetFramesInFlightCount);
 

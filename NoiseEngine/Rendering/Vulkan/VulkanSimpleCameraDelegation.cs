@@ -32,12 +32,21 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
         Marshal.FreeHGlobal(ClearColor);
     }
 
-    public override void ClearRenderTarget() {
-        renderPass = null;
-    }
-
     public override void UpdateClearColor() {
         Marshal.StructureToPtr(Camera.ClearColor, ClearColor, false);
+    }
+
+    public override void RaiseRenderTargetSet(ICameraRenderTarget? newRenderTarget) {
+        lock (calculateLocker) {
+            if (
+                renderPass is WindowRenderPass windowRenderPass &&
+                !ReferenceEquals(renderPass.RenderTarget, newRenderTarget)
+            ) {
+                windowRenderPass.Swapchain.Dispose();
+            } else {
+                renderPass = null;
+            }
+        }
     }
 
     public override uint ChangeFramesInFlightCount(uint targetFramesInFlightCount) {

@@ -427,7 +427,10 @@ impl Window for WindowWindows {
             None => return Err(NullReferenceError::with_str("WindowWindows weak is null.").into()),
         };
 
-        Ok(VulkanSurface::new(instance.clone(), window_arc, inner))
+        Ok(VulkanSurface::new(
+            instance.clone(), window_arc, inner,
+            khr::Surface::new(instance.library(), instance.inner())
+        ))
     }
 
     fn dispose(&self) -> Result<(), PlatformUniversalError> {
