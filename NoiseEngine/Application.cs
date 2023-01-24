@@ -151,7 +151,7 @@ public static class Application {
     }
 
     internal static void RaiseWindowClosed() {
-        if (Settings.AutoExitWhenAllWindowsAreClosed)
+        if (Settings.AutoExitWhenAllWindowsAreClosed && Windows.All(x => x.IsDisposed))
             Exit();
     }
 
