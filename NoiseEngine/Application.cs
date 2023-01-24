@@ -3,12 +3,13 @@ using NoiseEngine.Interop.Logging;
 using NoiseEngine.Jobs;
 using NoiseEngine.Logging;
 using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Vulkan;
+using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 
 namespace NoiseEngine;
 
@@ -17,6 +18,7 @@ public static class Application {
     private static readonly object exitLocker = new object();
     private static readonly object graphicsInstanceLocker = new object();
     private static readonly ConcurrentList<ApplicationScene> loadedScenes = new ConcurrentList<ApplicationScene>();
+    private static readonly ManualResetEvent endResetEvent = new ManualResetEvent(false);
 
     private static AtomicBool isInitialized;
     private static bool isExited;
@@ -30,7 +32,7 @@ public static class Application {
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
-    //public static IEnumerable<Window> Windows => LoadedScenes.SelectMany(x => x.Cameras).Select(x => x.RenderTarget);
+    public static IEnumerable<Window> Windows => WindowEventHandler.Windows;
 
     public static GraphicsInstance GraphicsInstance => GetGraphicsInstance();
 
@@ -125,10 +127,19 @@ public static class Application {
             Log.Info($"{nameof(Application)} exited with code {exitCode}.");
             Log.Logger.Flush();
 
+            endResetEvent.Set();
+
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomainOnExit;
             if (Settings.ProcessExitOnApplicationExit)
                 Environment.Exit(exitCode);
         }
+    }
+
+    /// <summary>
+    /// Blocks this thread until <see cref="Exit(int)"/> will be invoked.
+    /// </summary>
+    public static void WaitToEnd() {
+        endResetEvent.WaitOne();
     }
 
     internal static void AddSceneToLoaded(ApplicationScene scene) {
@@ -137,6 +148,11 @@ public static class Application {
 
     internal static void RemoveSceneFromLoaded(ApplicationScene scene) {
         loadedScenes.Remove(scene);
+    }
+
+    internal static void RaiseWindowClosed() {
+        if (Settings.AutoExitWhenAllWindowsAreClosed && Windows.All(x => x.IsDisposed))
+            Exit();
     }
 
     private static void CurrentDomainOnExit(object? sender, EventArgs e) {

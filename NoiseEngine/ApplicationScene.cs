@@ -2,7 +2,6 @@
 using NoiseEngine.Jobs;
 using NoiseEngine.Primitives;
 using NoiseEngine.Rendering;
-using NoiseEngine.Systems;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
@@ -13,15 +12,9 @@ namespace NoiseEngine;
 public class ApplicationScene : IDisposable {
 
     // TODO: move this to GraphicsDevice
-    #region Move to GraphicsDevice
-    private static readonly object defaultGraphicsDeviceLocker = new object();
-
     internal static PrimitiveCreatorShared? primitiveShared;
 
-    private static GraphicsDevice? defaultGraphicsDevice;
-    #endregion
-
-    private readonly ConcurrentList<RenderCamera> cameras = new ConcurrentList<RenderCamera>();
+    private readonly ConcurrentList<Camera> cameras = new ConcurrentList<Camera>();
 
     private AtomicBool isDisposed;
     private GraphicsDevice? graphicsDevice;
@@ -32,47 +25,20 @@ public class ApplicationScene : IDisposable {
     public GraphicsDevice GraphicsDevice {
         get {
             if (graphicsDevice is null)
-                SetDefaultGraphicsDevice();
+                graphicsDevice = Application.GraphicsInstance.Devices.First();
             return graphicsDevice!;
         }
         init => graphicsDevice = value;
     }
 
     public bool IsDisposed => isDisposed;
-    public IEnumerable<RenderCamera> Cameras => cameras;
+    public IEnumerable<Camera> Cameras => cameras;
 
     internal ConcurrentList<EntitySystemBase> FrameDependentSystems { get; } = new ConcurrentList<EntitySystemBase>();
 
     public ApplicationScene() {
         Primitive = new PrimitiveCreator(this);
         Application.AddSceneToLoaded(this);
-    }
-
-    /// <summary>
-    /// Creates new Window on this <see cref="ApplicationScene"/>.
-    /// </summary>
-    /// <param name="title">Title of Window.</param>
-    /// <param name="width">Width of Window.</param>
-    /// <param name="height">Height of Window.</param>
-    /// <param name="autoRender">If <see langword="true"/> render camera will be automatically renders
-    /// their view to window on each frame.</param>
-    /// <returns>New <see cref="RenderCamera"/>.</returns>
-    public RenderCamera CreateWindow(
-        string? title = null, uint width = 1280, uint height = 720, bool autoRender = true
-    ) {
-        title ??= Application.Name;
-
-        RenderCamera camera = new RenderCamera(
-            this,
-            //new Camera(new Window(GraphicsDevice, new UInt2(width, height), title)),
-            autoRender
-        );
-        cameras.Add(camera);
-
-        if (!HasFrameDependentSystem<CameraSystem>())
-            AddFrameDependentSystem(new CameraSystem());
-
-        return camera;
     }
 
     /// <summary>
@@ -107,8 +73,8 @@ public class ApplicationScene : IDisposable {
 
         OnDispose();
 
-        foreach (RenderCamera camera in Cameras)
-            camera.Dispose();
+        //foreach (Camera camera in Cameras)
+        //    camera.Dispose();
 
         FrameDependentSystems.Clear();
         EntityWorld.Dispose();
@@ -117,7 +83,7 @@ public class ApplicationScene : IDisposable {
         GC.SuppressFinalize(this);
     }
 
-    internal void RemoveRenderCameraFromScene(RenderCamera renderCamera) {
+    internal void RemoveRenderCameraFromScene(Camera renderCamera) {
         cameras.Remove(renderCamera);
     }
 
@@ -125,22 +91,6 @@ public class ApplicationScene : IDisposable {
     /// This method is executed when <see cref="Dispose"/> is called.
     /// </summary>
     protected virtual void OnDispose() {
-    }
-
-    private void SetDefaultGraphicsDevice() {
-        if (defaultGraphicsDevice is null) {
-            lock (defaultGraphicsDeviceLocker) {
-                if (defaultGraphicsDevice is null) {
-
-                    defaultGraphicsDevice = null;
-                    throw new NotImplementedException();
-                    /*defaultGraphicsDevice = new GraphicsDevice(false);
-                    primitiveShared = new PrimitiveCreatorShared(defaultGraphicsDevice);*/
-                }
-            }
-        }
-
-        graphicsDevice = defaultGraphicsDevice;
     }
 
 }

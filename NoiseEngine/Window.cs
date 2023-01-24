@@ -74,6 +74,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
         }
 
         WindowInterop.Destroy(Handle);
+        Application.RaiseWindowClosed();
     }
 
     internal static WindowApi GetWindowApi() {
@@ -96,6 +97,8 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
         assignedCamera?.CompareExchangeRenderTarget(null, this);
         Interlocked.Add(ref referenceCount, IReferenceCoutable.DisposeReferenceCount);
         ReferenceCoutable.RcRelease();
+
+        Application.RaiseWindowClosed();
     }
 
     /// <summary>
