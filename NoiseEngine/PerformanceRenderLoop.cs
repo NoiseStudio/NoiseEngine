@@ -64,7 +64,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
         rendererSignaler = 1;
 
         new Thread(RenderWorker) {
-            IsBackground = true,
+            IsBackground = false,
             Priority = ThreadPriority.Highest,
             Name = $"{ToString()} Renderer"
         }.Start();

@@ -2,6 +2,7 @@
 using NoiseEngine.Interop.Rendering.Presentation;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
@@ -13,6 +14,15 @@ internal static class WindowEventHandler {
         new ConcurrentDictionary<ulong, WeakReference<Window>>();
 
     private static readonly WindowEventHandlerRaw raw;
+
+    public static IEnumerable<Window> Windows {
+        get {
+            foreach (WeakReference<Window> weak in windows.Values) {
+                if (weak.TryGetTarget(out Window? window))
+                    yield return window;
+            }
+        }
+    }
 
     [UnmanagedFunctionPointer(InteropConstants.CallingConvention)]
     public delegate void UserClosedDelegate(ulong id);

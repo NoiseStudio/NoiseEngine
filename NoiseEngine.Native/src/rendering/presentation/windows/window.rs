@@ -367,15 +367,15 @@ impl Drop for WindowWindows {
             None => (),
         }
 
-        if unsafe { DestroyWindow(self.h_wnd) } == 0 {
+        if unsafe { DestroyWindow(self.h_wnd) } != 0 {
             log::error(Win32Error::get_last().to_string().as_str());
         }
 
-        if unsafe { UnregisterClassW(self.class_name.as_ptr(), self.h_instance) } == 0 {
+        if unsafe { UnregisterClassW(self.class_name.as_ptr(), self.h_instance) } != 0 {
             log::error(Win32Error::get_last().to_string().as_str());
         }
 
-        if unsafe { FreeLibrary(self.h_instance) } == 0 {
+        if unsafe { FreeLibrary(self.h_instance) } != 0 {
             log::error(Win32Error::get_last().to_string().as_str());
         }
     }
