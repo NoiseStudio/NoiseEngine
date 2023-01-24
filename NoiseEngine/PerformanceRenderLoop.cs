@@ -170,7 +170,10 @@ public sealed class PerformanceRenderLoop : RenderLoop {
         } finally {
             for (int i = 0; i < executeThreadWork.Length; i++)
                 executeThreadWork[i] = false;
-            Interlocked.Exchange(ref currentCommandBuffer, null);
+
+            GraphicsCommandBuffer? exchanged = Interlocked.Exchange(ref currentCommandBuffer, null);
+            if (exchanged is not null)
+                exchanged.Clear();
 
             while (executeWorkingThreadCount != 0) {
                 for (int i = 0; i < executeThreadWork.Length; i++)

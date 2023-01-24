@@ -69,6 +69,7 @@ public class GraphicsCommandBuffer {
 
     ~GraphicsCommandBuffer() {
         if (handle == InteropHandle<GraphicsCommandBuffer>.Zero) {
+            ReleaseRcReferences(rcReferences);
             gcHandle.Free();
             return;
         }

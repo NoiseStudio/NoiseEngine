@@ -4,6 +4,8 @@ namespace NoiseEngine.Common;
 
 internal interface IReferenceCoutable {
 
+    public const long DisposeReferenceCount = long.MinValue / 2;
+
     public bool TryRcRetain();
     public void RcRelease();
 

@@ -34,9 +34,16 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
         RenderPass renderPass = cameraDelegation.RenderPass;
 
         if (renderPass is WindowRenderPass window) {
+            FastList<IReferenceCoutable> rcReferences = this.rcReferences;
+            rcReferences.EnsureCapacity(rcReferences.Count + 2);
+
             IReferenceCoutable rcReference = (IReferenceCoutable)window.RenderTarget;
             rcReference.RcRetain();
-            rcReferences.Add(rcReference);
+            rcReferences.UnsafeAdd(rcReference);
+
+            rcReference = window.Swapchain;
+            rcReference.RcRetain();
+            rcReferences.UnsafeAdd(rcReference);
 
             references.Add(renderPass);
             Swapchain swapchain = window.Swapchain;

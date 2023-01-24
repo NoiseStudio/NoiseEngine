@@ -13,8 +13,6 @@ namespace NoiseEngine;
 
 public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
-    private const long DisposeReferenceCount = long.MinValue / 2;
-
     private static ulong nextId;
 
     private readonly object assignedCameraLocker = new object();
@@ -31,6 +29,8 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     internal ulong Id { get; }
     internal InteropHandle<Window> Handle { get; private set; }
     internal object PoolEventsLocker { get; } = new object();
+
+    private IReferenceCoutable ReferenceCoutable => this;
 
     TextureUsage ICameraRenderTarget.Usage => TextureUsage.ColorAttachment;
     Vector3<uint> ICameraRenderTarget.Extent => new Vector3<uint>(Width, Height, 0);
@@ -94,8 +94,8 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
             error.ThrowAndDispose();
 
         assignedCamera?.CompareExchangeRenderTarget(null, this);
-        Interlocked.Add(ref referenceCount, DisposeReferenceCount);
-        RcRelease();
+        Interlocked.Add(ref referenceCount, IReferenceCoutable.DisposeReferenceCount);
+        ReferenceCoutable.RcRelease();
     }
 
     /// <summary>
@@ -104,7 +104,10 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     /// <param name="width">New width.</param>
     /// <param name="height">New height.</param>
     public void Resize(uint width, uint height) {
-        WindowInterop.SetPosition(Handle, null, new Vector2<uint>(width, height));
+        if (ReferenceCoutable.TryRcRetain()) {
+            WindowInterop.SetPosition(Handle, null, new Vector2<uint>(width, height));
+            ReferenceCoutable.RcRelease();
+        }
     }
 
     internal void ChangeAssignedCamera(SimpleCamera? camera) {
@@ -115,25 +118,6 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
             if (assignedCamera is not null)
                 assignedCamera.RenderTarget = null;
             assignedCamera = camera;
-        }
-    }
-
-    internal bool TryRcRetain() {
-        if (Interlocked.Increment(ref referenceCount) > 0)
-            return true;
-        Interlocked.Decrement(ref referenceCount);
-        return false;
-    }
-
-    internal void RcRelease() {
-        if (Interlocked.Decrement(ref referenceCount) != DisposeReferenceCount || isReleased.Exchange(true))
-            return;
-
-        GC.SuppressFinalize(this);
-        if (Handle != InteropHandle<Window>.Zero) {
-            InteropHandle<Window> handle = Handle;
-            Handle = InteropHandle<Window>.Zero;
-            WindowInterop.Destroy(handle);
         }
     }
 
@@ -158,11 +142,26 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     }
 
     bool IReferenceCoutable.TryRcRetain() {
-        return TryRcRetain();
+        if (Interlocked.Increment(ref referenceCount) > 0)
+            return true;
+        Interlocked.Decrement(ref referenceCount);
+        return false;
     }
 
     void IReferenceCoutable.RcRelease() {
-        RcRelease();
+        if (
+            Interlocked.Decrement(ref referenceCount) != IReferenceCoutable.DisposeReferenceCount ||
+            isReleased.Exchange(true)
+        ) {
+            return;
+        }
+
+        GC.SuppressFinalize(this);
+        if (Handle != InteropHandle<Window>.Zero) {
+            InteropHandle<Window> handle = Handle;
+            Handle = InteropHandle<Window>.Zero;
+            WindowInterop.Destroy(handle);
+        }
     }
 
 }
