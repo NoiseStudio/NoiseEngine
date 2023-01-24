@@ -1,6 +1,6 @@
 use std::{
     ptr, sync::{Arc, Weak, atomic::{AtomicBool, Ordering}}, cell::{UnsafeCell, Cell},
-    thread::{self, JoinHandle, ThreadId}, mem
+    thread::{self, JoinHandle, ThreadId}, mem::{self, ManuallyDrop}
 };
 
 use ash::{vk, extensions::khr};
@@ -53,6 +53,8 @@ pub struct WindowWindows {
     thread_join_handle: Cell<Option<JoinHandle<()>>>,
     thread_task_queue: SegQueue<(WindowWindowsThreadTask, Option<Arc<AutoResetEvent>>)>,
     thread_reset_event: AutoResetEvent,
+    thread_end_reset_event: Arc<AutoResetEvent>,
+    thread_last_signaler: Cell<Option<Arc<AutoResetEvent>>>,
     data: UnsafeCell<WindowWindowsData>
 }
 
@@ -68,7 +70,7 @@ impl WindowWindows {
         let join_handle = match thread::Builder::new().name(
             format!("Window {{ Id = {id} }}")
         ).spawn(move || {
-            {
+            let mut window = {
                 let result =
                     Self::new_worker(id, title, width, height, settings);
 
@@ -85,14 +87,22 @@ impl WindowWindows {
                 match result {
                     Ok(w) => {
                         mem::forget(w.clone());
-                        w
+                        ManuallyDrop::new(w)
                     },
                     Err(_) => {
                         mem::forget(result);
                         return
                     },
                 }
-            }.thread_worker();
+            };
+
+            window.thread_worker();
+
+            let end_reset_event = window.thread_end_reset_event.clone();
+            unsafe {
+                ManuallyDrop::drop(&mut window);
+            }
+            end_reset_event.wait();
         }) {
             Ok(j) => j,
             Err(_) => return Err(InvalidOperationError::with_str("Unable to create window thread.").into()),
@@ -141,6 +151,8 @@ impl WindowWindows {
             thread_join_handle: Cell::new(None),
             thread_task_queue: SegQueue::new(),
             thread_reset_event: AutoResetEvent::new(EventState::Unset),
+            thread_end_reset_event: Arc::new(AutoResetEvent::new(EventState::Unset)),
+            thread_last_signaler: Cell::new(None),
             data: UnsafeCell::new(WindowWindowsData { width, height, settings })
         });
 
@@ -266,10 +278,17 @@ impl WindowWindows {
             return;
         }
 
+        if !self.thread_work.load(Ordering::Relaxed) {
+            return;
+        }
+
         let reset_event = Arc::new(AutoResetEvent::new(EventState::Unset));
         self.thread_task_queue.push((task, Some(reset_event.clone())));
         self.thread_reset_event.set();
-        reset_event.wait();
+
+        if self.thread_work.load(Ordering::Relaxed) {
+            reset_event.wait();
+        }
     }
 
     fn thread_worker(&self) {
@@ -279,22 +298,19 @@ impl WindowWindows {
         }
     }
 
-    #[inline(always)]
     fn thread_worker_iterator(&self) {
         for (task, signal) in self.thread_task_queue.pop() {
             self.thread_worker_task_invoker(task, signal);
         }
     }
 
-    #[inline(always)]
     fn thread_worker_task_invoker(&self, task: WindowWindowsThreadTask, signal: Option<Arc<AutoResetEvent>>) {
+        self.thread_last_signaler.set(signal.clone());
+
         match task {
             WindowWindowsThreadTask::PoolEvents => self.pool_events_thread(),
             WindowWindowsThreadTask::Hide => self.hide_thread(),
-            WindowWindowsThreadTask::Dispose => {
-                self.hide_thread();
-                self.thread_work.store(false, Ordering::Relaxed);
-            },
+            WindowWindowsThreadTask::Dispose => self.dispose_thread(),
         };
 
         match signal {
@@ -326,10 +342,31 @@ impl WindowWindows {
             ShowWindow(self.h_wnd, 0)
         };
     }
+
+    fn dispose_thread(&self) {
+        self.thread_work.store(false, Ordering::Relaxed);
+        self.hide_thread();
+
+        for (_, signal) in self.thread_task_queue.pop() {
+            match signal {
+                Some(s) => s.set(),
+                None => (),
+            };
+        }
+    }
 }
 
 impl Drop for WindowWindows {
     fn drop(&mut self) {
+        self.thread_end_reset_event.set();
+        match self.thread_join_handle.take() {
+            Some(j) => match j.join() {
+                Ok(_) => (),
+                Err(_) => log::error("Window thread has panicked."),
+            },
+            None => (),
+        }
+
         if unsafe { DestroyWindow(self.h_wnd) } == 0 {
             log::error(Win32Error::get_last().to_string().as_str());
         }
@@ -434,21 +471,12 @@ impl Window for WindowWindows {
     }
 
     fn dispose(&self) -> Result<(), PlatformUniversalError> {
-        self.execute_task(WindowWindowsThreadTask::Dispose);
-
         if self.thread_id == thread::current().id() {
-            self.thread_worker_iterator();
+            self.dispose_thread();
             return Ok(());
         }
 
-        match self.thread_join_handle.take() {
-            Some(j) => match j.join() {
-                Ok(_) => (),
-                Err(_) => return Err(InvalidOperationError::with_str("Window thread has panicked.").into()),
-            },
-            None => (),
-        }
-
+        self.execute_task_wait(WindowWindowsThreadTask::Dispose);
         Ok(())
     }
 }
@@ -473,7 +501,14 @@ unsafe extern "system" fn window_procedure(
             }
         },
         // WM_CLOSE
-        0x0010 => (event_handler.user_closed)(window.id),
+        0x0010 => {
+            match window.thread_last_signaler.take() {
+                Some(s) => s.set(),
+                None => (),
+            };
+
+            (event_handler.user_closed)(window.id);
+        },
         _ => return DefWindowProcW(h_wnd, msg, w_param, l_param)
     };
     0

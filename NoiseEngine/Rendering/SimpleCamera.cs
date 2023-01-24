@@ -71,6 +71,14 @@ public class SimpleCamera {
         Delegation.UpdateClearColor();
     }
 
+    internal void CompareExchangeRenderTarget(ICameraRenderTarget? value, ICameraRenderTarget? comparand) {
+        lock (renderTargetLocker) {
+            if (renderTarget != comparand)
+                return;
+            RenderTarget = value;
+        }
+    }
+
     private protected virtual void RaiseRenderTargetSet(ICameraRenderTarget? newRenderTarget) {
     }
 

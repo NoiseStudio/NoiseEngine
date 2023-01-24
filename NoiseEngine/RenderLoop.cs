@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Common;
+using System;
 using System.Threading;
 
 namespace NoiseEngine;
@@ -28,6 +29,8 @@ public abstract class RenderLoop {
         if (exchanged != null)
             throw new InvalidOperationException($"This {nameof(RenderLoop)} is currently assigned to the {exchanged}.");
 
+        ((IReferenceCoutable)camera.RenderTarget!).RcRetain();
+
         this.camera = camera;
         Window = (Window)camera.RenderTarget!;
 
@@ -39,7 +42,10 @@ public abstract class RenderLoop {
             Deinitialize();
 
         camera = null;
+        Window oldWindow = Window!;
         Window = null;
+
+        ((IReferenceCoutable)oldWindow).RcRelease();
     }
 
     /// <summary>

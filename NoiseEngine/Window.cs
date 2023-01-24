@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Interop;
+﻿using NoiseEngine.Common;
+using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Presentation;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering;
@@ -10,13 +11,17 @@ using System.Threading;
 
 namespace NoiseEngine;
 
-public class Window : IDisposable, ICameraRenderTarget {
+public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
+
+    private const long DisposeReferenceCount = long.MinValue / 2;
 
     private static ulong nextId;
 
     private readonly object assignedCameraLocker = new object();
 
     private AtomicBool isDisposed;
+    private long referenceCount = 1;
+    private AtomicBool isReleased;
     private SimpleCamera? assignedCamera;
 
     public bool IsDisposed => isDisposed;
@@ -24,7 +29,7 @@ public class Window : IDisposable, ICameraRenderTarget {
     public uint Height { get; private set; }
 
     internal ulong Id { get; }
-    internal InteropHandle<Window> Handle { get; }
+    internal InteropHandle<Window> Handle { get; private set; }
     internal object PoolEventsLocker { get; } = new object();
 
     TextureUsage ICameraRenderTarget.Usage => TextureUsage.ColorAttachment;
@@ -62,9 +67,13 @@ public class Window : IDisposable, ICameraRenderTarget {
         if (Handle == InteropHandle<Window>.Zero)
             return;
 
-        WindowEventHandler.UnregisterWindow(Id);
-        if (!WindowInterop.Destroy(Handle).TryGetValue(out _, out ResultError error))
-            error.ThrowAndDispose();
+        if (!IsDisposed) {
+            WindowEventHandler.UnregisterWindow(Id);
+            if (!WindowInterop.Dispose(Handle).TryGetValue(out _, out ResultError error))
+                error.ThrowAndDispose();
+        }
+
+        WindowInterop.Destroy(Handle);
     }
 
     internal static WindowApi GetWindowApi() {
@@ -81,10 +90,12 @@ public class Window : IDisposable, ICameraRenderTarget {
             return;
 
         WindowEventHandler.UnregisterWindow(Id);
-
-        GC.SuppressFinalize(this);
-        if (!WindowInterop.Destroy(Handle).TryGetValue(out _, out ResultError error))
+        if (!WindowInterop.Dispose(Handle).TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
+
+        assignedCamera?.CompareExchangeRenderTarget(null, this);
+        Interlocked.Add(ref referenceCount, DisposeReferenceCount);
+        RcRelease();
     }
 
     /// <summary>
@@ -98,9 +109,31 @@ public class Window : IDisposable, ICameraRenderTarget {
 
     internal void ChangeAssignedCamera(SimpleCamera? camera) {
         lock (assignedCameraLocker) {
+            if (IsDisposed)
+                throw new ObjectDisposedException(GetType().FullName);
+
             if (assignedCamera is not null)
                 assignedCamera.RenderTarget = null;
             assignedCamera = camera;
+        }
+    }
+
+    internal bool TryRcRetain() {
+        if (Interlocked.Increment(ref referenceCount) > 0)
+            return true;
+        Interlocked.Decrement(ref referenceCount);
+        return false;
+    }
+
+    internal void RcRelease() {
+        if (Interlocked.Decrement(ref referenceCount) != DisposeReferenceCount || isReleased.Exchange(true))
+            return;
+
+        GC.SuppressFinalize(this);
+        if (Handle != InteropHandle<Window>.Zero) {
+            InteropHandle<Window> handle = Handle;
+            Handle = InteropHandle<Window>.Zero;
+            WindowInterop.Destroy(handle);
         }
     }
 
@@ -122,6 +155,14 @@ public class Window : IDisposable, ICameraRenderTarget {
 
         Width = newWidth;
         Height = newHeight;
+    }
+
+    bool IReferenceCoutable.TryRcRetain() {
+        return TryRcRetain();
+    }
+
+    void IReferenceCoutable.RcRelease() {
+        RcRelease();
     }
 
 }

@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Collections;
+using NoiseEngine.Common;
 using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Buffers;
 using NoiseEngine.Mathematics;
@@ -20,6 +21,7 @@ public class GraphicsCommandBuffer {
 
     private readonly GraphicsCommandBufferDelegation delegation;
     private readonly FastList<object> references = new FastList<object>();
+    private readonly FastList<IReferenceCoutable> rcReferences = new FastList<IReferenceCoutable>();
     private readonly SerializationWriter writer = new SerializationWriter(BitConverter.IsLittleEndian);
     private readonly FastList<GraphicsFence> fences = new FastList<GraphicsFence>();
     private readonly GCHandle gcHandle;
@@ -57,12 +59,12 @@ public class GraphicsCommandBuffer {
         this.simultaneousExecute = simultaneousExecute;
 
         delegation = device.Instance.Api switch {
-            GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(writer, references),
+            GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(writer, references, rcReferences),
             _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
         };
 
         // Create GC handle to prevent finalization of references and fences until this command buffer is alive.
-        gcHandle = GCHandle.Alloc(new object[] { references, fences });
+        gcHandle = GCHandle.Alloc(new object[] { references, rcReferences, fences });
     }
 
     ~GraphicsCommandBuffer() {
@@ -73,15 +75,22 @@ public class GraphicsCommandBuffer {
 
         if (fences.Any(x => !x.IsSignaled)) {
             GraphicsCommandBufferCleaner.Enqueue(new GraphicsCommandBufferCleanData(
-                Device, handle, gcHandle, references, fences
+                Device, handle, gcHandle, references, rcReferences, fences
             ));
             return;
         }
 
+        ReleaseRcReferences(rcReferences);
         gcHandle.Free();
         references.Clear();
         fences.Clear();
         DestroyHandle(handle);
+    }
+
+    internal static void ReleaseRcReferences(FastList<IReferenceCoutable> rcReferences) {
+        foreach (IReferenceCoutable rcReference in rcReferences)
+            rcReference.RcRelease();
+        rcReferences.Clear();
     }
 
     internal static void DestroyHandle(InteropHandle<GraphicsCommandBuffer> handle) {
@@ -143,6 +152,7 @@ public class GraphicsCommandBuffer {
     /// </summary>
     public void Clear() {
         Deconstruct();
+        ReleaseRcReferences(rcReferences);
         references.Clear();
         writer.Clear();
     }
