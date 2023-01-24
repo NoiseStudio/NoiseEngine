@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Common;
+using System;
 using System.Threading;
 
 namespace NoiseEngine;

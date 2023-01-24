@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Collections;
+using NoiseEngine.Common;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
@@ -10,8 +11,8 @@ namespace NoiseEngine.Rendering.Vulkan.Buffers;
 internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
     public VulkanCommandBufferDelegation(
-        SerializationWriter writer, FastList<object> references
-    ) : base(writer, references) {
+        SerializationWriter writer, FastList<object> references, FastList<IReferenceCoutable> rcReferences
+    ) : base(writer, references, rcReferences) {
     }
 
     public override void DispatchWorker(ComputeKernel kernel, Vector3<uint> groupCount) {
@@ -33,6 +34,17 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
         RenderPass renderPass = cameraDelegation.RenderPass;
 
         if (renderPass is WindowRenderPass window) {
+            FastList<IReferenceCoutable> rcReferences = this.rcReferences;
+            rcReferences.EnsureCapacity(rcReferences.Count + 2);
+
+            IReferenceCoutable rcReference = (IReferenceCoutable)window.RenderTarget;
+            rcReference.RcRetain();
+            rcReferences.UnsafeAdd(rcReference);
+
+            rcReference = window.Swapchain;
+            rcReference.RcRetain();
+            rcReferences.UnsafeAdd(rcReference);
+
             references.Add(renderPass);
             Swapchain swapchain = window.Swapchain;
 

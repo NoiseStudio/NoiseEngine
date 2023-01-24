@@ -27,8 +27,12 @@ extern "C" fn rendering_presentation_window_interop_create(
 }
 
 #[no_mangle]
-extern "C" fn rendering_presentation_window_interop_destroy(handle: Box<Arc<dyn Window>>) -> InteropResult<()> {
-    match handle.dispose() {
+extern "C" fn rendering_presentation_window_interop_destroy(_handle: Box<Arc<dyn Window>>) {
+}
+
+#[no_mangle]
+extern "C" fn rendering_presentation_window_interop_dispose(window: &Arc<dyn Window>) -> InteropResult<()> {
+    match window.dispose() {
         Ok(r) => InteropResult::with_ok(r),
         Err(err) => InteropResult::with_err(err.into()),
     }

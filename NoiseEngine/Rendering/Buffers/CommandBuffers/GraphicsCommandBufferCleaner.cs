@@ -42,6 +42,7 @@ internal static class GraphicsCommandBufferCleaner {
                     continue;
                 }
 
+                GraphicsCommandBuffer.ReleaseRcReferences(data.RcReferences);
                 data.GcHandle.Free();
                 data.References.Clear();
                 data.Fences.Clear();
