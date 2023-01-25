@@ -156,6 +156,7 @@ public class GraphicsCommandBuffer {
         ReleaseRcReferences(rcReferences);
         references.Clear();
         writer.Clear();
+        delegation.Clear();
     }
 
     /// <summary>

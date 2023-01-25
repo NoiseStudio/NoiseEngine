@@ -24,20 +24,20 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
 
         SpirVCompilationResult result = SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(Vertex, ExecutionModel.Vertex),
-            //new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
+            new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
         }, settings);
 
         System.IO.File.WriteAllBytes("tak.spv", result.GetCode());
 
-        ModuleVertex = new ShaderModule(Device, result.GetCode());
+        ModuleFragment = ModuleVertex = new ShaderModule(Device, result.GetCode());
 
-        result = SpirVCompiler.Compile(new NeslEntryPoint[] {
+        /*result = SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
         }, settings);
 
         System.IO.File.WriteAllBytes("tak2.spv", result.GetCode());
 
-        ModuleFragment = new ShaderModule(Device, result.GetCode());
+        ModuleFragment = new ShaderModule(Device, result.GetCode());*/
 
         int i = 0;
         Span<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[result.Bindings.Count];

@@ -1,4 +1,5 @@
-﻿namespace NoiseEngine.Interop.Rendering.Vulkan;
+﻿using NoiseEngine.Rendering.Vulkan;
 
-internal readonly record struct GraphicsPipelineCreateInfoRaw {
-}
+namespace NoiseEngine.Interop.Rendering.Vulkan;
+
+internal readonly record struct GraphicsPipelineCreateInfoRaw(PrimitiveTopology PrimitiveTopology);

@@ -25,7 +25,8 @@ internal class GraphicsPipeline : Pipeline {
             rawStages[i] = new PipelineShaderStageRaw(stages[i]);
 
         if (!GraphicsPipelineInterop.Create(
-            renderPass.Handle, layout.Handle, rawStages, flags, new GraphicsPipelineCreateInfoRaw()
+            renderPass.Handle, layout.Handle, rawStages, flags,
+            new GraphicsPipelineCreateInfoRaw(PrimitiveTopology.TriangleList)
         ).TryGetValue(
             out InteropHandle<Pipeline> handle, out ResultError error
         )) {

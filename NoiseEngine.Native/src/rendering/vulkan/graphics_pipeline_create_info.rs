@@ -1,6 +1,6 @@
-use std::marker::PhantomData;
+use ash::vk;
 
 #[repr(C)]
 pub struct GraphicsPipelineCreateInfo {
-    phantom: PhantomData<()>,
+    pub primitive_topology: vk::PrimitiveTopology
 }

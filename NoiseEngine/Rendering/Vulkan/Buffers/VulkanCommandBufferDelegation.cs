@@ -18,6 +18,11 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
     ) : base(writer, references, rcReferences) {
     }
 
+    public override void Clear() {
+        RenderPass = null;
+        AttachedShader = null;
+    }
+
     public override void DispatchWorker(ComputeKernel kernel, Vector3<uint> groupCount) {
         VulkanComputeKernel vulkanKernel = (VulkanComputeKernel)kernel;
         VulkanCommonShaderDelegationOld commonShader = (VulkanCommonShaderDelegationOld)kernel.Shader.Delegation;

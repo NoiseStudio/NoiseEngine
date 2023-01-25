@@ -19,6 +19,8 @@ internal abstract class GraphicsCommandBufferDelegation {
         this.rcReferences = rcReferences;
     }
 
+    public abstract void Clear();
+
     public abstract void AttachCameraWorker(SimpleCamera camera);
 
     public abstract void DispatchWorker(ComputeKernel kernel, Vector3<uint> groupCount);

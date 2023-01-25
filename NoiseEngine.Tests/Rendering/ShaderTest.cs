@@ -6,9 +6,8 @@ using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using NoiseEngine.Tests.Nesl;
-using System.Buffers.Binary;
 using System;
-using System.Threading;
+using System.Buffers.Binary;
 
 namespace NoiseEngine.Tests.Rendering;
 
@@ -32,9 +31,9 @@ public class ShaderTest : ApplicationTestEnvironment {
 
         int index = 0;
         foreach (Vector4<float> vector in new Vector4<float>[] {
-            new Vector4<float>(0.0f, -0.5f, 0.0f, 1.0f),
-            new Vector4<float>(0.5f, 0.5f, 0.0f, 1.0f),
-            new Vector4<float>(-0.5f, 0.5f, 0.0f, 1.0f)
+            new Vector4<float>(-1.0f, -1.0f, 0.0f, 1.0f),
+            new Vector4<float>(1.0f, -1.0f, 0.0f, 1.0f),
+            new Vector4<float>(-1.0f, 1.0f, 0.0f, 1.0f)
         }) {
             BinaryPrimitives.WriteSingleLittleEndian(data.AsSpan(index), vector.X);
             index += sizeof(float);
@@ -67,14 +66,24 @@ public class ShaderTest : ApplicationTestEnvironment {
         il.Emit(OpCode.LoadFloat32, 2u, 1f);
         il.Emit(OpCode.SetField, 1u, 0u, 2u);
         il.Emit(OpCode.SetField, 1u, 3u, 2u);
+        il.Emit(OpCode.LoadFloat32, 2u, 0f);
+        il.Emit(OpCode.SetField, 1u, 1u, 2u);
+        il.Emit(OpCode.SetField, 1u, 2u, 2u);
         il.Emit(OpCode.ReturnValue, 1u);
 
-        Window window = Fixture.GetWindow(nameof(Triangle));
+        // Executing.
+        Span<Color32> buffer = stackalloc Color32[4];
+
         foreach (GraphicsDevice device in GraphicsDevices) {
             Shader shader = new Shader(device, shaderClassData);
 
+            Texture2D texture = new Texture2D(
+                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 2, 2
+            );
             SimpleCamera camera = new SimpleCamera(device) {
-                RenderTarget = window,
+                RenderTarget = texture,
+                ClearFlags = CameraClearFlags.SolidColor,
+                ClearColor = Color.Green
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
@@ -85,7 +94,10 @@ public class ShaderTest : ApplicationTestEnvironment {
             commandBuffer.Execute();
             commandBuffer.Clear();
 
-            Thread.Sleep(1000);
+            // Assert.
+            texture.GetPixels(buffer);
+            Assert.Equal(Color32.Red, buffer[0]);
+            Assert.Equal((Color32)camera.ClearColor, buffer[3]);
         }
     }
 

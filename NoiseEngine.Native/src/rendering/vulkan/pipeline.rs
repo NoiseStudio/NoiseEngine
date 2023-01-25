@@ -19,7 +19,7 @@ pub struct Pipeline<'init> {
 impl<'init> Pipeline<'init> {
     pub fn with_graphics(
         render_pass: &Arc<RenderPass<'init>>, layout: &Arc<PipelineLayout<'init>>, stages: &[PipelineShaderStage],
-        flags: vk::PipelineCreateFlags, _create_info: GraphicsPipelineCreateInfo
+        flags: vk::PipelineCreateFlags, create_info: GraphicsPipelineCreateInfo
     ) -> Result<Self, VulkanUniversalError> {
         // Stages.
         let mut stage_names = Vec::with_capacity(stages.len());
@@ -61,7 +61,7 @@ impl<'init> Pipeline<'init> {
             s_type: vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::PipelineInputAssemblyStateCreateFlags::empty(),
-            topology: vk::PrimitiveTopology::TRIANGLE_LIST,
+            topology: create_info.primitive_topology,
             primitive_restart_enable: vk::FALSE,
         };
 

@@ -79,4 +79,26 @@ fn attach_camera_worker(
             buffer.inner(), &render_pass_info, vk::SubpassContents::INLINE
         )
     };
+
+    let viewport = vk::Viewport {
+        x: 0.0,
+        y: 0.0,
+        width: framebuffer_extent.width as f32,
+        height: framebuffer_extent.height as f32,
+        min_depth: 0.0,
+        max_depth: 1.0,
+    };
+
+    unsafe {
+        vulkan_device.cmd_set_viewport(buffer.inner(), 0, &[viewport]);
+    }
+
+    let scissor = vk::Rect2D {
+        offset: vk::Offset2D { x: 0, y: 0 },
+        extent: framebuffer_extent,
+    };
+
+    unsafe {
+        vulkan_device.cmd_set_scissor(buffer.inner(), 0, &[scissor]);
+    }
 }

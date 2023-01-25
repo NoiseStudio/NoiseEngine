@@ -4,7 +4,6 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
