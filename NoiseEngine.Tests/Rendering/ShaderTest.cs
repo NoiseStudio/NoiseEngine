@@ -18,7 +18,6 @@ public class ShaderTest : ApplicationTestEnvironment {
         // Create shader.
         NeslTypeBuilder shaderClassData = TestEmitHelper.NewType();
 
-        return;
         Window window = Fixture.GetWindow(nameof(Triangle));
         foreach (GraphicsDevice device in GraphicsDevices) {
             Shader shader = new Shader(device, shaderClassData);

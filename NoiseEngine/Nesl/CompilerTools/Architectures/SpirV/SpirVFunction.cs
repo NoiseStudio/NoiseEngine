@@ -12,6 +12,7 @@ internal class SpirVFunction {
     public NeslMethod NeslMethod { get; }
 
     public SpirVGenerator SpirVGenerator { get; }
+    public SpirVGenerator CodeSpirVGenerator { get; }
 
     public SpirVId Id { get; }
 
@@ -20,6 +21,7 @@ internal class SpirVFunction {
         NeslMethod = identifier.NeslMethod;
 
         SpirVGenerator = new SpirVGenerator(Compiler);
+        CodeSpirVGenerator = new SpirVGenerator(Compiler);
         Id = Compiler.GetNextId();
 
         BeginFunction(identifier);
@@ -27,13 +29,15 @@ internal class SpirVFunction {
 
     internal void Construct(SpirVGenerator generator) {
         generator.Writer.WriteBytes(SpirVGenerator.Writer.AsSpan());
+        generator.Writer.WriteBytes(CodeSpirVGenerator.Writer.AsSpan());
         generator.Emit(SpirVOpCode.OpFunctionEnd);
     }
 
     private void BeginFunction(SpirVFunctionIdentifier identifier) {
         SpirVType returnType;
 
-        if (Compiler.TryGetEntryPoint(NeslMethod, out NeslEntryPoint entryPoint)) {
+        bool isEntryPoint = Compiler.TryGetEntryPoint(NeslMethod, out NeslEntryPoint entryPoint);
+        if (isEntryPoint) {
             returnType = entryPoint.ExecutionModel switch {
                 ExecutionModel.Fragment => BeginFunctionFragment(),
                 ExecutionModel.GLCompute => Compiler.GetSpirVType(NeslMethod.ReturnType),
@@ -86,9 +90,19 @@ internal class SpirVFunction {
         SpirVGenerator.Emit(SpirVOpCode.OpLabel, Compiler.GetNextId());
 
         if (!NeslMethod.Attributes.HasAnyAttribute(nameof(IntrinsicAttribute))) {
-            new IlCompiler(Compiler, NeslMethod.GetInstructions(), NeslMethod, SpirVGenerator, parameters).Compile();
+            IlCompiler ilCompiler = new IlCompiler(
+                Compiler, NeslMethod.GetInstructions(), NeslMethod, CodeSpirVGenerator, parameters
+            );
+            ilCompiler.Compile();
+
+            if (isEntryPoint) {
+                foreach (SpirVVariable variable in ilCompiler.UsedVariables) {
+                    if (variable.NeslField?.DefaultData is not null)
+                        DefaultDataHelper.Store(Compiler, variable, variable.NeslField, SpirVGenerator);
+                }
+            }
         } else {
-            IntrinsicsManager.Process(Compiler, NeslMethod, SpirVGenerator, parameters);
+            IntrinsicsManager.Process(Compiler, NeslMethod, CodeSpirVGenerator, parameters);
         }
     }
 

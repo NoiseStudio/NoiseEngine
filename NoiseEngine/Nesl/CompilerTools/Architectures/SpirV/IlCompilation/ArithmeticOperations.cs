@@ -1,6 +1,4 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
-using NoiseEngine.Rendering;
-using System;
+﻿using System;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 

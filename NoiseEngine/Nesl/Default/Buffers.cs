@@ -6,6 +6,8 @@ namespace NoiseEngine.Nesl.Default;
 
 internal static class Buffers {
 
+    public const string ReadWriteBufferName = "System::System.ReadWriteBuffer`1";
+
     private static readonly NeslType readWriteBuffer;
 
     static Buffers() {

@@ -6,6 +6,7 @@ namespace NoiseEngine.Nesl;
 public abstract class NeslField {
 
     public abstract IEnumerable<NeslAttribute> Attributes { get; }
+    public abstract IReadOnlyList<byte>? DefaultData { get; }
 
     public NeslType ParentType { get; }
     public string Name { get; }

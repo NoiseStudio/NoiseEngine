@@ -7,8 +7,10 @@ namespace NoiseEngine.Nesl.Emit;
 public class NeslFieldBuilder : NeslField {
 
     private readonly ConcurrentBag<NeslAttribute> attributes = new ConcurrentBag<NeslAttribute>();
+    private IReadOnlyList<byte>? defaultData;
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
+    public override IReadOnlyList<byte>? DefaultData => defaultData;
 
     internal NeslFieldBuilder(NeslType parentType, string name, NeslType fieldType)
         : base(parentType, name, fieldType) {
@@ -25,6 +27,14 @@ public class NeslFieldBuilder : NeslField {
         }
 
         attributes.Add(attribute);
+    }
+
+    /// <summary>
+    /// Sets default data to this <see cref="NeslFieldBuilder"/>.
+    /// </summary>
+    /// <param name="defaultData">Default data of field.</param>
+    public void SetDefaultData(IReadOnlyList<byte>? defaultData) {
+        this.defaultData = defaultData;
     }
 
 }

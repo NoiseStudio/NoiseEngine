@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Nesl.Emit.Attributes;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,6 +46,10 @@ public class NeslTypeBuilder : NeslType {
 
             NeslGenericTypeParameterBuilder genericTypeParameter = new NeslGenericTypeParameterBuilder(this, name);
             genericTypeParameters.Add(genericTypeParameter);
+
+            NeslFieldBuilder phantom = DefineField(NeslOperators.Phantom + name, genericTypeParameter);
+            phantom.AddAttribute(StaticAttribute.Create());
+
             return genericTypeParameter;
         }
     }
@@ -66,7 +71,12 @@ public class NeslTypeBuilder : NeslType {
                 throw new ArgumentException($"{nameof(NeslField)} named `{name}` already exists in `{Name}` type.",
                     nameof(name));
             }
-            fields.Add(field);
+
+            int index = fields.FindIndex(x => x.Name.StartsWith(NeslOperators.Phantom));
+            if (index == -1)
+                fields.Add(field);
+            else
+                fields.Insert(index, field);
         }
 
         return field;

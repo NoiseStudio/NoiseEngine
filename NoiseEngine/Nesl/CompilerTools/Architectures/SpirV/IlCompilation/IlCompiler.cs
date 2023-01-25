@@ -12,6 +12,7 @@ internal class IlCompiler {
     public NeslMethod NeslMethod { get; }
     public SpirVGenerator Generator { get; }
     public IReadOnlyList<SpirVVariable> Parameters { get; }
+    public HashSet<SpirVVariable> UsedVariables { get; } = new HashSet<SpirVVariable>();
 
     public ArithmeticOperations ArithmeticOperations { get; }
     public BranchOperations BranchOperations { get; }
