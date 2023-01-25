@@ -28,4 +28,26 @@ pub fn attach_shader(
             pipeline.inner()
         );
     }
+
+    let viewport = vk::Viewport {
+        x: 0.0,
+        y: 0.0,
+        width: 1280.0,
+        height: 720.0,
+        min_depth: 0.0,
+        max_depth: 1.0,
+    };
+
+    unsafe {
+        vulkan_device.cmd_set_viewport(buffer.inner(), 0, &[viewport]);
+    }
+
+    let scissor = vk::Rect2D {
+        offset: vk::Offset2D { x: 0, y: 0 },
+        extent: vk::Extent2D { width: 1280, height: 720 },
+    };
+
+    unsafe {
+        vulkan_device.cmd_set_scissor(buffer.inner(), 0, &[scissor]);
+    }
 }

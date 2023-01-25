@@ -12,7 +12,8 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
     private readonly DescriptorSetLayout layout;
 
     public VulkanDevice Device => Unsafe.As<VulkanDevice>(Shader.Device);
-    public ShaderModule Module { get; }
+    public ShaderModule ModuleVertex { get; }
+    public ShaderModule ModuleFragment { get; }
     public PipelineLayout PipelineLayout { get; }
     public NeslMethod Vertex { get; }
     public NeslMethod Fragment { get; }
@@ -23,12 +24,20 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
 
         SpirVCompilationResult result = SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(Vertex, ExecutionModel.Vertex),
-            new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
+            //new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
         }, settings);
 
         System.IO.File.WriteAllBytes("tak.spv", result.GetCode());
 
-        Module = new ShaderModule(Device, result.GetCode());
+        ModuleVertex = new ShaderModule(Device, result.GetCode());
+
+        result = SpirVCompiler.Compile(new NeslEntryPoint[] {
+            new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
+        }, settings);
+
+        System.IO.File.WriteAllBytes("tak2.spv", result.GetCode());
+
+        ModuleFragment = new ShaderModule(Device, result.GetCode());
 
         int i = 0;
         Span<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[result.Bindings.Count];
@@ -40,8 +49,6 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
 
         layout = new DescriptorSetLayout(Device, bindings);
         PipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { layout });
-
-
     }
 
 }

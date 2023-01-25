@@ -15,6 +15,7 @@ internal class SpirVFunction {
     public SpirVGenerator CodeSpirVGenerator { get; }
 
     public SpirVId Id { get; }
+    public SpirVVariable? OutputVariable { get; private set; }
 
     public SpirVFunction(SpirVCompiler compiler, SpirVFunctionIdentifier identifier) {
         Compiler = compiler;
@@ -39,6 +40,7 @@ internal class SpirVFunction {
         bool isEntryPoint = Compiler.TryGetEntryPoint(NeslMethod, out NeslEntryPoint entryPoint);
         if (isEntryPoint) {
             returnType = entryPoint.ExecutionModel switch {
+                ExecutionModel.Vertex => BeginFunctionFragment(),
                 ExecutionModel.Fragment => BeginFunctionFragment(),
                 ExecutionModel.GLCompute => Compiler.GetSpirVType(NeslMethod.ReturnType),
                 _ => throw new NotImplementedException()
@@ -91,7 +93,8 @@ internal class SpirVFunction {
 
         if (!NeslMethod.Attributes.HasAnyAttribute(nameof(IntrinsicAttribute))) {
             IlCompiler ilCompiler = new IlCompiler(
-                Compiler, NeslMethod.GetInstructions(), NeslMethod, CodeSpirVGenerator, parameters
+                Compiler, NeslMethod.GetInstructions(), NeslMethod, CodeSpirVGenerator, parameters,
+                this, isEntryPoint ? entryPoint.ExecutionModel : null
             );
             ilCompiler.Compile();
 
@@ -108,14 +111,14 @@ internal class SpirVFunction {
 
     private SpirVType BeginFunctionFragment() {
         if (NeslMethod.ReturnType is not null) {
-            SpirVVariable variable = new SpirVVariable(
+            OutputVariable = new SpirVVariable(
                 Compiler, NeslMethod.ReturnType, StorageClass.Output, Compiler.TypesAndVariables
             );
-            Compiler.AddVariable(variable);
+            Compiler.AddVariable(OutputVariable);
 
             lock (Compiler.Annotations) {
                 Compiler.Annotations.Emit(
-                    SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location, 0u.ToSpirVLiteral()
+                    SpirVOpCode.OpDecorate, OutputVariable.Id, (uint)Decoration.Location, 0u.ToSpirVLiteral()
                 );
             }
         }

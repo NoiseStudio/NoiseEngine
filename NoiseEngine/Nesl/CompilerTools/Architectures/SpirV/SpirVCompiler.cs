@@ -189,6 +189,7 @@ internal class SpirVCompiler {
             // TODO: add support for another execution modes.
             switch (entryPoint.ExecutionModel) {
                 case ExecutionModel.Vertex:
+                    break;
                 case ExecutionModel.Fragment:
                     Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
                     break;

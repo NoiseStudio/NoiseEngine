@@ -46,6 +46,7 @@ internal class SpirVVariable {
             case StorageClass.Private:
             case StorageClass.Function:
             case StorageClass.Input:
+            case StorageClass.Output:
                 output = CreateFunctionStorage(generator, type);
                 break;
             default:
@@ -108,6 +109,7 @@ internal class SpirVVariable {
         return StorageClass switch {
             StorageClass.Input => Id,
             StorageClass.Uniform => GetAccessUniformStorage(generator),
+            StorageClass.Output => Id,
             StorageClass.Private => Id,
             StorageClass.Function => Id,
             _ => throw new NotImplementedException()

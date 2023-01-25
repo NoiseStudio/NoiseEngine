@@ -39,10 +39,10 @@ internal abstract class RenderPass {
             VulkanCommonShaderDelegation shaderDelegation = (VulkanCommonShaderDelegation)shader.Delegation;
             return new GraphicsPipeline(this, shaderDelegation.PipelineLayout, new PipelineShaderStage[] {
                 new PipelineShaderStage(
-                    ShaderStageFlags.Vertex, shaderDelegation.Module, shaderDelegation.Vertex.Guid.ToString()
+                    ShaderStageFlags.Vertex, shaderDelegation.ModuleVertex, shaderDelegation.Vertex.Guid.ToString()
                 ),
                 new PipelineShaderStage(
-                    ShaderStageFlags.Fragment, shaderDelegation.Module, shaderDelegation.Fragment.Guid.ToString()
+                    ShaderStageFlags.Fragment, shaderDelegation.ModuleFragment, shaderDelegation.Fragment.Guid.ToString()
                 )
             }, PipelineCreateFlags.None);
         });

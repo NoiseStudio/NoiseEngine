@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using System;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
@@ -37,6 +38,19 @@ internal class BranchOperations : IlCompilerOperation {
 
     public void ReturnValue(Instruction instruction) {
         SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+
+        if (IlCompiler.ExecutionModel.HasValue) {
+            switch (IlCompiler.ExecutionModel.Value) {
+                case ExecutionModel.Vertex:
+                case ExecutionModel.Fragment:
+                    IlCompiler.LoadOperations.SpirVStore(
+                        IlCompiler.Function.OutputVariable!, IlCompiler.LoadOperations.SpirVLoad(result)
+                    );
+                    Return();
+                    return;
+            }
+        }
+
         Generator.Emit(SpirVOpCode.OpReturnValue, IlCompiler.LoadOperations.SpirVLoad(result));
     }
 
