@@ -11,8 +11,8 @@ internal class VulkanShaderProperty : ShaderProperty {
     public uint Binding { get; }
     public nuint Offset { get; }
 
-    public new VulkanCommonShaderDelegation ShaderDelegation =>
-        Unsafe.As<VulkanCommonShaderDelegation>(base.ShaderDelegation);
+    public new VulkanCommonShaderDelegationOld ShaderDelegation =>
+        Unsafe.As<VulkanCommonShaderDelegationOld>(base.ShaderDelegation);
 
     public DescriptorUpdateTemplateEntry UpdateTemplateEntry =>
         new DescriptorUpdateTemplateEntry(Binding, 0, 1, DescriptorType.Storage, Offset, 0);
@@ -27,7 +27,7 @@ internal class VulkanShaderProperty : ShaderProperty {
     }
 
     public VulkanShaderProperty(
-        VulkanCommonShaderDelegation shaderDelegation, int index, ShaderPropertyType type, string name, uint binding,
+        VulkanCommonShaderDelegationOld shaderDelegation, int index, ShaderPropertyType type, string name, uint binding,
         nuint offset
     ) : base(shaderDelegation, index, type, name) {
         Binding = binding;
@@ -48,9 +48,9 @@ internal class VulkanShaderProperty : ShaderProperty {
         }
     }
 
-    internal override VulkanShaderProperty Clone(CommonShaderDelegation newShaderDelegation) {
+    internal override VulkanShaderProperty Clone(CommonShaderDelegationOld newShaderDelegation) {
         return new VulkanShaderProperty(
-            (VulkanCommonShaderDelegation)newShaderDelegation, Index, Type, Name, Binding, Offset
+            (VulkanCommonShaderDelegationOld)newShaderDelegation, Index, Type, Name, Binding, Offset
         );
     }
 

@@ -12,14 +12,17 @@ internal class SpirVFunction {
     public NeslMethod NeslMethod { get; }
 
     public SpirVGenerator SpirVGenerator { get; }
+    public SpirVGenerator CodeSpirVGenerator { get; }
 
     public SpirVId Id { get; }
+    public SpirVVariable? OutputVariable { get; private set; }
 
     public SpirVFunction(SpirVCompiler compiler, SpirVFunctionIdentifier identifier) {
         Compiler = compiler;
         NeslMethod = identifier.NeslMethod;
 
         SpirVGenerator = new SpirVGenerator(Compiler);
+        CodeSpirVGenerator = new SpirVGenerator(Compiler);
         Id = Compiler.GetNextId();
 
         BeginFunction(identifier);
@@ -27,14 +30,17 @@ internal class SpirVFunction {
 
     internal void Construct(SpirVGenerator generator) {
         generator.Writer.WriteBytes(SpirVGenerator.Writer.AsSpan());
+        generator.Writer.WriteBytes(CodeSpirVGenerator.Writer.AsSpan());
         generator.Emit(SpirVOpCode.OpFunctionEnd);
     }
 
     private void BeginFunction(SpirVFunctionIdentifier identifier) {
         SpirVType returnType;
 
-        if (Compiler.TryGetEntryPoint(NeslMethod, out NeslEntryPoint entryPoint)) {
+        bool isEntryPoint = Compiler.TryGetEntryPoint(NeslMethod, out NeslEntryPoint entryPoint);
+        if (isEntryPoint) {
             returnType = entryPoint.ExecutionModel switch {
+                ExecutionModel.Vertex => BeginFunctionFragment(),
                 ExecutionModel.Fragment => BeginFunctionFragment(),
                 ExecutionModel.GLCompute => Compiler.GetSpirVType(NeslMethod.ReturnType),
                 _ => throw new NotImplementedException()
@@ -86,22 +92,33 @@ internal class SpirVFunction {
         SpirVGenerator.Emit(SpirVOpCode.OpLabel, Compiler.GetNextId());
 
         if (!NeslMethod.Attributes.HasAnyAttribute(nameof(IntrinsicAttribute))) {
-            new IlCompiler(Compiler, NeslMethod.GetInstructions(), NeslMethod, SpirVGenerator, parameters).Compile();
+            IlCompiler ilCompiler = new IlCompiler(
+                Compiler, NeslMethod.GetInstructions(), NeslMethod, CodeSpirVGenerator, parameters,
+                this, isEntryPoint ? entryPoint.ExecutionModel : null
+            );
+            ilCompiler.Compile();
+
+            if (isEntryPoint) {
+                foreach (SpirVVariable variable in ilCompiler.UsedVariables) {
+                    if (variable.NeslField?.DefaultData is not null)
+                        DefaultDataHelper.Store(Compiler, variable, variable.NeslField, SpirVGenerator);
+                }
+            }
         } else {
-            IntrinsicsManager.Process(Compiler, NeslMethod, SpirVGenerator, parameters);
+            IntrinsicsManager.Process(Compiler, NeslMethod, CodeSpirVGenerator, parameters);
         }
     }
 
     private SpirVType BeginFunctionFragment() {
         if (NeslMethod.ReturnType is not null) {
-            SpirVVariable variable = new SpirVVariable(
+            OutputVariable = new SpirVVariable(
                 Compiler, NeslMethod.ReturnType, StorageClass.Output, Compiler.TypesAndVariables
             );
-            Compiler.AddVariable(variable);
+            Compiler.AddVariable(OutputVariable);
 
             lock (Compiler.Annotations) {
                 Compiler.Annotations.Emit(
-                    SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location, 0u.ToSpirVLiteral()
+                    SpirVOpCode.OpDecorate, OutputVariable.Id, (uint)Decoration.Location, 0u.ToSpirVLiteral()
                 );
             }
         }

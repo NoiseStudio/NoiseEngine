@@ -18,7 +18,9 @@ internal class SpirVBuiltInTypes {
         Compiler = compiler;
     }
 
-    public bool TryGetTypeByName(NeslType neslType, string name, [NotNullWhen(true)] out SpirVType? type) {
+    public bool TryGetTypeByName(
+        NeslType neslType, string name, object? additionalData, [NotNullWhen(true)] out SpirVType? type
+    ) {
         // Split name.
         List<string> args = new List<string>();
 
@@ -61,8 +63,12 @@ internal class SpirVBuiltInTypes {
             case nameof(SpirVOpCode.OpTypeVector):
                 type = GetOpTypeVector(neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!, uint.Parse(args[2]));
                 return true;
-            case "OpTypeArray":
-                type = GetOpTypeRuntimeArray(neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!);
+            case nameof(SpirVOpCode.OpTypeArray):
+                NeslType genericElement = neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!;
+                if (additionalData is uint length)
+                    type = GetOpTypeArray(genericElement, length);
+                else
+                    type = GetOpTypeRuntimeArray(genericElement);
                 return true;
             default:
                 type = null;
@@ -115,6 +121,26 @@ internal class SpirVBuiltInTypes {
 
                     return new SpirVType(Compiler, id);
                 }
+            })).Value;
+    }
+
+    public SpirVType GetOpTypeArray(NeslType elementType, uint length) {
+        return types.GetOrAdd(new object[] { SpirVOpCode.OpTypeArray, elementType, length },
+            _ => new Lazy<SpirVType>(() => {
+                SpirVType array;
+                SpirVId lengthId = Compiler.GetConst(length);
+
+                lock (Compiler.TypesAndVariables) {
+                    SpirVId id = Compiler.GetNextId();
+
+                    Compiler.TypesAndVariables.Emit(
+                        SpirVOpCode.OpTypeArray, id, Compiler.GetSpirVType(elementType).Id, lengthId
+                    );
+
+                    array = new SpirVType(Compiler, id);
+                }
+
+                return array;
             })).Value;
     }
 

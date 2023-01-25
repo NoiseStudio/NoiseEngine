@@ -156,6 +156,7 @@ public class GraphicsCommandBuffer {
         ReleaseRcReferences(rcReferences);
         references.Clear();
         writer.Clear();
+        delegation.Clear();
     }
 
     /// <summary>
@@ -327,6 +328,11 @@ public class GraphicsCommandBuffer {
     internal void DetachCameraUnchecked() {
         AttachedCamera = null;
         writer.WriteCommand(CommandBufferCommand.DetachCamera);
+    }
+
+    internal void DrawMeshUnchecked(Mesh mesh, Material material) {
+        graphics = true;
+        delegation.DrawMeshWorker(mesh, material);
     }
 
 }

@@ -10,14 +10,22 @@ namespace NoiseEngine.Rendering.Vulkan.Buffers;
 
 internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
+    private RenderPass? RenderPass { get; set; }
+    private Shader? AttachedShader { get; set; }
+
     public VulkanCommandBufferDelegation(
         SerializationWriter writer, FastList<object> references, FastList<IReferenceCoutable> rcReferences
     ) : base(writer, references, rcReferences) {
     }
 
+    public override void Clear() {
+        RenderPass = null;
+        AttachedShader = null;
+    }
+
     public override void DispatchWorker(ComputeKernel kernel, Vector3<uint> groupCount) {
         VulkanComputeKernel vulkanKernel = (VulkanComputeKernel)kernel;
-        VulkanCommonShaderDelegation commonShader = (VulkanCommonShaderDelegation)kernel.Shader.Delegation;
+        VulkanCommonShaderDelegationOld commonShader = (VulkanCommonShaderDelegationOld)kernel.Shader.Delegation;
 
         commonShader.AssertInitialized();
 
@@ -31,9 +39,9 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
     public override void AttachCameraWorker(SimpleCamera camera) {
         VulkanSimpleCameraDelegation cameraDelegation = (VulkanSimpleCameraDelegation)camera.Delegation;
-        RenderPass renderPass = cameraDelegation.RenderPass;
+        RenderPass = cameraDelegation.RenderPass;
 
-        if (renderPass is WindowRenderPass window) {
+        if (RenderPass is WindowRenderPass window) {
             FastList<IReferenceCoutable> rcReferences = this.rcReferences;
             rcReferences.EnsureCapacity(rcReferences.Count + 2);
 
@@ -45,14 +53,14 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
             rcReference.RcRetain();
             rcReferences.UnsafeAdd(rcReference);
 
-            references.Add(renderPass);
+            references.Add(RenderPass);
             Swapchain swapchain = window.Swapchain;
 
             writer.WriteCommand(CommandBufferCommand.AttachCameraWindow);
-            writer.WriteIntN(renderPass.Handle.Pointer);
+            writer.WriteIntN(RenderPass.Handle.Pointer);
             writer.WriteIntN(swapchain.Handle.Pointer);
-        } else if (renderPass is TextureRenderPass texture) {
-            references.Add(renderPass);
+        } else if (RenderPass is TextureRenderPass texture) {
+            references.Add(RenderPass);
             Framebuffer framebuffer = texture.Framebuffer;
 
             writer.WriteCommand(CommandBufferCommand.AttachCameraTexture);
@@ -62,6 +70,22 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
         }
 
         writer.WriteIntN(cameraDelegation.ClearColor);
+    }
+
+    public override void DrawMeshWorker(Mesh mesh, Material material) {
+        AttachShader(material.Shader);
+        writer.WriteCommand(CommandBufferCommand.DrawMesh);
+    }
+
+    private void AttachShader(Shader shader) {
+        if (AttachedShader == shader)
+            return;
+
+        AttachedShader = shader;
+        references.Add(shader);
+
+        writer.WriteCommand(CommandBufferCommand.AttachShader);
+        writer.WriteIntN(RenderPass!.GetPipeline(shader).Handle.Pointer);
     }
 
 }

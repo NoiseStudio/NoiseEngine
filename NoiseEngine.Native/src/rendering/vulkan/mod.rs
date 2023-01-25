@@ -7,6 +7,7 @@ pub mod device_support;
 pub mod device;
 pub mod fence;
 pub mod framebuffer;
+pub mod graphics_pipeline_create_info;
 pub mod image_view;
 pub mod image;
 pub mod instance;

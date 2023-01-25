@@ -11,14 +11,23 @@ internal static class InstructionExtensions {
         if (index == uint.MaxValue)
             return null;
 
-        if (index < neslMethod.Type.Fields.Count)
-            return ilCompiler.Compiler.GetSpirVVariable(neslMethod.Type.Fields[(int)index]);
+        SpirVVariable variable;
+        if (index < neslMethod.Type.Fields.Count) {
+            variable = ilCompiler.Compiler.GetSpirVVariable(neslMethod.Type.Fields[(int)index]);
+            ilCompiler.UsedVariables.Add(variable);
+            return variable;
+        }
 
         index -= (uint)neslMethod.Type.Fields.Count;
-        if (index < ilCompiler.Parameters.Count)
-            return ilCompiler.Parameters[(int)index];
+        if (index < ilCompiler.Parameters.Count) {
+            variable = ilCompiler.Parameters[(int)index];
+            ilCompiler.UsedVariables.Add(variable);
+            return variable;
+        }
 
-        return ilCompiler.DefOperations.Variables[(int)index - ilCompiler.Parameters.Count];
+        variable = ilCompiler.DefOperations.Variables[(int)index - ilCompiler.Parameters.Count];
+        ilCompiler.UsedVariables.Add(variable);
+        return variable;
     }
 
     public static Span<SpirVVariable> ReadRangeSpirVVariable(

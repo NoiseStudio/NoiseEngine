@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
 
@@ -9,28 +10,43 @@ internal class SpirVVariable {
     public SpirVCompiler Compiler { get; }
     public NeslType NeslType { get; }
     public StorageClass StorageClass { get; }
+    public NeslField? NeslField { get; }
+    public object? AdditionalData { get; }
 
     public SpirVId Id { get; }
     public SpirVType PointerType { get; }
     public uint? Binding { get; }
 
     public SpirVVariable(
-        SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVGenerator generator
+        SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVGenerator generator,
+        NeslField? neslField = null, object? additionalData = null
     ) {
         Compiler = compiler;
         NeslType = neslType;
         StorageClass = storageClass;
+        NeslField = neslField;
+        AdditionalData = additionalData;
 
-        SpirVType type = Compiler.GetSpirVType(neslType);
+        SpirVType type;
+        if (
+            neslType.FullNameWithAssembly == Buffers.ReadWriteBufferName &&
+            storageClass != StorageClass.Uniform
+        ) {
+            type = Compiler.GetSpirVType(neslType, additionalData);
+        } else {
+            type = Compiler.GetSpirVType(neslType);
+        }
+
         SpirVVariableCreationOutput output;
-
         switch (storageClass) {
             case StorageClass.Uniform:
                 output = CreateUniformStorage(generator, type, out uint binding);
                 Binding = binding;
                 break;
+            case StorageClass.Private:
             case StorageClass.Function:
             case StorageClass.Input:
+            case StorageClass.Output:
                 output = CreateFunctionStorage(generator, type);
                 break;
             default:
@@ -42,7 +58,8 @@ internal class SpirVVariable {
     }
 
     public SpirVVariable(SpirVCompiler compiler, NeslField neslField) : this(
-        compiler, neslField.FieldType, GetStorageClass(neslField), compiler.TypesAndVariables
+        compiler, neslField.FieldType, GetStorageClass(neslField), compiler.TypesAndVariables,
+        neslField, GetAdditionalData(neslField)
     ) {
     }
 
@@ -76,10 +93,24 @@ internal class SpirVVariable {
         return StorageClass.Private;
     }
 
+    private static object? GetAdditionalData(NeslField neslField) {
+        if (
+            neslField.DefaultData is null ||
+            neslField.FieldType.FullNameWithAssembly != Buffers.ReadWriteBufferName
+        ) {
+            return null;
+        }
+
+        ulong size = neslField.FieldType.GetField($"{NeslOperators.Phantom}T")!.FieldType.GetSize();
+        return (uint)((ulong)neslField.DefaultData.Count * 8 / size);
+    }
+
     public SpirVId GetAccess(SpirVGenerator generator) {
         return StorageClass switch {
             StorageClass.Input => Id,
             StorageClass.Uniform => GetAccessUniformStorage(generator),
+            StorageClass.Output => Id,
+            StorageClass.Private => Id,
             StorageClass.Function => Id,
             _ => throw new NotImplementedException()
         };

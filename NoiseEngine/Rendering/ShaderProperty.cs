@@ -9,11 +9,11 @@ public abstract class ShaderProperty {
     public string Name { get; }
     public object? Value { get; private set; }
 
-    internal CommonShaderDelegation ShaderDelegation { get; }
+    internal CommonShaderDelegationOld ShaderDelegation { get; }
     internal int Index { get; }
 
     private protected ShaderProperty(
-        CommonShaderDelegation shaderDelegation, int index, ShaderPropertyType type, string name
+        CommonShaderDelegationOld shaderDelegation, int index, ShaderPropertyType type, string name
     ) {
         ShaderDelegation = shaderDelegation;
         Index = index;
@@ -34,7 +34,7 @@ public abstract class ShaderProperty {
         SetBufferUnchecked(buffer);
     }
 
-    internal abstract ShaderProperty Clone(CommonShaderDelegation newShaderDelegation);
+    internal abstract ShaderProperty Clone(CommonShaderDelegationOld newShaderDelegation);
 
     private protected abstract void SetBufferUnchecked<T>(GraphicsBuffer<T> buffer) where T : unmanaged;
 

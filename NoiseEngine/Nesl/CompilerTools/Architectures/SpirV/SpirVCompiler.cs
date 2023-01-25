@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -36,6 +35,7 @@ internal class SpirVCompiler {
 
     internal SpirVCompilationResultBuilder ResultBuilder { get; }
     internal SpirVBuiltInTypes BuiltInTypes { get; }
+    internal SpirVConsts Consts { get; }
 
     internal SpirVGenerator Header { get; }
     internal SpirVGenerator Annotations { get; }
@@ -47,6 +47,7 @@ internal class SpirVCompiler {
 
         ResultBuilder = new SpirVCompilationResultBuilder();
         BuiltInTypes = new SpirVBuiltInTypes(this);
+        Consts = new SpirVConsts(this);
 
         Header = new SpirVGenerator(this);
         Annotations = new SpirVGenerator(this);
@@ -115,11 +116,11 @@ internal class SpirVCompiler {
         })).Value;
     }
 
-    internal SpirVType GetSpirVType(NeslType? neslType) {
+    internal SpirVType GetSpirVType(NeslType? neslType, object? additionalData = null) {
         if (neslType is null)
             return BuiltInTypes.GetOpTypeVoid();
 
-        return types.GetOrAdd(neslType, _ => new Lazy<SpirVType>(() => {
+        return types.GetOrAdd((neslType, additionalData), _ => new Lazy<SpirVType>(() => {
             if (neslType.Attributes.TryCastAnyAttribute(
                 out PlatformDependentTypeRepresentationAttribute? platformDependentTypeRepresentation
             )) {
@@ -127,7 +128,7 @@ internal class SpirVCompiler {
                 if (name is null)
                     throw new InvalidOperationException();
 
-                if (!BuiltInTypes.TryGetTypeByName(neslType, name, out SpirVType? type))
+                if (!BuiltInTypes.TryGetTypeByName(neslType, name, additionalData, out SpirVType ? type))
                     throw new InvalidOperationException();
                 return type;
             }
@@ -188,6 +189,7 @@ internal class SpirVCompiler {
             // TODO: add support for another execution modes.
             switch (entryPoint.ExecutionModel) {
                 case ExecutionModel.Vertex:
+                    break;
                 case ExecutionModel.Fragment:
                     Header.Emit(SpirVOpCode.OpExecutionMode, function.Id, (uint)ExecutionMode.OriginUpperLeft);
                     break;

@@ -5,6 +5,11 @@ namespace NoiseEngine.Nesl.Default;
 
 internal static class BuiltInTypes {
 
+    public const string UInt32Name = "System::System.UInt32";
+    public const string Int32Name = "System::System.Int32";
+    public const string Float32Name = "System::System.Float32";
+    public const string Float64Name = "System::System.Float64";
+
     public static NeslType UInt32 { get; }
     public static NeslType Int32 { get; }
     public static NeslType Float32 { get; }

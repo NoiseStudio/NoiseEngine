@@ -22,6 +22,9 @@ internal static class IntrinsicsManager {
             case $"{DefaultAssembly}.{nameof(Compute)}":
                  new Compute(compiler, neslMethod, generator, parameters).Process();
                  break;
+            case $"{DefaultAssembly}.{nameof(Vertex)}":
+                new Vertex(compiler, neslMethod, generator, parameters).Process();
+                break;
             default:
                 throw new InvalidOperationException($"Unable to find given {nameof(IntrinsicAttribute)} definition.");
         }

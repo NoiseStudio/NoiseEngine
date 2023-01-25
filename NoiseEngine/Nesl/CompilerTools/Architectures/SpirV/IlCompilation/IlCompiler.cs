@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.Emit;
+﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
 
@@ -12,6 +13,9 @@ internal class IlCompiler {
     public NeslMethod NeslMethod { get; }
     public SpirVGenerator Generator { get; }
     public IReadOnlyList<SpirVVariable> Parameters { get; }
+    public SpirVFunction Function { get; }
+    public ExecutionModel? ExecutionModel { get; }
+    public HashSet<SpirVVariable> UsedVariables { get; } = new HashSet<SpirVVariable>();
 
     public ArithmeticOperations ArithmeticOperations { get; }
     public BranchOperations BranchOperations { get; }
@@ -22,13 +26,15 @@ internal class IlCompiler {
 
     public IlCompiler(
         SpirVCompiler compiler, IEnumerable<Instruction> instructions, NeslMethod neslMethod, SpirVGenerator generator,
-        IReadOnlyList<SpirVVariable> parameters
+        IReadOnlyList<SpirVVariable> parameters, SpirVFunction function, ExecutionModel? executionModel
     ) {
         Compiler = compiler;
         this.instructions = instructions;
         NeslMethod = neslMethod;
         Generator = generator;
+        Function = function;
         Parameters = parameters;
+        ExecutionModel = executionModel;
 
         ArithmeticOperations = new ArithmeticOperations(this);
         BranchOperations = new BranchOperations(this);

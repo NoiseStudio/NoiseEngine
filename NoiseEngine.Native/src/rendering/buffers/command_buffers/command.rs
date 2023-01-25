@@ -6,5 +6,8 @@ pub enum GraphicsCommandBufferCommand {
     Dispatch = 3,
     AttachCameraWindow = 4,
     AttachCameraTexture = 5,
-    DetachCamera = 6
+    DetachCamera = 6,
+    DrawMesh = 7,
+
+    AttachShader = 10000
 }
