@@ -23,4 +23,6 @@ internal abstract class GraphicsCommandBufferDelegation {
 
     public abstract void DispatchWorker(ComputeKernel kernel, Vector3<uint> groupCount);
 
+    public abstract void DrawMeshWorker(Mesh mesh, Material material);
+
 }

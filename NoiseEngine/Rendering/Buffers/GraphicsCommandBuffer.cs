@@ -329,4 +329,9 @@ public class GraphicsCommandBuffer {
         writer.WriteCommand(CommandBufferCommand.DetachCamera);
     }
 
+    internal void DrawMeshUnchecked(Mesh mesh, Material material) {
+        graphics = true;
+        delegation.DrawMeshWorker(mesh, material);
+    }
+
 }

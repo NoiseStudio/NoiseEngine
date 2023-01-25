@@ -8,6 +8,7 @@ mod compute_pipeline_interop;
 mod conversions;
 mod device_interop;
 mod framebuffer_interop;
+mod graphics_pipeline_interop;
 mod image_interop;
 mod instance_interop;
 mod library_interop;

@@ -7,7 +7,7 @@ internal class ComputePipeline : Pipeline {
 
     public ComputePipeline(
         PipelineLayout layout, PipelineShaderStage stage, PipelineCreateFlags flags
-    ) : base(layout, stage, CreateHandle(layout, stage, flags)) {
+    ) : base(layout, new PipelineShaderStage[] { stage }, CreateHandle(layout, stage, flags)) {
     }
 
     private static InteropHandle<Pipeline> CreateHandle(

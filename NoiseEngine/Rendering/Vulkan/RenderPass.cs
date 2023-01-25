@@ -1,9 +1,13 @@
 ﻿using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Vulkan;
+using System.Collections.Concurrent;
 
 namespace NoiseEngine.Rendering.Vulkan;
 
 internal abstract class RenderPass {
+
+    private readonly ConcurrentDictionary<Shader, GraphicsPipeline> pipelines =
+        new ConcurrentDictionary<Shader, GraphicsPipeline>();
 
     public ICameraRenderTarget RenderTarget { get; }
 
@@ -28,6 +32,20 @@ internal abstract class RenderPass {
             return;
 
         RenderPassInterop.Destroy(Handle);
+    }
+
+    public GraphicsPipeline GetPipeline(Shader shader) {
+        return pipelines.GetOrAdd(shader, _ => {
+            VulkanCommonShaderDelegation shaderDelegation = (VulkanCommonShaderDelegation)shader.Delegation;
+            return new GraphicsPipeline(this, shaderDelegation.PipelineLayout, new PipelineShaderStage[] {
+                new PipelineShaderStage(
+                    ShaderStageFlags.Vertex, shaderDelegation.Module, shaderDelegation.Vertex.Guid.ToString()
+                ),
+                new PipelineShaderStage(
+                    ShaderStageFlags.Fragment, shaderDelegation.Module, shaderDelegation.Fragment.Guid.ToString()
+                )
+            }, PipelineCreateFlags.None);
+        });
     }
 
 }

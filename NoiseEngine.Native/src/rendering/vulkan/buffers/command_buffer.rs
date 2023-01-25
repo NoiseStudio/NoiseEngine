@@ -14,7 +14,7 @@ use crate::{
     serialization::reader::SerializationReader, interop::prelude::InteropResult, common::pool::PoolItem
 };
 
-use super::command_buffers::{memory_commands, compute_commands, camera_commands::{self, AttachCameraWindowOutput}};
+use super::command_buffers::{memory_commands, compute_commands, camera_commands::{self, AttachCameraWindowOutput}, draw_commands};
 
 pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     initialized: &'init VulkanDeviceInitialized<'init>,
@@ -222,6 +222,10 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                     camera_commands::attach_camera_texture(&mut data, self, vulkan_device),
                 GraphicsCommandBufferCommand::DetachCamera =>
                     camera_commands::detach_camera(self, vulkan_device),
+                GraphicsCommandBufferCommand::DrawMesh =>
+                    draw_commands::draw_mesh(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::AttachShader =>
+                    draw_commands::attach_shader(&mut data, self, vulkan_device),
             };
         };
 
