@@ -16,7 +16,7 @@ public class ShaderTest : ApplicationTestEnvironment {
     public ShaderTest(ApplicationFixture fixture) : base(fixture) {
     }
 
-    [FactRequire(TestRequirements.Gui | TestRequirements.Graphics)]
+    [FactRequire(TestRequirements.Graphics)]
     public void Triangle() {
         // Create shader.
         NeslTypeBuilder vertexData = TestEmitHelper.NewType();
@@ -88,7 +88,10 @@ public class ShaderTest : ApplicationTestEnvironment {
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
             commandBuffer.AttachCameraUnchecked(camera);
-            commandBuffer.DrawMeshUnchecked(new Mesh(), new Material(shader));
+            commandBuffer.DrawMeshUnchecked(
+                new Mesh<Vector4<float>, ushort>(device, Array.Empty<Vector4<float>>(), Array.Empty<ushort>()),
+                new Material(shader)
+            );
             commandBuffer.DetachCameraUnchecked();
 
             commandBuffer.Execute();

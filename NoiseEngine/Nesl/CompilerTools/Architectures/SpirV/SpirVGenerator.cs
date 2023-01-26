@@ -40,7 +40,7 @@ internal class SpirVGenerator {
     }
 
     public void Emit(
-        SpirVOpCode opCode, uint argument1, SpirVId argument2, SpirVLiteral argument3, SpirVId[] argument4
+        SpirVOpCode opCode, uint argument1, SpirVId argument2, SpirVLiteral argument3, ReadOnlySpan<SpirVId> argument4
     ) {
         EmitWorker(
             opCode, (ushort)(3 + argument3.WordCount + argument4.Length),

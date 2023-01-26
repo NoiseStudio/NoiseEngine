@@ -123,21 +123,6 @@ internal class SpirVFunction {
             }
         }
 
-        uint location = 0;
-        foreach (NeslType parameterType in NeslMethod.ParameterTypes) {
-            SpirVVariable variable = new SpirVVariable(
-                Compiler, parameterType, StorageClass.Input, Compiler.TypesAndVariables
-            );
-            Compiler.AddVariable(variable);
-
-            lock (Compiler.Annotations) {
-                Compiler.Annotations.Emit(
-                    SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location,
-                    location++.ToSpirVLiteral()
-                );
-            }
-        }
-
         return Compiler.BuiltInTypes.GetOpTypeVoid();
     }
 

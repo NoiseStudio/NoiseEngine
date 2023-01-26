@@ -2,6 +2,7 @@
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System;
 using System.Reflection;
+using System.Reflection.Metadata;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -30,6 +31,8 @@ internal class SpirVType {
 
             if (field.Name == "Position") {
                 lock (Compiler.Annotations) {
+                    Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, Id, (uint)Decoration.Block);
+
                     Compiler.Annotations.Emit(
                         SpirVOpCode.OpMemberDecorate, Id, index.ToSpirVLiteral(), (uint)Decoration.BuiltIn,
                         0u.ToSpirVLiteral()

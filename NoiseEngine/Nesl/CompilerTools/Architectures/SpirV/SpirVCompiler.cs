@@ -163,6 +163,28 @@ internal class SpirVCompiler {
         return entryPoint != default;
     }
 
+    private SpirVVariable[] CreateEntryPointParameters(NeslMethod method) {
+        SpirVVariable[] parameters = new SpirVVariable[method.ParameterTypes.Count];
+
+        uint location = 0;
+        for (int i = 0; i < method.ParameterTypes.Count; i++) {
+            SpirVVariable variable = new SpirVVariable(
+                this, method.ParameterTypes[i], StorageClass.Input, TypesAndVariables
+            );
+            AddVariable(variable);
+            parameters[i] = variable;
+
+            lock (Annotations) {
+                Annotations.Emit(
+                    SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location,
+                    location++.ToSpirVLiteral()
+                );
+            }
+        }
+
+        return parameters;
+    }
+
     private void CompileWorker() {
         Header.Emit(SpirVOpCode.OpCapability, (uint)Capability.Shader);
         Header.Emit(SpirVOpCode.OpMemoryModel, (uint)AddressingModel.Logical, (uint)MemoryModel.Glsl450);
@@ -174,16 +196,23 @@ internal class SpirVCompiler {
 
         // Emit OpEntryPoint.
         foreach (NeslEntryPoint entryPoint in EntryPoints) {
+            SpirVVariable[] parameters = CreateEntryPointParameters(entryPoint.Method);
             SpirVFunction function = GetSpirVFunction(new SpirVFunctionIdentifier(
-                entryPoint.Method, Array.Empty<SpirVVariable>()
+                entryPoint.Method, parameters
             ));
+
+            SpirVId[] ids = new SpirVId[parameters.Length + (function.OutputVariable is null ? 0 : 1)];
+            int i = 0;
+            if (function.OutputVariable is not null)
+                ids[i++] = function.OutputVariable.Id;
+
+            for (int j = 0; j < parameters.Length; j++)
+                ids[i++] = parameters[j].Id;
 
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,
                 function.Id, entryPoint.Method.Guid.ToString().ToSpirVLiteral(),
-                allVariables
-                    .Where(x => x.StorageClass == StorageClass.Input || x.StorageClass == StorageClass.Output)
-                    .OrderBy(x => x.StorageClass).Select(x => x.Id).ToArray()
+                ids
             );
 
             // TODO: add support for another execution modes.
