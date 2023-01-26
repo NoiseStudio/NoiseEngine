@@ -186,23 +186,30 @@ internal class SpirVCompiler {
                 entryPoint.Method, parameters
             ));
 
-            SpirVId[] ids = new SpirVId[parameters.Length + function.UsedIOVariables.Count];
-            int i = 0;
-            if (function.OutputVariable is not null)
-                ids[i++] = function.OutputVariable.Id;
+            FastList<SpirVId> ids = new FastList<SpirVId>();
 
-            for (int j = 0; j < parameters.Length; j++)
-                ids[i++] = parameters[j].Id;
+            if (function.OutputVariable is not null)
+                ids.Add(function.OutputVariable.Id);
+
+            foreach (SpirVVariable parameter in parameters) {
+                if (parameter.AdditionalData is not SpirVVariable[] innerVariables) {
+                    ids.Add(parameter.Id);
+                    continue;
+                }
+
+                foreach (SpirVVariable innerVariable in innerVariables)
+                    ids.Add(innerVariable.Id);
+            }
 
             foreach (SpirVVariable variable in function.UsedIOVariables) {
                 if (variable != function.OutputVariable)
-                    ids[i++] = variable.Id;
+                    ids.Add(variable.Id);
             }
 
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,
                 function.Id, entryPoint.Method.Guid.ToString().ToSpirVLiteral(),
-                ids
+                ids.AsSpan()
             );
 
             // TODO: add support for another execution modes.

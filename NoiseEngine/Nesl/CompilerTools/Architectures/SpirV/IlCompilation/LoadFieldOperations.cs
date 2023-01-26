@@ -10,6 +10,16 @@ internal class LoadFieldOperations : IlCompilerOperation {
         SpirVVariable obj = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
         uint index = instruction.ReadUInt32();
 
+        if (obj.AdditionalData is SpirVVariable[] innerVariables) {
+            SpirVId id = Compiler.GetNextId();
+            Generator.Emit(
+                SpirVOpCode.OpLoad, Compiler.GetSpirVType(result.NeslType).Id, id,
+                innerVariables[index].GetAccess(Generator)
+            );
+            IlCompiler.LoadOperations.SpirVStore(result, id);
+            return;
+        }
+
         SpirVType elementType = Compiler.GetSpirVType(result.NeslType);
         SpirVId indexConst = Compiler.GetConst(index);
         SpirVId accessChain = IlCompiler.LoadOperations.GetAccessChainFromIndex(elementType, obj, indexConst);

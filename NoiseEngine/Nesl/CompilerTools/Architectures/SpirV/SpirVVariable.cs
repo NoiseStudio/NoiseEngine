@@ -64,13 +64,16 @@ internal class SpirVVariable {
     }
 
     public SpirVVariable(
-        SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVId id, SpirVType pointerType
+        SpirVCompiler compiler, NeslType neslType, StorageClass storageClass, SpirVId id, SpirVType pointerType,
+        NeslField? neslField = null, object? additionalData = null
     ) {
         Compiler = compiler;
         NeslType = neslType;
         StorageClass = storageClass;
         Id = id;
         PointerType = pointerType;
+        NeslField = neslField;
+        AdditionalData = additionalData;
     }
 
     public static SpirVVariable CreateFromParameter(

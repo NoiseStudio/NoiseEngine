@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System;
+using System.Reflection;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
@@ -23,6 +24,19 @@ internal class LoadOperations : IlCompilerOperation {
     public void Load(Instruction instruction) {
         SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
         SpirVVariable value = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+
+        if (value.AdditionalData is SpirVVariable[] innerVariables) {
+            for (uint i = 0; i < innerVariables.Length; i++) {
+                SpirVVariable innerVariable = innerVariables[i];
+                SpirVId load = SpirVLoad(innerVariable);
+                SpirVId accessChain = GetAccessChainFromIndex(
+                    Compiler.GetSpirVType(innerVariable.NeslType), result, Compiler.GetConst(i)
+                );
+
+                Generator.Emit(SpirVOpCode.OpStore, accessChain, load);
+            }
+            return;
+        }
 
         SpirVId id = Compiler.GetNextId();
         Generator.Emit(SpirVOpCode.OpLoad, Compiler.GetSpirVType(result.NeslType).Id, id, value.GetAccess(Generator));

@@ -39,7 +39,7 @@ internal class EntryPointHelper {
                 variable = innerVariables[0];
             } else {
                 variable = new SpirVVariable(
-                    Compiler, method.ParameterTypes[i], StorageClass.Input, Compiler.TypesAndVariables, null,
+                    Compiler, method.ParameterTypes[i], StorageClass.Input, new SpirVId(), null!, null,
                     innerVariables.ToArray()
                 );
             }
