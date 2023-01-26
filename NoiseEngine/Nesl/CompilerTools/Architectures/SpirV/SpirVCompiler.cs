@@ -36,6 +36,7 @@ internal class SpirVCompiler {
 
     internal SpirVCompilationResultBuilder ResultBuilder { get; }
     internal SpirVBuiltInTypes BuiltInTypes { get; }
+    internal SpirVBuiltInVariables BuiltInVariables { get; }
     internal SpirVConsts Consts { get; }
     internal EntryPointHelper EntryPointHelper { get; }
 
@@ -49,6 +50,7 @@ internal class SpirVCompiler {
 
         ResultBuilder = new SpirVCompilationResultBuilder();
         BuiltInTypes = new SpirVBuiltInTypes(this);
+        BuiltInVariables = new SpirVBuiltInVariables(this);
         Consts = new SpirVConsts(this);
         EntryPointHelper = new EntryPointHelper(this);
 

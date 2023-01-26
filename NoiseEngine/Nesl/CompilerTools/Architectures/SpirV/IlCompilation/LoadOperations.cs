@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System;
-using System.Reflection;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
