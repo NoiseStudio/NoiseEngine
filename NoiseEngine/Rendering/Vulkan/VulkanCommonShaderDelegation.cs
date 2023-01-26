@@ -16,6 +16,7 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
     public ShaderModule ModuleFragment { get; }
     public PipelineLayout PipelineLayout { get; }
     public NeslMethod Vertex { get; }
+    public VertexInputDescription VertexDescription { get; }
     public NeslMethod Fragment { get; }
 
     public VulkanCommonShaderDelegation(ICommonShader shader, ShaderSettings settings) : base(shader) {
@@ -31,6 +32,7 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
 
         //ModuleFragment =
         ModuleVertex = new ShaderModule(Device, result.GetCode());
+        VertexDescription = result.VertexInputDesciptions[Vertex];
 
         result = SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(Fragment, ExecutionModel.Fragment),

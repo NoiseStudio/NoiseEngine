@@ -22,11 +22,14 @@ internal class BranchOperations : IlCompilerOperation {
                 parameterIds[i++] = parameters[j].Id;
         }
 
+        SpirVFunction calledFunction = Compiler.GetSpirVFunction(identifier);
+
         SpirVId id = Compiler.GetNextId();
         Generator.Emit(
-            SpirVOpCode.OpFunctionCall, Compiler.GetSpirVType(method.ReturnType).Id, id,
-            Compiler.GetSpirVFunction(identifier).Id, parameterIds
+            SpirVOpCode.OpFunctionCall, Compiler.GetSpirVType(method.ReturnType).Id, id, calledFunction.Id, parameterIds
         );
+
+        IlCompiler.Function.UsedIOVariables.UnionWith(calledFunction.UsedIOVariables);
 
         if (result is not null)
             Generator.Emit(SpirVOpCode.OpStore, result.GetAccess(Generator), id);

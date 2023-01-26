@@ -3,6 +3,7 @@ using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.Vulkan;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -36,6 +37,7 @@ internal class SpirVCompiler {
     internal SpirVCompilationResultBuilder ResultBuilder { get; }
     internal SpirVBuiltInTypes BuiltInTypes { get; }
     internal SpirVConsts Consts { get; }
+    internal EntryPointHelper EntryPointHelper { get; }
 
     internal SpirVGenerator Header { get; }
     internal SpirVGenerator Annotations { get; }
@@ -48,6 +50,7 @@ internal class SpirVCompiler {
         ResultBuilder = new SpirVCompilationResultBuilder();
         BuiltInTypes = new SpirVBuiltInTypes(this);
         Consts = new SpirVConsts(this);
+        EntryPointHelper = new EntryPointHelper(this);
 
         Header = new SpirVGenerator(this);
         Annotations = new SpirVGenerator(this);
@@ -163,28 +166,6 @@ internal class SpirVCompiler {
         return entryPoint != default;
     }
 
-    private SpirVVariable[] CreateEntryPointParameters(NeslMethod method) {
-        SpirVVariable[] parameters = new SpirVVariable[method.ParameterTypes.Count];
-
-        uint location = 0;
-        for (int i = 0; i < method.ParameterTypes.Count; i++) {
-            SpirVVariable variable = new SpirVVariable(
-                this, method.ParameterTypes[i], StorageClass.Input, TypesAndVariables
-            );
-            AddVariable(variable);
-            parameters[i] = variable;
-
-            lock (Annotations) {
-                Annotations.Emit(
-                    SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location,
-                    location++.ToSpirVLiteral()
-                );
-            }
-        }
-
-        return parameters;
-    }
-
     private void CompileWorker() {
         Header.Emit(SpirVOpCode.OpCapability, (uint)Capability.Shader);
         Header.Emit(SpirVOpCode.OpMemoryModel, (uint)AddressingModel.Logical, (uint)MemoryModel.Glsl450);
@@ -196,18 +177,27 @@ internal class SpirVCompiler {
 
         // Emit OpEntryPoint.
         foreach (NeslEntryPoint entryPoint in EntryPoints) {
-            SpirVVariable[] parameters = CreateEntryPointParameters(entryPoint.Method);
+            (SpirVVariable[] parameters, VertexInputDescription description) =
+                EntryPointHelper.CreateEntryPointInputs(entryPoint.Method);
+
+            ResultBuilder.VertexInputDesciptions.Add(entryPoint.Method, description);
+
             SpirVFunction function = GetSpirVFunction(new SpirVFunctionIdentifier(
                 entryPoint.Method, parameters
             ));
 
-            SpirVId[] ids = new SpirVId[parameters.Length + (function.OutputVariable is null ? 0 : 1)];
+            SpirVId[] ids = new SpirVId[parameters.Length + function.UsedIOVariables.Count];
             int i = 0;
             if (function.OutputVariable is not null)
                 ids[i++] = function.OutputVariable.Id;
 
             for (int j = 0; j < parameters.Length; j++)
                 ids[i++] = parameters[j].Id;
+
+            foreach (SpirVVariable variable in function.UsedIOVariables) {
+                if (variable != function.OutputVariable)
+                    ids[i++] = variable.Id;
+            }
 
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,

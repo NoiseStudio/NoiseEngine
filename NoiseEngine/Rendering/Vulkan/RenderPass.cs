@@ -45,12 +45,8 @@ internal abstract class RenderPass {
                     ShaderStageFlags.Fragment, shaderDelegation.ModuleFragment, shaderDelegation.Fragment.Guid.ToString()
                 )
             }, PipelineCreateFlags.None, new GraphicsPipelineCreateInfo() {
-                /*VertexInputBindingDescription = stackalloc VertexInputBindingDescription[] {
-                    new VertexInputBindingDescription(0, 4 * 3 * sizeof(float), VertexInputRate.Vertex)
-                },
-                VertexInputAttributeDescription = stackalloc VertexInputAttributeDescription[] {
-                    new VertexInputAttributeDescription(0, 0, VulkanFormat.R32G32B32A32_SFloat, 0)
-                },*/
+                VertexInputBindingDescription = shaderDelegation.VertexDescription.Bindings,
+                VertexInputAttributeDescription = shaderDelegation.VertexDescription.Attributes,
                 PrimitiveTopology = PrimitiveTopology.TriangleList
             });
             ;

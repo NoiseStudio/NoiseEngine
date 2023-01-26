@@ -16,16 +16,19 @@ public class MeshT2Test : ApplicationTestEnvironment {
     public MeshT2Test(ApplicationFixture fixture) : base(fixture) {
     }
 
+    private readonly record struct VertexData(Vector4<float> Position, Color Color);
+
     [FactRequire(TestRequirements.Graphics)]
     public void Figure2D() {
         // Create shader.
         NeslTypeBuilder vertexData = TestEmitHelper.NewType();
         vertexData.DefineField("Position", Vectors.GetVector4(BuiltInTypes.Float32));
+        vertexData.DefineField("Color", Vectors.GetVector4(BuiltInTypes.Float32));
 
         NeslTypeBuilder shaderClassData = TestEmitHelper.NewType();
 
         NeslMethodBuilder vertex = shaderClassData.DefineMethod(
-            "Vertex", vertexData, Vectors.GetVector4(BuiltInTypes.Float32)
+            "Vertex", vertexData, vertexData
         );
         IlGenerator il = vertex.IlGenerator;
 
@@ -64,11 +67,14 @@ public class MeshT2Test : ApplicationTestEnvironment {
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
-            Mesh mesh = new Mesh<Vector4<float>, ushort>(device, new Vector4<float>[] {
-                new Vector4<float>(0, -.5f, 0, 1),
-                new Vector4<float>(.5f, .5f, 0, 1),
-                new Vector4<float>(-.5f, .5f, 0, 1)
-            }, Array.Empty<ushort>());
+            Mesh mesh = new Mesh<VertexData, ushort>(device, new VertexData[] {
+                new VertexData(new Vector4<float>(-.5f, -.5f, 0, 1), Color.Magenta),
+                new VertexData(new Vector4<float>(.5f, -.5f, 0, 1), Color.Red),
+                new VertexData(new Vector4<float>(-.5f, .5f, 0, 1), Color.Green),
+                new VertexData(new Vector4<float>(.5f, .5f, 0, 1), Color.Blue)
+            }, new ushort[] {
+                0, 1, 2, 1, 3, 2
+            });
 
             while (true) {
                 WindowInterop.PoolEvents(window.Handle);

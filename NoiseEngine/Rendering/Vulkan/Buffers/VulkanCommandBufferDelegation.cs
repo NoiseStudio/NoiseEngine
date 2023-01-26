@@ -84,6 +84,9 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
         writer.WriteCommand(CommandBufferCommand.DrawMesh);
         writer.WriteIntN(vertexBuffer.InnerHandleUniversal.Pointer);
+        writer.WriteIntN(indexBuffer.InnerHandleUniversal.Pointer);
+        writer.WriteUInt32((uint)mesh.IndexFormat);
+        writer.WriteUInt32((uint)indexBuffer.Count);
     }
 
     private void AttachShader(Shader shader) {

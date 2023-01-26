@@ -3,6 +3,7 @@ using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
+using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -16,6 +17,7 @@ internal class SpirVFunction {
 
     public SpirVId Id { get; }
     public SpirVVariable? OutputVariable { get; private set; }
+    public HashSet<SpirVVariable> UsedIOVariables { get; } = new HashSet<SpirVVariable>();
 
     public SpirVFunction(SpirVCompiler compiler, SpirVFunctionIdentifier identifier) {
         Compiler = compiler;
@@ -105,7 +107,7 @@ internal class SpirVFunction {
                 }
             }
         } else {
-            IntrinsicsManager.Process(Compiler, NeslMethod, CodeSpirVGenerator, parameters);
+            IntrinsicsManager.Process(CodeSpirVGenerator, this, parameters);
         }
     }
 
@@ -115,6 +117,7 @@ internal class SpirVFunction {
                 Compiler, NeslMethod.ReturnType, StorageClass.Output, Compiler.TypesAndVariables
             );
             Compiler.AddVariable(OutputVariable);
+            UsedIOVariables.Add(OutputVariable);
 
             lock (Compiler.Annotations) {
                 Compiler.Annotations.Emit(
