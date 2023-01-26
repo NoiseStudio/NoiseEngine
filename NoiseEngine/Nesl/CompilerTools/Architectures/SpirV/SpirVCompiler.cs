@@ -177,13 +177,20 @@ internal class SpirVCompiler {
 
         // Emit OpEntryPoint.
         foreach (NeslEntryPoint entryPoint in EntryPoints) {
-            (SpirVVariable[] parameters, VertexInputDescription description) =
-                EntryPointHelper.CreateEntryPointInputs(entryPoint.Method);
-
-            ResultBuilder.VertexInputDesciptions.Add(entryPoint.Method, description);
+            SpirVVariable[]? parameters = null;
+            switch (entryPoint.ExecutionModel) {
+                case ExecutionModel.Vertex:
+                    (parameters, VertexInputDescription description) =
+                        EntryPointHelper.CreateVertexInputs(entryPoint.Method);
+                    ResultBuilder.VertexInputDesciptions.Add(entryPoint.Method, description);
+                    break;
+                case ExecutionModel.Fragment:
+                    parameters = EntryPointHelper.CreateFragmentInputs(entryPoint.Method);
+                    break;
+            };
 
             SpirVFunction function = GetSpirVFunction(new SpirVFunctionIdentifier(
-                entryPoint.Method, parameters
+                entryPoint.Method, parameters ?? Array.Empty<SpirVVariable>()
             ));
 
             FastList<SpirVId> ids = new FastList<SpirVId>();
@@ -191,14 +198,16 @@ internal class SpirVCompiler {
             if (function.OutputVariable is not null)
                 ids.Add(function.OutputVariable.Id);
 
-            foreach (SpirVVariable parameter in parameters) {
-                if (parameter.AdditionalData is not SpirVVariable[] innerVariables) {
-                    ids.Add(parameter.Id);
-                    continue;
-                }
+            if (parameters is not null) {
+                foreach (SpirVVariable parameter in parameters) {
+                    if (parameter.AdditionalData is not SpirVVariable[] innerVariables) {
+                        ids.Add(parameter.Id);
+                        continue;
+                    }
 
-                foreach (SpirVVariable innerVariable in innerVariables)
-                    ids.Add(innerVariable.Id);
+                    foreach (SpirVVariable innerVariable in innerVariables)
+                        ids.Add(innerVariable.Id);
+                }
             }
 
             foreach (SpirVVariable variable in function.UsedIOVariables) {

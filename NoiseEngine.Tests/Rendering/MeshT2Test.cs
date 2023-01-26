@@ -42,15 +42,6 @@ public class MeshT2Test : ApplicationTestEnvironment {
         il = fragment.IlGenerator;
 
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
-        /*il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);
-        il.Emit(OpCode.LoadFloat32, 1u, 1f);
-        il.Emit(OpCode.SetField, 0u, 0u, 1u);
-        il.Emit(OpCode.SetField, 0u, 3u, 1u);
-        il.Emit(OpCode.LoadFloat32, 1u, 0f);
-        il.Emit(OpCode.SetField, 0u, 1u, 1u);
-        il.Emit(OpCode.SetField, 0u, 2u, 1u);
-        il.Emit(OpCode.ReturnValue, 0u);*/
-
         il.Emit(OpCode.LoadField, 1u, 0u, 1u);
         il.Emit(OpCode.ReturnValue, 1u);
 

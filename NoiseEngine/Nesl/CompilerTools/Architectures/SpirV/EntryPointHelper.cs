@@ -13,7 +13,29 @@ internal class EntryPointHelper {
         Compiler = compiler;
     }
 
-    public (SpirVVariable[], VertexInputDescription) CreateEntryPointInputs(NeslMethod method) {
+    public SpirVVariable[] CreateFragmentInputs(NeslMethod method) {
+        SpirVVariable[] parameters = new SpirVVariable[method.ParameterTypes.Count];
+
+        uint location = 0;
+        for (int i = 0; i < method.ParameterTypes.Count; i++) {
+            SpirVVariable variable = new SpirVVariable(
+                Compiler, method.ParameterTypes[i], StorageClass.Input, Compiler.TypesAndVariables
+            );
+            Compiler.AddVariable(variable);
+            parameters[i] = variable;
+
+            lock (Compiler.Annotations) {
+                Compiler.Annotations.Emit(
+                    SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location,
+                    location++.ToSpirVLiteral()
+                );
+            }
+        }
+
+        return parameters;
+    }
+
+    public (SpirVVariable[], VertexInputDescription) CreateVertexInputs(NeslMethod method) {
         SpirVVariable[] parameters = new SpirVVariable[method.ParameterTypes.Count];
         VertexInputBindingDescription[] bindings = new VertexInputBindingDescription[method.ParameterTypes.Count];
 
