@@ -50,10 +50,10 @@ impl<'init> Pipeline<'init> {
             s_type: vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::PipelineVertexInputStateCreateFlags::empty(),
-            vertex_binding_description_count: 0,
-            p_vertex_binding_descriptions: ptr::null(),
-            vertex_attribute_description_count: 0,
-            p_vertex_attribute_descriptions: ptr::null(),
+            vertex_binding_description_count: create_info.vertex_input_binding_descriptions.len() as u32,
+            p_vertex_binding_descriptions: create_info.vertex_input_binding_descriptions.as_ptr(),
+            vertex_attribute_description_count: create_info.vertex_input_attribute_descriptions.len() as u32,
+            p_vertex_attribute_descriptions: create_info.vertex_input_attribute_descriptions.as_ptr(),
         };
 
         // Input assembly.

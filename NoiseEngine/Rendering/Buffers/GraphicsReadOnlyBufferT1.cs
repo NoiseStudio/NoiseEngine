@@ -7,9 +7,7 @@ namespace NoiseEngine.Rendering.Buffers;
 
 public abstract class GraphicsReadOnlyBuffer<T> : GraphicsReadOnlyBuffer where T : unmanaged {
 
-    public GraphicsDevice Device { get; }
     public GraphicsBufferUsage Usage { get; }
-    public ulong Count { get; }
 
     internal InteropHandle<GraphicsReadOnlyBuffer<T>> Handle { get; }
     internal InteropHandle<GraphicsReadOnlyBuffer<T>> InnerHandle { get; }
@@ -22,10 +20,8 @@ public abstract class GraphicsReadOnlyBuffer<T> : GraphicsReadOnlyBuffer where T
     private protected GraphicsReadOnlyBuffer(
         GraphicsDevice device, GraphicsBufferUsage usage, ulong count, InteropHandle<GraphicsReadOnlyBuffer<T>> handle,
         InteropHandle<GraphicsReadOnlyBuffer<T>> innerHandle
-    ) {
-        Device = device;
+    ) : base(device, count) {
         Usage = usage;
-        Count = count;
         Handle = handle;
         InnerHandle = innerHandle;
     }
@@ -43,7 +39,9 @@ public abstract class GraphicsReadOnlyBuffer<T> : GraphicsReadOnlyBuffer where T
     /// <param name="count">T object count.</param>
     /// <returns>Size in bytes of <paramref name="count"/>.</returns>
     public static ulong GetSize(ulong count) {
-        return checked(count * (ulong)Marshal.SizeOf(default(T)));
+        unsafe {
+            return checked(count * (ulong)sizeof(T));
+        }
     }
 
     /// <summary>

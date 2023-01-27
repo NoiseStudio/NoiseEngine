@@ -7,17 +7,17 @@ namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 
 internal abstract class IntrinsicsContainer {
 
-    public SpirVCompiler Compiler { get; }
-    public NeslMethod NeslMethod { get; }
+    public SpirVCompiler Compiler => Function.Compiler;
+    public NeslMethod NeslMethod => Function.NeslMethod;
     public SpirVGenerator Generator { get; }
+    public SpirVFunction Function { get; }
     public IReadOnlyList<SpirVVariable> Parameters { get; }
 
     protected IntrinsicsContainer(
-        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator, IReadOnlyList<SpirVVariable> parameters
+        SpirVGenerator generator, SpirVFunction function, IReadOnlyList<SpirVVariable> parameters
     ) {
-        Compiler = compiler;
-        NeslMethod = neslMethod;
         Generator = generator;
+        Function = function;
         Parameters = parameters;
     }
 

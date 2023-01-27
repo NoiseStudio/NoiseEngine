@@ -7,8 +7,8 @@ namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 internal class Vertex : IntrinsicsContainer {
 
     public Vertex(
-        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator, IReadOnlyList<SpirVVariable> parameters
-    ) : base(compiler, neslMethod, generator, parameters) {
+        SpirVGenerator generator, SpirVFunction function, IReadOnlyList<SpirVVariable> parameters
+    ) : base(generator, function, parameters) {
     }
 
     public override void Process() {
@@ -24,6 +24,7 @@ internal class Vertex : IntrinsicsContainer {
     private void EmitBuiltInVariable(NeslType neslType, uint index) {
         SpirVVariable variable = new SpirVVariable(Compiler, neslType, StorageClass.Input, Compiler.TypesAndVariables);
         Compiler.AddVariable(variable);
+        Function.UsedIOVariables.Add(variable);
 
         lock (Compiler.Annotations) {
             Compiler.Annotations.Emit(

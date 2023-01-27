@@ -74,7 +74,19 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
     public override void DrawMeshWorker(Mesh mesh, Material material) {
         AttachShader(material.Shader);
+
+        (GraphicsReadOnlyBuffer vertexBuffer, GraphicsReadOnlyBuffer indexBuffer) = mesh.GetBuffers();
+
+        FastList<object> references = this.references;
+        references.EnsureCapacity(references.Count + 2);
+        references.UnsafeAdd(vertexBuffer);
+        references.UnsafeAdd(indexBuffer);
+
         writer.WriteCommand(CommandBufferCommand.DrawMesh);
+        writer.WriteIntN(vertexBuffer.InnerHandleUniversal.Pointer);
+        writer.WriteIntN(indexBuffer.InnerHandleUniversal.Pointer);
+        writer.WriteUInt32((uint)mesh.IndexFormat);
+        writer.WriteUInt32((uint)indexBuffer.Count);
     }
 
     private void AttachShader(Shader shader) {

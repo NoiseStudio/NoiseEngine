@@ -3,6 +3,7 @@ using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.Vulkan;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -35,7 +36,9 @@ internal class SpirVCompiler {
 
     internal SpirVCompilationResultBuilder ResultBuilder { get; }
     internal SpirVBuiltInTypes BuiltInTypes { get; }
+    internal SpirVBuiltInVariables BuiltInVariables { get; }
     internal SpirVConsts Consts { get; }
+    internal EntryPointHelper EntryPointHelper { get; }
 
     internal SpirVGenerator Header { get; }
     internal SpirVGenerator Annotations { get; }
@@ -47,7 +50,9 @@ internal class SpirVCompiler {
 
         ResultBuilder = new SpirVCompilationResultBuilder();
         BuiltInTypes = new SpirVBuiltInTypes(this);
+        BuiltInVariables = new SpirVBuiltInVariables(this);
         Consts = new SpirVConsts(this);
+        EntryPointHelper = new EntryPointHelper(this);
 
         Header = new SpirVGenerator(this);
         Annotations = new SpirVGenerator(this);
@@ -174,16 +179,48 @@ internal class SpirVCompiler {
 
         // Emit OpEntryPoint.
         foreach (NeslEntryPoint entryPoint in EntryPoints) {
+            SpirVVariable[]? parameters = null;
+            switch (entryPoint.ExecutionModel) {
+                case ExecutionModel.Vertex:
+                    (parameters, VertexInputDescription description) =
+                        EntryPointHelper.CreateVertexInputs(entryPoint.Method);
+                    ResultBuilder.VertexInputDesciptions.Add(entryPoint.Method, description);
+                    break;
+                case ExecutionModel.Fragment:
+                    parameters = EntryPointHelper.CreateFragmentInputs(entryPoint.Method);
+                    break;
+            };
+
             SpirVFunction function = GetSpirVFunction(new SpirVFunctionIdentifier(
-                entryPoint.Method, Array.Empty<SpirVVariable>()
+                entryPoint.Method, parameters ?? Array.Empty<SpirVVariable>()
             ));
+
+            FastList<SpirVId> ids = new FastList<SpirVId>();
+
+            if (function.OutputVariable is not null)
+                ids.Add(function.OutputVariable.Id);
+
+            if (parameters is not null) {
+                foreach (SpirVVariable parameter in parameters) {
+                    if (parameter.AdditionalData is not SpirVVariable[] innerVariables) {
+                        ids.Add(parameter.Id);
+                        continue;
+                    }
+
+                    foreach (SpirVVariable innerVariable in innerVariables)
+                        ids.Add(innerVariable.Id);
+                }
+            }
+
+            foreach (SpirVVariable variable in function.UsedIOVariables) {
+                if (variable != function.OutputVariable)
+                    ids.Add(variable.Id);
+            }
 
             Header.Emit(
                 SpirVOpCode.OpEntryPoint, (uint)entryPoint.ExecutionModel,
                 function.Id, entryPoint.Method.Guid.ToString().ToSpirVLiteral(),
-                allVariables
-                    .Where(x => x.StorageClass == StorageClass.Input || x.StorageClass == StorageClass.Output)
-                    .OrderBy(x => x.StorageClass).Select(x => x.Id).ToArray()
+                ids.AsSpan()
             );
 
             // TODO: add support for another execution modes.

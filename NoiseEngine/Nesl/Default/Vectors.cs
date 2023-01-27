@@ -5,6 +5,9 @@ namespace NoiseEngine.Nesl.Default;
 
 internal static class Vectors {
 
+    public const string Vector3Name = "System::System.Vector3`1";
+    public const string Vector4Name = "System::System.Vector4`1";
+
     private static readonly string[] units = new string[] { "x", "y", "z", "w", "v" };
 
     private static readonly NeslType vector3;

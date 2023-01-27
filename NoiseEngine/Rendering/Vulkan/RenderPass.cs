@@ -44,7 +44,12 @@ internal abstract class RenderPass {
                 new PipelineShaderStage(
                     ShaderStageFlags.Fragment, shaderDelegation.ModuleFragment, shaderDelegation.Fragment.Guid.ToString()
                 )
-            }, PipelineCreateFlags.None);
+            }, PipelineCreateFlags.None, new GraphicsPipelineCreateInfo() {
+                VertexInputBindingDescription = shaderDelegation.VertexDescription.Bindings,
+                VertexInputAttributeDescription = shaderDelegation.VertexDescription.Attributes,
+                PrimitiveTopology = PrimitiveTopology.TriangleList
+            });
+            ;
         });
     }
 

@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
-using NoiseEngine.Nesl.Emit.Attributes.Internal;
+﻿using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
 
@@ -10,20 +9,20 @@ internal static class IntrinsicsManager {
     private const string DefaultAssembly = "System";
 
     public static void Process(
-        SpirVCompiler compiler, NeslMethod neslMethod, SpirVGenerator generator, IReadOnlyList<SpirVVariable> parameters
+        SpirVGenerator generator, SpirVFunction function, IReadOnlyList<SpirVVariable> parameters
     ) {
-        if (neslMethod.Assembly.Name != DefaultAssembly) {
+        if (function.NeslMethod.Assembly.Name != DefaultAssembly) {
             throw new InvalidOperationException(
                 $"{nameof(IntrinsicAttribute)} can only be used in {DefaultAssembly} assembly."
             );
         }
 
-        switch (neslMethod.Type.FullName) {
+        switch (function.NeslMethod.Type.FullName) {
             case $"{DefaultAssembly}.{nameof(Compute)}":
-                 new Compute(compiler, neslMethod, generator, parameters).Process();
+                 new Compute(generator, function, parameters).Process();
                  break;
             case $"{DefaultAssembly}.{nameof(Vertex)}":
-                new Vertex(compiler, neslMethod, generator, parameters).Process();
+                new Vertex(generator, function, parameters).Process();
                 break;
             default:
                 throw new InvalidOperationException($"Unable to find given {nameof(IntrinsicAttribute)} definition.");

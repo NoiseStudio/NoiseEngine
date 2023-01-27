@@ -16,7 +16,7 @@ public class ShaderTest : ApplicationTestEnvironment {
     public ShaderTest(ApplicationFixture fixture) : base(fixture) {
     }
 
-    [FactRequire(TestRequirements.Gui | TestRequirements.Graphics)]
+    [FactRequire(TestRequirements.Graphics)]
     public void Triangle() {
         // Create shader.
         NeslTypeBuilder vertexData = TestEmitHelper.NewType();
@@ -47,16 +47,18 @@ public class ShaderTest : ApplicationTestEnvironment {
 
         positions.SetDefaultData(data);
 
-        NeslMethodBuilder vertex = shaderClassData.DefineMethod("Vertex", vertexData);
+        NeslMethodBuilder vertex = shaderClassData.DefineMethod(
+            "Vertex", vertexData, Vectors.GetVector4(BuiltInTypes.Float32)
+        );
         IlGenerator il = vertex.IlGenerator;
 
         il.Emit(OpCode.DefVariable, vertexData);
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
         il.Emit(OpCode.DefVariable, BuiltInTypes.Int32);
-        il.Emit(OpCode.Call, 3u, Vertex.Index, stackalloc uint[0]);
-        il.Emit(OpCode.LoadElement, 2u, 0u, 3u);
-        il.Emit(OpCode.SetField, 1u, 0u, 2u);
-        il.Emit(OpCode.ReturnValue, 1u);
+        il.Emit(OpCode.Call, 4u, Vertex.Index, stackalloc uint[0]);
+        il.Emit(OpCode.LoadElement, 3u, 0u, 4u);
+        il.Emit(OpCode.SetField, 2u, 0u, 3u);
+        il.Emit(OpCode.ReturnValue, 2u);
 
         NeslMethodBuilder fragment = shaderClassData.DefineMethod("Fragment", Vectors.GetVector4(BuiltInTypes.Float32));
         il = fragment.IlGenerator;
@@ -88,7 +90,10 @@ public class ShaderTest : ApplicationTestEnvironment {
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
             commandBuffer.AttachCameraUnchecked(camera);
-            commandBuffer.DrawMeshUnchecked(new Mesh(), new Material(shader));
+            commandBuffer.DrawMeshUnchecked(
+                new Mesh<Vector4<float>, ushort>(device, new Vector4<float>[4], new ushort[] { 0, 1, 2 }),
+                new Material(shader)
+            );
             commandBuffer.DetachCameraUnchecked();
 
             commandBuffer.Execute();

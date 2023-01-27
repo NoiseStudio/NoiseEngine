@@ -22,11 +22,14 @@ internal class BranchOperations : IlCompilerOperation {
                 parameterIds[i++] = parameters[j].Id;
         }
 
+        SpirVFunction calledFunction = Compiler.GetSpirVFunction(identifier);
+
         SpirVId id = Compiler.GetNextId();
         Generator.Emit(
-            SpirVOpCode.OpFunctionCall, Compiler.GetSpirVType(method.ReturnType).Id, id,
-            Compiler.GetSpirVFunction(identifier).Id, parameterIds
+            SpirVOpCode.OpFunctionCall, Compiler.GetSpirVType(method.ReturnType).Id, id, calledFunction.Id, parameterIds
         );
+
+        IlCompiler.Function.UsedIOVariables.UnionWith(calledFunction.UsedIOVariables);
 
         if (result is not null)
             Generator.Emit(SpirVOpCode.OpStore, result.GetAccess(Generator), id);
@@ -42,16 +45,35 @@ internal class BranchOperations : IlCompilerOperation {
         if (IlCompiler.ExecutionModel.HasValue) {
             switch (IlCompiler.ExecutionModel.Value) {
                 case ExecutionModel.Vertex:
+                    uint index = 0;
+                    foreach (NeslField field in result.NeslType.Fields) {
+                        switch (field.Name) {
+                            case "Position":
+                                SpirVVariable position =
+                                    Compiler.BuiltInVariables.GetBuiltIn(field.FieldType, StorageClass.Output, 0);
+                                IlCompiler.Function.UsedIOVariables.Add(position);
+                                IlCompiler.LoadFieldOperations.SpirVLoadField(position, result, index);
+                                break;
+                        }
+                        index++;
+                    }
+
+                    ReturnValueStore(result);
+                    return;
                 case ExecutionModel.Fragment:
-                    IlCompiler.LoadOperations.SpirVStore(
-                        IlCompiler.Function.OutputVariable!, IlCompiler.LoadOperations.SpirVLoad(result)
-                    );
-                    Return();
+                    ReturnValueStore(result);
                     return;
             }
         }
 
         Generator.Emit(SpirVOpCode.OpReturnValue, IlCompiler.LoadOperations.SpirVLoad(result));
+    }
+
+    private void ReturnValueStore(SpirVVariable result) {
+        IlCompiler.LoadOperations.SpirVStore(
+            IlCompiler.Function.OutputVariable!, IlCompiler.LoadOperations.SpirVLoad(result)
+        );
+        Return();
     }
 
 }

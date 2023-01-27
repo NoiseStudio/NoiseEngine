@@ -5,10 +5,16 @@ internal class LoadFieldOperations : IlCompilerOperation {
     public LoadFieldOperations(IlCompiler ilCompiler) : base(ilCompiler) {
     }
 
-    public void LoadField(Instruction instruction) {
-        SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
-        SpirVVariable obj = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
-        uint index = instruction.ReadUInt32();
+    public void SpirVLoadField(SpirVVariable result, SpirVVariable obj, uint index) {
+        if (obj.AdditionalData is SpirVVariable[] innerVariables) {
+            SpirVId id = Compiler.GetNextId();
+            Generator.Emit(
+                SpirVOpCode.OpLoad, Compiler.GetSpirVType(result.NeslType).Id, id,
+                innerVariables[index].GetAccess(Generator)
+            );
+            IlCompiler.LoadOperations.SpirVStore(result, id);
+            return;
+        }
 
         SpirVType elementType = Compiler.GetSpirVType(result.NeslType);
         SpirVId indexConst = Compiler.GetConst(index);
@@ -18,6 +24,14 @@ internal class LoadFieldOperations : IlCompilerOperation {
         Generator.Emit(SpirVOpCode.OpLoad, elementType.Id, load, accessChain);
 
         IlCompiler.LoadOperations.SpirVStore(result, load);
+    }
+
+    public void LoadField(Instruction instruction) {
+        SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+        SpirVVariable obj = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+        uint index = instruction.ReadUInt32();
+
+        SpirVLoadField(result, obj, index);
     }
 
     public void SetField(Instruction instruction) {

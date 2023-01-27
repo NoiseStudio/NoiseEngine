@@ -7,6 +7,20 @@ pub struct InteropReadOnlySpan<'a, T> {
     phantom_data: PhantomData<&'a T>
 }
 
+impl<'a, T> InteropReadOnlySpan<'a, T> {
+    pub fn len(&self) -> usize {
+        self.length as usize
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.length == 0
+    }
+
+    pub fn as_ptr(&self) -> *const T {
+        self.reference
+    }
+}
+
 impl<'a, T> From<InteropReadOnlySpan<'a, T>> for &'a [T] {
     fn from(span: InteropReadOnlySpan<'a, T>) -> Self {
         unsafe {

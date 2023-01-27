@@ -25,7 +25,8 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
     ) : base(device, usage, count, GraphicsBufferHelper<T>.CreateHandle(
         device, usage, GetSize(count), true, out InteropHandle<GraphicsReadOnlyBuffer<T>> innerHandle
     ), innerHandle) {
-        GC.AddMemoryPressure(GetSizeSigned(Count));
+        if (count > 0)
+            GC.AddMemoryPressure(GetSizeSigned(Count));
     }
 
     /// <summary>
@@ -46,7 +47,8 @@ public class GraphicsHostBuffer<T> : GraphicsBuffer<T> where T : unmanaged {
         if (Handle != InteropHandle<GraphicsReadOnlyBuffer<T>>.Zero)
             return;
 
-        GC.RemoveMemoryPressure(GetSizeSigned(Count));
+        if (Count > 0)
+            GC.RemoveMemoryPressure(GetSizeSigned(Count));
     }
 
     private static long GetSizeSigned(ulong count) {
