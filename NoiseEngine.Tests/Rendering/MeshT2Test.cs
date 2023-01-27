@@ -16,8 +16,6 @@ public class MeshT2Test : ApplicationTestEnvironment {
     public MeshT2Test(ApplicationFixture fixture) : base(fixture) {
     }
 
-    private readonly record struct VertexData(Vector4<float> Position, Color Color);
-
     [FactRequire(TestRequirements.Graphics)]
     public void Figure2D() {
         // Create shader.
@@ -46,47 +44,53 @@ public class MeshT2Test : ApplicationTestEnvironment {
         il.Emit(OpCode.ReturnValue, 1u);
 
         // Executing.
-        Span<Color32> buffer = stackalloc Color32[4];
+        Span<Color32> buffer = stackalloc Color32[16 * 16];
+
+        ReadOnlySpan<(Vector4<float>, Color)> vertices = stackalloc (Vector4<float>, Color)[] {
+            (new Vector4<float>(-1, -1, 0, 1), Color.Red),
+            (new Vector4<float>(-.5f, -1, 0, 1), Color.Red),
+            (new Vector4<float>(-1, 1, 0, 1), Color.Red),
+            (new Vector4<float>(-.5f, 1, 0, 1), Color.Red),
+            (new Vector4<float>(0, -1, 0, 1), Color.Blue),
+            (new Vector4<float>(.5f, -1, 0, 1), Color.Blue),
+            (new Vector4<float>(0, 1, 0, 1), Color.Blue),
+            (new Vector4<float>(.5f, 1, 0, 1), Color.Blue)
+        };
+        ReadOnlySpan<ushort> triangles = stackalloc ushort[] {
+            0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6
+        };
 
         foreach (GraphicsDevice device in GraphicsDevices) {
             Shader shader = new Shader(device, shaderClassData);
 
             Texture2D texture = new Texture2D(
-                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 2, 2
+                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16
             );
-
-            Window window = Fixture.GetWindow(nameof(MeshT2Test));
             SimpleCamera camera = new SimpleCamera(device) {
-                RenderTarget = window,
+                RenderTarget = texture,
                 ClearFlags = CameraClearFlags.SolidColor,
-                //ClearColor = Color.Green
+                ClearColor = Color.Green
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
-            Mesh mesh = new Mesh<VertexData, ushort>(device, new VertexData[] {
-                new VertexData(new Vector4<float>(-.5f, -.5f, 0, 1), Color.Magenta),
-                new VertexData(new Vector4<float>(.5f, -.5f, 0, 1), Color.Red),
-                new VertexData(new Vector4<float>(-.5f, .5f, 0, 1), Color.Green),
-                new VertexData(new Vector4<float>(.5f, .5f, 0, 1), Color.Blue)
-            }, new ushort[] {
-                0, 1, 2, 1, 3, 2
-            });
+            commandBuffer.AttachCameraUnchecked(camera);
+            commandBuffer.DrawMeshUnchecked(
+                new Mesh<(Vector4<float>, Color), ushort>(device, vertices, triangles), new Material(shader)
+            );
+            commandBuffer.DetachCameraUnchecked();
 
-            for (int i = 0; i < 3000; i++) {
-                WindowInterop.PoolEvents(window.Handle);
-
-                commandBuffer.AttachCameraUnchecked(camera);
-                commandBuffer.DrawMeshUnchecked(mesh, new Material(shader));
-                commandBuffer.DetachCameraUnchecked();
-
-                commandBuffer.Execute();
-                commandBuffer.Clear();
-            }
+            commandBuffer.Execute();
+            commandBuffer.Clear();
 
             // Assert.
-            //texture.GetPixels(buffer);
-            //Assert.Equal(Color32.Red, buffer[0]);
-            //Assert.Equal((Color32)camera.ClearColor, buffer[3]);
+            texture.GetPixels(buffer);
+
+            for (int i = 0; i < buffer.Length; i += (int)texture.Width) {
+                Assert.Equal(Color32.Red, buffer[i]);
+                Assert.Equal(Color32.Green, buffer[i + 4]);
+                Assert.Equal(Color32.Blue, buffer[i + 8]);
+                Assert.Equal(Color32.Green, buffer[i + 12]);
+            }
         }
     }
 
