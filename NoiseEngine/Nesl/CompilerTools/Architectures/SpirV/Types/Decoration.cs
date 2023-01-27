@@ -6,7 +6,9 @@
 internal enum Decoration : uint {
     Block = 2,
     BufferBlock = 3,
+    ColMajor = 5,
     ArrayStride = 6,
+    MatrixStride = 7,
     BuiltIn = 11,
     Location = 30,
     Binding = 33,

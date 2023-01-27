@@ -40,6 +40,7 @@ internal class SpirVVariable {
         SpirVVariableCreationOutput output;
         switch (storageClass) {
             case StorageClass.Uniform:
+            case StorageClass.PushConstant:
                 output = CreateUniformStorage(generator, type, out uint binding);
                 Binding = binding;
                 break;
@@ -115,6 +116,7 @@ internal class SpirVVariable {
             StorageClass.Output => Id,
             StorageClass.Private => Id,
             StorageClass.Function => Id,
+            StorageClass.PushConstant => GetAccessUniformStorage(generator),
             _ => throw new NotImplementedException()
         };
     }
@@ -162,7 +164,7 @@ internal class SpirVVariable {
 
     private SpirVId GetAccessUniformStorage(SpirVGenerator generator) {
         SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(
-            StorageClass.Uniform, Compiler.GetSpirVType(NeslType)
+            StorageClass, Compiler.GetSpirVType(NeslType)
         );
 
         SpirVId id = Compiler.GetNextId();

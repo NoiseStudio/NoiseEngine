@@ -8,7 +8,7 @@ internal static partial class PipelineLayoutInterop {
 
     [InteropImport("rendering_vulkan_pipeline_layout_create")]
     public static partial InteropResult<InteropHandle<PipelineLayout>> Create(
-        ReadOnlySpan<InteropHandle<DescriptorSetLayout>> layouts
+        ReadOnlySpan<InteropHandle<DescriptorSetLayout>> layouts, ReadOnlySpan<PushConstantRange> pushConstantRanges
     );
 
     [InteropImport("rendering_vulkan_pipeline_layout_destroy")]

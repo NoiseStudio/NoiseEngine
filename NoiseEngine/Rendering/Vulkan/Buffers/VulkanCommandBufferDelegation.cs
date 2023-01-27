@@ -3,24 +3,31 @@ using NoiseEngine.Common;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
+using NoiseEngine.Rendering.PushConstants;
 using NoiseEngine.Serialization;
 using System;
+using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Vulkan.Buffers;
 
 internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
+    private Matrix4x4<float> CameraProjectionViewMatrix { get; set; }
+
     private RenderPass? RenderPass { get; set; }
     private Shader? AttachedShader { get; set; }
+    private VulkanCommonShaderDelegation? AttachedCommonShaderDelegation { get; set; }
 
     public VulkanCommandBufferDelegation(
-        SerializationWriter writer, FastList<object> references, FastList<IReferenceCoutable> rcReferences
-    ) : base(writer, references, rcReferences) {
+        GraphicsCommandBuffer commandBuffer, SerializationWriter writer, FastList<object> references,
+        FastList<IReferenceCoutable> rcReferences
+    ) : base(commandBuffer, writer, references, rcReferences) {
     }
 
     public override void Clear() {
         RenderPass = null;
         AttachedShader = null;
+        AttachedCommonShaderDelegation = null;
     }
 
     public override void DispatchWorker(ComputeKernel kernel, Vector3<uint> groupCount) {
@@ -70,9 +77,11 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
         }
 
         writer.WriteIntN(cameraDelegation.ClearColor);
+
+        CameraProjectionViewMatrix = camera.ProjectionViewMatrix;
     }
 
-    public override void DrawMeshWorker(Mesh mesh, Material material) {
+    public override void DrawMeshWorker(Mesh mesh, Material material, Matrix4x4<float> transform) {
         AttachShader(material.Shader);
 
         (GraphicsReadOnlyBuffer vertexBuffer, GraphicsReadOnlyBuffer indexBuffer) = mesh.GetBuffers();
@@ -87,6 +96,27 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
         writer.WriteIntN(indexBuffer.InnerHandleUniversal.Pointer);
         writer.WriteUInt32((uint)mesh.IndexFormat);
         writer.WriteUInt32((uint)indexBuffer.Count);
+
+        VulkanCommonShaderDelegation shaderDelegation = AttachedCommonShaderDelegation!;
+        if (shaderDelegation.PushConstantDescriptors.Length == 0) {
+            writer.WriteUInt32(0);
+        } else {
+            writer.WriteUInt32(shaderDelegation.PushConstantSize);
+            Span<byte> data = stackalloc byte[(int)shaderDelegation.PushConstantSize];
+
+            foreach (PushConstantDescriptor descriptor in shaderDelegation.PushConstantDescriptors) {
+                switch (descriptor.Features) {
+                    case RenderingFeatures.ObjectToClipPos:
+                        Matrix4x4<float> matrix = CameraProjectionViewMatrix * transform;
+                        MemoryMarshal.Write(data[descriptor.Offset..], ref matrix);
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+
+            writer.WriteBytes(data);
+        }
     }
 
     private void AttachShader(Shader shader) {
@@ -95,6 +125,7 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
         AttachedShader = shader;
         references.Add(shader);
+        AttachedCommonShaderDelegation = (VulkanCommonShaderDelegation)shader.Delegation;
 
         writer.WriteCommand(CommandBufferCommand.AttachShader);
         writer.WriteIntN(RenderPass!.GetPipeline(shader).Handle.Pointer);
