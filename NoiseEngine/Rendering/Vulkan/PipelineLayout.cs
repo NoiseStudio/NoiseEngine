@@ -12,13 +12,15 @@ internal class PipelineLayout {
 
     internal InteropHandle<PipelineLayout> Handle { get; }
 
-    public PipelineLayout(IReadOnlyList<DescriptorSetLayout> layouts) {
+    public PipelineLayout(
+        IReadOnlyList<DescriptorSetLayout> layouts, ReadOnlySpan<PushConstantRange> pushConstantRanges
+    ) {
         Span<InteropHandle<DescriptorSetLayout>> layoutHandles =
             stackalloc InteropHandle<DescriptorSetLayout>[layouts.Count];
         for (int i = 0; i < layoutHandles.Length; i++)
             layoutHandles[i] = layouts[i].Handle;
 
-        if (!PipelineLayoutInterop.Create(layoutHandles).TryGetValue(
+        if (!PipelineLayoutInterop.Create(layoutHandles, pushConstantRanges).TryGetValue(
             out InteropHandle<PipelineLayout> handle, out ResultError error
         )) {
             error.ThrowAndDispose();

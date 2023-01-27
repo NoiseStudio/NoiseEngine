@@ -66,7 +66,9 @@ internal class VulkanCommonShaderDelegationOld : CommonShaderDelegationOld {
         // Pipelines.
         if (Shader is ComputeShader computeShader) {
             Kernels = new Dictionary<NeslMethod, ComputeKernel>();
-            PipelineLayout pipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { layout });
+            PipelineLayout pipelineLayout = new PipelineLayout(
+                new DescriptorSetLayout[] { layout }, stackalloc PushConstantRange[0]
+            );
 
             foreach (NeslMethod kernel in kernels) {
                 ComputePipeline pipeline = new ComputePipeline(pipelineLayout, new PipelineShaderStage(

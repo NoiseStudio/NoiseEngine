@@ -12,18 +12,13 @@ pub struct PipelineLayout<'init> {
 }
 
 impl<'init: 'setl, 'setl> PipelineLayout<'init> {
-    pub fn new(layouts: &[&'setl Arc<DescriptorSetLayout<'init>>]) -> Result<Self, VulkanUniversalError> {
+    pub fn new(
+        layouts: &[&'setl Arc<DescriptorSetLayout<'init>>], push_constant_ranges: &[vk::PushConstantRange]
+    ) -> Result<Self, VulkanUniversalError> {
         let mut final_layouts = Vec::with_capacity(layouts.len());
         for layout in layouts {
             final_layouts.push(layout.inner());
         }
-
-        // TODO: remove
-        let push_constant = vk::PushConstantRange {
-            stage_flags: vk::ShaderStageFlags::VERTEX,
-            offset: 0,
-            size: 64,
-        };
 
         let create_info = vk::PipelineLayoutCreateInfo {
             s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
@@ -31,8 +26,8 @@ impl<'init: 'setl, 'setl> PipelineLayout<'init> {
             flags: vk::PipelineLayoutCreateFlags::empty(),
             set_layout_count: final_layouts.len() as u32,
             p_set_layouts: final_layouts.as_ptr(),
-            push_constant_range_count: 1,
-            p_push_constant_ranges: &push_constant,
+            push_constant_range_count: push_constant_ranges.len() as u32,
+            p_push_constant_ranges: push_constant_ranges.as_ptr(),
         };
 
         let device = layouts[0].device();

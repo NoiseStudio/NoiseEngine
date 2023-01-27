@@ -26,7 +26,7 @@ internal static class Matrices {
         ));
 
         for (int i = 0; i < size; i++)
-            type.DefineField($"C{i}", genericTypeParameter);
+            type.DefineField($"C{i}", Vectors.GetVector4(genericTypeParameter));
 
         return type;
     }

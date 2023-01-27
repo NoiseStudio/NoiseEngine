@@ -1,11 +1,7 @@
-use std::sync::Arc;
-
 use ash::vk;
 
 use crate::{
-    rendering::vulkan::{
-        buffers::command_buffer::VulkanCommandBuffer, pipeline::Pipeline, pipeline_layout::PipelineLayout
-    },
+    rendering::vulkan::{buffers::command_buffer::VulkanCommandBuffer, pipeline::Pipeline},
     serialization::reader::SerializationReader
 };
 
@@ -17,10 +13,6 @@ pub fn draw_mesh(
     let index_format = data.read_unchecked::<vk::IndexType>();
     let index_buffer_count = data.read_unchecked::<u32>();
 
-    let push_constants_size = data.read_unchecked::<u32>();
-    let pipeline_layout = data.read_unchecked::<&Arc<PipelineLayout>>();
-    let push_constants_data = data.read_bytes_unchecked(push_constants_size as usize);
-
     unsafe {
         vulkan_device.cmd_bind_vertex_buffers(
             buffer.inner(), 0, &[vertex_buffer], &[0]
@@ -29,12 +21,22 @@ pub fn draw_mesh(
         vulkan_device.cmd_bind_index_buffer(
             buffer.inner(), index_buffer, 0, index_format
         );
+    }
 
-        vulkan_device.cmd_push_constants(
-            buffer.inner(), pipeline_layout.inner(), vk::ShaderStageFlags::VERTEX,
-            0, push_constants_data
-        );
+    let push_constants_size = data.read_unchecked::<u32>();
+    if push_constants_size > 0 {
+        let push_constants_data = data.read_bytes_unchecked(push_constants_size as usize);
 
+        unsafe {
+            vulkan_device.cmd_push_constants(
+                buffer.inner(), buffer.attached_pipeline_layout(),
+                vk::ShaderStageFlags::VERTEX,
+                0, push_constants_data
+            );
+        }
+    }
+
+    unsafe {
         vulkan_device.cmd_draw_indexed(
             buffer.inner(), index_buffer_count, 1, 0,
             0, 0
@@ -43,8 +45,8 @@ pub fn draw_mesh(
 }
 
 pub fn attach_shader(
-    data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
-) {
+    data: &mut SerializationReader, buffer: &mut VulkanCommandBuffer, vulkan_device: &ash::Device
+) -> vk::PipelineLayout {
     let pipeline = data.read_unchecked::<&Pipeline>();
 
     unsafe {
@@ -53,4 +55,6 @@ pub fn attach_shader(
             pipeline.inner()
         );
     }
+
+    pipeline.layout().inner()
 }

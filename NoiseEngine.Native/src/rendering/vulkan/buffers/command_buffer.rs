@@ -23,6 +23,7 @@ pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     command_pool: PoolItem<'fam, VulkanCommandPool<'init>>,
     used_fence: Option<Arc<VulkanFence<'init>>>,
     attached_camera_windows: Vec<AttachCameraWindowOutput<'init, 'fam>>,
+    attached_pipeline_layout: vk::PipelineLayout,
     device: Arc<VulkanDevice<'init>>,
 }
 
@@ -56,8 +57,9 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             inner: command_buffer,
             queue_family,
             command_pool,
-            attached_camera_windows: Vec::new(),
             used_fence: None,
+            attached_camera_windows: Vec::new(),
+            attached_pipeline_layout: vk::PipelineLayout::null(),
             device: device.clone(),
         };
 
@@ -68,6 +70,10 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
 
     pub fn inner(&self) -> vk::CommandBuffer {
         self.inner
+    }
+
+    pub fn attached_pipeline_layout(&self) -> vk::PipelineLayout {
+        self.attached_pipeline_layout
     }
 
     pub fn execute(&self) -> Result<Arc<VulkanFence<'init>>, VulkanUniversalError> {
@@ -224,7 +230,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                     camera_commands::detach_camera(self, vulkan_device),
                 GraphicsCommandBufferCommand::DrawMesh =>
                     draw_commands::draw_mesh(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::AttachShader =>
+                GraphicsCommandBufferCommand::AttachShader => self.attached_pipeline_layout =
                     draw_commands::attach_shader(&mut data, self, vulkan_device),
             };
         };

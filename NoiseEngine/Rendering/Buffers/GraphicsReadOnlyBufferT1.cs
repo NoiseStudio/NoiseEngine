@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Buffers;
 using System;
-using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Buffers;
 

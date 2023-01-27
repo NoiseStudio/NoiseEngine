@@ -1,5 +1,7 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
+using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.PushConstants;
 using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
@@ -43,6 +45,10 @@ internal class Vertex : IntrinsicsContainer {
     private void ObjectToClipPos() {
         NeslType matrix4x4 = Matrices.GetMatrix4x4(BuiltInTypes.Float32);
         SpirVVariable pushConstant = Compiler.PushConstantsHelper.GetPushConstant(matrix4x4);
+
+        Compiler.ResultBuilder.PushConstantDescriptors.Add(
+            new PushConstantDescriptor(0, (int)(matrix4x4.GetSize() / 8), RenderingFeatures.ObjectToClipPos
+        ));
 
         SpirVId positionLoad = Compiler.GetNextId();
         Generator.Emit(

@@ -191,7 +191,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
             SimpleCamera camera = new SimpleCamera(device) {
                 RenderTarget = window,
                 ClearFlags = CameraClearFlags.SolidColor,
-                ClearColor = Color.Random
+                //ClearColor = Color.Random
             };
 
             Mesh mesh = new Mesh<(Vector3<float>, Vector3<float>), ushort>(device, vertices, triangles);

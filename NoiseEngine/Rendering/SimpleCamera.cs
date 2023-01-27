@@ -79,6 +79,7 @@ public class SimpleCamera {
 
     public Matrix4x4<float> ViewMatrix => CalculateViewMatrix();
     public Matrix4x4<float> ProjectionMatrix => CalculateProjectionMatrix();
+    public Matrix4x4<float> ProjectionViewMatrix => ProjectionMatrix * ViewMatrix;
 
     internal SimpleCameraDelegation Delegation { get; }
     internal bool IsDirty { get; set; } = true;
