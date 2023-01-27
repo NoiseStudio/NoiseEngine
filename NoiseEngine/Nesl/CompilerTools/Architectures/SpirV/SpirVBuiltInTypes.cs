@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
+using NoiseEngine.Nesl.Default;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -63,6 +64,11 @@ internal class SpirVBuiltInTypes {
             case nameof(SpirVOpCode.OpTypeVector):
                 type = GetOpTypeVector(neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!, uint.Parse(args[2]));
                 return true;
+            case nameof(SpirVOpCode.OpTypeMatrix) + "4":
+                type = GetOpTypeMatrix(
+                    Vectors.GetVector4(neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!), uint.Parse(args[2])
+                );
+                return true;
             case nameof(SpirVOpCode.OpTypeArray):
                 NeslType genericElement = neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!;
                 if (additionalData is uint length)
@@ -116,6 +122,22 @@ internal class SpirVBuiltInTypes {
 
                     Compiler.TypesAndVariables.Emit(
                         SpirVOpCode.OpTypeVector, id, Compiler.GetSpirVType(neslType).Id,
+                        size.ToSpirVLiteral()
+                    );
+
+                    return new SpirVType(Compiler, id);
+                }
+            })).Value;
+    }
+
+    public SpirVType GetOpTypeMatrix(NeslType neslType, uint size) {
+        return types.GetOrAdd(new object[] { SpirVOpCode.OpTypeMatrix, neslType, size },
+            _ => new Lazy<SpirVType>(() => {
+                lock (Compiler.TypesAndVariables) {
+                    SpirVId id = Compiler.GetNextId();
+
+                    Compiler.TypesAndVariables.Emit(
+                        SpirVOpCode.OpTypeMatrix, id, Compiler.GetSpirVType(neslType).Id,
                         size.ToSpirVLiteral()
                     );
 

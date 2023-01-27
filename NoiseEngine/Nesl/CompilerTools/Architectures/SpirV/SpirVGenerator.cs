@@ -119,6 +119,18 @@ internal class SpirVGenerator {
     }
 
     public void Emit(
+        SpirVOpCode opCode, SpirVId argument1, SpirVLiteral argument2, uint argument3
+    ) {
+        EmitWorker(
+            opCode, (ushort)(3 + argument2.WordCount), typeof(SpirVId), typeof(SpirVLiteral), typeof(uint)
+        );
+
+        Writer.WriteUInt32(argument1.RawId);
+        Writer.WriteBytes(argument2.Bytes.ToArray());
+        Writer.WriteUInt32(argument3);
+    }
+
+    public void Emit(
         SpirVOpCode opCode, SpirVId argument1, SpirVLiteral argument2, uint argument3, SpirVLiteral argument4
     ) {
         EmitWorker(
@@ -192,6 +204,19 @@ internal class SpirVGenerator {
 
         foreach (SpirVId id in argument4)
             Writer.WriteUInt32(id.RawId);
+    }
+
+    public void Emit(
+        SpirVOpCode opCode, SpirVId argument1, SpirVId argument2, SpirVId argument3, SpirVLiteral argument4
+    ) {
+        EmitWorker(
+            opCode, (ushort)(4 + argument4.WordCount), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId),
+            typeof(SpirVLiteral)
+        );
+        Writer.WriteUInt32(argument1.RawId);
+        Writer.WriteUInt32(argument2.RawId);
+        Writer.WriteUInt32(argument3.RawId);
+        Writer.WriteBytes(argument4.Bytes.ToArray());
     }
 
     public void Emit(

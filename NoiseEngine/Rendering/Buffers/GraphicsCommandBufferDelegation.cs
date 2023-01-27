@@ -7,13 +7,16 @@ namespace NoiseEngine.Rendering.Buffers;
 
 internal abstract class GraphicsCommandBufferDelegation {
 
+    protected readonly GraphicsCommandBuffer commandBuffer;
     protected readonly SerializationWriter writer;
     protected readonly FastList<object> references;
     protected readonly FastList<IReferenceCoutable> rcReferences;
 
     protected GraphicsCommandBufferDelegation(
-        SerializationWriter writer, FastList<object> references, FastList<IReferenceCoutable> rcReferences
+        GraphicsCommandBuffer commandBuffer, SerializationWriter writer, FastList<object> references,
+        FastList<IReferenceCoutable> rcReferences
     ) {
+        this.commandBuffer = commandBuffer;
         this.writer = writer;
         this.references = references;
         this.rcReferences = rcReferences;
@@ -25,6 +28,6 @@ internal abstract class GraphicsCommandBufferDelegation {
 
     public abstract void DispatchWorker(ComputeKernel kernel, Vector3<uint> groupCount);
 
-    public abstract void DrawMeshWorker(Mesh mesh, Material material);
+    public abstract void DrawMeshWorker(Mesh mesh, Material material, Matrix4x4<float> transform);
 
 }

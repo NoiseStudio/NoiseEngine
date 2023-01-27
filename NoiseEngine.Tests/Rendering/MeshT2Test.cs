@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Interop.Rendering.Presentation;
+﻿using NoiseEngine.Components;
+using NoiseEngine.Interop.Rendering.Presentation;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
@@ -91,6 +92,138 @@ public class MeshT2Test : ApplicationTestEnvironment {
                 Assert.Equal(Color32.Blue, buffer[i + 8]);
                 Assert.Equal(Color32.Green, buffer[i + 12]);
             }
+        }
+    }
+
+    [FactRequire(TestRequirements.Graphics)]
+    public void Figure3D() {
+        // Create shader.
+        NeslTypeBuilder vertexData = TestEmitHelper.NewType();
+        vertexData.DefineField("Position", Vectors.GetVector3(BuiltInTypes.Float32));
+        vertexData.DefineField("Color", Vectors.GetVector3(BuiltInTypes.Float32));
+
+        NeslTypeBuilder fragmentData = TestEmitHelper.NewType();
+        fragmentData.DefineField("Position", Vectors.GetVector4(BuiltInTypes.Float32));
+        fragmentData.DefineField("Color", Vectors.GetVector3(BuiltInTypes.Float32));
+
+        NeslTypeBuilder shaderClassData = TestEmitHelper.NewType();
+
+        NeslMethodBuilder vertex = shaderClassData.DefineMethod(
+            "Vertex", fragmentData, vertexData
+        );
+        IlGenerator il = vertex.IlGenerator;
+
+        il.Emit(OpCode.DefVariable, fragmentData);
+        il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
+        il.Emit(OpCode.DefVariable, Vectors.GetVector3(BuiltInTypes.Float32));
+        il.Emit(OpCode.LoadField, 3u, 0u, 0u);
+        il.Emit(OpCode.Call, 2u, Vertex.ObjectToClipPos, stackalloc uint[] { 3u });
+        il.Emit(OpCode.SetField, 1u, 0u, 2u);
+        il.Emit(OpCode.LoadField, 3u, 0u, 1u);
+        il.Emit(OpCode.SetField, 1u, 1u, 3u);
+        il.Emit(OpCode.ReturnValue, 1u);
+
+        NeslMethodBuilder fragment = shaderClassData.DefineMethod(
+            "Fragment", Vectors.GetVector3(BuiltInTypes.Float32), fragmentData
+        );
+        il = fragment.IlGenerator;
+
+        il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
+        il.Emit(OpCode.LoadField, 1u, 0u, 1u);
+        il.Emit(OpCode.ReturnValue, 1u);
+
+        // Executing.
+        Span<Color32> buffer = stackalloc Color32[16 * 16];
+
+        ReadOnlySpan<(Vector3<float>, Vector3<float>)> vertices = stackalloc (Vector3<float>, Vector3<float>)[] {
+            // Top
+            (new Vector3<float>(-0.5f, 0.5f, 0.5f), Vector3<float>.Up),
+            (new Vector3<float>(0.5f, 0.5f, 0.5f), Vector3<float>.Up),
+            (new Vector3<float>(-0.5f, 0.5f, -0.5f), Vector3<float>.Up),
+            (new Vector3<float>(0.5f, 0.5f, -0.5f), Vector3<float>.Up),
+
+            // Bottom
+            (new Vector3<float>(-0.5f, -0.5f, -0.5f), Vector3<float>.Up * 0.25f),
+            (new Vector3<float>(0.5f, -0.5f, -0.5f), Vector3<float>.Up * 0.25f),
+            (new Vector3<float>(-0.5f, -0.5f, 0.5f), Vector3<float>.Up * 0.25f),
+            (new Vector3<float>(0.5f, -0.5f, 0.5f), Vector3<float>.Up * 0.25f),
+
+            // Right
+            (new Vector3<float>(0.5f, -0.5f, -0.5f), Vector3<float>.Right),
+            (new Vector3<float>(0.5f, 0.5f, -0.5f), Vector3<float>.Right),
+            (new Vector3<float>(0.5f, -0.5f, 0.5f), Vector3<float>.Right),
+            (new Vector3<float>(0.5f, 0.5f, 0.5f), Vector3<float>.Right),
+
+            // Left
+            (new Vector3<float>(-0.5f, -0.5f, 0.5f), Vector3<float>.Right * 0.25f),
+            (new Vector3<float>(-0.5f, 0.5f, 0.5f), Vector3<float>.Right * 0.25f),
+            (new Vector3<float>(-0.5f, -0.5f, -0.5f), Vector3<float>.Right * 0.25f),
+            (new Vector3<float>(-0.5f, 0.5f, -0.5f), Vector3<float>.Right * 0.25f),
+
+            // Front
+            (new Vector3<float>(0.5f, -0.5f, 0.5f), Vector3<float>.Front),
+            (new Vector3<float>(0.5f, 0.5f, 0.5f), Vector3<float>.Front),
+            (new Vector3<float>(-0.5f, -0.5f, 0.5f), Vector3<float>.Front),
+            (new Vector3<float>(-0.5f, 0.5f, 0.5f), Vector3<float>.Front),
+
+            // Back
+            (new Vector3<float>(-0.5f, -0.5f, -0.5f), Vector3<float>.Front * 0.25f),
+            (new Vector3<float>(-0.5f, 0.5f, -0.5f), Vector3<float>.Front * 0.25f),
+            (new Vector3<float>(0.5f, -0.5f, -0.5f), Vector3<float>.Front * 0.25f),
+            (new Vector3<float>(0.5f, 0.5f, -0.5f), Vector3<float>.Front * 0.25f)
+        };
+        ReadOnlySpan<ushort> triangles = stackalloc ushort[] {
+            0, 1, 2, 3, 2, 1,
+            4, 5, 6, 7, 6, 5,
+            8, 9, 10, 11, 10, 9,
+            12, 13, 14, 15, 14, 13,
+            16, 17, 18, 19, 18, 17,
+            20, 21, 22, 23, 22, 21
+        };
+
+        foreach (GraphicsDevice device in GraphicsDevices) {
+            Shader shader = new Shader(device, shaderClassData);
+
+            Texture2D texture = new Texture2D(
+                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16
+            );
+            Window window = Fixture.GetWindow(nameof(Figure3D));
+            SimpleCamera camera = new SimpleCamera(device) {
+                RenderTarget = window,
+                ClearFlags = CameraClearFlags.SolidColor,
+                ClearColor = Color.Random
+            };
+
+            Mesh mesh = new Mesh<(Vector3<float>, Vector3<float>), ushort>(device, vertices, triangles);
+
+            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
+
+            while (true) {
+                WindowInterop.PoolEvents(window.Handle);
+
+                commandBuffer.AttachCameraUnchecked(camera);
+                commandBuffer.DrawMeshUnchecked(mesh, new Material(shader), new TransformComponent() {
+                    Rotation = Quaternion.EulerRadians(new Vector3<float>(
+                        Environment.TickCount / 3000f % 360f,
+                        Environment.TickCount / 1000f % 360f,
+                        Environment.TickCount / 5000f % 360f
+                    ))
+                }.Matrix);
+                commandBuffer.DetachCameraUnchecked();
+
+                commandBuffer.Execute();
+                commandBuffer.Clear();
+            }
+
+            // Assert.
+            /*texture.GetPixels(buffer);
+
+            for (int i = 0; i < buffer.Length; i += (int)texture.Width) {
+                Assert.Equal(Color32.Red, buffer[i]);
+                Assert.Equal(Color32.Green, buffer[i + 4]);
+                Assert.Equal(Color32.Blue, buffer[i + 8]);
+                Assert.Equal(Color32.Green, buffer[i + 12]);
+            }*/
         }
     }
 

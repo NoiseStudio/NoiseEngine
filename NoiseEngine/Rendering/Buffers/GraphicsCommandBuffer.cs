@@ -59,7 +59,7 @@ public class GraphicsCommandBuffer {
         this.simultaneousExecute = simultaneousExecute;
 
         delegation = device.Instance.Api switch {
-            GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(writer, references, rcReferences),
+            GraphicsApi.Vulkan => new VulkanCommandBufferDelegation(this, writer, references, rcReferences),
             _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
         };
 
@@ -332,7 +332,12 @@ public class GraphicsCommandBuffer {
 
     internal void DrawMeshUnchecked(Mesh mesh, Material material) {
         graphics = true;
-        delegation.DrawMeshWorker(mesh, material);
+        delegation.DrawMeshWorker(mesh, material, new Matrix4x4<float>());
+    }
+
+    internal void DrawMeshUnchecked(Mesh mesh, Material material, Matrix4x4<float> transform) {
+        graphics = true;
+        delegation.DrawMeshWorker(mesh, material, transform);
     }
 
 }

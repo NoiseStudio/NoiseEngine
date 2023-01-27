@@ -77,29 +77,17 @@ internal class EntryPointHelper {
         FastList<SpirVVariable> innerVariables
     ) {
         switch (type.FullNameWithAssembly) {
+            case Vectors.Vector3Name:
+                GetInnerVariablesVector(
+                    ref location, ref offset, type, inputAttributes, innerVariables, 3,
+                    VulkanFormat.R32G32B32_SFloat
+                );
+                break;
             case Vectors.Vector4Name:
-                NeslType tType = type.GetField($"{NeslOperators.Phantom}T")!.FieldType;
-                switch (tType.FullNameWithAssembly) {
-                    case BuiltInTypes.Float32Name:
-                        SpirVVariable variable = new SpirVVariable(
-                            Compiler, type, StorageClass.Input, Compiler.TypesAndVariables
-                        );
-                        Compiler.AddVariable(variable);
-                        innerVariables.Add(variable);
-
-                        lock (Compiler.Annotations) {
-                            Compiler.Annotations.Emit(
-                                SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location,
-                                location.ToSpirVLiteral()
-                            );
-                        }
-
-                        inputAttributes.Add(new VertexInputAttributeDescription(
-                            location++, 0, VulkanFormat.R32G32B32A32_SFloat, offset
-                        ));
-                        offset += 4 * sizeof(float);
-                        return;
-                }
+                GetInnerVariablesVector(
+                    ref location, ref offset, type, inputAttributes, innerVariables, 4,
+                    VulkanFormat.R32G32B32A32_SFloat
+                );
                 break;
         }
 
@@ -109,6 +97,35 @@ internal class EntryPointHelper {
 
             GetInnerVariables(ref location, ref offset, field.FieldType, inputAttributes, innerVariables);
         }
+    }
+
+    private bool GetInnerVariablesVector(
+        ref uint location, ref uint offset, NeslType type, FastList<VertexInputAttributeDescription> inputAttributes,
+        FastList<SpirVVariable> innerVariables, uint size, VulkanFormat floatFormat
+    ) {
+        NeslType tType = type.GetField($"{NeslOperators.Phantom}T")!.FieldType;
+        switch (tType.FullNameWithAssembly) {
+            case BuiltInTypes.Float32Name:
+                SpirVVariable variable = new SpirVVariable(
+                    Compiler, type, StorageClass.Input, Compiler.TypesAndVariables
+                );
+                Compiler.AddVariable(variable);
+                innerVariables.Add(variable);
+
+                lock (Compiler.Annotations) {
+                    Compiler.Annotations.Emit(
+                        SpirVOpCode.OpDecorate, variable.Id, (uint)Decoration.Location,
+                        location.ToSpirVLiteral()
+                    );
+                }
+
+                inputAttributes.Add(new VertexInputAttributeDescription(
+                    location++, 0, floatFormat, offset
+                ));
+                offset += size * sizeof(float);
+                return true;
+        }
+        return false;
     }
 
 }

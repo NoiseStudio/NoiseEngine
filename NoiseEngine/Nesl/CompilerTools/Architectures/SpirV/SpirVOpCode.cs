@@ -22,6 +22,8 @@ internal enum SpirVOpCode : ushort {
     OpTypeFloat = 22,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral))]
     OpTypeVector = 23,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral))]
+    OpTypeMatrix = 24,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
     OpTypeArray = 28,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId))]
@@ -63,6 +65,11 @@ internal enum SpirVOpCode : ushort {
     [OpCodeValidationOptional(typeof(SpirVLiteral))]
     OpMemberDecorate = 72,
 
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId[]))]
+    OpCompositeConstruct = 80,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral))]
+    OpCompositeExtract = 81,
+
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
     OpFConvert = 115,
 
@@ -98,6 +105,9 @@ internal enum SpirVOpCode : ushort {
     OpFRem = 140,
     [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
     OpFMod = 141,
+
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVId))]
+    OpMatrixTimesVector = 145,
 
     [OpCodeValidation(typeof(SpirVId))]
     OpLabel = 248,

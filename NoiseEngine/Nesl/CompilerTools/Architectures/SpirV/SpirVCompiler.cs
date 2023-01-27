@@ -39,6 +39,7 @@ internal class SpirVCompiler {
     internal SpirVBuiltInVariables BuiltInVariables { get; }
     internal SpirVConsts Consts { get; }
     internal EntryPointHelper EntryPointHelper { get; }
+    internal PushConstantsHelper PushConstantsHelper { get; }
 
     internal SpirVGenerator Header { get; }
     internal SpirVGenerator Annotations { get; }
@@ -53,6 +54,7 @@ internal class SpirVCompiler {
         BuiltInVariables = new SpirVBuiltInVariables(this);
         Consts = new SpirVConsts(this);
         EntryPointHelper = new EntryPointHelper(this);
+        PushConstantsHelper = new PushConstantsHelper(this);
 
         Header = new SpirVGenerator(this);
         Annotations = new SpirVGenerator(this);

@@ -1,4 +1,4 @@
-use std::{ptr, mem};
+use std::{ptr, mem, slice};
 
 pub struct SerializationReader<'a> {
     pub index: usize,
@@ -38,6 +38,19 @@ impl<'a> SerializationReader<'a> {
 
         unsafe {
             ptr::read_unaligned::<T>(ptr as *const T)
+        }
+    }
+
+    pub fn read_bytes_unchecked(&mut self, length: usize) -> &[u8] {
+        let mut ptr = self.data.as_ptr() as *const u8;
+        ptr = unsafe {
+            ptr.offset(self.index as isize)
+        };
+
+        self.index += length;
+
+        unsafe {
+            slice::from_raw_parts(ptr, length)
         }
     }
 }

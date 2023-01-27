@@ -18,14 +18,21 @@ impl<'init: 'setl, 'setl> PipelineLayout<'init> {
             final_layouts.push(layout.inner());
         }
 
+        // TODO: remove
+        let push_constant = vk::PushConstantRange {
+            stage_flags: vk::ShaderStageFlags::VERTEX,
+            offset: 0,
+            size: 64,
+        };
+
         let create_info = vk::PipelineLayoutCreateInfo {
             s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::PipelineLayoutCreateFlags::empty(),
             set_layout_count: final_layouts.len() as u32,
             p_set_layouts: final_layouts.as_ptr(),
-            push_constant_range_count: 0,
-            p_push_constant_ranges: ptr::null(),
+            push_constant_range_count: 1,
+            p_push_constant_ranges: &push_constant,
         };
 
         let device = layouts[0].device();
