@@ -330,11 +330,6 @@ public class GraphicsCommandBuffer {
         writer.WriteCommand(CommandBufferCommand.DetachCamera);
     }
 
-    internal void DrawMeshUnchecked(Mesh mesh, Material material) {
-        graphics = true;
-        delegation.DrawMeshWorker(mesh, material, new Matrix4x4<float>());
-    }
-
     internal void DrawMeshUnchecked(Mesh mesh, Material material, Matrix4x4<float> transform) {
         graphics = true;
         delegation.DrawMeshWorker(mesh, material, transform);

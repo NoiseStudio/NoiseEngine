@@ -76,7 +76,8 @@ public class MeshT2Test : ApplicationTestEnvironment {
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
             commandBuffer.AttachCameraUnchecked(camera);
             commandBuffer.DrawMeshUnchecked(
-                new Mesh<(Vector4<float>, Color), ushort>(device, vertices, triangles), new Material(shader)
+                new Mesh<(Vector4<float>, Color), ushort>(device, vertices, triangles), new Material(shader),
+                new Matrix4x4<float>()
             );
             commandBuffer.DetachCameraUnchecked();
 
@@ -203,6 +204,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
 
                 commandBuffer.AttachCameraUnchecked(camera);
                 commandBuffer.DrawMeshUnchecked(mesh, new Material(shader), new TransformComponent() {
+                    Position = new Vector3<float>(0, 0, 2.5f),
                     Rotation = Quaternion.EulerRadians(new Vector3<float>(
                         Environment.TickCount / 3000f % 360f,
                         Environment.TickCount / 1000f % 360f,

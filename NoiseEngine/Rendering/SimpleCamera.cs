@@ -10,18 +10,30 @@ public class SimpleCamera {
 
     private readonly object renderTargetLocker = new object();
 
+    protected Vector3<float> position;
+    protected Quaternion<float> rotation = Quaternion<float>.Identity;
+
     private CameraClearFlags clearFlags = CameraClearFlags.SolidColor;
     private Color clearColor = new Color(0.26666f, 0.45882f, 0.87058f);
-    private ProjectionType projectionType = ProjectionType.Perspective;
-    private Vector3<float> position = new Vector3<float>(0, 0, -2.5f);
-    private Quaternion<float> rotation = Quaternion<float>.Identity;
-    private float nearClipPlane = 0.1f;
-    private float farClipPlane = 1000f;
-    private float fieldOfView = FloatingPointIeee754Helper.ConvertDegreesToRadians(60f);
-    private float orthographicSize = 10.0f;
     private ICameraRenderTarget? renderTarget;
 
     public GraphicsDevice GraphicsDevice { get; }
+
+    public ProjectionType ProjectionType { get; set; } = ProjectionType.Perspective;
+    public float NearClipPlane { get; set; } = 0.1f;
+    public float FarClipPlane { get; set; } = 1000f;
+    public float FieldOfViewRadians { get; set; } = FloatingPointIeee754Helper.ConvertDegreesToRadians(60f);
+    public float OrthographicSize { get; set; } = 10f;
+
+    public virtual Vector3<float> Position {
+        get => position;
+        set => position = value;
+    }
+
+    public virtual Quaternion<float> Rotation {
+        get => rotation;
+        set => rotation = value;
+    }
 
     public CameraClearFlags ClearFlags {
         get => clearFlags;
@@ -37,6 +49,11 @@ public class SimpleCamera {
             clearColor = value;
             Delegation.UpdateClearColor();
         }
+    }
+
+    public float FieldOfViewDegrees {
+        get => FloatingPointIeee754Helper.ConvertRadiansToDegrees(FieldOfViewRadians);
+        set => FieldOfViewRadians = FloatingPointIeee754Helper.ConvertDegreesToRadians(value);
     }
 
     /// <summary>
@@ -153,31 +170,30 @@ public class SimpleCamera {
     }
 
     private Matrix4x4<float> CalculateProjectionMatrix() {
-        float farMinusNear = farClipPlane - nearClipPlane;
+        float farMinusNear = FarClipPlane - NearClipPlane;
 
-        switch (projectionType) {
+        switch (ProjectionType) {
             case ProjectionType.Perspective:
-                float tanHalfFieldOfView = MathF.Tan(fieldOfView * 0.5f);
-                float zRange = nearClipPlane - farClipPlane;
+                float tanHalfFieldOfView = MathF.Tan(FieldOfViewRadians * 0.5f);
+                float zRange = NearClipPlane - FarClipPlane;
 
                 return new Matrix4x4<float>(
                     new Vector4<float>(1 / (AspectRatio * tanHalfFieldOfView), 0.0f, 0.0f, 0.0f),
                     new Vector4<float>(0.0f, -1 / tanHalfFieldOfView, 0.0f, 0.0f),
-                    new Vector4<float>(0.0f, 0.0f, (-nearClipPlane - farClipPlane) / zRange, 1.0f),
-                    new Vector4<float>(0.0f, 0.0f, 2.0f * farClipPlane * nearClipPlane / zRange, 0.0f));
+                    new Vector4<float>(0.0f, 0.0f, (-NearClipPlane - FarClipPlane) / zRange, 1.0f),
+                    new Vector4<float>(0.0f, 0.0f, 2.0f * FarClipPlane * NearClipPlane / zRange, 0.0f));
 
             case ProjectionType.Orthographic:
                 return new Matrix4x4<float>(
-                    new Vector4<float>(1 / (orthographicSize * AspectRatio), 0, 0, 0),
-                    new Vector4<float>(0, -1 / orthographicSize, 0, 0),
+                    new Vector4<float>(1 / (OrthographicSize * AspectRatio), 0, 0, 0),
+                    new Vector4<float>(0, -1 / OrthographicSize, 0, 0),
                     new Vector4<float>(0, 0, 1 / farMinusNear, 0),
-                    new Vector4<float>(0, 0, 0.5f * (-(farClipPlane + nearClipPlane) / farMinusNear + 1), 1));
+                    new Vector4<float>(0, 0, 0.5f * (-(FarClipPlane + NearClipPlane) / farMinusNear + 1), 1));
 
             default:
-                throw new InvalidEnumArgumentException(
-                    nameof(ProjectionType),
-                    (int)projectionType,
-                    typeof(ProjectionType));
+                throw new InvalidEnumArgumentException
+                    (nameof(ProjectionType), (int)ProjectionType, typeof(ProjectionType)
+                );
         }
     }
 
