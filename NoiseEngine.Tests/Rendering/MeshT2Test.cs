@@ -1,5 +1,4 @@
 ﻿using NoiseEngine.Components;
-using NoiseEngine.Interop.Rendering.Presentation;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
@@ -105,7 +104,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
 
         NeslTypeBuilder fragmentData = TestEmitHelper.NewType();
         fragmentData.DefineField("Position", Vectors.GetVector4(BuiltInTypes.Float32));
-        fragmentData.DefineField("Color", Vectors.GetVector3(BuiltInTypes.Float32));
+        fragmentData.DefineField("Color", Vectors.GetVector4(BuiltInTypes.Float32));
 
         NeslTypeBuilder shaderClassData = TestEmitHelper.NewType();
 
@@ -117,15 +116,29 @@ public class MeshT2Test : ApplicationTestEnvironment {
         il.Emit(OpCode.DefVariable, fragmentData);
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
         il.Emit(OpCode.DefVariable, Vectors.GetVector3(BuiltInTypes.Float32));
+        il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);
+
         il.Emit(OpCode.LoadField, 3u, 0u, 0u);
         il.Emit(OpCode.Call, 2u, Vertex.ObjectToClipPos, stackalloc uint[] { 3u });
         il.Emit(OpCode.SetField, 1u, 0u, 2u);
+
         il.Emit(OpCode.LoadField, 3u, 0u, 1u);
-        il.Emit(OpCode.SetField, 1u, 1u, 3u);
+
+        il.Emit(OpCode.LoadField, 4u, 3u, 0u);
+        il.Emit(OpCode.SetField, 2u, 0u, 4u);
+        il.Emit(OpCode.LoadField, 4u, 3u, 1u);
+        il.Emit(OpCode.SetField, 2u, 1u, 4u);
+        il.Emit(OpCode.LoadField, 4u, 3u, 2u);
+        il.Emit(OpCode.SetField, 2u, 2u, 4u);
+        il.Emit(OpCode.LoadFloat32, 4u, 1f);
+        il.Emit(OpCode.SetField, 2u, 3u, 4u);
+
+        il.Emit(OpCode.SetField, 1u, 1u, 2u);
+
         il.Emit(OpCode.ReturnValue, 1u);
 
         NeslMethodBuilder fragment = shaderClassData.DefineMethod(
-            "Fragment", Vectors.GetVector3(BuiltInTypes.Float32), fragmentData
+            "Fragment", Vectors.GetVector4(BuiltInTypes.Float32), fragmentData
         );
         il = fragment.IlGenerator;
 
@@ -135,6 +148,15 @@ public class MeshT2Test : ApplicationTestEnvironment {
 
         // Executing.
         Span<Color32> buffer = stackalloc Color32[16 * 16];
+
+        (Quaternion<float>, Color32)[] tasks = new (Quaternion<float>, Color32)[] {
+            (Quaternion<float>.Identity, new Color32(0, 0, 64)),
+            (Quaternion.EulerDegrees(new Vector3<float>(0, 90, 0)), new Color32(255, 0, 0)),
+            (Quaternion.EulerDegrees(new Vector3<float>(0, 180, 0)), new Color32(0, 0, 255)),
+            (Quaternion.EulerDegrees(new Vector3<float>(0, 270, 0)), new Color32(64, 0, 0)),
+            (Quaternion.EulerDegrees(new Vector3<float>(90, 0, 0)), new Color32(0, 64, 0)),
+            (Quaternion.EulerDegrees(new Vector3<float>(270, 0, 0)), new Color32(0, 255, 0)),
+        };
 
         ReadOnlySpan<(Vector3<float>, Vector3<float>)> vertices = stackalloc (Vector3<float>, Vector3<float>)[] {
             // Top
@@ -186,46 +208,47 @@ public class MeshT2Test : ApplicationTestEnvironment {
             Shader shader = new Shader(device, shaderClassData);
 
             Texture2D texture = new Texture2D(
-                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16
+                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16, TextureFormat.R8G8B8A8_UNORM
             );
-            Window window = Fixture.GetWindow(nameof(Figure3D));
             SimpleCamera camera = new SimpleCamera(device) {
-                RenderTarget = window,
+                RenderTarget = texture,
                 ClearFlags = CameraClearFlags.SolidColor,
-                //ClearColor = Color.Random
+                ClearColor = Color.White,
+                ProjectionType = ProjectionType.Orthographic,
+                OrthographicSize = 0.5f
             };
 
             Mesh mesh = new Mesh<(Vector3<float>, Vector3<float>), ushort>(device, vertices, triangles);
+            Material material = new Material(shader);
+            TransformComponent transform = new TransformComponent(new Vector3<float>(0, 0, 5));
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
 
-            while (true) {
-                WindowInterop.PoolEvents(window.Handle);
-
+            foreach ((Quaternion<float> rotation, Color32 expectedColor) in tasks) {
                 commandBuffer.AttachCameraUnchecked(camera);
-                commandBuffer.DrawMeshUnchecked(mesh, new Material(shader), new TransformComponent() {
-                    Position = new Vector3<float>(0, 0, 2.5f),
-                    Rotation = Quaternion.EulerRadians(new Vector3<float>(
-                        Environment.TickCount / 3000f % 360f,
-                        Environment.TickCount / 1000f % 360f,
-                        Environment.TickCount / 5000f % 360f
-                    ))
-                }.Matrix);
+                commandBuffer.DrawMeshUnchecked(mesh, material, (transform with { Rotation = rotation }).Matrix);
                 commandBuffer.DetachCameraUnchecked();
 
                 commandBuffer.Execute();
                 commandBuffer.Clear();
+
+                // Assert.
+                texture.GetPixels(buffer);
+                Assert.Equal(expectedColor, buffer[128]);
             }
 
-            // Assert.
-            /*texture.GetPixels(buffer);
+            commandBuffer.AttachCameraUnchecked(camera);
+            commandBuffer.DrawMeshUnchecked(
+                mesh, material, (transform with { Position = new Vector3<float>(0, 0, -100) }
+            ).Matrix);
+            commandBuffer.DetachCameraUnchecked();
 
-            for (int i = 0; i < buffer.Length; i += (int)texture.Width) {
-                Assert.Equal(Color32.Red, buffer[i]);
-                Assert.Equal(Color32.Green, buffer[i + 4]);
-                Assert.Equal(Color32.Blue, buffer[i + 8]);
-                Assert.Equal(Color32.Green, buffer[i + 12]);
-            }*/
+            commandBuffer.Execute();
+            commandBuffer.Clear();
+
+            // Assert.
+            texture.GetPixels(buffer);
+            Assert.Equal((Color32)camera.ClearColor, buffer[128]);
         }
     }
 
