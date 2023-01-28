@@ -3,8 +3,9 @@ use std::sync::Arc;
 use cgmath::Vector2;
 
 use crate::{
-    rendering::presentation::{window::Window, window_settings::WindowSettings},
-    interop::prelude::{InteropString, InteropResult, InteropOption}, errors::invalid_operation::InvalidOperationError
+    rendering::presentation::{window::Window, window_settings::WindowSettings, input::{KeyValue, InputData}},
+    interop::prelude::{InteropString, InteropResult, InteropOption, InteropSpan},
+    errors::invalid_operation::InvalidOperationError
 };
 
 #[no_mangle]
@@ -39,8 +40,10 @@ extern "C" fn rendering_presentation_window_interop_dispose(window: &Arc<dyn Win
 }
 
 #[no_mangle]
-extern "C" fn rendering_presentation_window_interop_pool_events(window: &Arc<dyn Window>) {
-    window.pool_events();
+extern "C" fn rendering_presentation_window_interop_pool_events(
+    window: &Arc<dyn Window>, key_values: InteropSpan<'static, KeyValue>
+) {
+    window.pool_events(InputData::new(key_values.into()));
 }
 
 #[no_mangle]

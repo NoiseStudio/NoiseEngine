@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Common;
+using NoiseEngine.Inputs;
 using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Presentation;
 using NoiseEngine.Mathematics;
@@ -22,6 +23,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     private AtomicBool isReleased;
     private SimpleCamera? assignedCamera;
 
+    public WindowInput Input { get; }
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
     public uint Height { get; private set; }
@@ -56,6 +58,8 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
         Handle = handle;
         WindowEventHandler.RegisterWindow(this);
+
+        Input = new WindowInput(this);
     }
 
     public Window(string? title = null, uint width = 1280, uint height = 720) : this(
@@ -121,6 +125,17 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
             if (assignedCamera is not null)
                 assignedCamera.RenderTarget = null;
             assignedCamera = camera;
+        }
+    }
+
+    internal void PoolEvents() {
+        WindowInterop.PoolEvents(Handle, Input.GetKeyValueSpan());
+
+        int i = 0;
+        foreach (KeyValue value in Input.GetKeyValueSpan()) {
+            if (value.State == KeyState.JustReleased || value.State == KeyState.JustPressed)
+                Log.Info($"{(Key)i} {value.State}");
+            i++;
         }
     }
 

@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Interop.Rendering.Presentation;
-using NoiseEngine.Rendering;
+﻿using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using System;
 
@@ -45,7 +44,7 @@ public class Camera : SimpleCamera {
     public void Render() {
         if (RenderTarget is Window window) {
             lock (window.PoolEventsLocker)
-                WindowInterop.PoolEvents(window.Handle);
+                window.PoolEvents();
         }
 
         GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(GraphicsDevice, false);

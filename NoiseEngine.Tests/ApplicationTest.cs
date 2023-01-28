@@ -1,16 +1,42 @@
 ﻿using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Mathematics;
-using System.Threading;
+using NoiseEngine.Rendering.Buffers;
+using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
+using System.Threading;
 
 namespace NoiseEngine.Tests;
 
-[Collection(nameof(ApplicationCollection))]
-public class ApplicationTest {
+public class ApplicationTest : ApplicationTestEnvironment {
 
-    /*[FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
+    public ApplicationTest(ApplicationFixture fixture) : base(fixture) {
+    }
+
+
+    [FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
     public void SimpleScene() {
-        using ApplicationScene scene = new ApplicationScene();
+        Window window = Fixture.GetWindow(nameof(SimpleScene));
+        ExecuteOnAllDevices(scene => {
+            Camera camera = new Camera(scene) {
+                RenderTarget = window
+            };
+
+            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
+
+            while (true) {
+                window.PoolEvents();
+
+                commandBuffer.AttachCameraUnchecked(camera);
+
+
+
+                commandBuffer.DetachCameraUnchecked();
+                commandBuffer.Execute();
+                commandBuffer.Clear();
+            }
+        });
+
+        /*using ApplicationScene scene = new ApplicationScene();
 
         for (int x = -10; x < 10; x += 2) {
             for (int y = -10; y < 10; y += 2) {
@@ -28,7 +54,7 @@ public class ApplicationTest {
             AutoResetEvent autoResetEvent = new AutoResetEvent(false);
             Application.ApplicationExit += _ => autoResetEvent.Set();
             autoResetEvent.WaitOne();
-        }
-    }*/
+        }*/
+    }
 
 }

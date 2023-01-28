@@ -1,6 +1,6 @@
 use std::{
     ptr, sync::{Arc, Weak, atomic::{AtomicBool, Ordering}}, cell::{UnsafeCell, Cell},
-    thread::{self, JoinHandle, ThreadId}, mem::{self, ManuallyDrop}
+    thread::{self, JoinHandle, ThreadId}, mem::{self, ManuallyDrop, MaybeUninit}
 };
 
 use ash::{vk, extensions::khr};
@@ -19,7 +19,7 @@ use crate::{
     rendering::{
         presentation::{
             window::Window, window_settings::{WindowSettings, WindowMode, WindowControls, WindowCoordinateMode},
-            window_event_handler::WindowEventHandler
+            window_event_handler::WindowEventHandler, input::{InputData, self, KeyValue, KeyState}
         },
         vulkan::{surface::VulkanSurface, instance::VulkanInstance, errors::universal::VulkanUniversalError}
     }, platform::windows::rect::Rect, common::send_ptr::{SendPtrMut, SendPtr}
@@ -37,9 +37,26 @@ fn wide_null(s: &str) -> Vec<u16> {
 fn low_word(l: isize) -> u16 {
     (l & 0xffff) as u16
 }
+
 #[inline]
 fn high_word(l: isize) -> u16 {
     ((l >> 16) & 0xffff) as u16
+}
+
+#[inline]
+fn is_extended_key(l_param: isize) -> bool {
+    (high_word(l_param) & 0x0100) == 0x0100
+}
+
+#[inline]
+fn is_right_shift(l_param: isize) -> bool {
+    match unsafe {
+        MapVirtualKeyW(((l_param & 0x00ff0000) >> 16) as u32, 3)
+    } {
+        0xa0 => false,
+        0xa1 => true,
+        _ => panic!("Given key is not a shift.")
+    }
 }
 
 pub struct WindowWindows {
@@ -153,7 +170,7 @@ impl WindowWindows {
             thread_reset_event: AutoResetEvent::new(EventState::Unset),
             thread_end_reset_event: Arc::new(AutoResetEvent::new(EventState::Unset)),
             thread_last_signaler: Cell::new(None),
-            data: UnsafeCell::new(WindowWindowsData { width, height, settings })
+            data: UnsafeCell::new(WindowWindowsData { width, height, settings, input_data: MaybeUninit::uninit() }),
         });
 
         let reference = unsafe {
@@ -198,6 +215,44 @@ impl WindowWindows {
         };
 
         Ok(arc)
+    }
+
+    fn translate_keys(w_param: usize, l_param: isize) -> usize {
+        match w_param {
+            0x30..=0x39 => w_param - 47, // Alpha 0 - 9
+            0x41..=0x5a => w_param - 54, // A - Z
+            0x20 => 37, // Space ( )
+            0xbd => 38, // Minus (-)
+            0xbc => 39, // Comma (,)
+            0xbe..=0xbf => w_param - 150, // Period (.), Slash (/)
+            0xdc => 42, // BackSlash (\)
+            0xba..=0xbb => w_param - 143, // Semicolon (;), Equal (=)
+            0xde => 45, // Appostrophe (')
+            0xdb => 46, // LeftBracket ([)
+            0xdd => 47, // RightBracket (])
+            0x1b => 48, // Escape
+            0xc0 => 49, // Grave (`),
+            0x70..=0x87 => w_param - 62, // F1 - F24
+            0x6a..=0x6f => w_param - 32, // NumpadMultiply - NumpadDivide
+            0xd => match is_extended_key(l_param) {
+                true => 80, // NumpadEnter
+                false => 103, // Return
+            },
+            0x21..=0x28 => w_param + match is_extended_key(l_param) { // NumpadKeys
+                true => 71, // Normal
+                false => 48, // Numpad
+            },
+            0x90 => 89, // NumpadLock
+            0x60..=0x69 => w_param - 6, // Numpad 0 - 9
+            0x8..=0x9 => w_param + 92, // Backspace, Tab
+            0xc => 102, // Clear
+            0x2c => 112, // PrintScreen
+            0x91 => 113, // ScrollLock
+            0x13 => 114, // Pause
+            0x2d..=0x2f => w_param + 70, // Insert, Delete, Help
+            0x5d => 118,
+            _ => 0
+        }
     }
 
     // https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
@@ -390,7 +445,21 @@ impl Window for WindowWindows {
         self.data().height
     }
 
-    fn pool_events(&self) {
+    fn pool_events(&self, input_data: InputData) {
+        for i in 0..input_data.key_values.len() {
+            let value = input_data.key_values[i];
+            match value.state {
+                KeyState::JustReleased => input_data.key_values[i] = KeyValue {
+                    modifier: 0, state: KeyState::Released
+                },
+                KeyState::JustPressed => input_data.key_values[i] = KeyValue {
+                    modifier: value.modifier, state: KeyState::Pressed
+                },
+                _ => ()
+            }
+        }
+
+        self.data_mut().input_data = MaybeUninit::new(input_data);
         self.execute_task_wait(WindowWindowsThreadTask::PoolEvents);
     }
 
@@ -509,6 +578,90 @@ unsafe extern "system" fn window_procedure(
 
             (event_handler.user_closed)(window.id);
         },
+        // WM_KEYDOWN | WM_SYSKEYDOWN
+        0x0100 | 0x0104 => {
+            let input = data.input_data.assume_init_mut();
+
+            let last_modifier = input.current_modifier;
+            let key_index = match w_param {
+                0x14 => {
+                    input.current_modifier |= input::CAPSLOCK_MODIFIER;
+                    119
+                },
+                0x10 => match is_right_shift(l_param) {
+                    true => {
+                        input.current_modifier |= input::SHIFT_MODIFIER | input::RIGHT_SHIFT_MODIFIER;
+                        124
+                    },
+                    false => {
+                        input.current_modifier |= input::SHIFT_MODIFIER | input::LEFT_SHIFT_MODIFIER;
+                        120
+                    }
+                },
+                0x11 => match is_extended_key(l_param) {
+                    true => {
+                        input.current_modifier |= input::CONTROL_MODIFIER | input::RIGHT_CONTROL_MODIFIER;
+                        125
+                    },
+                    false => {
+                        input.current_modifier |= input::CONTROL_MODIFIER | input::LEFT_CONTROL_MODIFIER;
+                        121
+                    }
+                },
+                0x12 => match is_extended_key(l_param) {
+                    true => {
+                        input.current_modifier |= input::ALT_MODIFIER | input::RIGHT_ALT_MODIFIER;
+                        126
+                    },
+                    false => {
+                        input.current_modifier |= input::ALT_MODIFIER | input::LEFT_ALT_MODIFIER;
+                        122
+                    }
+                },
+                0x5b => {
+                    input.current_modifier |= input::SUPER_MODIFIER | input::LEFT_SUPER_MODIFIER;
+                    123
+                },
+                0x5c => {
+                    input.current_modifier |= input::SUPER_MODIFIER | input::RIGHT_SUPER_MODIFIER;
+                    127
+                },
+                _ => WindowWindows::translate_keys(w_param, l_param)
+            };
+
+            let value = input.key_values[key_index];
+            if value.state == KeyState::Released {
+                input.key_values[key_index] = KeyValue { modifier: last_modifier, state: KeyState::JustPressed };
+            }
+
+            if input.current_modifier == last_modifier {
+                input.current_modifier = 0;
+            }
+        },
+        // WM_KEYUP | WM_SYSKEYUP
+        0x0101 | 0x0105 => {
+            let key_index = match w_param {
+                0x14 => 119, // CapsLock
+                0x10 => match is_right_shift(l_param) {
+                    true => 124,
+                    false => 120
+                },
+                0x11..=0x12 => match is_extended_key(l_param) { // Shift, Control, Alt
+                    true => w_param + 108, // Right
+                    false => w_param + 104 // Left
+                },
+                0x5b => 123, // LeftSuper
+                0x5c => 127, // RightSuper
+                _ => WindowWindows::translate_keys(w_param, l_param)
+            };
+
+            let input = data.input_data.assume_init_mut();
+
+            let value = input.key_values[key_index];
+            if value.state == KeyState::Pressed {
+                input.key_values[key_index] = KeyValue { modifier: value.modifier, state: KeyState::JustReleased };
+            }
+        }
         _ => return DefWindowProcW(h_wnd, msg, w_param, l_param)
     };
     0
@@ -517,7 +670,8 @@ unsafe extern "system" fn window_procedure(
 struct WindowWindowsData {
     pub width: u32,
     pub height: u32,
-    pub settings: WindowSettings
+    pub settings: WindowSettings,
+    pub input_data: MaybeUninit<InputData>
 }
 
 enum WindowWindowsThreadTask {
@@ -560,6 +714,8 @@ extern "system" {
     fn TranslateMessage(lp_msg: &Msg) -> u32;
 
     fn DispatchMessageW(lp_msg: &Msg) -> isize;
+
+    fn MapVirtualKeyW(u_code: u32, u_map_type: u32) -> u32;
 
     fn ShowWindow(h_wnd: *mut c_void, n_cmd_show: u32) -> u32;
 
