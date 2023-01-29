@@ -70,8 +70,8 @@ public class ApplicationScene : IDisposable {
 
         OnDispose();
 
-        //foreach (Camera camera in Cameras)
-        //    camera.Dispose();
+        foreach (Camera camera in Cameras)
+            camera.RenderTarget = null;
 
         FrameDependentSystems.Clear();
         EntityWorld.Dispose();
@@ -79,8 +79,12 @@ public class ApplicationScene : IDisposable {
         GC.SuppressFinalize(this);
     }
 
-    internal void RemoveRenderCameraFromScene(Camera renderCamera) {
-        cameras.Remove(renderCamera);
+    internal void AddCameraToScene(Camera camera) {
+        cameras.Add(camera);
+    }
+
+    internal void RemoveCameraFromScene(Camera camera) {
+        cameras.Remove(camera);
     }
 
     /// <summary>

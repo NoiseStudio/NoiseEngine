@@ -1,9 +1,6 @@
 ﻿using NoiseEngine.DeveloperTools.Components;
 using NoiseEngine.DeveloperTools.Systems;
-using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
-using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System.Threading;
@@ -34,7 +31,8 @@ public class ApplicationTest : ApplicationTestEnvironment {
             camera.Entity.Add(scene.EntityWorld, new DebugMovementComponent());
             scene.AddFrameDependentSystem(new DebugMovementSystem(window));
 
-            Thread.Sleep(1000000);
+            while (!window.IsDisposed)
+                Thread.Sleep(1);
         });
 
         /*using ApplicationScene scene = new ApplicationScene();

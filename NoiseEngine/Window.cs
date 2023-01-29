@@ -27,7 +27,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
     public uint Height { get; private set; }
-    public bool IsFocused { get; private set; } = true;
+    public bool IsFocused { get; private set; }
 
     internal ulong Id { get; }
     internal InteropHandle<Window> Handle { get; private set; }
@@ -63,6 +63,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
         WindowEventHandler.RegisterWindow(this);
 
         Input = new WindowInput(this);
+        IsFocused = WindowInterop.IsFocused(Handle);
     }
 
     public Window(string? title = null, uint width = 1280, uint height = 720) : this(

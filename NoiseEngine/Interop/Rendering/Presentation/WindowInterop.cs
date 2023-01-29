@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Inputs;
+using NoiseEngine.Interop.InteropMarshalling;
 using NoiseEngine.Mathematics;
 
 namespace NoiseEngine.Interop.Rendering.Presentation;
@@ -26,5 +27,8 @@ internal static partial class WindowInterop {
 
     [InteropImport("rendering_presentation_window_interop_set_cursor_position")]
     public static partial InteropResult<None> SetCursorPosition(InteropHandle<Window> handle, Vector2<double> position);
+
+    [InteropImport("rendering_presentation_window_interop_is_focused")]
+    public static partial bool IsFocused(InteropHandle<Window> handle);
 
 }

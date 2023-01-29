@@ -17,11 +17,11 @@ public class WindowInput {
     public Vector2<double> CursorPosition {
         get => cursorPosition;
         set {
+            cursorPosition = value;
             if (WindowRc.TryRcRetain()) {
                 WindowInterop.SetCursorPosition(Window.Handle, value);
                 WindowRc.RcRelease();
             }
-            cursorPosition = value;
         }
     }
 

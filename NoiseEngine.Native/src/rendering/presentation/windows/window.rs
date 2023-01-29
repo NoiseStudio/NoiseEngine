@@ -78,7 +78,7 @@ pub struct WindowWindows {
     thread_id: ThreadId,
     thread_work: AtomicBool,
     thread_join_handle: Cell<Option<JoinHandle<()>>>,
-    thread_task_queue: SegQueue<(WindowWindowsThreadTask, Option<Arc<AutoResetEvent>>)>,
+    thread_task_queue: SegQueue<(WindowWindowsThreadTask, Option<Arc<AutoResetEvent>>, *mut c_void)>,
     thread_reset_event: AutoResetEvent,
     thread_end_reset_event: Arc<AutoResetEvent>,
     thread_last_signaler: Cell<Option<Arc<AutoResetEvent>>>,
@@ -365,13 +365,18 @@ impl WindowWindows {
     }
 
     fn execute_task(&self, task: WindowWindowsThreadTask) {
-        self.thread_task_queue.push((task, None));
+        self.thread_task_queue.push((task, None, ptr::null_mut()));
         self.thread_reset_event.set();
     }
 
     fn execute_task_wait(&self, task: WindowWindowsThreadTask) {
+        let mut i = 0;
+        self.execute_task_wait_with_data(task, &mut i);
+    }
+
+    fn execute_task_wait_with_data<T>(&self, task: WindowWindowsThreadTask, data: &mut T) {
         if self.thread_id == thread::current().id() {
-            self.thread_worker_task_invoker(task, None);
+            self.thread_worker_task_invoker(task, None, data as *mut T as *mut c_void);
             return;
         }
 
@@ -380,7 +385,7 @@ impl WindowWindows {
         }
 
         let reset_event = Arc::new(AutoResetEvent::new(EventState::Unset));
-        self.thread_task_queue.push((task, Some(reset_event.clone())));
+        self.thread_task_queue.push((task, Some(reset_event.clone()), data as *mut T as *mut c_void));
         self.thread_reset_event.set();
 
         if self.thread_work.load(Ordering::Relaxed) {
@@ -396,17 +401,22 @@ impl WindowWindows {
     }
 
     fn thread_worker_iterator(&self) {
-        for (task, signal) in self.thread_task_queue.pop() {
-            self.thread_worker_task_invoker(task, signal);
+        for (
+            task, signal, data
+        ) in self.thread_task_queue.pop() {
+            self.thread_worker_task_invoker(task, signal, data);
         }
     }
 
-    fn thread_worker_task_invoker(&self, task: WindowWindowsThreadTask, signal: Option<Arc<AutoResetEvent>>) {
+    fn thread_worker_task_invoker(
+        &self, task: WindowWindowsThreadTask, signal: Option<Arc<AutoResetEvent>>, data: *mut c_void
+    ) {
         self.thread_last_signaler.set(signal.clone());
 
         match task {
             WindowWindowsThreadTask::PoolEvents => self.pool_events_thread(),
             WindowWindowsThreadTask::Hide => self.hide_thread(),
+            WindowWindowsThreadTask::IsFocused => self.is_focused_thread(data),
             WindowWindowsThreadTask::Dispose => self.dispose_thread(),
         };
 
@@ -440,11 +450,17 @@ impl WindowWindows {
         };
     }
 
+    fn is_focused_thread(&self, data: *mut c_void) {
+        unsafe {
+            ptr::write(data as *mut bool, GetActiveWindow() == self.h_wnd);
+        }
+    }
+
     fn dispose_thread(&self) {
         self.thread_work.store(false, Ordering::Relaxed);
         self.hide_thread();
 
-        for (_, signal) in self.thread_task_queue.pop() {
+        for (_, signal, _) in self.thread_task_queue.pop() {
             match signal {
                 Some(s) => s.set(),
                 None => (),
@@ -572,6 +588,12 @@ impl Window for WindowWindows {
         }
     }
 
+    fn is_focused(&self) -> bool {
+        let mut result = false;
+        self.execute_task_wait_with_data(WindowWindowsThreadTask::IsFocused, &mut result);
+        result
+    }
+
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
         let create_info = vk::Win32SurfaceCreateInfoKHR {
             s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
@@ -640,8 +662,8 @@ unsafe extern "system" fn window_procedure(
         0x0007 => (event_handler.focused)(window.id),
         // WM_KILLFOCUS
         0x0008 => (event_handler.unfocused)(window.id),
-        // WM_KEYDOWN | WM_SYSKEYDOWN
-        0x0100 | 0x0104 => {
+        // WM_KEYDOWN
+        0x0100 => {
             let last_modifier = data.input_current_modifier;
             let key_index = match w_param {
                 0x14 => {
@@ -691,8 +713,16 @@ unsafe extern "system" fn window_procedure(
 
             WindowWindows::keydown_worker(data, last_modifier, key_index);
         },
-        // WM_KEYUP | WM_SYSKEYUP
-        0x0101 | 0x0105 => {
+        // WM_SYSKEYDOWN
+        0x0104 => {
+            WindowWindows::keydown_worker(
+                data, data.input_current_modifier,
+                WindowWindows::translate_keys(w_param, l_param)
+            );
+            return DefWindowProcW(h_wnd, msg, w_param, l_param);
+        },
+        // WM_KEYUP
+        0x0101 => {
             let key_index = match w_param {
                 0x14 => 119, // CapsLock
                 0x10 => match is_right_shift(l_param) {
@@ -710,6 +740,13 @@ unsafe extern "system" fn window_procedure(
 
             WindowWindows::keyup_worker(data, key_index);
         },
+        // WM_SYSKEYDOWN
+        0x105 => {
+            WindowWindows::keyup_worker(
+                data, WindowWindows::translate_keys(w_param, l_param)
+            );
+            return DefWindowProcW(h_wnd, msg, w_param, l_param);
+        }
         // WM_LBUTTONDOWN
         0x0201 => WindowWindows::keydown_worker(data, data.input_current_modifier, 128),
         // WM_RBUTTONDOWN
@@ -758,6 +795,7 @@ struct WindowWindowsData {
 enum WindowWindowsThreadTask {
     PoolEvents,
     Hide,
+    IsFocused,
     Dispose
 }
 
@@ -801,6 +839,8 @@ extern "system" {
     fn ShowWindow(h_wnd: *mut c_void, n_cmd_show: u32) -> u32;
 
     fn AdjustWindowRectEx(lp_rect: &Rect, dw_style: u32, b_menu: u32, dw_ex_style: u32) -> u32;
+
+    fn GetActiveWindow() -> *mut c_void;
 
     fn ClientToScreen(h_wnd: *mut c_void, lp_point: &mut Vector2<i32>) -> u32;
 

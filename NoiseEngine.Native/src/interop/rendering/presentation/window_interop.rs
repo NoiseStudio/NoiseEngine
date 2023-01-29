@@ -65,3 +65,8 @@ extern "C" fn rendering_presentation_window_interop_set_cursor_position(
         Err(err) => InteropResult::with_err(err.into()),
     }
 }
+
+#[no_mangle]
+extern "C" fn rendering_presentation_window_interop_is_focused(window: &Arc<dyn Window>) -> bool {
+    window.is_focused()
+}

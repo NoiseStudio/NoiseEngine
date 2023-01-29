@@ -12,7 +12,8 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
 
     private const float MouseDownLookLimiter = (float)Math.PI / 2;
 
-    private float speed = 1f;
+    private float speed = 4.5f;
+    private float currentSpeed = 4.5f;
 
     public Window Window { get; }
 
@@ -21,6 +22,14 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
     public float MinSpeedMultipler { get; set; } = 0.001f;
     public float MaxSpeedMultipler { get; set; } = 2f;
     public float Sensitivity { get; set; } = 0.001f;
+
+    public float Speed {
+        get => speed;
+        set {
+            speed = value;
+            currentSpeed = Math.Max(value, currentSpeed);
+        }
+    }
 
     public override IReadOnlyList<Type> WritableComponents { get; } = new Type[] {
         typeof(TransformComponent), typeof(DebugMovementComponent)
@@ -49,20 +58,20 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
 
         // Move
         if (input.Pressed(Key.W)) {
-            position += transform.Front * (speed * SpeedMultipler * DeltaTimeF);
+            position += transform.Front * (currentSpeed * SpeedMultipler * DeltaTimeF);
             changePosition = true;
         }
         if (input.Pressed(Key.S)) {
-            position += transform.Back * (speed * SpeedMultipler * DeltaTimeF);
+            position += transform.Back * (currentSpeed * SpeedMultipler * DeltaTimeF);
             changePosition = true;
         }
 
         if (input.Pressed(Key.A)) {
-            position += transform.Left * (speed * SpeedMultipler * DeltaTimeF);
+            position += transform.Left * (currentSpeed * SpeedMultipler * DeltaTimeF);
             changePosition = true;
         }
         if (input.Pressed(Key.D)) {
-            position += transform.Right * (speed * SpeedMultipler * DeltaTimeF);
+            position += transform.Right * (currentSpeed * SpeedMultipler * DeltaTimeF);
             changePosition = true;
         }
 
@@ -85,14 +94,14 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
 
         if (changePosition) {
             movement = movement with { TimeUntilLastChangedPosition = 0 };
-            speed += speed * DeltaTimeF * SpeedIncrease;
+            currentSpeed += currentSpeed * DeltaTimeF * SpeedIncrease;
         } else {
             movement = movement with {
                 TimeUntilLastChangedPosition = movement.TimeUntilLastChangedPosition + DeltaTimeF
             };
 
             if (movement.TimeUntilLastChangedPosition > 0.2f)
-                speed = 1;
+                currentSpeed = Speed;
         }
 
         entity.Set(this, transform with { Position = position, Rotation = rotation });
