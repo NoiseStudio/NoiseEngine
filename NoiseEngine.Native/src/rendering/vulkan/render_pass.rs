@@ -11,12 +11,18 @@ pub struct RenderPassCreateInfo {
     format: vk::Format,
     sample_count: vk::SampleCountFlags,
     clear_flags: CameraClearFlags,
-    final_layout: vk::ImageLayout
+    final_layout: vk::ImageLayout,
+    depth_testing: bool,
+    depth_stencil_format: vk::Format,
+    depth_stencil_sample_count: vk::SampleCountFlags,
 }
 
 pub struct RenderPass<'init> {
     inner: vk::RenderPass,
-    device: Arc<VulkanDevice<'init>>
+    device: Arc<VulkanDevice<'init>>,
+    depth_testing: bool,
+    depth_stencil_format: vk::Format,
+    depth_stencil_sample_count: vk::SampleCountFlags,
 }
 
 impl<'init> RenderPass<'init> {
@@ -44,6 +50,56 @@ impl<'init> RenderPass<'init> {
             layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
         };
 
+        let depth_attachment;
+        let depth_attachment_reference;
+
+        let dependency;
+
+        if create_info.depth_testing {
+            depth_attachment = vk::AttachmentDescription {
+                flags: vk::AttachmentDescriptionFlags::default(),
+                format: create_info.depth_stencil_format,
+                samples: create_info.depth_stencil_sample_count,
+                load_op: vk::AttachmentLoadOp::CLEAR,
+                store_op: vk::AttachmentStoreOp::DONT_CARE,
+                stencil_load_op: vk::AttachmentLoadOp::DONT_CARE,
+                stencil_store_op: vk::AttachmentStoreOp::DONT_CARE,
+                initial_layout: vk::ImageLayout::UNDEFINED,
+                final_layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            };
+
+            depth_attachment_reference = vk::AttachmentReference {
+                attachment: 1,
+                layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            };
+
+            dependency = vk::SubpassDependency {
+                src_subpass: vk::SUBPASS_EXTERNAL,
+                dst_subpass: 0,
+                src_stage_mask:
+                    vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT | vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
+                dst_stage_mask:
+                    vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT | vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
+                src_access_mask: vk::AccessFlags::empty(),
+                dst_access_mask:
+                    vk::AccessFlags::COLOR_ATTACHMENT_WRITE | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE,
+                dependency_flags: vk::DependencyFlags::empty(),
+            };
+        } else {
+            depth_attachment = vk::AttachmentDescription::default();
+            depth_attachment_reference = vk::AttachmentReference::default();
+
+            dependency = vk::SubpassDependency {
+                src_subpass: vk::SUBPASS_EXTERNAL,
+                dst_subpass: 0,
+                src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+                dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+                src_access_mask: vk::AccessFlags::empty(),
+                dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+                dependency_flags: vk::DependencyFlags::empty(),
+            };
+        }
+
         let subpass = vk::SubpassDescription {
             flags: vk::SubpassDescriptionFlags::default(),
             pipeline_bind_point: vk::PipelineBindPoint::GRAPHICS,
@@ -52,7 +108,10 @@ impl<'init> RenderPass<'init> {
             color_attachment_count: 1,
             p_color_attachments: &color_attachment_reference,
             p_resolve_attachments: ptr::null(),
-            p_depth_stencil_attachment: ptr::null(),
+            p_depth_stencil_attachment: match create_info.depth_testing {
+                true => &depth_attachment_reference,
+                false => ptr::null()
+            },
             preserve_attachment_count: 0,
             p_preserve_attachments: ptr::null(),
         };
@@ -61,12 +120,15 @@ impl<'init> RenderPass<'init> {
             s_type: vk::StructureType::RENDER_PASS_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::RenderPassCreateFlags::default(),
-            attachment_count: 1,
-            p_attachments: &color_attachment,
+            attachment_count: match create_info.depth_testing {
+                true => 2,
+                false => 1
+            },
+            p_attachments: [color_attachment, depth_attachment].as_ptr(),
             subpass_count: 1,
             p_subpasses: &subpass,
-            dependency_count: 0,
-            p_dependencies: ptr::null(),
+            dependency_count: 1,
+            p_dependencies: &dependency,
         };
 
         let initialized = device.initialized()?;
@@ -74,7 +136,13 @@ impl<'init> RenderPass<'init> {
             initialized.vulkan_device().create_render_pass(&vk_create_info, None)
         }?;
 
-        Ok(Self { inner, device: device.clone() })
+        Ok(Self {
+            inner,
+            device: device.clone(),
+            depth_testing: create_info.depth_testing,
+            depth_stencil_format: create_info.depth_stencil_format,
+            depth_stencil_sample_count: create_info.depth_stencil_sample_count
+        })
     }
 
     pub fn inner(&self) -> vk::RenderPass {
@@ -83,6 +151,18 @@ impl<'init> RenderPass<'init> {
 
     pub fn device(&self) -> &Arc<VulkanDevice<'init>> {
         &self.device
+    }
+
+    pub fn depth_testing(&self) -> bool {
+        self.depth_testing
+    }
+
+    pub fn depth_stencil_format(&self) -> vk::Format {
+        self.depth_stencil_format
+    }
+
+    pub fn depth_stencil_sample_count(&self) -> vk::SampleCountFlags {
+        self.depth_stencil_sample_count
     }
 }
 

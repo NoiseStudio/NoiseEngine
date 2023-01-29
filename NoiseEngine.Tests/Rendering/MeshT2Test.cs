@@ -67,9 +67,10 @@ public class MeshT2Test : ApplicationTestEnvironment {
                 device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16
             );
             SimpleCamera camera = new SimpleCamera(device) {
-                RenderTarget = texture,
+                RenderTarget = new RenderTexture(texture),
                 ClearFlags = CameraClearFlags.SolidColor,
-                ClearColor = Color.Green
+                ClearColor = Color.Green,
+                DepthTesting = false
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
@@ -211,9 +212,10 @@ public class MeshT2Test : ApplicationTestEnvironment {
                 device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16, TextureFormat.R8G8B8A8_UNORM
             );
             SimpleCamera camera = new SimpleCamera(device) {
-                RenderTarget = texture,
+                RenderTarget = new RenderTexture(texture),
                 ClearFlags = CameraClearFlags.SolidColor,
                 ClearColor = Color.White,
+                DepthTesting = false,
                 ProjectionType = ProjectionType.Orthographic,
                 OrthographicSize = 0.5f
             };

@@ -9,6 +9,7 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
 
     private readonly object calculateLocker = new object();
 
+    private bool recalcutate = true;
     private RenderPass? renderPass;
     private uint imageCount = 1;
 
@@ -16,7 +17,7 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
 
     public RenderPass RenderPass {
         get {
-            if (Camera.IsDirty)
+            if (recalcutate)
                 Calculate();
             return renderPass!;
         }
@@ -32,11 +33,20 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
         Marshal.FreeHGlobal(ClearColor);
     }
 
+    public override void UpdateClearFlags() {
+        recalcutate = true;
+    }
+
     public override void UpdateClearColor() {
         Marshal.StructureToPtr(Camera.ClearColor, ClearColor, false);
     }
 
+    public override void UpdateDepthTesting() {
+        recalcutate = true;
+    }
+
     public override void RaiseRenderTargetSet(ICameraRenderTarget? newRenderTarget) {
+        recalcutate = true;
         lock (calculateLocker) {
             if (
                 renderPass is WindowRenderPass windowRenderPass &&
@@ -61,24 +71,27 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
 
     private void Calculate() {
         lock (calculateLocker) {
-            if (!Camera.IsDirty)
+            if (!recalcutate)
                 return;
 
             ICameraRenderTarget? renderTarget = Camera.RenderTarget;
             if (renderTarget is null) {
                 renderPass = null;
-                Camera.IsDirty = false;
+                recalcutate = false;
                 throw new NullReferenceException("Camera's render target is null.");
             }
 
-            if (renderTarget is Window window)
+            if (renderTarget is Window window) {
                 CreateRenderPassWindow(window);
-            else if (renderTarget is Texture)
-                renderPass = new TextureRenderPass(GraphicsDevice, renderTarget, Camera.ClearFlags);
-            else
+            } else if (renderTarget is RenderTexture renderTexture) {
+                renderPass = new RenderTextureRenderPass(
+                    GraphicsDevice, renderTexture, Camera.ClearFlags, Camera.DepthTesting
+                );
+            } else {
                 throw new NotImplementedException("Camera render target is not implemented.");
+            }
 
-            Camera.IsDirty = false;
+            recalcutate = false;
         }
     }
 
@@ -91,7 +104,7 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
         else
             swapchain = ((WindowRenderPass)oldRenderPass).Swapchain;
 
-        renderPass = new WindowRenderPass(GraphicsDevice, swapchain, window, Camera.ClearFlags);
+        renderPass = new WindowRenderPass(GraphicsDevice, swapchain, window, Camera.ClearFlags, Camera.DepthTesting);
     }
 
     private bool TryGetSwapchain([NotNullWhen(true)] out Swapchain? swapchain) {
@@ -109,7 +122,7 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
                 return true;
             }
 
-            Camera.IsDirty = false;
+            recalcutate = false;
             swapchain = null;
             return false;
         }

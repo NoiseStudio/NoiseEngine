@@ -12,11 +12,11 @@ public class CameraTest : ApplicationTestEnvironment {
 
     [FactRequire(TestRequirements.Gui | TestRequirements.Graphics)]
     public void RenderToWindow() {
-        Window window = Fixture.GetWindow(nameof(RenderToWindow));
         ExecuteOnAllDevices(scene => {
             new Camera(scene) {
-                RenderTarget = window,
-                ClearColor = Color.Random
+                RenderTarget = Fixture.GetWindow(nameof(RenderToWindow)),
+                ClearColor = Color.Random,
+                DepthTesting = false
             }.Render();
         });
     }
@@ -29,9 +29,10 @@ public class CameraTest : ApplicationTestEnvironment {
             );
 
             Camera camera = new Camera(scene) {
-                RenderTarget = texture,
+                RenderTarget = new RenderTexture(texture),
                 ClearFlags = CameraClearFlags.SolidColor,
-                ClearColor = Color.Blue
+                ClearColor = Color.Blue,
+                DepthTesting = false
             };
             camera.Render();
 

@@ -106,6 +106,27 @@ impl<'init> Pipeline<'init> {
             alpha_to_one_enable: vk::FALSE,
         };
 
+        // Depth stencil.
+        let depth_stencil;
+        if render_pass.depth_testing() {
+            depth_stencil = vk::PipelineDepthStencilStateCreateInfo {
+                s_type: vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+                p_next: ptr::null(),
+                flags: vk::PipelineDepthStencilStateCreateFlags::empty(),
+                depth_test_enable: vk::TRUE,
+                depth_write_enable: vk::TRUE,
+                depth_compare_op: vk::CompareOp::LESS,
+                depth_bounds_test_enable: vk::FALSE,
+                stencil_test_enable: vk::FALSE,
+                front: vk::StencilOpState::default(),
+                back: vk::StencilOpState::default(),
+                min_depth_bounds: 0.0,
+                max_depth_bounds: 1.0,
+            };
+        } else {
+            depth_stencil = vk::PipelineDepthStencilStateCreateInfo::default();
+        }
+
         // Color blend.
         let color_blend_attachment = vk::PipelineColorBlendAttachmentState {
             blend_enable: vk::FALSE,
@@ -156,7 +177,7 @@ impl<'init> Pipeline<'init> {
             p_viewport_state: &viewport,
             p_rasterization_state: &rasterization,
             p_multisample_state: &multisample,
-            p_depth_stencil_state: ptr::null(),
+            p_depth_stencil_state: &depth_stencil,
             p_color_blend_state: &color_blend,
             p_dynamic_state: &dynamic,
             layout: layout.inner(),

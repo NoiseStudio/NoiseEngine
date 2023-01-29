@@ -83,9 +83,10 @@ public class ShaderTest : ApplicationTestEnvironment {
                 device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 2, 2
             );
             SimpleCamera camera = new SimpleCamera(device) {
-                RenderTarget = texture,
+                RenderTarget = new RenderTexture(texture),
                 ClearFlags = CameraClearFlags.SolidColor,
-                ClearColor = Color.Green
+                ClearColor = Color.Green,
+                DepthTesting = false
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);

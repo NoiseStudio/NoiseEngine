@@ -15,6 +15,7 @@ public class SimpleCamera {
 
     private CameraClearFlags clearFlags = CameraClearFlags.SolidColor;
     private Color clearColor = new Color(0.26666f, 0.45882f, 0.87058f);
+    private bool depthTesting = true;
     private ICameraRenderTarget? renderTarget;
 
     public GraphicsDevice GraphicsDevice { get; }
@@ -39,7 +40,7 @@ public class SimpleCamera {
         get => clearFlags;
         set {
             clearFlags = value;
-            IsDirty = true;
+            Delegation.UpdateClearFlags();
         }
     }
 
@@ -48,6 +49,14 @@ public class SimpleCamera {
         set {
             clearColor = value;
             Delegation.UpdateClearColor();
+        }
+    }
+
+    public bool DepthTesting {
+        get => depthTesting;
+        set {
+            depthTesting = value;
+            Delegation.UpdateDepthTesting();
         }
     }
 
@@ -77,7 +86,6 @@ public class SimpleCamera {
                 if (value is null)
                     Delegation.RaiseRenderTargetSet(value);
 
-                IsDirty = true;
                 renderTarget = value;
             }
         }
@@ -99,7 +107,6 @@ public class SimpleCamera {
     public Matrix4x4<float> ProjectionViewMatrix => ProjectionMatrix * ViewMatrix;
 
     internal SimpleCameraDelegation Delegation { get; }
-    internal bool IsDirty { get; set; } = true;
 
     public SimpleCamera(GraphicsDevice graphicsDevice) {
         GraphicsDevice = graphicsDevice;
@@ -126,12 +133,6 @@ public class SimpleCamera {
     private void AssertRenderTarget(ICameraRenderTarget? renderTarget) {
         if (renderTarget is null)
             return;
-
-        if (!renderTarget.Usage.HasFlag(TextureUsage.ColorAttachment)) {
-            throw new InvalidOperationException(
-                $"{ToString()} render target must have TextureUsage.ColorAttachment flag."
-            );
-        }
 
         if (renderTarget is Window) {
             if (!GraphicsDevice.Instance.PresentationEnabled) {

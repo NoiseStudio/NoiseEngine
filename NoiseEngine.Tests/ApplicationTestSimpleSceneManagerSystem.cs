@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.DeveloperTools.Components;
 using NoiseEngine.DeveloperTools.Systems;
+using NoiseEngine.Inputs;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using System;
@@ -13,11 +14,13 @@ internal class ApplicationTestSimpleSceneManagerSystem
 {
 
     private readonly ApplicationScene scene;
+    private readonly Window window;
 
     public override IReadOnlyList<Type> WritableComponents { get; } = new Type[] { typeof(TransformComponent) };
 
-    public ApplicationTestSimpleSceneManagerSystem(ApplicationScene scene) {
+    public ApplicationTestSimpleSceneManagerSystem(ApplicationScene scene, Window window) {
         this.scene = scene;
+        this.window = window;
     }
 
     protected override void OnInitialize() {
@@ -35,24 +38,20 @@ internal class ApplicationTestSimpleSceneManagerSystem
         entity.Set(World, value);
 
         entity.Set(World, transform with {
-            Position = transform.Position with { Y = transform.Position.Y + 1f * DeltaTimeF },
-            // TODO: implement
-            //Rotation = Quaternion.EulerDegress<float>(new Vector3<float>(
-            //    value.Rotation.X, value.Rotation.Y, value.Rotation.Z))
+            Position = transform.Position with { Y = transform.Position.Y + 4f * DeltaTimeF },
+            Rotation = Quaternion.EulerRadians(new Vector3<float>(
+                value.Rotation.X, value.Rotation.Y, value.Rotation.Z
+            ))
         });
 
-        /*if (Window.TryGetFocusedWindow(out Window? focusedWindow)) {
-            Input input = Input.GetInput(focusedWindow);
+        if (window.Input.Pressed(Key.Tab, out KeyModifier keyModifier) && keyModifier.HasFlag(KeyModifier.LeftShift)) {
+            entity.Add(World, new DebugMovementComponent());
 
-            if (input.GetKeyDown(Key.Tab, out KeyModifier keyModifier) && keyModifier == KeyModifier.Shift) {
-                entity.Add(World, new DebugMovementComponent());
+            if (!World.HasAnySystem<DebugMovementSystem>())
+                scene.AddFrameDependentSystem(new DebugMovementSystem(window));
 
-                if (!World.HasAnySystem<DebugMovementSystem>())
-                    scene.AddFrameDependentSystem(new DebugMovementSystem());
-
-                Enabled = false;
-            }
-        }*/
+            Enabled = false;
+        }
     }
 
 }
