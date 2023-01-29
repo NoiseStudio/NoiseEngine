@@ -13,7 +13,7 @@ pub trait Window {
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
 
-    fn pool_events(&self, input_data: InputData);
+    fn pool_events(&self, input_data: &'static mut InputData);
     fn hide(&self);
     fn set_position(
         &self, position: Option<Vector2<i32>>, size: Option<Vector2<u32>>

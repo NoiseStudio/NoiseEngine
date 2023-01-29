@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Inputs;
 using NoiseEngine.Mathematics;
-using System;
 
 namespace NoiseEngine.Interop.Rendering.Presentation;
 
@@ -18,7 +17,7 @@ internal static partial class WindowInterop {
     public static partial InteropResult<None> Dispose(InteropHandle<Window> handle);
 
     [InteropImport("rendering_presentation_window_interop_pool_events")]
-    public static partial void PoolEvents(InteropHandle<Window> handle, Span<KeyValue> keyValues);
+    public static partial void PoolEvents(InteropHandle<Window> handle, InteropHandle<WindowInputRaw> windowInputRaw);
 
     [InteropImport("rendering_presentation_window_interop_set_position")]
     public static partial InteropResult<None> SetPosition(

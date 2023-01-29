@@ -1,10 +1,10 @@
 use std::{
     ptr, sync::{Arc, Weak, atomic::{AtomicBool, Ordering}}, cell::{UnsafeCell, Cell},
-    thread::{self, JoinHandle, ThreadId}, mem::{self, ManuallyDrop, MaybeUninit}
+    thread::{self, JoinHandle, ThreadId}, mem::{self, ManuallyDrop}
 };
 
 use ash::{vk, extensions::khr};
-use cgmath::Vector2;
+use cgmath::{Vector2, Zero};
 use crossbeam_queue::SegQueue;
 use libc::{c_void, wchar_t};
 use rsevents::{ManualResetEvent, EventState, Awaitable, AutoResetEvent};
@@ -39,8 +39,18 @@ fn low_word(l: isize) -> u16 {
 }
 
 #[inline]
+fn low_word_i(l: isize) -> i16 {
+    (l & 0xffff) as i16
+}
+
+#[inline]
 fn high_word(l: isize) -> u16 {
     ((l >> 16) & 0xffff) as u16
+}
+
+#[inline]
+fn high_word_i(l: isize) -> i16 {
+    ((l >> 16) & 0xffff) as i16
 }
 
 #[inline]
@@ -157,6 +167,7 @@ impl WindowWindows {
         }
 
         // Construct.
+        #[allow(deref_nullptr)]
         let arc = Arc::new(Self {
             id,
             weak: Weak::default(),
@@ -170,7 +181,9 @@ impl WindowWindows {
             thread_reset_event: AutoResetEvent::new(EventState::Unset),
             thread_end_reset_event: Arc::new(AutoResetEvent::new(EventState::Unset)),
             thread_last_signaler: Cell::new(None),
-            data: UnsafeCell::new(WindowWindowsData { width, height, settings, input_data: MaybeUninit::uninit() }),
+            data: UnsafeCell::new(WindowWindowsData {
+                width, height, settings, input_current_modifier: 0, input_data: unsafe { &mut *ptr::null_mut() }
+            }),
         });
 
         let reference = unsafe {
@@ -252,6 +265,35 @@ impl WindowWindows {
             0x2d..=0x2f => w_param + 70, // Insert, Delete, Help
             0x5d => 118,
             _ => 0
+        }
+    }
+
+    fn keydown_worker(data: &mut WindowWindowsData, last_modifier: u16, key_index: usize) {
+        let input = &mut data.input_data;
+
+        input.key_values[0] = KeyValue { modifier: last_modifier, state: KeyState::JustPressed };
+
+        let value = input.key_values[key_index];
+        if value.state == KeyState::Released {
+            input.key_values[key_index] = KeyValue { modifier: last_modifier, state: KeyState::JustPressed };
+        }
+
+        if data.input_current_modifier == last_modifier {
+            data.input_current_modifier = 0;
+        }
+    }
+
+    fn keyup_worker(data: &mut WindowWindowsData, key_index: usize) {
+        let input = &mut data.input_data;
+
+        let mut value = input.key_values[0];
+        if value.state == KeyState::Pressed {
+            input.key_values[0] = KeyValue { modifier: value.modifier, state: KeyState::JustReleased };
+        }
+
+        value = input.key_values[key_index];
+        if value.state == KeyState::Pressed {
+            input.key_values[key_index] = KeyValue { modifier: value.modifier, state: KeyState::JustReleased };
         }
     }
 
@@ -445,7 +487,9 @@ impl Window for WindowWindows {
         self.data().height
     }
 
-    fn pool_events(&self, input_data: InputData) {
+    fn pool_events(&self, input_data: &'static mut InputData) {
+        input_data.scroll_delta = Vector2::zero();
+
         for i in 0..input_data.key_values.len() {
             let value = input_data.key_values[i];
             match value.state {
@@ -459,7 +503,7 @@ impl Window for WindowWindows {
             }
         }
 
-        self.data_mut().input_data = MaybeUninit::new(input_data);
+        self.data_mut().input_data = input_data;
         self.execute_task_wait(WindowWindowsThreadTask::PoolEvents);
     }
 
@@ -578,65 +622,60 @@ unsafe extern "system" fn window_procedure(
 
             (event_handler.user_closed)(window.id);
         },
+        // WM_SETFOCUS
+        0x0007 => (event_handler.focused)(window.id),
+        // WM_KILLFOCUS
+        0x0008 => (event_handler.unfocused)(window.id),
         // WM_KEYDOWN | WM_SYSKEYDOWN
         0x0100 | 0x0104 => {
-            let input = data.input_data.assume_init_mut();
-
-            let last_modifier = input.current_modifier;
+            let last_modifier = data.input_current_modifier;
             let key_index = match w_param {
                 0x14 => {
-                    input.current_modifier |= input::CAPSLOCK_MODIFIER;
+                    data.input_current_modifier |= input::CAPSLOCK_MODIFIER;
                     119
                 },
                 0x10 => match is_right_shift(l_param) {
                     true => {
-                        input.current_modifier |= input::SHIFT_MODIFIER | input::RIGHT_SHIFT_MODIFIER;
+                        data.input_current_modifier |= input::SHIFT_MODIFIER | input::RIGHT_SHIFT_MODIFIER;
                         124
                     },
                     false => {
-                        input.current_modifier |= input::SHIFT_MODIFIER | input::LEFT_SHIFT_MODIFIER;
+                        data.input_current_modifier |= input::SHIFT_MODIFIER | input::LEFT_SHIFT_MODIFIER;
                         120
                     }
                 },
                 0x11 => match is_extended_key(l_param) {
                     true => {
-                        input.current_modifier |= input::CONTROL_MODIFIER | input::RIGHT_CONTROL_MODIFIER;
+                        data.input_current_modifier |= input::CONTROL_MODIFIER | input::RIGHT_CONTROL_MODIFIER;
                         125
                     },
                     false => {
-                        input.current_modifier |= input::CONTROL_MODIFIER | input::LEFT_CONTROL_MODIFIER;
+                        data.input_current_modifier |= input::CONTROL_MODIFIER | input::LEFT_CONTROL_MODIFIER;
                         121
                     }
                 },
                 0x12 => match is_extended_key(l_param) {
                     true => {
-                        input.current_modifier |= input::ALT_MODIFIER | input::RIGHT_ALT_MODIFIER;
+                        data.input_current_modifier |= input::ALT_MODIFIER | input::RIGHT_ALT_MODIFIER;
                         126
                     },
                     false => {
-                        input.current_modifier |= input::ALT_MODIFIER | input::LEFT_ALT_MODIFIER;
+                        data.input_current_modifier |= input::ALT_MODIFIER | input::LEFT_ALT_MODIFIER;
                         122
                     }
                 },
                 0x5b => {
-                    input.current_modifier |= input::SUPER_MODIFIER | input::LEFT_SUPER_MODIFIER;
+                    data.input_current_modifier |= input::SUPER_MODIFIER | input::LEFT_SUPER_MODIFIER;
                     123
                 },
                 0x5c => {
-                    input.current_modifier |= input::SUPER_MODIFIER | input::RIGHT_SUPER_MODIFIER;
+                    data.input_current_modifier |= input::SUPER_MODIFIER | input::RIGHT_SUPER_MODIFIER;
                     127
                 },
                 _ => WindowWindows::translate_keys(w_param, l_param)
             };
 
-            let value = input.key_values[key_index];
-            if value.state == KeyState::Released {
-                input.key_values[key_index] = KeyValue { modifier: last_modifier, state: KeyState::JustPressed };
-            }
-
-            if input.current_modifier == last_modifier {
-                input.current_modifier = 0;
-            }
+            WindowWindows::keydown_worker(data, last_modifier, key_index);
         },
         // WM_KEYUP | WM_SYSKEYUP
         0x0101 | 0x0105 => {
@@ -655,13 +694,40 @@ unsafe extern "system" fn window_procedure(
                 _ => WindowWindows::translate_keys(w_param, l_param)
             };
 
-            let input = data.input_data.assume_init_mut();
-
-            let value = input.key_values[key_index];
-            if value.state == KeyState::Pressed {
-                input.key_values[key_index] = KeyValue { modifier: value.modifier, state: KeyState::JustReleased };
-            }
-        }
+            WindowWindows::keyup_worker(data, key_index);
+        },
+        // WM_LBUTTONDOWN
+        0x0201 => WindowWindows::keydown_worker(data, data.input_current_modifier, 128),
+        // WM_RBUTTONDOWN
+        0x0204 => WindowWindows::keydown_worker(data, data.input_current_modifier, 129),
+        // WM_RBUTTONDOWN
+        0x0207 => WindowWindows::keydown_worker(data, data.input_current_modifier, 130),
+        // WM_XBUTTONDOWN
+        0x020b => match high_word(w_param as isize) {
+            0x0001 => WindowWindows::keydown_worker(data, data.input_current_modifier, 131),
+            0x0002 => WindowWindows::keydown_worker(data, data.input_current_modifier, 132),
+            _ => unimplemented!()
+        },
+        0x0202 => WindowWindows::keyup_worker(data, 128), // WM_LBUTTONDOWN
+        0x0205 => WindowWindows::keyup_worker(data, 129), // WM_RBUTTONDOWN
+        0x0208 => WindowWindows::keyup_worker(data, 130), // WM_MBUTTONDOWN
+        0x020c => match high_word(w_param as isize) { // WM_XBUTTONDOWN
+            0x0001 => WindowWindows::keyup_worker(data, 131),
+            0x0002 => WindowWindows::keyup_worker(data, 132),
+            _ => unimplemented!()
+        },
+        // WM_MOUSEMOVE
+        0x0200 => data.input_data.cursor_position = Vector2::new(
+            low_word_i(l_param) as f64, high_word_i(l_param) as f64
+        ),
+        // WM_MOUSEWHEEL
+        0x020a => data.input_data.scroll_delta = Vector2::new(
+            data.input_data.scroll_delta.x, high_word_i(w_param as isize) as f64 / 120.0
+        ),
+        // WM_MOUSEHWHEEL
+        0x020e => data.input_data.scroll_delta = Vector2::new(
+            high_word_i(w_param as isize) as f64 / 120.0, data.input_data.scroll_delta.y
+        ),
         _ => return DefWindowProcW(h_wnd, msg, w_param, l_param)
     };
     0
@@ -671,7 +737,8 @@ struct WindowWindowsData {
     pub width: u32,
     pub height: u32,
     pub settings: WindowSettings,
-    pub input_data: MaybeUninit<InputData>
+    pub input_current_modifier: u16,
+    pub input_data: &'static mut InputData
 }
 
 enum WindowWindowsThreadTask {

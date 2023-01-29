@@ -28,11 +28,17 @@ internal static class WindowEventHandler {
     public delegate void UserClosedDelegate(ulong id);
 
     [UnmanagedFunctionPointer(InteropConstants.CallingConvention)]
+    public delegate void FocusedDelegate(ulong id);
+
+    [UnmanagedFunctionPointer(InteropConstants.CallingConvention)]
+    public delegate void UnfocusedDelegate(ulong id);
+
+    [UnmanagedFunctionPointer(InteropConstants.CallingConvention)]
     public delegate void SizeChangedDelegate(ulong id, uint newWidth, uint newHeight);
 
     static WindowEventHandler() {
         // Prevents GC cleanup (https://stackoverflow.com/a/43227979/14677292)
-        raw = new WindowEventHandlerRaw(UserClosedImpl, SizeChangedImpl);
+        raw = new WindowEventHandlerRaw(UserClosedImpl, FocusedImpl, UnfocusedImpl, SizeChangedImpl);
 
         if (!WindowEventHandlerInterop.Initialize(raw).TryGetValue(out _, out ResultError error))
             error.ThrowAndDispose();
@@ -66,6 +72,16 @@ internal static class WindowEventHandler {
     private static void UserClosedImpl(ulong id) {
         if (TryGetWindow(id, out Window? window))
             window.RaiseUserClosed();
+    }
+
+    private static void FocusedImpl(ulong id) {
+        if (TryGetWindow(id, out Window? window))
+            window.RaiseFocused();
+    }
+
+    private static void UnfocusedImpl(ulong id) {
+        if (TryGetWindow(id, out Window? window))
+            window.RaiseUnfocused();
     }
 
     private static void SizeChangedImpl(ulong id, uint newWidth, uint newHeight) {

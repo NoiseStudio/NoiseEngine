@@ -145,4 +145,20 @@ public enum Key {
 
     #endregion
 
+    #region Mouse buttons
+    Mouse0,
+    Mouse1,
+    Mouse2,
+    Mouse3,
+    Mouse4,
+
+    #region Bindings
+    MouseLeft = Mouse0,
+    MouseRight = Mouse1,
+    MouseMiddle = Mouse2,
+    MouseBackward = Mouse3,
+    MouseForward = Mouse4,
+    #endregion
+    #endregion
+
 }

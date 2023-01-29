@@ -1,3 +1,5 @@
+use cgmath::Vector2;
+
 
 pub const CAPSLOCK_MODIFIER: u16 = 1 << 0;
 pub const SHIFT_MODIFIER: u16 = 1 << 1;
@@ -13,15 +15,11 @@ pub const RIGHT_CONTROL_MODIFIER: u16 = 1 << 10;
 pub const RIGHT_ALT_MODIFIER: u16 = 1 << 11;
 pub const RIGHT_SUPER_MODIFIER: u16 = 1 << 12;
 
+#[repr(C)]
 pub struct InputData {
-    pub current_modifier: u16,
-    pub key_values: &'static mut [KeyValue],
-}
-
-impl InputData {
-    pub fn new(key_values: &'static mut [KeyValue]) -> Self {
-        Self { current_modifier: 0, key_values }
-    }
+    pub key_values: [KeyValue; 133],
+    pub cursor_position: Vector2<f64>,
+    pub scroll_delta: Vector2<f64>
 }
 
 #[repr(C)]
