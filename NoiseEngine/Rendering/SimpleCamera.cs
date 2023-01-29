@@ -134,12 +134,6 @@ public class SimpleCamera {
         if (renderTarget is null)
             return;
 
-        if (!renderTarget.Usage.HasFlag(TextureUsage.ColorAttachment)) {
-            throw new InvalidOperationException(
-                $"{ToString()} render target must have TextureUsage.ColorAttachment flag."
-            );
-        }
-
         if (renderTarget is Window) {
             if (!GraphicsDevice.Instance.PresentationEnabled) {
                 if (!GraphicsDevice.Instance.SupportsPresentation) {

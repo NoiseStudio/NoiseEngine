@@ -35,10 +35,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
     private IReferenceCoutable ReferenceCoutable => this;
 
-    TextureUsage ICameraRenderTarget.Usage => TextureUsage.ColorAttachment;
-    Vector3<uint> ICameraRenderTarget.Extent => new Vector3<uint>(Width, Height, 0);
-    uint ICameraRenderTarget.SampleCount => 1;
-    TextureFormat ICameraRenderTarget.Format => throw new NotImplementedException();
+    Vector3<uint> ICameraRenderTarget.Extent => new Vector3<uint>(Width, Height, 1);
 
     public event EventHandler<FocusedEventArgs>? Focused;
     public event EventHandler<UnfocusedEventArgs>? Unfocused;

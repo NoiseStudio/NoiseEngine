@@ -66,7 +66,7 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
             writer.WriteCommand(CommandBufferCommand.AttachCameraWindow);
             writer.WriteIntN(RenderPass.Handle.Pointer);
             writer.WriteIntN(swapchain.Handle.Pointer);
-        } else if (RenderPass is TextureRenderPass texture) {
+        } else if (RenderPass is RenderTextureRenderPass texture) {
             references.Add(RenderPass);
             Framebuffer framebuffer = texture.Framebuffer;
 

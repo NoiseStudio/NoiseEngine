@@ -81,12 +81,15 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
                 throw new NullReferenceException("Camera's render target is null.");
             }
 
-            if (renderTarget is Window window)
+            if (renderTarget is Window window) {
                 CreateRenderPassWindow(window);
-            else if (renderTarget is Texture)
-                renderPass = new TextureRenderPass(GraphicsDevice, renderTarget, Camera.ClearFlags);
-            else
+            } else if (renderTarget is RenderTexture renderTexture) {
+                renderPass = new RenderTextureRenderPass(
+                    GraphicsDevice, renderTexture, Camera.ClearFlags, Camera.DepthTesting
+                );
+            } else {
                 throw new NotImplementedException("Camera render target is not implemented.");
+            }
 
             recalcutate = false;
         }

@@ -20,7 +20,7 @@ public class CameraClearFlagsTest : ApplicationTestEnvironment {
                 device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 1, 1
             );
             SimpleCamera camera = new SimpleCamera(device) {
-                RenderTarget = texture,
+                RenderTarget = new RenderTexture(texture),
                 ClearFlags = CameraClearFlags.SolidColor,
                 ClearColor = Color.Red
             };

@@ -7,7 +7,7 @@ using System;
 
 namespace NoiseEngine.Rendering;
 
-public abstract class Texture : ICameraRenderTarget {
+public abstract class Texture {
 
     public GraphicsDevice Device { get; }
     public TextureUsage Usage { get; }
@@ -18,9 +18,6 @@ public abstract class Texture : ICameraRenderTarget {
 
     internal InteropHandle<Texture> Handle { get; }
     internal InteropHandle<Texture> InnerHandle { get; }
-
-    Vector3<uint> ICameraRenderTarget.Extent => Extent;
-    uint ICameraRenderTarget.SampleCount => SampleCountInternal;
 
     private protected Texture(
         GraphicsDevice device, TextureUsage usage, TextureFormat format, InteropHandle<Texture> handle,
