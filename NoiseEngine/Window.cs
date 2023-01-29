@@ -37,6 +37,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
     Vector3<uint> ICameraRenderTarget.Extent => new Vector3<uint>(Width, Height, 1);
 
+    public event EventHandler<WindowDisposedEventArgs>? Disposed;
     public event EventHandler<FocusedEventArgs>? Focused;
     public event EventHandler<UnfocusedEventArgs>? Unfocused;
     public event EventHandler<SizeChangedEventArgs>? SizeChanged;
@@ -94,6 +95,8 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     public void Dispose() {
         if (isDisposed.Exchange(true))
             return;
+
+        Disposed?.Invoke(this, new WindowDisposedEventArgs());
 
         WindowEventHandler.UnregisterWindow(Id);
         if (!WindowInterop.Dispose(Handle).TryGetValue(out _, out ResultError error))

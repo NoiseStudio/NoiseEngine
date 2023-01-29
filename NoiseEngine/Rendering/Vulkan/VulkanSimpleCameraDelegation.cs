@@ -9,7 +9,7 @@ internal class VulkanSimpleCameraDelegation : SimpleCameraDelegation {
 
     private readonly object calculateLocker = new object();
 
-    private bool recalcutate;
+    private bool recalcutate = true;
     private RenderPass? renderPass;
     private uint imageCount = 1;
 

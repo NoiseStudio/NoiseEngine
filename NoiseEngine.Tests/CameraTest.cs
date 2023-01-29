@@ -12,10 +12,9 @@ public class CameraTest : ApplicationTestEnvironment {
 
     [FactRequire(TestRequirements.Gui | TestRequirements.Graphics)]
     public void RenderToWindow() {
-        Window window = Fixture.GetWindow(nameof(RenderToWindow));
         ExecuteOnAllDevices(scene => {
             new Camera(scene) {
-                RenderTarget = window,
+                RenderTarget = Fixture.GetWindow(nameof(RenderToWindow)),
                 ClearColor = Color.Random,
                 DepthTesting = false
             }.Render();

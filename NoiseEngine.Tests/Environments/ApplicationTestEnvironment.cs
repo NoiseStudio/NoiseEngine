@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Rendering;
 using NoiseEngine.Tests.Fixtures;
 using System;
+using System.Linq;
 
 namespace NoiseEngine.Tests.Environments;
 

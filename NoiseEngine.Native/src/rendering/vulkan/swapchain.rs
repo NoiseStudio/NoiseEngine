@@ -373,7 +373,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
                         linear: false,
                         usage: vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT,
                         concurrent: true,
-                        layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                        layout: vk::ImageLayout::UNDEFINED,
                     }
                 )?);
 

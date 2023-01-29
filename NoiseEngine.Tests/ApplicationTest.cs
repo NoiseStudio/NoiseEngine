@@ -15,8 +15,8 @@ public class ApplicationTest : ApplicationTestEnvironment {
 
     [FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
     public void SimpleScene() {
-        Window window = Fixture.GetWindow(nameof(SimpleScene));
         ExecuteOnAllDevices(scene => {
+            Window window = Fixture.GetWindow("A lot of X-Cuboids 3090 Ti.");
             Camera camera = new Camera(scene) {
                 RenderTarget = window,
                 RenderLoop = new PerformanceRenderLoop()
@@ -28,32 +28,18 @@ public class ApplicationTest : ApplicationTestEnvironment {
                 }
             }
 
-            camera.Entity.Add(scene.EntityWorld, new DebugMovementComponent());
-            scene.AddFrameDependentSystem(new DebugMovementSystem(window));
+            camera.Entity.Add(scene.EntityWorld, new ApplicationTestSimpleSceneManagerComponent());
+            camera.Scene.AddFrameDependentSystem(new ApplicationTestSimpleSceneManagerSystem(scene, window));
 
-            while (!window.IsDisposed)
-                Thread.Sleep(1);
-        });
+            Thread.Sleep(1000);
 
-        /*using ApplicationScene scene = new ApplicationScene();
-
-        for (int x = -10; x < 10; x += 2) {
-            for (int y = -10; y < 10; y += 2) {
-                scene.Primitive.CreateCube(new Vector3<float>(x, 0, y));
+            if (scene.EntityWorld.HasAnySystem<DebugMovementSystem>()) {
+                AutoResetEvent autoResetEvent = new AutoResetEvent(false);
+                window.Disposed += (_, _) => autoResetEvent.Set();
+                if (!window.IsDisposed)
+                    autoResetEvent.WaitOne();
             }
-        }
-
-        using RenderCamera camera = scene.CreateWindow("A lot of X-Cuboids 3090 Ti.");
-        camera.Entity.Add(scene.EntityWorld, new ApplicationTestSimpleSceneManagerComponent());
-        camera.Scene.AddFrameDependentSystem(new ApplicationTestSimpleSceneManagerSystem(scene));
-
-        Thread.Sleep(1000);
-
-        if (scene.EntityWorld.HasAnySystem<DebugMovementSystem>()) {
-            AutoResetEvent autoResetEvent = new AutoResetEvent(false);
-            Application.ApplicationExit += _ => autoResetEvent.Set();
-            autoResetEvent.WaitOne();
-        }*/
+        });
     }
 
 }

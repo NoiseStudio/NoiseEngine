@@ -6,6 +6,7 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace NoiseEngine;
 
@@ -15,9 +16,9 @@ public class ApplicationScene : IDisposable {
 
     private AtomicBool isDisposed;
     private GraphicsDevice? graphicsDevice;
+    private PrimitiveCreator? primitive;
 
     public EntityWorld EntityWorld { get; } = new EntityWorld();
-    public PrimitiveCreator Primitive { get; }
 
     public GraphicsDevice GraphicsDevice {
         get {
@@ -28,13 +29,20 @@ public class ApplicationScene : IDisposable {
         init => graphicsDevice = value;
     }
 
+    public PrimitiveCreator Primitive {
+        get {
+            if (primitive is null)
+                Interlocked.CompareExchange(ref primitive, new PrimitiveCreator(this), null);
+            return primitive;
+        }
+    }
+
     public bool IsDisposed => isDisposed;
     public IEnumerable<Camera> Cameras => cameras;
 
     internal ConcurrentList<EntitySystemBase> FrameDependentSystems { get; } = new ConcurrentList<EntitySystemBase>();
 
     public ApplicationScene() {
-        Primitive = new PrimitiveCreator(this);
         Application.AddSceneToLoaded(this);
     }
 

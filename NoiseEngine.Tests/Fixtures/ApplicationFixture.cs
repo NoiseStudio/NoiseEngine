@@ -56,7 +56,7 @@ public class ApplicationFixture : IDisposable {
     }
 
     internal Window GetWindow(string title, uint? width = null, uint? height = null) {
-        if (window is null) {
+        if (window is null || window.IsDisposed) {
             window = new Window(title, width ?? 1280, height ?? 720);
         } else {
             window.Resize(width ?? window.Width, height ?? window.Height);
