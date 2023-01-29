@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Common;
+using NoiseEngine.Inputs;
 using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering.Presentation;
 using NoiseEngine.Mathematics;
@@ -22,9 +23,11 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     private AtomicBool isReleased;
     private SimpleCamera? assignedCamera;
 
+    public WindowInput Input { get; }
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
     public uint Height { get; private set; }
+    public bool IsFocused { get; private set; }
 
     internal ulong Id { get; }
     internal InteropHandle<Window> Handle { get; private set; }
@@ -37,6 +40,8 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     uint ICameraRenderTarget.SampleCount => 1;
     TextureFormat ICameraRenderTarget.Format => throw new NotImplementedException();
 
+    public event EventHandler<FocusedEventArgs>? Focused;
+    public event EventHandler<UnfocusedEventArgs>? Unfocused;
     public event EventHandler<SizeChangedEventArgs>? SizeChanged;
 
     public Window(string? title, uint width, uint height, WindowSettings settings) {
@@ -56,6 +61,9 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
         Handle = handle;
         WindowEventHandler.RegisterWindow(this);
+
+        Input = new WindowInput(this);
+        IsFocused = WindowInterop.IsFocused(Handle);
     }
 
     public Window(string? title = null, uint width = 1280, uint height = 720) : this(
@@ -98,6 +106,10 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
         Interlocked.Add(ref referenceCount, IReferenceCoutable.DisposeReferenceCount);
         ReferenceCoutable.RcRelease();
 
+        Focused = null;
+        Unfocused = null;
+        SizeChanged = null;
+
         Application.RaiseWindowClosed();
     }
 
@@ -124,8 +136,26 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
         }
     }
 
+    internal void PoolEvents() {
+        unsafe {
+            fixed (WindowInputRaw* pointer = &Input.ProcessBeforePoolEvents())
+                WindowInterop.PoolEvents(Handle, new InteropHandle<WindowInputRaw>((IntPtr)pointer));
+        }
+        Input.ProcessAfterPoolEvents();
+    }
+
     internal void RaiseUserClosed() {
         Dispose();
+    }
+
+    internal void RaiseFocused() {
+        IsFocused = true;
+        Focused?.Invoke(this, new FocusedEventArgs());
+    }
+
+    internal void RaiseUnfocused() {
+        IsFocused = false;
+        Unfocused?.Invoke(this, new UnfocusedEventArgs());
     }
 
     internal void RaiseSizeChanged(uint newWidth, uint newHeight) {

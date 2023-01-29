@@ -5,6 +5,8 @@ use crate::errors::invalid_operation::InvalidOperationError;
 #[repr(C)]
 pub(crate) struct WindowEventHandler {
     pub user_closed: unsafe extern "C" fn(id: u64),
+    pub focused: unsafe extern "C" fn(id: u64),
+    pub unfocused: unsafe extern "C" fn(id: u64),
     pub size_changed: unsafe extern "C" fn(id: u64, new_width: u32, new_height: u32)
 }
 
@@ -19,7 +21,7 @@ pub(crate) fn initialize(handler: WindowEventHandler) -> Result<(), InvalidOpera
 impl WindowEventHandler {
     /// # Panics
     /// This function panics if called before [`initialize`].
-    #[allow(dead_code)] // TODO: Remove this attribute.
+    #[allow(dead_code)]
     pub(crate) fn get() -> &'static WindowEventHandler {
         INSTANCE.get().expect("WindowEventHandler is not initialized.")
     }

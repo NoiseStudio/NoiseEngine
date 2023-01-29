@@ -1,29 +1,22 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
-using System;
+using NoiseEngine.Rendering;
 
 namespace NoiseEngine.Primitives;
 
-public class PrimitiveCreator : IDisposable {
+public class PrimitiveCreator {
 
     private readonly ApplicationScene scene;
 
-    //public Shader DefaultShader => Shared.DefaultShader;
-    //public Material DefaultMaterial => Shared.DefaultMaterial;
+    public Shader DefaultShader => Shared.DefaultShader;
+    public Material DefaultMaterial => Shared.DefaultMaterial;
 
     private PrimitiveCreatorShared Shared { get; }
 
     internal PrimitiveCreator(ApplicationScene scene) {
         this.scene = scene;
-        Shared = ApplicationScene.primitiveShared!;
-    }
-
-    /// <summary>
-    /// Disposes this <see cref="PrimitiveCreator"/>.
-    /// </summary>
-    public void Dispose() {
-        GC.SuppressFinalize(this);
+        Shared = PrimitiveCreatorShared.CreateOrGet(scene.GraphicsDevice);
     }
 
     /// <summary>
@@ -38,9 +31,9 @@ public class PrimitiveCreator : IDisposable {
     ) {
         return scene.EntityWorld.NewEntity(
             new TransformComponent(
-                position ?? Vector3<float>.Zero, rotation ?? Quaternion<float>.Identity, scale ?? Vector3<float>.One)
-            //new MeshRendererComponent(Shared.CubeMesh),
-            //new MaterialComponent(DefaultMaterial)
+                position ?? Vector3<float>.Zero, rotation ?? Quaternion<float>.Identity, scale ?? Vector3<float>.One
+            ),
+            new MeshRendererComponent(Shared.CubeMesh, DefaultMaterial)
         );
     }
 

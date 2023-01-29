@@ -11,9 +11,6 @@ namespace NoiseEngine;
 
 public class ApplicationScene : IDisposable {
 
-    // TODO: move this to GraphicsDevice
-    internal static PrimitiveCreatorShared? primitiveShared;
-
     private readonly ConcurrentList<Camera> cameras = new ConcurrentList<Camera>();
 
     private AtomicBool isDisposed;
@@ -73,18 +70,21 @@ public class ApplicationScene : IDisposable {
 
         OnDispose();
 
-        //foreach (Camera camera in Cameras)
-        //    camera.Dispose();
+        foreach (Camera camera in Cameras)
+            camera.RenderTarget = null;
 
         FrameDependentSystems.Clear();
         EntityWorld.Dispose();
-        Primitive.Dispose();
 
         GC.SuppressFinalize(this);
     }
 
-    internal void RemoveRenderCameraFromScene(Camera renderCamera) {
-        cameras.Remove(renderCamera);
+    internal void AddCameraToScene(Camera camera) {
+        cameras.Add(camera);
+    }
+
+    internal void RemoveCameraFromScene(Camera camera) {
+        cameras.Remove(camera);
     }
 
     /// <summary>

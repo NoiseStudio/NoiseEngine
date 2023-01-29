@@ -1,6 +1,8 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.DeveloperTools.Components;
+using NoiseEngine.Inputs;
 using NoiseEngine.Jobs;
+using NoiseEngine.Mathematics;
 using System;
 using System.Collections.Generic;
 
@@ -10,7 +12,10 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
 
     private const float MouseDownLookLimiter = (float)Math.PI / 2;
 
-    private float speed = 1f;
+    private float speed = 4.5f;
+    private float currentSpeed = 4.5f;
+
+    public Window Window { get; }
 
     public float SpeedIncrease { get; set; } = 0.2f;
     public float SpeedMultipler { get; set; } = 1f;
@@ -18,61 +23,67 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
     public float MaxSpeedMultipler { get; set; } = 2f;
     public float Sensitivity { get; set; } = 0.001f;
 
+    public float Speed {
+        get => speed;
+        set {
+            speed = value;
+            currentSpeed = Math.Max(value, currentSpeed);
+        }
+    }
+
     public override IReadOnlyList<Type> WritableComponents { get; } = new Type[] {
         typeof(TransformComponent), typeof(DebugMovementComponent)
     };
 
+    public DebugMovementSystem(Window window) {
+        Window = window;
+        Window.Input.CursorLockMode = CursorLockMode.Locked;
+    }
+
     protected override void OnUpdateEntity(
         Entity entity, TransformComponent transform, DebugMovementComponent movement
     ) {
-        _ = speed;
-        /*if (!Window.TryGetFocusedWindow(out Window? window))
-            return;
-
-        Input input = Input.GetInput(window);
+        WindowInput input = Window.Input;
 
         Vector3<float> position = transform.Position;
         bool changePosition = false;
 
-        if (input.ScrollOffset.Y != 0) {
+        if (input.ScrollDelta.Y != 0) {
             SpeedMultipler = Math.Clamp(
-                SpeedMultipler * (input.ScrollOffset.Y > 0 ? 1.1f : 0.9f),
+                SpeedMultipler * (input.ScrollDelta.Y > 0 ? 1.1f : 0.9f),
                 MinSpeedMultipler,
                 MaxSpeedMultipler
             );
         }
 
         // Move
-        if (input.GetKey(Key.W)) {
-            position += transform.Front * (speed * SpeedMultipler * DeltaTimeF);
+        if (input.Pressed(Key.W)) {
+            position += transform.Front * (currentSpeed * SpeedMultipler * DeltaTimeF);
             changePosition = true;
         }
-        if (input.GetKey(Key.S)) {
-            position += transform.Back * (speed * SpeedMultipler * DeltaTimeF);
+        if (input.Pressed(Key.S)) {
+            position += transform.Back * (currentSpeed * SpeedMultipler * DeltaTimeF);
             changePosition = true;
         }
 
-        if (input.GetKey(Key.A)) {
-            position += transform.Left * (speed * SpeedMultipler * DeltaTimeF);
+        if (input.Pressed(Key.A)) {
+            position += transform.Left * (currentSpeed * SpeedMultipler * DeltaTimeF);
             changePosition = true;
         }
-        if (input.GetKey(Key.D)) {
-            position += transform.Right * (speed * SpeedMultipler * DeltaTimeF);
+        if (input.Pressed(Key.D)) {
+            position += transform.Right * (currentSpeed * SpeedMultipler * DeltaTimeF);
             changePosition = true;
         }
 
         // Rotation
-        Double2 centerPosition = (Double2)(window.Size / 2);
-        Double2 deltaPosition = input.CursorPosition - centerPosition;
-
         movement = movement with {
-            MouseRotation = new Float2(
+            MouseRotation = new Vector2<float>(
                 Math.Clamp(
-                    (float)deltaPosition.Y * Sensitivity + movement.MouseRotation.X,
+                    (float)input.CursorPositionDelta.Y * Sensitivity + movement.MouseRotation.X,
                     -MouseDownLookLimiter,
                     MouseDownLookLimiter
                 ),
-                (float)deltaPosition.X * Sensitivity + movement.MouseRotation.Y
+                (float)input.CursorPositionDelta.X * Sensitivity + movement.MouseRotation.Y
             )
         };
         Quaternion<float> rotation = Quaternion.EulerRadians(new Vector3<float>(
@@ -81,22 +92,20 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
             0
         ));
 
-        input.CursorPosition = centerPosition;
-
         if (changePosition) {
             movement = movement with { TimeUntilLastChangedPosition = 0 };
-            speed += speed * DeltaTimeF * SpeedIncrease;
+            currentSpeed += currentSpeed * DeltaTimeF * SpeedIncrease;
         } else {
             movement = movement with {
                 TimeUntilLastChangedPosition = movement.TimeUntilLastChangedPosition + DeltaTimeF
             };
 
             if (movement.TimeUntilLastChangedPosition > 0.2f)
-                speed = 1;
+                currentSpeed = Speed;
         }
 
         entity.Set(this, transform with { Position = position, Rotation = rotation });
-        entity.Set(this, movement);*/
+        entity.Set(this, movement);
     }
 
 }

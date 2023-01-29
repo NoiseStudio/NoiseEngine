@@ -9,6 +9,8 @@ public class Shader : ICommonShader {
     public GraphicsDevice Device { get; }
     public NeslType ClassData { get; }
 
+    public int Priority { get; init; }
+
     internal CommonShaderDelegation Delegation { get; }
 
     public Shader(GraphicsDevice device, NeslType classData, ShaderSettings settings) {

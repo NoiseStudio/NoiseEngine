@@ -1,16 +1,41 @@
-﻿using NoiseEngine.DeveloperTools.Systems;
+﻿using NoiseEngine.DeveloperTools.Components;
+using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Mathematics;
-using System.Threading;
+using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
+using System.Threading;
 
 namespace NoiseEngine.Tests;
 
-[Collection(nameof(ApplicationCollection))]
-public class ApplicationTest {
+public class ApplicationTest : ApplicationTestEnvironment {
 
-    /*[FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
+    public ApplicationTest(ApplicationFixture fixture) : base(fixture) {
+    }
+
+
+    [FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
     public void SimpleScene() {
-        using ApplicationScene scene = new ApplicationScene();
+        Window window = Fixture.GetWindow(nameof(SimpleScene));
+        ExecuteOnAllDevices(scene => {
+            Camera camera = new Camera(scene) {
+                RenderTarget = window,
+                RenderLoop = new PerformanceRenderLoop()
+            };
+
+            for (int x = -10; x < 10; x += 2) {
+                for (int y = -10; y < 10; y += 2) {
+                    scene.Primitive.CreateCube(new Vector3<float>(x, 0, y));
+                }
+            }
+
+            camera.Entity.Add(scene.EntityWorld, new DebugMovementComponent());
+            scene.AddFrameDependentSystem(new DebugMovementSystem(window));
+
+            while (!window.IsDisposed)
+                Thread.Sleep(1);
+        });
+
+        /*using ApplicationScene scene = new ApplicationScene();
 
         for (int x = -10; x < 10; x += 2) {
             for (int y = -10; y < 10; y += 2) {
@@ -28,7 +53,7 @@ public class ApplicationTest {
             AutoResetEvent autoResetEvent = new AutoResetEvent(false);
             Application.ApplicationExit += _ => autoResetEvent.Set();
             autoResetEvent.WaitOne();
-        }
-    }*/
+        }*/
+    }
 
 }

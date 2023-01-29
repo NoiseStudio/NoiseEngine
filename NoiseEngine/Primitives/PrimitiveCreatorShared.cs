@@ -1,113 +1,140 @@
 ﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Nesl;
+using NoiseEngine.Nesl.Default;
+using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Rendering;
-using System;
+using System.Collections.Concurrent;
 using System.Threading;
 
 namespace NoiseEngine.Primitives;
 
-internal class PrimitiveCreatorShared : IDisposable {
+internal class PrimitiveCreatorShared {
 
-    private const string InPosition3Color3OutColor3GlslVert = @"
-            #version 450
-            layout(location = 0) in vec3 inPosition;
-            layout(location = 1) in vec3 inColor;
-            layout(location = 0) out vec3 outColor;
-            layout(binding = 0, set = 0) uniform FrameUniformData {
-                vec4 Time; // Time since GraphicsDevice creation (t/20, t, t * 2, t * 3)
-                vec4 SineTime; // Sine of time: (t/8, t/4, t/2, t)
-                vec4 CosineTime; // Cosine of time: (t/8, t/4, t/2, t)
-            } _FrameUniformData;
-            layout(binding = 0, set = 1) uniform CameraUniformData {
-                mat4 View;
-                mat4 Projection;
-                mat4 ViewProjection;
-                vec4 DeltaTime; // (dt, 1/dt, 2*dt, 2/dt)
-            } _CameraUniformData;
-            layout(push_constant) uniform PushConstant {
-                mat4 ModelMatrix;
-            } _PushConstant;
-            void main() {
-                mat4 mvp = _CameraUniformData.ViewProjection * _PushConstant.ModelMatrix;
-                gl_Position = mvp * vec4(inPosition, 1.0);
-                outColor = inColor;
-            }
-        ";
+    private static readonly ConcurrentDictionary<GraphicsDevice, PrimitiveCreatorShared> shareds =
+        new ConcurrentDictionary<GraphicsDevice, PrimitiveCreatorShared>();
 
-    private const string InColor3GlslFrag = @"
-            #version 450
-            layout(location = 0) in vec3 inColor;
-            layout(location = 0) out vec4 outColor;
-            void main() {
-                outColor = vec4(inColor, 1.0);
-            }
-        ";
+    private static NeslType defaultShaderClassData;
 
-    private readonly GraphicsDevice graphicsDevice;
+    private Shader? defaultShader;
+    private Material? defaultMaterial;
+    private Mesh? cubeMesh;
 
-    //private Shader? defaultShader;
-    //private Material? defaultMaterial;
+    public GraphicsDevice GraphicsDevice { get; }
+    public Shader DefaultShader => defaultShader ?? CreateDefaultShader();
+    public Material DefaultMaterial => defaultMaterial ?? CreateDefaultMaterial();
+    public Mesh CubeMesh => cubeMesh ?? CreateCubeMesh();
 
-    //private Mesh? cubeMesh;
+    static PrimitiveCreatorShared() {
+        NeslAssemblyBuilder assembly = NeslAssemblyBuilder.DefineAssembly("NoiseEngine");
 
-    //public Material DefaultMaterial => defaultMaterial ??= new Material(DefaultShader);
-    /*public Shader DefaultShader => defaultShader ??= Shader.FromGlslSource(
-        graphicsDevice,
-        InPosition3Color3OutColor3GlslVert,
-        InColor3GlslFrag,
-        "main",
-        "main",
-        VertexPosition3Color3.GetVertexDescription());*/
+        NeslTypeBuilder vertexData = assembly.DefineType(nameof(VertexPosition3Color3));
+        vertexData.DefineField("Position", Vectors.GetVector3(BuiltInTypes.Float32));
+        vertexData.DefineField("Color", Vectors.GetVector3(BuiltInTypes.Float32));
 
-    //internal Mesh CubeMesh => cubeMesh ?? CreateCubeMesh();
+        NeslTypeBuilder fragmentData = assembly.DefineType("VertexPosition4Color4");
+        fragmentData.DefineField("Position", Vectors.GetVector4(BuiltInTypes.Float32));
+        fragmentData.DefineField("Color", Vectors.GetVector4(BuiltInTypes.Float32));
 
-    public PrimitiveCreatorShared(GraphicsDevice graphicsDevice) {
-        this.graphicsDevice = graphicsDevice;
+        NeslTypeBuilder defaultShaderClassData = assembly.DefineType("DefaultShader");
+
+        NeslMethodBuilder vertex = defaultShaderClassData.DefineMethod(
+            "Vertex", fragmentData, vertexData
+        );
+        IlGenerator il = vertex.IlGenerator;
+
+        il.Emit(OpCode.DefVariable, fragmentData);
+        il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
+        il.Emit(OpCode.DefVariable, Vectors.GetVector3(BuiltInTypes.Float32));
+        il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);
+
+        il.Emit(OpCode.LoadField, 3u, 0u, 0u);
+        il.Emit(OpCode.Call, 2u, Vertex.ObjectToClipPos, stackalloc uint[] { 3u });
+        il.Emit(OpCode.SetField, 1u, 0u, 2u);
+
+        il.Emit(OpCode.LoadField, 3u, 0u, 1u);
+
+        il.Emit(OpCode.LoadField, 4u, 3u, 0u);
+        il.Emit(OpCode.SetField, 2u, 0u, 4u);
+        il.Emit(OpCode.LoadField, 4u, 3u, 1u);
+        il.Emit(OpCode.SetField, 2u, 1u, 4u);
+        il.Emit(OpCode.LoadField, 4u, 3u, 2u);
+        il.Emit(OpCode.SetField, 2u, 2u, 4u);
+        il.Emit(OpCode.LoadFloat32, 4u, 1f);
+        il.Emit(OpCode.SetField, 2u, 3u, 4u);
+
+        il.Emit(OpCode.SetField, 1u, 1u, 2u);
+
+        il.Emit(OpCode.ReturnValue, 1u);
+
+        NeslMethodBuilder fragment = defaultShaderClassData.DefineMethod(
+            "Fragment", Vectors.GetVector4(BuiltInTypes.Float32), fragmentData
+        );
+        il = fragment.IlGenerator;
+
+        il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
+        il.Emit(OpCode.LoadField, 1u, 0u, 1u);
+        il.Emit(OpCode.ReturnValue, 1u);
+
+        PrimitiveCreatorShared.defaultShaderClassData = defaultShaderClassData;
     }
 
-    public void Dispose() {
-        //defaultMaterial?.Destroy();
-        //defaultShader?.Destroy();
+    private PrimitiveCreatorShared(GraphicsDevice graphicsDevice) {
+        GraphicsDevice = graphicsDevice;
     }
 
-    /*private Mesh CreateCubeMesh() {
+    public static PrimitiveCreatorShared CreateOrGet(GraphicsDevice graphicsDevice) {
+        return shareds.GetOrAdd(graphicsDevice, static (device) => new PrimitiveCreatorShared(device));
+    }
+
+    private Shader CreateDefaultShader() {
+        Interlocked.CompareExchange(ref defaultShader, new Shader(GraphicsDevice, defaultShaderClassData), null);
+        return DefaultShader;
+    }
+
+    private Material CreateDefaultMaterial() {
+        Interlocked.CompareExchange(ref defaultMaterial, new Material(DefaultShader), null);
+        return DefaultMaterial;
+    }
+
+    private Mesh CreateCubeMesh() {
         Interlocked.CompareExchange(ref cubeMesh, new Mesh<VertexPosition3Color3, ushort>(
-            graphicsDevice,
+            GraphicsDevice,
             new VertexPosition3Color3[] {
                 // Top
-                new VertexPosition3Color3(new Float3(-0.5f, 0.5f, 0.5f), Float3.Up),
-                new VertexPosition3Color3(new Float3(0.5f, 0.5f, 0.5f), Float3.Up),
-                new VertexPosition3Color3(new Float3(-0.5f, 0.5f, -0.5f), Float3.Up),
-                new VertexPosition3Color3(new Float3(0.5f, 0.5f, -0.5f), Float3.Up),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, 0.5f, 0.5f), Vector3<float>.Up),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, 0.5f, 0.5f), Vector3<float>.Up),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, 0.5f, -0.5f), Vector3<float>.Up),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, 0.5f, -0.5f), Vector3<float>.Up),
 
                 // Bottom
-                new VertexPosition3Color3(new Float3(-0.5f, -0.5f, -0.5f), Float3.Up * 0.25f),
-                new VertexPosition3Color3(new Float3(0.5f, -0.5f, -0.5f), Float3.Up * 0.25f),
-                new VertexPosition3Color3(new Float3(-0.5f, -0.5f, 0.5f), Float3.Up * 0.25f),
-                new VertexPosition3Color3(new Float3(0.5f, -0.5f, 0.5f), Float3.Up * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, -0.5f, -0.5f), Vector3<float>.Up * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, -0.5f, -0.5f), Vector3<float>.Up * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, -0.5f, 0.5f), Vector3<float>.Up * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, -0.5f, 0.5f), Vector3<float>.Up * 0.25f),
 
                 // Right
-                new VertexPosition3Color3(new Float3(0.5f, -0.5f, -0.5f), Float3.Right),
-                new VertexPosition3Color3(new Float3(0.5f, 0.5f, -0.5f), Float3.Right),
-                new VertexPosition3Color3(new Float3(0.5f, -0.5f, 0.5f), Float3.Right),
-                new VertexPosition3Color3(new Float3(0.5f, 0.5f, 0.5f), Float3.Right),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, -0.5f, -0.5f), Vector3<float>.Right),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, 0.5f, -0.5f), Vector3<float>.Right),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, -0.5f, 0.5f), Vector3<float>.Right),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, 0.5f, 0.5f), Vector3<float>.Right),
 
                 // Left
-                new VertexPosition3Color3(new Float3(-0.5f, -0.5f, 0.5f), Float3.Right * 0.25f),
-                new VertexPosition3Color3(new Float3(-0.5f, 0.5f, 0.5f), Float3.Right * 0.25f),
-                new VertexPosition3Color3(new Float3(-0.5f, -0.5f, -0.5f), Float3.Right * 0.25f),
-                new VertexPosition3Color3(new Float3(-0.5f, 0.5f, -0.5f), Float3.Right * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, -0.5f, 0.5f), Vector3<float>.Right * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, 0.5f, 0.5f), Vector3<float>.Right * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, -0.5f, -0.5f), Vector3<float>.Right * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, 0.5f, -0.5f), Vector3<float>.Right * 0.25f),
 
                 // Front
-                new VertexPosition3Color3(new Float3(0.5f, -0.5f, 0.5f), Float3.Front),
-                new VertexPosition3Color3(new Float3(0.5f, 0.5f, 0.5f), Float3.Front),
-                new VertexPosition3Color3(new Float3(-0.5f, -0.5f, 0.5f), Float3.Front),
-                new VertexPosition3Color3(new Float3(-0.5f, 0.5f, 0.5f), Float3.Front),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, -0.5f, 0.5f), Vector3<float>.Front),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, 0.5f, 0.5f), Vector3<float>.Front),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, -0.5f, 0.5f), Vector3<float>.Front),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, 0.5f, 0.5f), Vector3<float>.Front),
 
                 // Back
-                new VertexPosition3Color3(new Float3(-0.5f, -0.5f, -0.5f), Float3.Front * 0.25f),
-                new VertexPosition3Color3(new Float3(-0.5f, 0.5f, -0.5f), Float3.Front * 0.25f),
-                new VertexPosition3Color3(new Float3(0.5f, -0.5f, -0.5f), Float3.Front * 0.25f),
-                new VertexPosition3Color3(new Float3(0.5f, 0.5f, -0.5f), Float3.Front * 0.25f)
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, -0.5f, -0.5f), Vector3<float>.Front * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(-0.5f, 0.5f, -0.5f), Vector3<float>.Front * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, -0.5f, -0.5f), Vector3<float>.Front * 0.25f),
+                new VertexPosition3Color3(new Vector3<float>(0.5f, 0.5f, -0.5f), Vector3<float>.Front * 0.25f)
             },
             new ushort[] {
                 0, 1, 2, 3, 2, 1,
@@ -120,6 +147,6 @@ internal class PrimitiveCreatorShared : IDisposable {
         ), null);
 
         return CubeMesh;
-    }*/
+    }
 
 }

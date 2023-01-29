@@ -1,16 +1,24 @@
-﻿using NoiseEngine.Interop.Rendering.Presentation;
+﻿using NoiseEngine.Components;
+using NoiseEngine.Jobs;
+using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Buffers;
+using NoiseEngine.Systems;
 using System;
+using System.Threading;
 
 namespace NoiseEngine;
 
 public class Camera : SimpleCamera {
 
     private readonly object renderLoopLocker = new object();
+    private readonly object renderFrameResourcesLock = new object();
+
     private RenderLoop? renderLoop;
+    private RenderFrameResources? renderFrameResources;
+    private MeshRendererSystem? meshRendererSystem;
 
     public ApplicationScene Scene { get; }
+    public Entity Entity { get; }
 
     /// <summary>
     /// Assigns given <see cref="RenderLoop"/> to this <see cref="Camera"/>.
@@ -35,26 +43,61 @@ public class Camera : SimpleCamera {
         }
     }
 
-    public Camera(ApplicationScene scene) : base(scene.GraphicsDevice) {
+    public Camera(
+        ApplicationScene scene, Vector3<float> position, Quaternion<float> rotation
+    ) : base(scene.GraphicsDevice) {
         Scene = scene;
+        Entity = scene.EntityWorld.NewEntity(
+            new TransformComponent(position, rotation),
+            new CameraComponent(this)
+        );
+
+        Scene.AddCameraToScene(this);
+    }
+
+    public Camera(ApplicationScene scene, Vector3<float> position) : this(scene, position, Quaternion<float>.Identity) {
+    }
+
+    public Camera(ApplicationScene scene) : this(scene, new Vector3<float>(0, 0, -5)) {
     }
 
     /// <summary>
     /// Renders frame manually.
     /// </summary>
     public void Render() {
-        if (RenderTarget is Window window) {
-            lock (window.PoolEventsLocker)
-                WindowInterop.PoolEvents(window.Handle);
+        Window? window = null;
+        if (RenderTarget is Window w) {
+            window = w;
+            Monitor.Enter(window);
         }
 
-        GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(GraphicsDevice, false);
+        lock (renderFrameResourcesLock) {
+            try {
+                if (renderFrameResources is null) {
+                    renderFrameResources = new RenderFrameResources(GraphicsDevice, this);
+                    meshRendererSystem = new MeshRendererSystem(this);
+                    meshRendererSystem.Initialize(Scene.EntityWorld, Application.EntitySchedule);
+                    meshRendererSystem.Resources = renderFrameResources.MeshRendererResources;
+                }
 
-        commandBuffer.AttachCameraUnchecked(this);
-        commandBuffer.DetachCameraUnchecked();
+                foreach (EntitySystemBase system in Scene.FrameDependentSystems)
+                    system.TryExecute();
 
-        commandBuffer.Execute();
-        commandBuffer.Clear();
+                foreach (EntitySystemBase system in Scene.FrameDependentSystems)
+                    system.Wait();
+            } finally {
+                if (window is not null)
+                    Monitor.Exit(window);
+            }
+
+            TransformComponent transform = Entity.Get<TransformComponent>(Scene.EntityWorld);
+            Position = transform.Position;
+            Rotation = transform.Rotation;
+            meshRendererSystem!.ExecuteParallelAndWait();
+
+            renderFrameResources.RecordAndExecute();
+            renderFrameResources.Clear();
+        }
     }
 
     private protected override void RaiseRenderTargetSet(ICameraRenderTarget? newRenderTarget) {

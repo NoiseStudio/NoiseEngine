@@ -1,5 +1,6 @@
-﻿using NoiseEngine.Mathematics;
-using System.Numerics;
+﻿using NoiseEngine.Inputs;
+using NoiseEngine.Interop.InteropMarshalling;
+using NoiseEngine.Mathematics;
 
 namespace NoiseEngine.Interop.Rendering.Presentation;
 
@@ -17,11 +18,17 @@ internal static partial class WindowInterop {
     public static partial InteropResult<None> Dispose(InteropHandle<Window> handle);
 
     [InteropImport("rendering_presentation_window_interop_pool_events")]
-    public static partial void PoolEvents(InteropHandle<Window> handle);
+    public static partial void PoolEvents(InteropHandle<Window> handle, InteropHandle<WindowInputRaw> windowInputRaw);
 
     [InteropImport("rendering_presentation_window_interop_set_position")]
     public static partial InteropResult<None> SetPosition(
         InteropHandle<Window> handle, InteropOption<Vector2<int>> position, InteropOption<Vector2<uint>> size
     );
+
+    [InteropImport("rendering_presentation_window_interop_set_cursor_position")]
+    public static partial InteropResult<None> SetCursorPosition(InteropHandle<Window> handle, Vector2<double> position);
+
+    [InteropImport("rendering_presentation_window_interop_is_focused")]
+    public static partial bool IsFocused(InteropHandle<Window> handle);
 
 }
