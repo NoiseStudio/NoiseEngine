@@ -11,7 +11,8 @@ internal class TextureRenderPass : RenderPass {
     public TextureRenderPass(
         VulkanDevice device, ICameraRenderTarget renderTarget, CameraClearFlags clearFlags
     ) : base(device, renderTarget, new RenderPassCreateInfo(
-        renderTarget.Format, renderTarget.SampleCount, clearFlags, VulkanImageLayout.TransferDestinationOptimal
+        renderTarget.Format, renderTarget.SampleCount, clearFlags, VulkanImageLayout.TransferDestinationOptimal,
+        false, TextureFormat.R8G8B8A8_SRGB, 1
     )) {
         Framebuffer = new Framebuffer(
             this, renderTarget.Extent.X, renderTarget.Extent.Y, 1, stackalloc VulkanImageViewCreateInfo[] {

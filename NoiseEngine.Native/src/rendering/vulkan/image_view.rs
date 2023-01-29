@@ -6,10 +6,10 @@ use super::{image::VulkanImage, errors::universal::VulkanUniversalError};
 
 #[repr(C)]
 pub struct VulkanImageViewCreateInfo {
-    flags: vk::ImageViewCreateFlags,
-    view_type: vk::ImageViewType,
-    components: vk::ComponentMapping,
-    subresource_range: vk::ImageSubresourceRange
+    pub flags: vk::ImageViewCreateFlags,
+    pub view_type: vk::ImageViewType,
+    pub components: vk::ComponentMapping,
+    pub subresource_range: vk::ImageSubresourceRange
 }
 
 pub struct VulkanImageView<'init: 'ma, 'ma> {

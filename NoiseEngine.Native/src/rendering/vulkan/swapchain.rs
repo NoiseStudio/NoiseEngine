@@ -13,9 +13,10 @@ use crate::{
 use super::{
     surface::VulkanSurface, device::{VulkanDevice, VulkanQueueFamily},
     errors::{universal::VulkanUniversalError, swapchain_accquire_next_image::SwapchainAccquireNextImageError},
-    render_pass::RenderPass, swapchain_image_view::SwapchainImageView, swapchain_framebuffer::SwapchainFramebuffer,
+    render_pass::RenderPass, swapchain_image_view::SwapchainImageView,
+    swapchain_framebuffer::{SwapchainFramebuffer, SwapchainFramebufferAttachment},
     semaphore::VulkanSemaphore, swapchain_support::SwapchainSupport, synchronized_fence::VulkanSynchronizedFence,
-    fence::VulkanFence
+    fence::VulkanFence, image::{VulkanImage, VulkanImageCreateInfo}, image_view::VulkanImageViewCreateInfo
 };
 
 pub struct Swapchain<'init: 'fam, 'fam> {
@@ -352,8 +353,52 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         let dynamic = self.dynamic.get();
 
         let mut framebuffers = Vec::with_capacity(dynamic.image_views.len());
+        let device = self.shared.device();
+
         for image_view in dynamic.image_views.deref() {
-            framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent)?);
+            if render_pass.depth_testing() {
+                let image =
+                    Arc::new(VulkanImage::new(device, VulkanImageCreateInfo {
+                        flags: vk::ImageCreateFlags::empty(),
+                        image_type: vk::ImageType::TYPE_2D,
+                        extent: vk::Extent3D {
+                            width: dynamic.extent.width,
+                            height: dynamic.extent.height,
+                            depth: 1
+                        },
+                        format: render_pass.depth_stencil_format(),
+                        mip_levels: 1,
+                        array_layers: 1,
+                        sample_count: render_pass.depth_stencil_sample_count().as_raw(),
+                        linear: false,
+                        usage: vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT,
+                        concurrent: true,
+                        layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    }
+                )?);
+
+                let attachments = &[SwapchainFramebufferAttachment {
+                    image,
+                    create_info: VulkanImageViewCreateInfo {
+                        flags: vk::ImageViewCreateFlags::empty(),
+                        view_type: vk::ImageViewType::TYPE_2D,
+                        components: vk::ComponentMapping::default(),
+                        subresource_range: vk::ImageSubresourceRange {
+                            aspect_mask: vk::ImageAspectFlags::DEPTH,
+                            base_mip_level: 0,
+                            level_count: 1,
+                            base_array_layer: 0,
+                            layer_count: 1,
+                        },
+                    },
+                }];
+
+                framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent, attachments)?);
+            } else {
+                framebuffers.push(SwapchainFramebuffer::new(
+                    &render_pass, image_view, dynamic.extent, &[]
+                )?);
+            }
         }
 
         let in_flight_fences_length = dynamic.image_available_semaphores.len();
@@ -455,7 +500,7 @@ impl Drop for SwapchainSharedDynamic<'_, '_> {
 pub struct SwapchainPass<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
     dynamic: Arc<SwapchainSharedDynamic<'init, 'fam>>,
-    framebuffers: ManuallyDrop<Vec<SwapchainFramebuffer<'init>>>,
+    framebuffers: ManuallyDrop<Vec<SwapchainFramebuffer<'init, 'fam>>>,
     in_flight_fences: Vec<Rc<WeakCell<VulkanSynchronizedFence<'init>>>>,
     frame_index: AtomicUsize,
     render_pass: Arc<RenderPass<'init>>
@@ -510,7 +555,7 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
         }
     }
 
-    pub fn get_framebuffer(&self, index: u32) -> &SwapchainFramebuffer<'init> {
+    pub fn get_framebuffer(&self, index: u32) -> &SwapchainFramebuffer<'init, 'fam> {
         &self.framebuffers[index as usize]
     }
 

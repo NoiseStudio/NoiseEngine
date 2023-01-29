@@ -10,17 +10,17 @@ use super::{
 
 #[repr(C)]
 pub struct VulkanImageCreateInfo {
-    flags: vk::ImageCreateFlags,
-    image_type: vk::ImageType,
-    extent: vk::Extent3D,
-    format: vk::Format,
-    mip_levels: u32,
-    array_layers: u32,
-    sample_count: u32,
-    linear: bool,
-    usage: vk::ImageUsageFlags,
-    concurrent: bool,
-    layout: vk::ImageLayout
+    pub flags: vk::ImageCreateFlags,
+    pub image_type: vk::ImageType,
+    pub extent: vk::Extent3D,
+    pub format: vk::Format,
+    pub mip_levels: u32,
+    pub array_layers: u32,
+    pub sample_count: u32,
+    pub linear: bool,
+    pub usage: vk::ImageUsageFlags,
+    pub concurrent: bool,
+    pub layout: vk::ImageLayout
 }
 
 pub struct VulkanImage<'init: 'ma, 'ma> {
@@ -33,7 +33,7 @@ pub struct VulkanImage<'init: 'ma, 'ma> {
 
 impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
     pub fn new(
-        device: &'init Arc<VulkanDevice<'init>>, create_info: VulkanImageCreateInfo
+        device: &'ma Arc<VulkanDevice<'init>>, create_info: VulkanImageCreateInfo
     ) -> Result<Self, VulkanUniversalError> {
         let initialized = device.initialized()?;
 

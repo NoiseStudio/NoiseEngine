@@ -61,6 +61,11 @@ fn attach_camera_worker(
 ) {
     let clear_color = vk::ClearValue { color: *data.read_unchecked::<&vk::ClearColorValue>() };
 
+    let depth_stencil_clear = vk::ClearValue { depth_stencil: vk::ClearDepthStencilValue {
+        depth: 1.0,
+        stencil: 0,
+    }};
+
     let render_pass_info = vk::RenderPassBeginInfo {
         s_type: vk::StructureType::RENDER_PASS_BEGIN_INFO,
         p_next: ptr::null(),
@@ -70,8 +75,11 @@ fn attach_camera_worker(
             offset: vk::Offset2D { x: 0, y: 0 },
             extent: framebuffer_extent
         },
-        clear_value_count: 1,
-        p_clear_values: &clear_color,
+        clear_value_count: match render_pass.depth_testing() {
+            true => 2,
+            false => 1,
+        },
+        p_clear_values: [clear_color, depth_stencil_clear].as_ptr(),
     };
 
     unsafe {
