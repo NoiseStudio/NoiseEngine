@@ -24,4 +24,7 @@ internal static partial class WindowInterop {
         InteropHandle<Window> handle, InteropOption<Vector2<int>> position, InteropOption<Vector2<uint>> size
     );
 
+    [InteropImport("rendering_presentation_window_interop_set_cursor_position")]
+    public static partial InteropResult<None> SetCursorPosition(InteropHandle<Window> handle, Vector2<double> position);
+
 }

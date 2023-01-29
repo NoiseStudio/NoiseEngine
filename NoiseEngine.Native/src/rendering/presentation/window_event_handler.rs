@@ -21,7 +21,6 @@ pub(crate) fn initialize(handler: WindowEventHandler) -> Result<(), InvalidOpera
 impl WindowEventHandler {
     /// # Panics
     /// This function panics if called before [`initialize`].
-    #[allow(dead_code)] // TODO: Remove this attribute.
     pub(crate) fn get() -> &'static WindowEventHandler {
         INSTANCE.get().expect("WindowEventHandler is not initialized.")
     }

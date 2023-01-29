@@ -1,5 +1,8 @@
-﻿using NoiseEngine.DeveloperTools.Systems;
+﻿using NoiseEngine.DeveloperTools.Components;
+using NoiseEngine.DeveloperTools.Systems;
+using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
+using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
@@ -18,22 +21,20 @@ public class ApplicationTest : ApplicationTestEnvironment {
         Window window = Fixture.GetWindow(nameof(SimpleScene));
         ExecuteOnAllDevices(scene => {
             Camera camera = new Camera(scene) {
-                RenderTarget = window
+                RenderTarget = window,
+                RenderLoop = new PerformanceRenderLoop()
             };
 
-            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(scene.GraphicsDevice, false);
-
-            while (true) {
-                window.PoolEvents();
-
-                commandBuffer.AttachCameraUnchecked(camera);
-
-
-
-                commandBuffer.DetachCameraUnchecked();
-                commandBuffer.Execute();
-                commandBuffer.Clear();
+            for (int x = -10; x < 10; x += 2) {
+                for (int y = -10; y < 10; y += 2) {
+                    scene.Primitive.CreateCube(new Vector3<float>(x, 0, y));
+                }
             }
+
+            camera.Entity.Add(scene.EntityWorld, new DebugMovementComponent());
+            scene.AddFrameDependentSystem(new DebugMovementSystem(window));
+
+            Thread.Sleep(1000000);
         });
 
         /*using ApplicationScene scene = new ApplicationScene();

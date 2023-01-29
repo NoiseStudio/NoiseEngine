@@ -1,4 +1,7 @@
-﻿using NoiseEngine.Rendering;
+﻿using NoiseEngine.Components;
+using NoiseEngine.Jobs;
+using NoiseEngine.Mathematics;
+using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using System;
 
@@ -10,6 +13,7 @@ public class Camera : SimpleCamera {
     private RenderLoop? renderLoop;
 
     public ApplicationScene Scene { get; }
+    public Entity Entity { get; }
 
     /// <summary>
     /// Assigns given <see cref="RenderLoop"/> to this <see cref="Camera"/>.
@@ -34,8 +38,20 @@ public class Camera : SimpleCamera {
         }
     }
 
-    public Camera(ApplicationScene scene) : base(scene.GraphicsDevice) {
+    public Camera(
+        ApplicationScene scene, Vector3<float> position, Quaternion<float> rotation
+    ) : base(scene.GraphicsDevice) {
         Scene = scene;
+        Entity = scene.EntityWorld.NewEntity(
+            new TransformComponent(position, rotation),
+            new CameraComponent(this)
+        );
+    }
+
+    public Camera(ApplicationScene scene, Vector3<float> position) : this(scene, position, Quaternion<float>.Identity) {
+    }
+
+    public Camera(ApplicationScene scene) : this(scene, new Vector3<float>(0, 0, -5)) {
     }
 
     /// <summary>

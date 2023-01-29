@@ -558,6 +558,20 @@ impl Window for WindowWindows {
         }
     }
 
+    fn set_cursor_position(&self, position: Vector2<f64>) -> Result<(), PlatformUniversalError> {
+        let mut position_i = Vector2::new(position.x as i32, position.y as i32);
+
+        if unsafe { ClientToScreen(self.h_wnd, &mut position_i) } == 0 {
+            return Err(Win32Error::get_last().into())
+        }
+
+        if unsafe { SetCursorPos(position_i.x, position_i.y) } == 0 {
+            Err(Win32Error::get_last().into())
+        } else {
+            Ok(())
+        }
+    }
+
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
         let create_info = vk::Win32SurfaceCreateInfoKHR {
             s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
@@ -788,7 +802,11 @@ extern "system" {
 
     fn AdjustWindowRectEx(lp_rect: &Rect, dw_style: u32, b_menu: u32, dw_ex_style: u32) -> u32;
 
+    fn ClientToScreen(h_wnd: *mut c_void, lp_point: &mut Vector2<i32>) -> u32;
+
     fn SetWindowPos(
         h_wnd: *mut c_void, h_wnd_insert_after: *mut c_void, x: i32, y: i32, cx: i32, cy: i32, flags: u32
     ) -> u32;
+
+    fn SetCursorPos(x: i32, y: i32) -> u32;
 }

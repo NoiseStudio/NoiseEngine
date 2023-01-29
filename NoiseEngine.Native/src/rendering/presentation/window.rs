@@ -18,6 +18,7 @@ pub trait Window {
     fn set_position(
         &self, position: Option<Vector2<i32>>, size: Option<Vector2<u32>>
     ) -> Result<(), PlatformUniversalError>;
+    fn set_cursor_position(&self, position: Vector2<f64>) -> Result<(), PlatformUniversalError>;
     fn dispose(&self) -> Result<(), PlatformUniversalError>;
 
     fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError>;

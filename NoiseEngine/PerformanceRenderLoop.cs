@@ -1,4 +1,8 @@
-﻿using NoiseEngine.Rendering.Buffers;
+﻿using NoiseEngine.Collections.Concurrent;
+using NoiseEngine.Components;
+using NoiseEngine.Jobs;
+using NoiseEngine.Rendering;
+using NoiseEngine.Systems;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -8,8 +12,8 @@ namespace NoiseEngine;
 public sealed class PerformanceRenderLoop : RenderLoop {
 
     private readonly object updateLocker = new object();
-    private readonly ConcurrentStack<GraphicsCommandBuffer> commandBuffers =
-        new ConcurrentStack<GraphicsCommandBuffer>();
+    private readonly ConcurrentStack<RenderFrameResources> frameResources =
+        new ConcurrentStack<RenderFrameResources>();
 
     private bool renderThreadWork;
     private bool[] executeThreadWork = Array.Empty<bool>();
@@ -17,7 +21,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
     private AutoResetEvent? rendererResetEvent;
     private uint rendererSignaler;
     private AutoResetEvent? executeResetEvent;
-    private GraphicsCommandBuffer? currentCommandBuffer;
+    private RenderFrameResources? currentFrame;
     private AutoResetEvent? deinitializeResetEvent;
     private bool isDeinitialized;
 
@@ -138,27 +142,45 @@ public sealed class PerformanceRenderLoop : RenderLoop {
         Window window = Window ?? throw new NullReferenceException();
         AutoResetEvent rendererResetEvent = this.rendererResetEvent ?? throw new NullReferenceException();
         AutoResetEvent executeResetEvent = this.executeResetEvent ?? throw new NullReferenceException();
-        ConcurrentStack<GraphicsCommandBuffer> commandBuffers = this.commandBuffers;
+        ConcurrentStack<RenderFrameResources> frameResources = this.frameResources;
         object poolEventsLocker = window.PoolEventsLocker;
+        ConcurrentList<EntitySystemBase> frameDependentSystems = camera.Scene.FrameDependentSystems;
+
+        MeshRendererSystem meshRendererSystem = new MeshRendererSystem(camera);
+        meshRendererSystem.Initialize(camera.Scene.EntityWorld, Application.EntitySchedule);
 
         try {
+            RenderFrameResources? frame;
+            RenderFrameResources? exchanged;
+            TransformComponent transform;
+
             while (renderThreadWork) {
-                lock (poolEventsLocker)
+                lock (poolEventsLocker) {
                     window.PoolEvents();
 
-                if (rendererSignaler == 0)
-                    rendererResetEvent.WaitOne();
-                Interlocked.Decrement(ref rendererSignaler);
+                    foreach (EntitySystemBase system in frameDependentSystems)
+                        system.TryExecute();
 
-                if (!commandBuffers.TryPop(out GraphicsCommandBuffer? commandBuffer))
-                    commandBuffer = new GraphicsCommandBuffer(camera.GraphicsDevice, false);
+                    if (rendererSignaler == 0)
+                        rendererResetEvent.WaitOne();
+                    Interlocked.Decrement(ref rendererSignaler);
 
-                commandBuffer.AttachCameraUnchecked(camera);
-                commandBuffer.DetachCameraUnchecked();
+                    if (!frameResources.TryPop(out frame))
+                        frame = new RenderFrameResources(camera.GraphicsDevice, camera);
 
-                GraphicsCommandBuffer? exchanged;
+                    foreach (EntitySystemBase system in frameDependentSystems)
+                        system.Wait();
+                }
+
+                transform = camera.Entity.Get<TransformComponent>(camera.Scene.EntityWorld);
+                camera.Position = transform.Position;
+                camera.Rotation = transform.Rotation;
+
+                meshRendererSystem.Resources = frame.MeshRendererResources;
+                meshRendererSystem.ExecuteParallelAndWait();
+
                 do {
-                    exchanged = Interlocked.CompareExchange(ref currentCommandBuffer, commandBuffer, null);
+                    exchanged = Interlocked.CompareExchange(ref currentFrame, frame, null);
                 } while (exchanged is not null);
 
                 executeResetEvent.Set();
@@ -170,7 +192,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
             for (int i = 0; i < executeThreadWork.Length; i++)
                 executeThreadWork[i] = false;
 
-            GraphicsCommandBuffer? exchanged = Interlocked.Exchange(ref currentCommandBuffer, null);
+            RenderFrameResources? exchanged = Interlocked.Exchange(ref currentFrame, null);
             if (exchanged is not null)
                 exchanged.Clear();
 
@@ -196,17 +218,19 @@ public sealed class PerformanceRenderLoop : RenderLoop {
         int id = (int)(idObject ?? throw new NullReferenceException());
         AutoResetEvent rendererResetEvent = this.rendererResetEvent ?? throw new NullReferenceException();
         AutoResetEvent executeResetEvent = this.executeResetEvent ?? throw new NullReferenceException();
-        ConcurrentStack<GraphicsCommandBuffer> commandBuffers = this.commandBuffers;
+        ConcurrentStack<RenderFrameResources> frameResources = this.frameResources;
 
         Interlocked.Increment(ref executeWorkingThreadCount);
 
         try {
+            RenderFrameResources? current;
+
             while (executeThreadWork[id]) {
                 executeResetEvent.WaitOne();
                 Interlocked.Increment(ref rendererSignaler);
                 rendererResetEvent.Set();
 
-                GraphicsCommandBuffer? current = Interlocked.Exchange(ref currentCommandBuffer, null);
+                current = Interlocked.Exchange(ref currentFrame, null);
                 if (current is null) {
                     if (executeThreadWork[id])
                         throw new InvalidOperationException("Frame was omitted.");
@@ -214,9 +238,10 @@ public sealed class PerformanceRenderLoop : RenderLoop {
                         break;
                 }
 
-                current.Execute();
+                current.RecordAndExecute();
                 current.Clear();
-                commandBuffers.Push(current);
+
+                frameResources.Push(current);
             }
         } catch (Exception exception) {
             Log.Error($"Thread terminated due to an exception. {exception}");

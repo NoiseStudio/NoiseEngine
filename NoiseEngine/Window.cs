@@ -27,7 +27,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
     public uint Height { get; private set; }
-    public bool IsFocused { get; private set; }
+    public bool IsFocused { get; private set; } = true;
 
     internal ulong Id { get; }
     internal InteropHandle<Window> Handle { get; private set; }
@@ -141,14 +141,6 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
                 WindowInterop.PoolEvents(Handle, new InteropHandle<WindowInputRaw>((IntPtr)pointer));
         }
         Input.ProcessAfterPoolEvents();
-
-        Log.Error($"{IsFocused} {Input.CursorPositionDelta}");
-
-        for (int i = 0; i < 133; i++) {
-            KeyValue value = Input.ProcessBeforePoolEvents().GetKeyValue(i);
-            if (value.State == KeyState.JustReleased || value.State == KeyState.JustPressed)
-                Log.Info($"{(Key)i} {value.State}");
-        }
     }
 
     internal void RaiseUserClosed() {

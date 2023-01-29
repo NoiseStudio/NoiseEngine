@@ -55,3 +55,13 @@ extern "C" fn rendering_presentation_window_interop_set_position(
         Err(err) => InteropResult::with_err(err.into()),
     }
 }
+
+#[no_mangle]
+extern "C" fn rendering_presentation_window_interop_set_cursor_position(
+    window: &Arc<dyn Window>, position: Vector2<f64>
+) -> InteropResult<()> {
+    match window.set_cursor_position(position) {
+        Ok(()) => InteropResult::with_ok(()),
+        Err(err) => InteropResult::with_err(err.into()),
+    }
+}
