@@ -1,7 +1,5 @@
 ﻿using NoiseEngine.Interop;
-using NoiseEngine.Interop.InteropMarshalling;
 using NoiseEngine.Interop.Rendering.Vulkan;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -95,6 +93,8 @@ internal class VulkanLibrary {
     }
 
     ~VulkanLibrary() {
+        if (Handle.IsNull)
+            return;
         VulkanLibraryInterop.Destroy(Handle);
     }
 

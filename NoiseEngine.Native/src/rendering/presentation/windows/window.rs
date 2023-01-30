@@ -401,9 +401,9 @@ impl WindowWindows {
     }
 
     fn thread_worker_iterator(&self) {
-        for (
+        while let Some((
             task, signal, data
-        ) in self.thread_task_queue.pop() {
+        )) = self.thread_task_queue.pop() {
             self.thread_worker_task_invoker(task, signal, data);
         }
     }
@@ -460,7 +460,7 @@ impl WindowWindows {
         self.thread_work.store(false, Ordering::Relaxed);
         self.hide_thread();
 
-        for (_, signal, _) in self.thread_task_queue.pop() {
+        while let Some((_, signal, _)) = self.thread_task_queue.pop() {
             match signal {
                 Some(s) => s.set(),
                 None => (),
