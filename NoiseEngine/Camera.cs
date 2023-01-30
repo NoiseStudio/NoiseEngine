@@ -68,7 +68,8 @@ public class Camera : SimpleCamera {
         Window? window = null;
         if (RenderTarget is Window w) {
             window = w;
-            Monitor.Enter(window);
+            Monitor.Enter(window.PoolEventsLocker);
+            window.PoolEvents();
         }
 
         lock (renderFrameResourcesLock) {
@@ -87,7 +88,7 @@ public class Camera : SimpleCamera {
                     system.Wait();
             } finally {
                 if (window is not null)
-                    Monitor.Exit(window);
+                    Monitor.Exit(window.PoolEventsLocker);
             }
 
             TransformComponent transform = Entity.Get<TransformComponent>(Scene.EntityWorld);
