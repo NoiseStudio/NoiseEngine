@@ -116,6 +116,7 @@ impl<'init> RenderPass<'init> {
             p_preserve_attachments: ptr::null(),
         };
 
+        let p_attachments = [color_attachment, depth_attachment];
         let vk_create_info = vk::RenderPassCreateInfo {
             s_type: vk::StructureType::RENDER_PASS_CREATE_INFO,
             p_next: ptr::null(),
@@ -124,7 +125,7 @@ impl<'init> RenderPass<'init> {
                 true => 2,
                 false => 1
             },
-            p_attachments: [color_attachment, depth_attachment].as_ptr(),
+            p_attachments: p_attachments.as_ptr(),
             subpass_count: 1,
             p_subpasses: &subpass,
             dependency_count: 1,

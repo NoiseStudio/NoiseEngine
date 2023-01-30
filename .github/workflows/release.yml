@@ -56,6 +56,13 @@ jobs:
       - name: Publish
         run: dotnet publish NoiseEngine/NoiseEngine.csproj -p:PublishDir=../release --no-restore --configuration Release
 
+      - name: Remove unnecessary files from artifact
+        working-directory: ${{ github.workspace }}/release
+        run: |
+          rm NoiseEngine.deps.json
+          rm NoiseEngine.pdb
+        shell: bash
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:

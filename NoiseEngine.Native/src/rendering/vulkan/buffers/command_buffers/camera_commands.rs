@@ -66,6 +66,7 @@ fn attach_camera_worker(
         stencil: 0,
     }};
 
+    let p_clear_values = [clear_color, depth_stencil_clear];
     let render_pass_info = vk::RenderPassBeginInfo {
         s_type: vk::StructureType::RENDER_PASS_BEGIN_INFO,
         p_next: ptr::null(),
@@ -79,7 +80,7 @@ fn attach_camera_worker(
             true => 2,
             false => 1,
         },
-        p_clear_values: [clear_color, depth_stencil_clear].as_ptr(),
+        p_clear_values: p_clear_values.as_ptr(),
     };
 
     unsafe {
