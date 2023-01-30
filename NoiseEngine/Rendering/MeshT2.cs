@@ -1,8 +1,6 @@
 ﻿using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Reflection;
 
 namespace NoiseEngine.Rendering;
 

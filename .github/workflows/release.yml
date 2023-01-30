@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        target:
+          - Windows
+          - Linux
+        include:
+          - target: Windows
+            os: windows-latest
+            name: Windows
+            architecture: AMD64
+            build-script: build-windows-amd64.ps1
+            tests-directory: /Release
+            no-supports: graphics;
+
+          - target: Linux
+            os: ubuntu-latest
+            name: Linux
+            architecture: AMD64
+            build-script: build-linux-amd64.sh
+            tests-directory: ''
+            no-supports: gui;
+
+    name: Build on ${{ matrix.os }} with ${{ matrix.architecture }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Apt update
+        if: matrix.target == 'Linux'
+        run: sudo apt-get update
+      - name: Install Mesa Vulkan graphics drivers
+        if: matrix.target == 'Linux'
+        run: sudo apt install mesa-vulkan-drivers
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.x.x'
+          include-prerelease: true
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore --configuration Release /p:DoNotBuildMainNative=true
+      - name: Run tests
+        run: dotnet test --no-build --verbosity normal
+        timeout-minutes: 1
+        env:
+          NOISEENGINE_NO_SUPPORTS: ${{ matrix.no-supports }}
+
+      - name: Publish
+        run: dotnet publish NoiseEngine/NoiseEngine.csproj -p:PublishDir=../release --no-restore --configuration Release
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Universal
+          path: ${{ github.workspace }}/release
+
+  upload-artifacts:
+    name: Upload artifacts to release
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Install zip
+        run: sudo apt install zip
+
+      - name: Archive artifacts
+        run: |
+          cd Universal
+          zip -r ../Universal *
+          cd ..
+
+      - name: Upload artifacts to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            Universal
