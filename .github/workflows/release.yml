@@ -48,7 +48,7 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release /p:DoNotBuildMainNative=true
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test --no-build --verbosity normal --configuration Release
         timeout-minutes: 1
         env:
           NOISEENGINE_NO_SUPPORTS: ${{ matrix.no-supports }}
