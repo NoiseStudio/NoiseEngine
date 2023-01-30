@@ -22,7 +22,7 @@ impl MemoryAllocator {
         };
 
         // TODO: implement best suitable config.
-        let config = Config::i_am_potato();
+        let config = Config::i_am_prototyping();
 
         Ok(MemoryAllocator {
             device: device.clone(),
