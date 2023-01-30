@@ -7,6 +7,7 @@ using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -75,20 +76,33 @@ public static class Application {
         InteropLogging.Initialize(Log.Logger);
 
         // Set default values.
-        if (settings.Name is null || settings.Version is null) {
+        if (settings.Name is null || settings.Version is null || settings.DebugMode is null) {
             Assembly? entryAssembly = Assembly.GetEntryAssembly();
 
             if (entryAssembly is null) {
                 settings = settings with {
-                    Name = settings.Name is null ? "Unknown" : settings.Name,
-                    Version = settings.Version is null ? new Version() : settings.Version
+                    Name = settings.Name ?? "Unknown",
+                    Version = settings.Version ?? new Version(),
+                    DebugMode = settings.DebugMode ?? false
                 };
             } else {
                 AssemblyName name = entryAssembly.GetName();
 
+                bool debugMode;
+                if (settings.DebugMode is null) {
+                    DebuggableAttribute? attribute = entryAssembly.GetCustomAttribute<DebuggableAttribute>();
+                    if (attribute is not null)
+                        debugMode = attribute.IsJITTrackingEnabled;
+                    else
+                        debugMode = false;
+                } else {
+                    debugMode = settings.DebugMode.Value;
+                }
+
                 settings = settings with {
-                    Name = settings.Name is null ? (name.Name ?? entryAssembly.Location) : settings.Name,
-                    Version = settings.Version is null ? name.Version ?? new Version() : settings.Version
+                    Name = settings.Name ?? name.Name ?? entryAssembly.Location,
+                    Version = settings.Version ?? name.Version ?? new Version(),
+                    DebugMode = debugMode
                 };
             }
         }
@@ -177,7 +191,9 @@ public static class Application {
                 return graphicsInstance;
 
             AssertNotExited();
-            graphicsInstance = GraphicsInstance.Create();
+            graphicsInstance = GraphicsInstance.Create(
+                Settings.DisablePresentation, Settings.DebugMode!.Value, Settings.EnableValidationLayers
+            );
         }
 
         return graphicsInstance;

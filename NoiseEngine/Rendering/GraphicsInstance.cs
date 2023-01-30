@@ -21,12 +21,21 @@ public abstract class GraphicsInstance {
     /// <summary>
     /// Creates new <see cref="GraphicsInstance"/>.
     /// </summary>
+    /// <param name="disablePresentation">
+    /// Specifies whether the instance should disable presentation (e.g. displaying a view on a window).
+    /// </param>
+    /// <param name="isDebug">Specifies whether the instance is to be used in debug mode.</param>
+    /// <param name="enableValidationLayers">Specifies whether to use instance validation layers.</param>
     /// <returns>New <see cref="GraphicsInstance"/>.</returns>
-    public static GraphicsInstance Create() {
+    public static GraphicsInstance Create(bool disablePresentation, bool isDebug, bool enableValidationLayers) {
         VulkanLibrary library = new VulkanLibrary();
+
         return new VulkanInstance(
-            library, VulkanLogSeverity.All, VulkanLogType.All, library.SupportsValidationLayers,
-            library.SupportsPresentation
+            library, isDebug ? VulkanLogSeverity.All : (VulkanLogSeverity.Warning | VulkanLogSeverity.Error),
+            isDebug ? VulkanLogType.All : (
+                enableValidationLayers ? (VulkanLogType.General | VulkanLogType.Validation
+            ) : VulkanLogType.None), enableValidationLayers && library.SupportsValidationLayers,
+            !disablePresentation && library.SupportsPresentation
         );
     }
 
