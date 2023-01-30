@@ -7,6 +7,7 @@ using NoiseEngine.Rendering.Presentation;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -64,8 +65,11 @@ public static class Application {
         if (settings.AddDefaultLoggerSinks) {
             if (!Log.Logger.Sinks.Any(x => typeof(ConsoleLogSink) == x.GetType()))
                 Log.Logger.AddSink(new ConsoleLogSink(new ConsoleLogSinkSettings { ThreadNameLength = 20 }));
-            if (!Log.Logger.Sinks.Any(x => typeof(FileLogSink) == x.GetType()))
-                Log.Logger.AddSink(FileLogSink.CreateFromDirectory("logs"));
+            if (!Log.Logger.Sinks.Any(x => typeof(FileLogSink) == x.GetType())) {
+                Log.Logger.AddSink(FileLogSink.CreateFromDirectory(
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs")
+                ));
+            }
         }
 
         InteropLogging.Initialize(Log.Logger);
