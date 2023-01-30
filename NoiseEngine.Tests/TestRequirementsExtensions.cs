@@ -18,7 +18,7 @@ internal static class TestRequirementsExtensions {
             return string.Format(Reason, "graphics");
         if (requirements.HasFlag(TestRequirements.Gui) && args.Contains("gui;"))
             return string.Format(Reason, "GUI");
-        if (requirements.HasFlag(TestRequirements.Vulkan) && args.Contains("vulkan;"))
+        if (requirements.HasFlag(TestRequirements.Vulkan) && (args.Contains("vulkan;") || args.Contains("graphics;")))
             return string.Format(Reason, "Vulkan");
 
         return string.Empty;

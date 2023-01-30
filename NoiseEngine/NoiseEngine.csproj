@@ -37,6 +37,7 @@
     <Target Name="CompileNative" BeforeTargets="AfterBuild" Condition="$(DoNotBuildMainNative) != 'true'">
         <Exec WorkingDirectory="../NoiseEngine.Native/" Command="cargo build $(CargoReleaseFlag)" />
         <Copy SourceFiles="../NoiseEngine.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_native.$(OSLibExt)" DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
+        <Copy SourceFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" DestinationFiles="$(PublishDir)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
     </Target>
 
 </Project>

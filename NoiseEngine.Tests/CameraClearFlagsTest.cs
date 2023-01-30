@@ -22,7 +22,8 @@ public class CameraClearFlagsTest : ApplicationTestEnvironment {
             SimpleCamera camera = new SimpleCamera(device) {
                 RenderTarget = new RenderTexture(texture),
                 ClearFlags = CameraClearFlags.SolidColor,
-                ClearColor = Color.Red
+                ClearColor = Color.Red,
+                DepthTesting = false
             };
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
