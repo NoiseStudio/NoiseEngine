@@ -16,16 +16,12 @@ jobs:
             os: windows-latest
             name: Windows
             architecture: AMD64
-            build-script: build-windows-amd64.ps1
-            tests-directory: /Release
             no-supports: graphics;
 
           - target: Linux
             os: ubuntu-latest
             name: Linux
             architecture: AMD64
-            build-script: build-linux-amd64.sh
-            tests-directory: ''
             no-supports: gui;
 
     name: Build on ${{ matrix.os }} with ${{ matrix.architecture }}
