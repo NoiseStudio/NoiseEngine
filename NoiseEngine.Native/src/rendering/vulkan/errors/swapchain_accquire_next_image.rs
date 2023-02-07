@@ -6,7 +6,7 @@ use crate::{interop::prelude::{ResultError, ResultErrorKind}, errors::invalid_op
 
 #[derive(Debug)]
 pub enum SwapchainAccquireNextImageError {
-    Suboptimal,
+    Suboptimal(u32),
     OutOfDate,
     Recreated,
     InvalidOperation(InvalidOperationError),
@@ -26,7 +26,7 @@ impl Error for SwapchainAccquireNextImageError {
 impl Display for SwapchainAccquireNextImageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            Self::Suboptimal => "Suboptimal".to_string(),
+            Self::Suboptimal(_) => "Suboptimal".to_string(),
             Self::OutOfDate => "Out of date".to_string(),
             Self::Recreated => "Recreated".to_string(),
             Self::InvalidOperation(err) => err.to_string(),
