@@ -15,8 +15,12 @@ public class Mesh<TVertex, TIndex> : Mesh where TVertex : unmanaged where TIndex
         ulong verticesCount = (ulong)vertices.Length;
         ulong indicesCount = (ulong)indices.Length;
 
-        vertexBuffer = new GraphicsDeviceBuffer<TVertex>(device, GraphicsBufferUsage.Vertex, verticesCount);
-        indexBuffer = new GraphicsDeviceBuffer<TIndex>(device, GraphicsBufferUsage.Index, indicesCount);
+        vertexBuffer = new GraphicsDeviceBuffer<TVertex>(
+            device, GraphicsBufferUsage.TransferDestination | GraphicsBufferUsage.Vertex, verticesCount
+        );
+        indexBuffer = new GraphicsDeviceBuffer<TIndex>(
+            device, GraphicsBufferUsage.TransferDestination | GraphicsBufferUsage.Index, indicesCount
+        );
 
         GraphicsHostBuffer<TVertex> vertexHost = Device.BufferPool.GetOrCreateHost<TVertex>(
             GraphicsBufferUsage.TransferAll, verticesCount
