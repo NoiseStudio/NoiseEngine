@@ -107,6 +107,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             dynamic: ArcCell::new(Arc::new(SwapchainSharedDynamic {
                 shared: shared.clone(),
                 is_old: Cell::new(false),
+                must_be_recreated: Cell::new(false),
                 inner: unsafe { mem::zeroed() },
                 extent: vk::Extent2D::default(),
                 used_min_image_count: 0,
@@ -185,8 +186,8 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
     pub fn get_swapchain_pass_and_accquire_next_image(
         &'init self, render_pass: &Arc<RenderPass<'init>>, new_fence: &Arc<VulkanFence<'init>>
     ) -> Result<(
-            Arc<SwapchainPass<'init, 'fam>>, Arc<VulkanSynchronizedFence<'init>>, usize, u32
-        ), VulkanUniversalError> {
+        Arc<SwapchainPass<'init, 'fam>>, Arc<VulkanSynchronizedFence<'init>>, usize, u32
+    ), VulkanUniversalError> {
         loop {
             let swapchain_pass = self.get_swapchain_pass(render_pass)?;
 
@@ -197,14 +198,30 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
             match swapchain_pass.accquire_next_image(frame_index) {
                 Ok(i) => return Ok((swapchain_pass, synchronized_fence, frame_index, i)),
                 Err(result) => {
-                    synchronized_fence.retire();
                     match result {
-                        SwapchainAccquireNextImageError::Suboptimal => self.recreate(None)?,
-                        SwapchainAccquireNextImageError::OutOfDate => self.recreate(None)?,
-                        SwapchainAccquireNextImageError::Recreated => (),
-                        SwapchainAccquireNextImageError::InvalidOperation(err) =>
-                            return Err(err.into()),
-                        SwapchainAccquireNextImageError::Vulkan(err) => return Err(err.into()),
+                        SwapchainAccquireNextImageError::Suboptimal(i) => {
+                            swapchain_pass.dynamic.is_old.set(true);
+                            swapchain_pass.dynamic.must_be_recreated.set(true);
+                            return Ok((swapchain_pass, synchronized_fence, frame_index, i))
+                        },
+                        SwapchainAccquireNextImageError::OutOfDate => {
+                            synchronized_fence.retire();
+                            self.recreate(None)?;
+                        },
+                        SwapchainAccquireNextImageError::Recreated => {
+                            synchronized_fence.retire();
+                            if swapchain_pass.dynamic.must_be_recreated.take() {
+                                self.recreate(None)?;
+                            }
+                        },
+                        SwapchainAccquireNextImageError::InvalidOperation(err) => {
+                            synchronized_fence.retire();
+                            return Err(err.into())
+                        },
+                        SwapchainAccquireNextImageError::Vulkan(err) => {
+                            synchronized_fence.retire();
+                            return Err(err.into())
+                        }
                     }
                 },
             };
@@ -322,6 +339,7 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         self.dynamic.set(Arc::new(SwapchainSharedDynamic {
             shared: self.shared.clone(),
             is_old: Cell::new(false),
+            must_be_recreated: Cell::new(false),
             inner,
             extent,
             used_min_image_count,
@@ -480,6 +498,7 @@ impl<'init: 'fam, 'fam> SwapchainShared<'init, 'fam> {
 struct SwapchainSharedDynamic<'init: 'fam, 'fam> {
     shared: Arc<SwapchainShared<'init, 'fam>>,
     is_old: Cell<bool>,
+    must_be_recreated: Cell<bool>,
     inner: vk::SwapchainKHR,
     extent: vk::Extent2D,
     used_min_image_count: u32,
@@ -543,13 +562,13 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
         match result {
             Ok((index, suboptimal)) => {
                 if suboptimal {
-                    Err(SwapchainAccquireNextImageError::Suboptimal)
+                    Err(SwapchainAccquireNextImageError::Suboptimal(index))
                 } else {
                     Ok(index)
                 }
             },
             Err(err) => match err {
-                vk::Result::ERROR_OUT_OF_DATE_KHR => Err(SwapchainAccquireNextImageError::Suboptimal),
+                vk::Result::ERROR_OUT_OF_DATE_KHR => Err(SwapchainAccquireNextImageError::OutOfDate),
                 _ => Err(SwapchainAccquireNextImageError::Vulkan(err))
             },
         }
