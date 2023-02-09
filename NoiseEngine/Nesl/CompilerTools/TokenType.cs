@@ -1,6 +1,7 @@
 ﻿namespace NoiseEngine.Nesl.CompilerTools;
 
 internal enum TokenType {
+    None,
     Assigment,
     Addition,
     AdditionAssigment,
