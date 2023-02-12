@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Tests.Jobs;
 
-[Collection(nameof(JobsCollection))]
+[Collection(nameof(JobsCollectionOld))]
 public class EntitySystemT1Test {
 
     private JobsFixture Fixture { get; }

@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 
 namespace NoiseEngine.Tests.Jobs;
 
-[Collection(nameof(JobsCollection))]
+[Collection(nameof(JobsCollectionOld))]
 public class ComponentsStorageTest {
 
     private JobsFixture Fixture { get; }

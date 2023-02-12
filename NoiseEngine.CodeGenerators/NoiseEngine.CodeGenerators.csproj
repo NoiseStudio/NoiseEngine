@@ -17,4 +17,8 @@
         </PackageReference>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Jobs2\" />
+    </ItemGroup>
+
 </Project>

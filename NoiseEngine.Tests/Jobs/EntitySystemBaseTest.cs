@@ -3,7 +3,7 @@ using System;
 
 namespace NoiseEngine.Tests.Jobs;
 
-[Collection(nameof(JobsCollection))]
+[Collection(nameof(JobsCollectionOld))]
 public class EntitySystemBaseTest {
 
     private JobsFixture Fixture { get; }

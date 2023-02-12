@@ -1,5 +1,5 @@
 ﻿namespace NoiseEngine.Tests.Jobs;
 
-[CollectionDefinition(nameof(JobsCollection))]
-public class JobsCollection : ICollectionFixture<JobsFixture> {
+[CollectionDefinition(nameof(JobsCollectionOld))]
+public class JobsCollectionOld : ICollectionFixture<JobsFixture> {
 }
