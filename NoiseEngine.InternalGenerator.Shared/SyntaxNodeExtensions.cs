@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace NoiseEngine.CodeGenerators.Shared;
+namespace NoiseEngine.InternalGenerator.Shared;
 
 internal static class SyntaxNodeExtensions {
 

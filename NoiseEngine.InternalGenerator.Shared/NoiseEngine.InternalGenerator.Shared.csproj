@@ -4,8 +4,8 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
-        <AssemblyName>NoiseEngine.CodeGenerators.Shared</AssemblyName>
-        <RootNamespace>NoiseEngine.CodeGenerators.Shared</RootNamespace>
+        <AssemblyName>NoiseEngine.InternalGenerator.Shared</AssemblyName>
+        <RootNamespace>NoiseEngine.InternalGenerator.Shared</RootNamespace>
         <Company>Noise Studio</Company>
     </PropertyGroup>
 

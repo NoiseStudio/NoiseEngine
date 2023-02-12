@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
 
-namespace NoiseEngine.CodeGenerators.Jobs {
+namespace NoiseEngine.InternalGenerator.Jobs {
     [Generator]
     public class EntitySystemSourceGenerator : ISourceGenerator {
 

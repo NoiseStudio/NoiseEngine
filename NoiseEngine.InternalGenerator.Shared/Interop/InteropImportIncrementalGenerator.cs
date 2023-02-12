@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
-namespace NoiseEngine.CodeGenerators.Shared.Interop;
+namespace NoiseEngine.InternalGenerator.Shared.Interop;
 
 [Generator]
 public class InteropImportIncrementalGenerator : IIncrementalGenerator {

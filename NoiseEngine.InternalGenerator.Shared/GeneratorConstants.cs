@@ -1,4 +1,4 @@
-﻿namespace NoiseEngine.CodeGenerators.Shared;
+﻿namespace NoiseEngine.InternalGenerator.Shared;
 
 internal static class GeneratorConstants {
 

@@ -4,8 +4,8 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
-        <AssemblyName>NoiseEngine.CodeGenerators</AssemblyName>
-        <RootNamespace>NoiseEngine.CodeGenerators</RootNamespace>
+        <AssemblyName>NoiseEngine.InternalGenerator</AssemblyName>
+        <RootNamespace>NoiseEngine.InternalGenerator</RootNamespace>
         <Company>Noise Studio</Company>
     </PropertyGroup>
 
@@ -15,10 +15,6 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Jobs2\" />
     </ItemGroup>
 
 </Project>

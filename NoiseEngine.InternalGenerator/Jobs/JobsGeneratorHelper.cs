@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace NoiseEngine.CodeGenerators.Jobs {
+namespace NoiseEngine.InternalGenerator.Jobs {
     internal static class JobsGeneratorHelper {
 
         public const int ArgumentsCount = 8;

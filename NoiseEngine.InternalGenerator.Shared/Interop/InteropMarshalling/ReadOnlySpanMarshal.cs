@@ -1,4 +1,4 @@
-﻿namespace NoiseEngine.CodeGenerators.Shared.Interop.InteropMarshalling;
+﻿namespace NoiseEngine.InternalGenerator.Shared.Interop.InteropMarshalling;
 
 internal class ReadOnlySpanMarshal : InteropMarshal {
 
