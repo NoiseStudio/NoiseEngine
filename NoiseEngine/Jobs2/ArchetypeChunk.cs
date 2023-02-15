@@ -7,21 +7,21 @@ namespace NoiseEngine.Jobs2;
 
 internal class ArchetypeChunk {
 
-    private readonly nint columnSize;
     private readonly Array storage;
     private int count = -1;
 
     public Archetype Archetype { get; }
 
+    internal nint RecordSize { get; }
     internal byte[] StorageData { get; }
     internal Dictionary<Type, nint> Offsets { get; }
 
-    public ArchetypeChunk(Archetype archetype, Type columnType, nint columnSize) {
+    public ArchetypeChunk(Archetype archetype, Type columnType, nint recordSize) {
         Archetype = archetype;
         Offsets = archetype.Offsets;
-        this.columnSize = columnSize;
+        RecordSize = recordSize;
 
-        nint length = 16000 / columnSize;
+        nint length = 16000 / recordSize;
         storage = Array.CreateInstance(columnType, length == 0 ? 1 : length);
 
         StorageData = Unsafe.As<byte[]>(storage);
@@ -31,7 +31,7 @@ internal class ArchetypeChunk {
         if (count < storage.Length) {
             int i = Interlocked.Increment(ref count);
             if (i < storage.Length) {
-                index = i * columnSize;
+                index = i * RecordSize;
                 return true;
             }
         }
