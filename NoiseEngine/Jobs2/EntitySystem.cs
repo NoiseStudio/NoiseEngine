@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace NoiseEngine.Jobs2;
 
@@ -8,7 +9,7 @@ public abstract class EntitySystem {
 
     #region NoiseEngineInternal
 
-    [Obsolete("This class is internal and is not part of the API. Do not use.")]
+    [Obsolete("This struct is internal and is not part of the API. Do not use.")]
     protected struct NoiseEngineInternal_DoNotUse {
 
         public readonly record struct ExecutionData(nint RecordSize, nint StartIndex, nint EndIndex) {
@@ -47,6 +48,25 @@ public abstract class EntitySystem {
             return ref Unsafe.AsRef<T>((void*)0);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static void UpdateComponent<T>(in T oldValue, in T newValue) where T : IComponent {
+            if (oldValue is IAffectiveComponent<T> affective) {
+                if (affective.AffectiveEquals(newValue)) {
+                    if (oldValue is IEquatable<T> equatable) {
+                        if (equatable.Equals(newValue))
+                            return;
+                    } else if (oldValue.Equals(newValue)) {
+                        return;
+                    }
+                }
+            } else if (oldValue is IEquatable<T> equatable) {
+                if (equatable.Equals(newValue))
+                    return;
+            } else if (oldValue.Equals(newValue)) {
+                return;
+            }
+        }
+
     }
 
     [Obsolete("This field is internal and is not part of the API. Do not use.")]
@@ -65,6 +85,23 @@ public abstract class EntitySystem {
     }
 
     #endregion
+
+    private EntityWorld? world;
+
+    public bool IsInitialized => world is not null;
+    public EntityWorld World => world ?? throw new InvalidOperationException("This system is not initialized.");
+
+    public double? CycleTime { get; set; }
+
+    internal void InternalInitialize(EntityWorld world) {
+        if (Interlocked.CompareExchange(ref this.world, world, null) is not null)
+            throw new InvalidOperationException("System is already initialized.");
+
+#pragma warning disable CS0618
+        NoiseEngineInternal_DoNotUse_Initialize();
+#pragma warning restore CS0618
+        OnInitialize();
+    }
 
     /// <summary>
     /// This method is executed when this system is initializing.

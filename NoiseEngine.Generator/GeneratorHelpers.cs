@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -18,7 +19,8 @@ internal static class GeneratorHelpers {
     }
 
     public static void GenerateNamespaceWithType(
-        StringBuilder builder, TypeDeclarationSyntax type, string? additionalModifiers = null
+        StringBuilder builder, TypeDeclarationSyntax type, string? additionalModifiers = null,
+        IEnumerable<string>? inherited = null
     ) {
         builder.Append("namespace ").Append(type.ParentNodes()
             .OfType<BaseNamespaceDeclarationSyntax>().First().Name.GetText()).AppendLine(" {");
@@ -38,7 +40,14 @@ internal static class GeneratorHelpers {
         else
             throw new NotImplementedException();
 
-        builder.Append(type.Identifier.Text).AppendLine(" {");
+        builder.Append(type.Identifier.Text);
+        if (inherited is not null && inherited.Any()) {
+            builder.Append(" : ");
+            foreach (string i in inherited)
+                builder.Append(i).Append(", ");
+            builder.Remove(builder.Length - 2, 2);
+        }
+        builder.AppendLine(" {");
     }
 
     public static void AddModifiers(StringBuilder builder, SyntaxTokenList modifiers, string? additional) {
@@ -72,6 +81,37 @@ internal static class GeneratorHelpers {
             reported = true;
         }
         return reported;
+    }
+
+    public static IEnumerable<string> GetGenerics(string type) {
+        int start = type.IndexOf('<');
+        if (start == -1)
+            return Enumerable.Empty<string>();
+
+        int end = type.LastIndexOf('>');
+        if (end == -1)
+            throw new ArgumentException("Invalid type string.", nameof(type));
+
+        List<string> result = new List<string>();
+
+        int brackets = 0;
+        start++;
+        for (int i = start; i < end; i++) {
+            if (type[i] == '<') {
+                brackets++;
+            } else if (type[i] == '>') {
+                brackets--;
+            } else if (type[i] == ',' && brackets == 0) {
+                result.Add(type.Substring(start, i - start).Trim());
+                start = i + 1;
+            }
+        }
+
+        if (brackets != 0)
+            throw new ArgumentException("Invalid type string.", nameof(type));
+
+        result.Add(type.Substring(start, end - start).Trim());
+        return result;
     }
 
 }

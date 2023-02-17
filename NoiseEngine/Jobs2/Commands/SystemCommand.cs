@@ -1,7 +1,3 @@
 ﻿namespace NoiseEngine.Jobs2.Commands;
 
-internal abstract record SystemCommand {
-
-    public abstract void Invoke();
-
-}
+internal readonly record struct SystemCommand(SystemCommandType Type, object? Value);

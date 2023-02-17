@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32714.290
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine", "NoiseEngine/NoiseEngine.csproj", "{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine", "NoiseEngine\NoiseEngine.csproj", "{A90CF90B-0BD7-4EA0-83ED-656C7CB56C0B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Tests", "NoiseEngine.Tests/NoiseEngine.Tests.csproj", "{BBFBF8C3-000C-4B63-9704-44CD338E31FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Tests", "NoiseEngine.Tests\NoiseEngine.Tests.csproj", "{BBFBF8C3-000C-4B63-9704-44CD338E31FE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Benchmarks", "NoiseEngine.Benchmarks/NoiseEngine.Benchmarks.csproj", "{93B82DAA-2ABE-45F1-A20E-D2CE885A738A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Benchmarks", "NoiseEngine.Benchmarks\NoiseEngine.Benchmarks.csproj", "{93B82DAA-2ABE-45F1-A20E-D2CE885A738A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.InternalGenerator", "NoiseEngine.InternalGenerator/NoiseEngine.InternalGenerator.csproj", "{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.InternalGenerator", "NoiseEngine.InternalGenerator\NoiseEngine.InternalGenerator.csproj", "{01AEE2FC-5B13-4968-B099-7F5D51DF0DCC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.InternalGenerator.Shared", "NoiseEngine.InternalGenerator.Shared/NoiseEngine.InternalGenerator.Shared.csproj", "{B3052F7F-C58E-413C-8E90-64A296D67A06}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.InternalGenerator.Shared", "NoiseEngine.InternalGenerator.Shared\NoiseEngine.InternalGenerator.Shared.csproj", "{B3052F7F-C58E-413C-8E90-64A296D67A06}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Generator", "NoiseEngine.Generator/NoiseEngine.Generator.csproj", "{7E2CDF35-81EA-434F-8184-B15399A6BE02}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Generator", "NoiseEngine.Generator\NoiseEngine.Generator.csproj", "{7E2CDF35-81EA-434F-8184-B15399A6BE02}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

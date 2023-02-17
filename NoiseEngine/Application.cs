@@ -37,6 +37,7 @@ public static class Application {
     public static IEnumerable<Window> Windows => WindowEventHandler.Windows;
 
     public static GraphicsInstance GraphicsInstance => GetGraphicsInstance();
+    public static bool IsDebugMode => Settings.DebugMode!.Value;
 
     internal static ApplicationSettings Settings => settings ?? throw new InvalidOperationException(
         $"{nameof(Application)} has not been initialized with a call to {nameof(Initialize)}.");

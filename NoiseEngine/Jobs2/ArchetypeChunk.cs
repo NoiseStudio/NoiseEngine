@@ -7,6 +7,7 @@ namespace NoiseEngine.Jobs2;
 
 internal class ArchetypeChunk {
 
+    private readonly EntityLocker locker = new EntityLocker();
     private readonly Array storage;
     private int count = -1;
 
@@ -40,20 +41,8 @@ internal class ArchetypeChunk {
         return false;
     }
 
-    public void CopyToExtensive(nint sourceIndex, ArchetypeChunk destinationChunk, nint destinationIndex) {
-
-    }
-
-    public void EnterWriteLock(nint index) {
-    }
-
-    public void ExitWriteLock(nint index) {
-    }
-
-    public void EnterReadLock(nint index) {
-    }
-
-    public void ExitReadLock(nint index) {
+    public EntityLocker GetLocker(nint index) {
+        return locker;
     }
 
 }

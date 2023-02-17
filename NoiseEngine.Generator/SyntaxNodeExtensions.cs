@@ -36,4 +36,8 @@ internal static class SyntaxNodeExtensions {
         return (T)(node.GetSymbol(compilation) ?? throw new NullReferenceException());
     }
 
+    public static T GetDeclaredSymbol<T>(this SyntaxNode node, Compilation compilation) where T : ISymbol {
+        return (T)(node.GetSemanticModel(compilation).GetDeclaredSymbol(node) ?? throw new NullReferenceException());
+    }
+
 }

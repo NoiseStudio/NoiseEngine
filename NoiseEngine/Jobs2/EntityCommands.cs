@@ -1,22 +1,44 @@
-﻿using NoiseEngine.Jobs2.Commands;
+﻿using NoiseEngine.Collections;
+using NoiseEngine.Jobs2.Commands;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Jobs2;
 
-public readonly ref struct EntityCommands {
+public ref struct EntityCommands {
 
-    public readonly SystemCommands Commands { get; }
-    public readonly Entity Entity { get; }
+    internal readonly SystemCommands SystemCommands { get; }
+    internal EntityCommandsInner Inner { get; }
+    internal FastList<SystemCommand> Commands => SystemCommands.Commands;
 
-    internal EntityCommands(SystemCommands commands, Entity entity) {
-        Commands = commands;
-        Entity = entity;
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    internal EntityCommands(SystemCommands systemCommands, EntityCommandsInner inner) {
+        SystemCommands = systemCommands;
+        Inner = inner;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public EntityCommands Despawn() {
-        Commands.Objects.Add(new EntityDespawnCommand(Entity));
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public EntityCommands Insert<T>(T component) where T : IComponent {
+        Commands.Add(new SystemCommand(SystemCommandType.EntityInsert, ((IComponent)component, Unsafe.SizeOf<T>())));
         return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public EntityCommands Remove<T>() where T : IComponent {
+        Commands.Add(new SystemCommand(SystemCommandType.EntityRemove, typeof(T)));
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public ConditionalEntityCommands When(Entity entity) {
+        if (Inner.ConditionalsCount >= Inner.Conditionals.Length)
+            Array.Resize(ref Inner.Conditionals, Math.Max(Inner.Conditionals.Length * 2, 1));
+
+        Commands.Add(new SystemCommand(SystemCommandType.EntityWhen, null));
+
+        ref ConditionalEntityCommandsInner inner = ref Inner.Conditionals[Inner.ConditionalsCount++];
+        inner = new ConditionalEntityCommandsInner(entity);
+        return new ConditionalEntityCommands(this, ref inner);
     }
 
 }
