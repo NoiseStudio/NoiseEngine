@@ -18,6 +18,12 @@ public ref struct EntityCommands {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public EntityCommands Despawn() {
+        Commands.Add(new SystemCommand(SystemCommandType.EntityDespawn, null));
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public EntityCommands Insert<T>(T component) where T : IComponent {
         Commands.Add(new SystemCommand(SystemCommandType.EntityInsert, ((IComponent)component, Unsafe.SizeOf<T>())));
         return this;

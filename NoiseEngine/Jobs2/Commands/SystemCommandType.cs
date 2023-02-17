@@ -2,6 +2,7 @@
 
 internal enum SystemCommandType {
     GetEntity,
+    EntityDespawn,
     EntityInsert,
     EntityRemove,
     EntityWhen,

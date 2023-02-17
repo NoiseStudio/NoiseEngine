@@ -11,7 +11,7 @@ public class EntityTest : JobsTestEnvironment {
 
     [Fact]
     public void Contains() {
-        Entity entity = EntityWorld.Spawn(MockComponentA.TestValueA);
+        using Entity entity = EntityWorld.Spawn(MockComponentA.TestValueA);
 
         Assert.True(entity.Contains<MockComponentA>());
         Assert.False(entity.Contains<MockComponentB>());
@@ -19,7 +19,7 @@ public class EntityTest : JobsTestEnvironment {
 
     [Fact]
     public void TryGet() {
-        Entity entity = EntityWorld.Spawn(MockComponentA.TestValueA);
+        using Entity entity = EntityWorld.Spawn(MockComponentA.TestValueA);
 
         Assert.True(entity.TryGet(out MockComponentA componentA));
         Assert.Equal(MockComponentA.TestValueA, componentA);

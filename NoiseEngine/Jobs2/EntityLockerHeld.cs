@@ -16,7 +16,7 @@ internal struct EntityLockerHeld : IDisposable {
             if (wa)
                 l.ExitWriteLock();
             else
-                l.ExitWriteLock();
+                l.ExitReadLock();
         }
         acquired = null;
     }

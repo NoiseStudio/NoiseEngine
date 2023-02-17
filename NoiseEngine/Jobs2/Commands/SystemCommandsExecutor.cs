@@ -14,7 +14,6 @@ internal class SystemCommandsExecutor {
         new Dictionary<Type, (IComponent? value, int size)>();
 
     private int index;
-    private int indexEntity;
     private EntityCommandsInner? entityCommands;
     private bool writeAccess;
 
@@ -28,8 +27,15 @@ internal class SystemCommandsExecutor {
             switch (command.Type) {
                 case SystemCommandType.GetEntity:
                     ProcessEntity();
+                    components.Clear();
+                    writeAccess = false;
                     entityCommands = (EntityCommandsInner)command.Value!;
-                    indexEntity = index;
+                    break;
+                case SystemCommandType.EntityDespawn:
+                    DespawnEntity();
+                    while (++index < commands.Count && commands[index].Type != SystemCommandType.GetEntity)
+                        continue;
+                    index--;
                     break;
                 case SystemCommandType.EntityInsert:
                     writeAccess = true;
@@ -83,7 +89,8 @@ internal class SystemCommandsExecutor {
 
         if (entityCommands.ConditionalsCount == 0) {
             ArchetypeChunk oldChunk = entity.chunk!;
-            (ArchetypeChunk newChunk, nint newIndex) = entity.World.GetArchetype(
+            entity.TryGetWorld(out EntityWorld? world);
+            (ArchetypeChunk newChunk, nint newIndex) = world!.GetArchetype(
                 entity.chunk!.Archetype.ComponentTypes.Select(x => x.type).Where(
                     x => !components.TryGetValue(x, out (IComponent? value, int size) o) || o.value is not null
                 ).Union(components.Where(x => x.Value.value is not null).Select(x => x.Key)),
@@ -138,6 +145,32 @@ internal class SystemCommandsExecutor {
         }
 
         held.Dispose();
+    }
+
+    private void DespawnEntity() {
+        if (entityCommands is null)
+            return;
+
+        Entity entity = entityCommands!.Entity;
+        if (!EntityLocker.TryLockEntity(entity, true, out EntityLockerHeld held))
+            return;
+
+        ArchetypeChunk chunk = entity.chunk!;
+        entity.chunk = null;
+        nint index = entity.index;
+        entity.index = 0;
+
+        unsafe {
+            fixed (byte* dp = chunk.StorageData) {
+                byte* di = dp + index;
+
+                // Clear old data.
+                new Span<byte>(di, (int)chunk.Archetype.RecordSize).Clear();
+            }
+        }
+
+        held.Dispose();
+        chunk.Archetype.ReleaseRecord(chunk, index);
     }
 
 }

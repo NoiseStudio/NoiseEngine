@@ -7,7 +7,8 @@ namespace NoiseEngine.Jobs2;
 internal class EntityLocker {
 
     private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim();
-    private readonly ManualResetEvent resetEvent = new ManualResetEvent(true);
+    private readonly ManualResetEvent writeResetEvent = new ManualResetEvent(true);
+    private readonly ManualResetEvent readResetEvent = new ManualResetEvent(true);
 
     public static bool TryLockEntity(Entity entity, bool writeAccess, out EntityLockerHeld held) {
         return TryLockEntities(new (Entity entity, bool writeAccess)[] { (entity, writeAccess) }, out held);
@@ -25,8 +26,8 @@ internal class EntityLocker {
                 return false;
             }
 
-            if (writeAccess)
-                resetEvents[i] = chunk.GetLocker(entity.index).resetEvent;
+            EntityLocker locker = chunk.GetLocker(entity.index);
+            resetEvents[i] = writeAccess ? locker.writeResetEvent : locker.readResetEvent;
         }
 
         do {
@@ -40,7 +41,7 @@ internal class EntityLocker {
                         if (wa)
                             l.ExitWriteLock();
                         else
-                            l.ExitWriteLock();
+                            l.ExitReadLock();
                     }
                     acquired.Clear();
 
@@ -54,27 +55,28 @@ internal class EntityLocker {
                 if (writeAccess) {
                     if (locker.locker.IsWriteLockHeld)
                         continue;
-                    resetEvents[i] = locker.resetEvent;
+                    resetEvents[i] = locker.writeResetEvent;
 
                     if (locker.locker.TryEnterWriteLock(1)) {
-                        locker.resetEvent.Reset();
+                        locker.writeResetEvent.Reset();
 
                         if (chunk != entity.chunk || index != entity.index) {
-                            locker.locker.ExitWriteLock();
+                            locker.ExitWriteLock();
                         } else {
                             acquired.Add((locker, true));
                             continue;
                         }
                     }
                 } else {
-                    resetEvents[i] = null;
-                    if (locker.locker.IsReadLockHeld) {
+                    if (locker.locker.IsReadLockHeld)
                         continue;
-                    } else if (locker.locker.TryEnterReadLock(1)) {
-                        locker.resetEvent.Reset();
+                    resetEvents[i] = locker.readResetEvent;
+
+                    if (locker.locker.TryEnterReadLock(1)) {
+                        locker.writeResetEvent.Reset();
 
                         if (chunk != entity.chunk || index != entity.index) {
-                            locker.locker.ExitReadLock();
+                            locker.ExitReadLock();
                         } else {
                             acquired.Add((locker, false));
                             continue;
@@ -86,7 +88,7 @@ internal class EntityLocker {
                     if (wa)
                         l.ExitWriteLock();
                     else
-                        l.ExitWriteLock();
+                        l.ExitReadLock();
                 }
                 acquired.Clear();
                 break;
@@ -99,30 +101,32 @@ internal class EntityLocker {
 
     ~EntityLocker() {
         locker.Dispose();
-        resetEvent.Dispose();
+        writeResetEvent.Dispose();
+        readResetEvent.Dispose();
     }
 
     public void EnterWriteLock() {
-        resetEvent.Reset();
         locker.EnterWriteLock();
-        resetEvent.Reset();
+        readResetEvent.Reset();
+        writeResetEvent.Reset();
     }
 
     public void ExitWriteLock() {
         locker.ExitWriteLock();
-        resetEvent.Set();
+        writeResetEvent.Set();
+        readResetEvent.Set();
     }
 
     public void EnterReadLock() {
-        resetEvent.Reset();
         locker.EnterReadLock();
-        resetEvent.Reset();
+        readResetEvent.Set();
+        writeResetEvent.Reset();
     }
 
     public void ExitReadLock() {
         locker.ExitReadLock();
         if (locker.CurrentReadCount == 0)
-            resetEvent.Set();
+            writeResetEvent.Set();
     }
 
 }

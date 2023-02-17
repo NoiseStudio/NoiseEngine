@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NoiseEngine.Jobs2;
@@ -18,6 +19,11 @@ public class EntityWorld {
     private readonly List<EntitySystem> systems = new List<EntitySystem>();
     private readonly ConcurrentDictionary<Type, MethodInfo> affectiveSystems =
         new ConcurrentDictionary<Type, MethodInfo>();
+    private readonly object despawnQueueLocker = new object();
+
+    private ConcurrentQueue<Entity>? despawnQueue;
+    private AutoResetEvent? despawnQueueResetEvent;
+    private bool despawnQueueThreadWork;
 
     public void AddSystem<T>(T system, double? cycleTime) where T : EntitySystem,
 #pragma warning disable CS0618
@@ -95,6 +101,26 @@ public class EntityWorld {
         );
     }
 
+    internal void EnqueueToDespawnQueue(Entity entity) {
+        if (despawnQueue is null) {
+            lock (despawnQueueLocker) {
+                if (despawnQueue is null) {
+                    despawnQueue = new ConcurrentQueue<Entity>();
+                    despawnQueueResetEvent = new AutoResetEvent(false);
+                    despawnQueueThreadWork = true;
+
+                    new Thread(DespawnQueueThreadWorker) {
+                        Name = $"{this} {nameof(DespawnQueueThreadWorker)}",
+                        IsBackground = true,
+                    }.Start();
+                }
+            }
+        }
+
+        despawnQueue.Enqueue(entity);
+        despawnQueueResetEvent!.Set();
+    }
+
     private void AssertSystemInterfaces<T>() where T : EntitySystem {
 #pragma warning disable CS0618
         if (typeof(T).GetInterfaces().Count(x =>
@@ -106,6 +132,37 @@ public class EntityWorld {
             } and {typeof(NoiseEngineInternal_DoNotUse.IAffectiveEntitySystem).FullName} simultaneously.");
         }
 #pragma warning restore CS0618
+    }
+
+    private void DespawnQueueThreadWorker() {
+        AutoResetEvent resetEvent = despawnQueueResetEvent!;
+        ConcurrentQueue<Entity> despawnQueue = this.despawnQueue!;
+
+        while (despawnQueueThreadWork) {
+            resetEvent.WaitOne();
+
+            while (despawnQueue.TryDequeue(out Entity? entity)) {
+                if (!EntityLocker.TryLockEntity(entity, true, out EntityLockerHeld held))
+                    continue;
+
+                ArchetypeChunk chunk = entity.chunk!;
+                entity.chunk = null;
+                nint index = entity.index;
+                entity.index = 0;
+
+                unsafe {
+                    fixed (byte* dp = chunk.StorageData) {
+                        byte* di = dp + index;
+
+                        // Clear old data.
+                        new Span<byte>(di, (int)chunk.Archetype.RecordSize).Clear();
+                    }
+                }
+
+                held.Dispose();
+                chunk.Archetype.ReleaseRecord(chunk, index);
+            }
+        }
     }
 
 }
