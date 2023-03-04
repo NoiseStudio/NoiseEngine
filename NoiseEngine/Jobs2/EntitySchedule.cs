@@ -4,6 +4,9 @@ namespace NoiseEngine.Jobs2;
 
 public class EntitySchedule : IDisposable {
 
+    [ThreadStatic]
+    internal static bool isScheduleLockThread;
+
     internal EntityScheduleWorker Worker { get; }
 
     public EntitySchedule(int? threadCount = null) {
@@ -12,6 +15,15 @@ public class EntitySchedule : IDisposable {
 
     ~EntitySchedule() {
         Worker.Dispose();
+    }
+
+    internal static void AssertNotScheduleLockThread(string helpMessage) {
+        if (isScheduleLockThread) {
+            throw new InvalidOperationException(
+                "Calling this method from the schedule thread is not allowed because this can cause a deadlocks. " +
+                helpMessage
+            );
+        }
     }
 
     /// <summary>

@@ -25,7 +25,8 @@ public class ApplicationFixture : IDisposable {
         Application.Initialize(new ApplicationSettings {
             AutoExitWhenAllWindowsAreClosed = false,
             ProcessExitOnApplicationExit = false,
-            EnableValidationLayers = true
+            EnableValidationLayers = true,
+            DebugMode = true
         });
 
         Log.Logger.LogLevelMask = LogLevel.All;

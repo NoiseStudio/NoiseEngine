@@ -84,7 +84,7 @@ public abstract class EntitySystem {
 
     [Obsolete("This method is internal and is not part of the API. Do not use.")]
     protected virtual void NoiseEngineInternal_DoNotUse_SystemExecution(
-        NoiseEngineInternal_DoNotUse.ExecutionData data
+        NoiseEngineInternal_DoNotUse.ExecutionData data, SystemCommands commands
     ) {
         throw new InvalidOperationException("NoiseEngine.Generator did not generate the code.");
     }
@@ -169,11 +169,13 @@ public abstract class EntitySystem {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void SystemExecutionInternal(ArchetypeChunk chunk, nint startPointer, nint endPointer) {
+    internal void SystemExecutionInternal(
+        ArchetypeChunk chunk, nint startPointer, nint endPointer, SystemCommands systemCommands
+    ) {
 #pragma warning disable CS0618
         NoiseEngineInternal_DoNotUse_SystemExecution(new NoiseEngineInternal_DoNotUse.ExecutionData(
             chunk, startPointer, endPointer
-        ));
+        ), systemCommands);
 #pragma warning restore CS0618
     }
 

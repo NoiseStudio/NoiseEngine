@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Collections.Concurrent;
+using NoiseEngine.Jobs2.Commands;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -124,6 +125,7 @@ internal class EntityScheduleWorker : IDisposable {
     private void ExecutorThreadWork() {
         ManualResetEventSlim executorThreadsResetEvent = this.executorThreadsResetEvent;
         SchedulePackage executionData;
+        SystemCommands systemCommands = new SystemCommands();
 
         try {
             while (work) {
@@ -145,21 +147,28 @@ internal class EntityScheduleWorker : IDisposable {
                         continue;
                     }
 
+                    EntitySchedule.isScheduleLockThread = true;
                     unsafe {
                         fixed (byte* ptr = executionData.Chunk.StorageData) {
                             executionData.System.SystemExecutionInternal(
                                 executionData.Chunk, (nint)(executionData.StartIndex + ptr),
-                                (nint)(executionData.EndIndex * executionData.Chunk.RecordSize + ptr)
+                                (nint)(executionData.EndIndex * executionData.Chunk.RecordSize + ptr),
+                                systemCommands
                             );
                         }
                     }
+                    EntitySchedule.isScheduleLockThread = false;
 
                     if (executionData.System.ComponentWriteAccess)
                         locker.ExitWriteLock();
                     else
                         locker.ExitReadLock();
-
                     executionData.System.ReleaseWork();
+
+                    if (systemCommands.Commands.Count > 0) {
+                        new SystemCommandsExecutor(systemCommands.Commands).Invoke();
+                        systemCommands.Commands.Clear();
+                    }
                 }
 
                 executorThreadsResetEvent.Wait();

@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Collections.Concurrent;
-using NoiseEngine.Jobs;
 using NoiseEngine.Jobs2.Commands;
 using NoiseEngine.Jobs2.Internal;
 using System;
@@ -44,10 +43,10 @@ public class EntityWorld {
             AssertSystemInterfaces<T>();
 
         system.InternalInitialize(this);
-        if (cycleTime.HasValue) {
+        if (cycleTime.HasValue)
             system.CycleTime = cycleTime.Value;
+        if (system.Schedule is null)
             system.Schedule = DefaultSchedule;
-        }
 
         systems.Add(system);
         RegisterArchetypesToSystem(system);
@@ -69,6 +68,12 @@ public class EntityWorld {
     }
 
     public void ExecuteCommands(SystemCommands commands) {
+        if (Application.IsDebugMode) {
+            EntitySchedule.AssertNotScheduleLockThread(
+                "Use built in `SystemCommands` parameter in `OnUpdateEntity` instead."
+            );
+        }
+
         new SystemCommandsExecutor(commands.Commands).Invoke();
     }
 
@@ -78,10 +83,8 @@ public class EntityWorld {
     }
 
     /// <summary>
-    /// Spawns new <see cref="Entity"/> with specified components.
+    /// Spawns new <see cref="Entity"/> without components.
     /// </summary>
-    /// <typeparam name="T1">Type of <see cref="IComponent"/>.</typeparam>
-    /// <param name="component1">Value of T1 component.</param>
     /// <returns>New <see cref="Entity"/>.</returns>
     public Entity Spawn() {
         Archetype archetype = GetArchetype(Array.Empty<(Type, int)>(), () => Array.Empty<(Type, int, int)>());

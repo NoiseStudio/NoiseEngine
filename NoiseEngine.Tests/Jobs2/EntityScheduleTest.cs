@@ -9,7 +9,7 @@ public class EntityScheduleTest : ApplicationTestEnvironment {
     }
 
     [Fact]
-    public void TestA() {
+    public void Execution() {
         const int Entities = 1024;
 
         for (int i = 0; i < Entities; i++)
