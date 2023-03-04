@@ -38,7 +38,7 @@ namespace NoiseEngine.InternalGenerator.Jobs {
                     char c = (char)(j + 64);
                     builder.AppendIndentation().Append("/// <param name=\"component").Append(c).AppendLine("\">");
                     builder.AppendIndentation().AppendLine(
-                        "/// <see cref=\"IAffectiveComponent\"/> component tracked by this" +
+                        "/// <see cref=\"IAffectiveComponent\"/> component tracked by this " +
                         "<see cref=\"IAffectiveSystem\"/>."
                     );
                     builder.AppendIndentation().AppendLine("/// </param>");

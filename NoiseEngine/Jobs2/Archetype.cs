@@ -1,30 +1,29 @@
 ﻿using NoiseEngine.Collections.Concurrent;
+using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Jobs2;
 
 internal class Archetype {
 
+    internal readonly ConcurrentList<ArchetypeChunk> chunks = new ConcurrentList<ArchetypeChunk>();
+
     private readonly Type columnType;
-    private readonly ConcurrentList<ArchetypeChunk> chunks = new ConcurrentList<ArchetypeChunk>();
     private readonly ConcurrentQueue<(ArchetypeChunk, nint)> releasedRecords =
         new ConcurrentQueue<(ArchetypeChunk, nint)>();
-    private readonly ConcurrentDictionary<Type, Archetype> withArchetypes =
-        new ConcurrentDictionary<Type, Archetype>();
-    private readonly ConcurrentDictionary<Type, Archetype> withoutArchetypes =
-        new ConcurrentDictionary<Type, Archetype>();
+
+    private AtomicBool isInitialized;
 
     public EntityWorld World { get; }
 
     internal nint RecordSize { get; }
-    internal (Type type, int size)[] ComponentTypes { get; }
+    internal (Type type, int size, int affectiveHashCode)[] ComponentTypes { get; }
     internal Dictionary<Type, nint> Offsets { get; } = new Dictionary<Type, nint>();
 
-    public Archetype(EntityWorld world, (Type type, int size)[] componentTypes) {
+    public Archetype(EntityWorld world, (Type type, int size, int affectiveHashCode)[] componentTypes) {
         World = world;
         ComponentTypes = componentTypes;
 
@@ -34,7 +33,7 @@ internal class Archetype {
         nint offset = Unsafe.SizeOf<EntityInternalComponent>();
 
         int i = 1;
-        foreach ((Type type, int size) in componentTypes) {
+        foreach ((Type type, int size, _) in componentTypes) {
             finalComponentTypes[i++] = type;
             Offsets.Add(type, offset);
             offset += size;
@@ -42,6 +41,15 @@ internal class Archetype {
 
         columnType = ArchetypeColumnCreator.CreateColumnType(finalComponentTypes);
         RecordSize = offset;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Initialize() {
+        if (isInitialized.Exchange(true))
+            return;
+
+        foreach (EntitySystem system in World.Systems)
+            system.RegisterArchetype(this);
     }
 
     public (ArchetypeChunk chunk, nint index) TakeRecord() {
@@ -73,26 +81,6 @@ internal class Archetype {
 
     public void ReleaseRecord(ArchetypeChunk chunk, nint index) {
         releasedRecords.Enqueue((chunk, index));
-    }
-
-    public Archetype GetArchetypeWith<T>() {
-        return withArchetypes.GetOrAdd(typeof(T), type => {
-            return World.GetArchetype(ComponentTypes.Select(x => x.type).Append(type), () => {
-                (Type type, int size)[] newComponentTypes = new (Type type, int size)[ComponentTypes.Length + 1];
-                Array.Copy(ComponentTypes, newComponentTypes, ComponentTypes.Length);
-                newComponentTypes[^1] = (type, Unsafe.SizeOf<T>());
-                return newComponentTypes;
-            });
-        });
-    }
-
-    public Archetype GetArchetypeWithout(Type type) {
-        return withoutArchetypes.GetOrAdd(
-            type, _ => World.GetArchetype(
-                ComponentTypes.Select(x => x.type).Where(x => x != type),
-                () => ComponentTypes.Where(x => x.type != type).ToArray()
-            )
-        );
     }
 
 }

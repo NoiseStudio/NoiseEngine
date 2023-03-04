@@ -27,7 +27,7 @@ public sealed class Entity : IDisposable {
     }
 
     /// <summary>
-    /// Does the same as <see cref="Despawn"/> method.
+    /// Enqueues this <see cref="Entity"/> to despawn queue. Does the same as <see cref="Despawn"/> method.
     /// </summary>
     public void Dispose() {
         Despawn();

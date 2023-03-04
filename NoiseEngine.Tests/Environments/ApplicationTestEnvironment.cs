@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Rendering;
+﻿using NoiseEngine.Jobs2;
+using NoiseEngine.Rendering;
 using NoiseEngine.Tests.Fixtures;
 using System;
 
@@ -6,6 +7,8 @@ namespace NoiseEngine.Tests.Environments;
 
 [Collection(nameof(ApplicationCollection))]
 public abstract class ApplicationTestEnvironment : GraphicsTestEnvironment {
+
+    public EntityWorld EntityWorld => Fixture.EntityWorld;
 
     protected ApplicationTestEnvironment(ApplicationFixture fixture) : base(fixture) {
     }

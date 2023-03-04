@@ -20,10 +20,10 @@ public ref struct PostConditionalEntityCommands {
         return this;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    /*[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public ConditionalEntityCommands When(Entity entity) {
         return ConditionalCommands.EntityCommands.When(entity);
-    }
+    }*/
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public ConditionalEntityCommands Else() {

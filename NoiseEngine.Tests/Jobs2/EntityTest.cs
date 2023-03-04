@@ -4,9 +4,9 @@ using NoiseEngine.Tests.Fixtures;
 
 namespace NoiseEngine.Tests.Jobs2;
 
-public class EntityTest : JobsTestEnvironment {
+public class EntityTest : ApplicationTestEnvironment {
 
-    public EntityTest(JobsFixture fixture) : base(fixture) {
+    public EntityTest(ApplicationFixture fixture) : base(fixture) {
     }
 
     [Fact]

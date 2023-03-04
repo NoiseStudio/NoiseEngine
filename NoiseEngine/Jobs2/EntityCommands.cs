@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Jobs2.Commands;
-using System;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Jobs2;
@@ -25,7 +24,10 @@ public ref struct EntityCommands {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public EntityCommands Insert<T>(T component) where T : IComponent {
-        Commands.Add(new SystemCommand(SystemCommandType.EntityInsert, ((IComponent)component, Unsafe.SizeOf<T>())));
+        Commands.Add(new SystemCommand(
+            SystemCommandType.EntityInsert,
+            ((IComponent)component, Unsafe.SizeOf<T>(), IAffectiveComponent.GetAffectiveHashCode(component))
+        ));
         return this;
     }
 
@@ -35,7 +37,7 @@ public ref struct EntityCommands {
         return this;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    /*[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public ConditionalEntityCommands When(Entity entity) {
         if (Inner.ConditionalsCount >= Inner.Conditionals.Length)
             Array.Resize(ref Inner.Conditionals, Math.Max(Inner.Conditionals.Length * 2, 1));
@@ -45,6 +47,6 @@ public ref struct EntityCommands {
         ref ConditionalEntityCommandsInner inner = ref Inner.Conditionals[Inner.ConditionalsCount++];
         inner = new ConditionalEntityCommandsInner(entity);
         return new ConditionalEntityCommands(this, ref inner);
-    }
+    }*/
 
 }

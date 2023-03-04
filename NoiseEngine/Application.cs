@@ -32,6 +32,7 @@ public static class Application {
     public static string Name => Settings.Name!;
     public static Version Version => Settings.Version!;
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
+    public static Jobs2.EntitySchedule EntitySchedule2 { get; private set; } = new Jobs2.EntitySchedule();
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
     public static IEnumerable<Window> Windows => WindowEventHandler.Windows;
@@ -111,6 +112,8 @@ public static class Application {
         Application.settings = settings with {
             EntitySchedule = settings.EntitySchedule ?? new EntitySchedule()
         };
+
+        EntitySchedule2 = new Jobs2.EntitySchedule();
     }
 
     /// <summary>

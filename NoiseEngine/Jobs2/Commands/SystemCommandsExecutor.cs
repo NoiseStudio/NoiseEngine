@@ -10,8 +10,8 @@ namespace NoiseEngine.Jobs2.Commands;
 internal class SystemCommandsExecutor {
 
     private readonly FastList<SystemCommand> commands;
-    private readonly Dictionary<Type, (IComponent? value, int size)> components =
-        new Dictionary<Type, (IComponent? value, int size)>();
+    private readonly Dictionary<Type, (IComponent? value, int size, int affectiveHashCode)> components =
+        new Dictionary<Type, (IComponent? value, int size, int affectiveHashCode)>();
 
     private int index;
     private EntityCommandsInner? entityCommands;
@@ -39,14 +39,15 @@ internal class SystemCommandsExecutor {
                     break;
                 case SystemCommandType.EntityInsert:
                     writeAccess = true;
-                    (IComponent component, int size) value = ((IComponent, int))command.Value!;
+                    (IComponent component, int size, int affectiveHashCode) value =
+                        ((IComponent, int, int))command.Value!;
                     Type type = value.component.GetType();
                     components[type] = value;
                     break;
                 case SystemCommandType.EntityRemove:
                     Type typeB = (Type)command.Value!;
                     writeAccess |= entityCommands!.Entity.Contains(typeB);
-                    components[typeB] = (null, 0);
+                    components[typeB] = (null, 0, 0);
                     break;
                 default:
                     throw new UnreachableException();
@@ -58,7 +59,7 @@ internal class SystemCommandsExecutor {
     }
 
     private void ProcessEntity() {
-        if (entityCommands is null)
+        if (entityCommands is null || components.Count == 0)
             return;
 
         Entity entity = entityCommands.Entity;
@@ -77,7 +78,7 @@ internal class SystemCommandsExecutor {
         }
 
         if (!writeAccess) {
-            foreach ((Type type, (IComponent? value, _)) in components) {
+            foreach ((Type type, (IComponent? value, _, _)) in components) {
                 if ((value is null && entityCommands.Entity.Contains(type)) || !entityCommands.Entity.Contains(type)) {
                     held.Dispose();
                     writeAccess = true;
@@ -88,59 +89,25 @@ internal class SystemCommandsExecutor {
         }
 
         if (entityCommands.ConditionalsCount == 0) {
-            ArchetypeChunk oldChunk = entity.chunk!;
             entity.TryGetWorld(out EntityWorld? world);
-            (ArchetypeChunk newChunk, nint newIndex) = world!.GetArchetype(
-                entity.chunk!.Archetype.ComponentTypes.Select(x => x.type).Where(
-                    x => !components.TryGetValue(x, out (IComponent? value, int size) o) || o.value is not null
-                ).Union(components.Where(x => x.Value.value is not null).Select(x => x.Key)),
-                () => entity.chunk!.Archetype.ComponentTypes.Where(
-                    x => !components.TryGetValue(x.type, out (IComponent? value, int size) o) || o.value is not null
-                ).Union(components.Where(x => x.Value.value is not null).Select(x => (x.Key, x.Value.size))).ToArray()
-            ).TakeRecord();
+            Archetype newArchetype = world!.GetArchetype(
+                components.Where(x => x.Value.value is not null).Select(x => (x.Key, x.Value.affectiveHashCode))
+                .UnionBy(entity.chunk!.Archetype.ComponentTypes.Select(x => (x.type, x.affectiveHashCode)).Where(
+                    x => !components.TryGetValue(x.type, out (IComponent? value, int size, int affectiveHashCode) o) ||
+                        o.value is not null
+                ), x => x.Item1),
+                () => components.Where(x => x.Value.value is not null)
+                .Select(x => (x.Key, x.Value.size, x.Value.affectiveHashCode))
+                .UnionBy(entity.chunk!.Archetype.ComponentTypes.Where(
+                    x => !components.TryGetValue(x.type, out (IComponent? value, int size, int affectiveHashCode) o) ||
+                    o.value is not null
+                ), x => x.Item1).ToArray()
+            );
 
-            entity.chunk = newChunk;
-            nint oldIndex = entity.index;
-            entity.index = newIndex;
-
-            unsafe {
-                fixed (byte* dp = newChunk.StorageData) {
-                    byte* di = dp + newIndex;
-                    fixed (byte* sp = oldChunk.StorageData) {
-                        byte* si = sp + oldIndex;
-
-                        // Copy old components.
-                        foreach ((Type type, int size) in newChunk.Archetype.ComponentTypes) {
-                            (IComponent? value, int size) component;
-                            if (oldChunk.Offsets.TryGetValue(type, out nint oldOffset)) {
-                                if (!components.TryGetValue(type, out component)) {
-                                    Buffer.MemoryCopy(si + oldOffset, di + newChunk.Offsets[type], size, size);
-                                    continue;
-                                }
-                            } else {
-                                component = components[type];
-                            }
-
-                            fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component.value!)) {
-                                Buffer.MemoryCopy(
-                                    (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)),
-                                    di + newChunk.Offsets[type], size, size
-                                );
-                            }
-                        }
-
-                        // Copy internal component.
-                        int iSize = Unsafe.SizeOf<EntityInternalComponent>();
-                        Buffer.MemoryCopy(si, di, iSize, iSize);
-
-                        // Clear old data.
-                        new Span<byte>(si, (int)oldChunk.Archetype.RecordSize).Clear();
-                    }
-                }
-            }
-
-            held.Dispose();
-            oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
+            if (newArchetype != entity.chunk.Archetype)
+                ChangeArchetype(newArchetype, held);
+            else
+                UpdateRecord(held);
             return;
         }
 
@@ -171,6 +138,81 @@ internal class SystemCommandsExecutor {
 
         held.Dispose();
         chunk.Archetype.ReleaseRecord(chunk, index);
+    }
+
+    private void ChangeArchetype(Archetype newArchetype, EntityLockerHeld held) {
+        Entity entity = entityCommands!.Entity;
+        ArchetypeChunk oldChunk = entity.chunk!;
+        (ArchetypeChunk newChunk, nint newIndex) = newArchetype.TakeRecord();
+
+        entity.chunk = newChunk;
+        nint oldIndex = entity.index;
+        entity.index = newIndex;
+
+        unsafe {
+            fixed (byte* dp = newChunk.StorageData) {
+                byte* di = dp + newIndex;
+                fixed (byte* sp = oldChunk.StorageData) {
+                    byte* si = sp + oldIndex;
+
+                    // Copy old components.
+                    foreach ((Type type, int size, _) in newChunk.Archetype.ComponentTypes) {
+                        (IComponent? value, int size, int affectiveHashCode) component;
+                        if (oldChunk.Offsets.TryGetValue(type, out nint oldOffset)) {
+                            if (!components.TryGetValue(type, out component)) {
+                                Buffer.MemoryCopy(si + oldOffset, di + newChunk.Offsets[type], size, size);
+                                continue;
+                            }
+                        } else {
+                            component = components[type];
+                        }
+
+                        fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component.value!)) {
+                            Buffer.MemoryCopy(
+                                (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)),
+                                di + newChunk.Offsets[type], size, size
+                            );
+                        }
+                    }
+
+                    // Copy internal component.
+                    int iSize = Unsafe.SizeOf<EntityInternalComponent>();
+                    Buffer.MemoryCopy(si, di, iSize, iSize);
+
+                    // Clear old data.
+                    new Span<byte>(si, (int)oldChunk.Archetype.RecordSize).Clear();
+                }
+            }
+        }
+
+        held.Dispose();
+        oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
+    }
+
+    private void UpdateRecord(EntityLockerHeld held) {
+        Entity entity = entityCommands!.Entity;
+        ArchetypeChunk chunk = entity.chunk!;
+
+        unsafe {
+            fixed (byte* dp = chunk.StorageData) {
+                byte* di = dp + entity.index;
+
+                // Update components.
+                foreach ((Type type, (IComponent? value, int size, int affectiveHashCode)) in components) {
+                    if (value is null)
+                        continue;
+
+                    IComponent component = value;
+                    fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component)) {
+                        Buffer.MemoryCopy(
+                            (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)), di + chunk.Offsets[type], size, size
+                        );
+                    }
+                }
+            }
+        }
+
+        held.Dispose();
     }
 
 }

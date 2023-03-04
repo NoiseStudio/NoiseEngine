@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace NoiseEngine.Tests.Jobs2;
 
-public class EntityCommandsTest : JobsTestEnvironment {
+public class EntityCommandsTest : ApplicationTestEnvironment {
 
-    public EntityCommandsTest(JobsFixture fixture) : base(fixture) {
+    public EntityCommandsTest(ApplicationFixture fixture) : base(fixture) {
     }
 
     [Fact]
@@ -100,6 +100,11 @@ public class EntityCommandsTest : JobsTestEnvironment {
                 for (int i = 0; i < entities.Length * 4; i++) {
                     Entity entity = entities[Random.Shared.Next(entities.Length)];
                     SystemCommands commands = new SystemCommands();
+
+                    if (entity.TryGet(out MockComponentB componentB))
+                        Assert.Equal(MockComponentB.TestValueA, componentB);
+                    if (entity.TryGet(out MockComponentC componentC))
+                        Assert.Equal(MockComponentC.TestValueA, componentC);
 
                     switch (Random.Shared.Next(5)) {
                         case 0:

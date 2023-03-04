@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Collections;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace NoiseEngine.Jobs2;
@@ -57,9 +58,7 @@ internal class EntityLocker {
                         continue;
                     resetEvents[i] = locker.writeResetEvent;
 
-                    if (locker.locker.TryEnterWriteLock(1)) {
-                        locker.writeResetEvent.Reset();
-
+                    if (locker.TryEnterWriteLock(1)) {
                         if (chunk != entity.chunk || index != entity.index) {
                             locker.ExitWriteLock();
                         } else {
@@ -72,9 +71,7 @@ internal class EntityLocker {
                         continue;
                     resetEvents[i] = locker.readResetEvent;
 
-                    if (locker.locker.TryEnterReadLock(1)) {
-                        locker.writeResetEvent.Reset();
-
+                    if (locker.TryEnterReadLock(1)) {
                         if (chunk != entity.chunk || index != entity.index) {
                             locker.ExitReadLock();
                         } else {
@@ -105,24 +102,34 @@ internal class EntityLocker {
         readResetEvent.Dispose();
     }
 
-    public void EnterWriteLock() {
-        locker.EnterWriteLock();
-        readResetEvent.Reset();
-        writeResetEvent.Reset();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryEnterWriteLock(int millisecondsTimeout) {
+        if (locker.TryEnterWriteLock(millisecondsTimeout)) {
+            readResetEvent.Reset();
+            writeResetEvent.Reset();
+            return true;
+        }
+        return false;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ExitWriteLock() {
         locker.ExitWriteLock();
         writeResetEvent.Set();
         readResetEvent.Set();
     }
 
-    public void EnterReadLock() {
-        locker.EnterReadLock();
-        readResetEvent.Set();
-        writeResetEvent.Reset();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryEnterReadLock(int millisecondsTimeout) {
+        if (locker.TryEnterReadLock(millisecondsTimeout)) {
+            readResetEvent.Set();
+            writeResetEvent.Reset();
+            return true;
+        }
+        return false;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ExitReadLock() {
         locker.ExitReadLock();
         if (locker.CurrentReadCount == 0)

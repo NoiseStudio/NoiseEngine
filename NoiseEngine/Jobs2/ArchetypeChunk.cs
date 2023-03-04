@@ -12,6 +12,7 @@ internal class ArchetypeChunk {
     private int count = -1;
 
     public Archetype Archetype { get; }
+    public int Count => count;
 
     internal nint RecordSize { get; }
     internal byte[] StorageData { get; }

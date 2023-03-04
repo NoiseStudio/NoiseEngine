@@ -1,4 +1,6 @@
 ﻿using NoiseEngine.Collections;
+using NoiseEngine.Collections.Concurrent;
+using NoiseEngine.Jobs;
 using NoiseEngine.Jobs2.Commands;
 using NoiseEngine.Jobs2.Internal;
 using System;
@@ -14,9 +16,9 @@ namespace NoiseEngine.Jobs2;
 
 public class EntityWorld {
 
-    private readonly ConcurrentDictionary<EquatableReadOnlyList<Type>, Archetype> archetypes =
-        new ConcurrentDictionary<EquatableReadOnlyList<Type>, Archetype>();
-    private readonly List<EntitySystem> systems = new List<EntitySystem>();
+    private readonly ConcurrentDictionary<EquatableReadOnlyList<(Type, int)>, Archetype> archetypes =
+        new ConcurrentDictionary<EquatableReadOnlyList<(Type, int)>, Archetype>();
+    private readonly ConcurrentList<EntitySystem> systems = new ConcurrentList<EntitySystem>();
     private readonly ConcurrentDictionary<Type, MethodInfo> affectiveSystems =
         new ConcurrentDictionary<Type, MethodInfo>();
     private readonly object despawnQueueLocker = new object();
@@ -25,7 +27,15 @@ public class EntityWorld {
     private AutoResetEvent? despawnQueueResetEvent;
     private bool despawnQueueThreadWork;
 
-    public void AddSystem<T>(T system, double? cycleTime) where T : EntitySystem,
+    public EntitySchedule? DefaultSchedule { get; set; }
+
+    internal IEnumerable<EntitySystem> Systems => systems;
+
+    public EntityWorld() {
+        DefaultSchedule = Application.EntitySchedule2;
+    }
+
+    public void AddSystem<T>(T system, double? cycleTime = null) where T : EntitySystem,
 #pragma warning disable CS0618
         NoiseEngineInternal_DoNotUse.INormalEntitySystem
 #pragma warning restore CS0618
@@ -34,11 +44,13 @@ public class EntityWorld {
             AssertSystemInterfaces<T>();
 
         system.InternalInitialize(this);
-        if (cycleTime.HasValue)
+        if (cycleTime.HasValue) {
             system.CycleTime = cycleTime.Value;
+            system.Schedule = DefaultSchedule;
+        }
 
-        lock (systems)
-            systems.Add(system);
+        systems.Add(system);
+        RegisterArchetypesToSystem(system);
     }
 
     public void AddAffectiveSystem<T>() where T : EntitySystem,
@@ -71,9 +83,33 @@ public class EntityWorld {
     /// <typeparam name="T1">Type of <see cref="IComponent"/>.</typeparam>
     /// <param name="component1">Value of T1 component.</param>
     /// <returns>New <see cref="Entity"/>.</returns>
+    public Entity Spawn() {
+        Archetype archetype = GetArchetype(Array.Empty<(Type, int)>(), () => Array.Empty<(Type, int, int)>());
+        (ArchetypeChunk chunk, nint index) = archetype.TakeRecord();
+        Entity entity = new Entity(chunk, index);
+
+        unsafe {
+            fixed (byte* ptr = chunk.StorageData) {
+                byte* pointer = ptr + index;
+
+                Unsafe.AsRef<EntityInternalComponent>(pointer) = new EntityInternalComponent(entity);
+            }
+        }
+
+        return entity;
+    }
+
+    /// <summary>
+    /// Spawns new <see cref="Entity"/> with specified components.
+    /// </summary>
+    /// <typeparam name="T1">Type of <see cref="IComponent"/>.</typeparam>
+    /// <param name="component1">Value of T1 component.</param>
+    /// <returns>New <see cref="Entity"/>.</returns>
     public Entity Spawn<T1>(T1 component1) where T1 : IComponent {
-        Archetype archetype = GetArchetype(new Type[] { typeof(T1) }, () => new (Type type, int size)[] {
-            (typeof(T1), Unsafe.SizeOf<T1>())
+        Archetype archetype = GetArchetype(new (Type, int)[] {
+            (typeof(T1), IAffectiveComponent.GetAffectiveHashCode(component1))
+        }, () => new (Type type, int size, int affectiveHashCode)[] {
+            (typeof(T1), Unsafe.SizeOf<T1>(), IAffectiveComponent.GetAffectiveHashCode(component1))
         });
 
         (ArchetypeChunk chunk, nint index) = archetype.TakeRecord();
@@ -93,12 +129,16 @@ public class EntityWorld {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Archetype GetArchetype(IEnumerable<Type> componentTypes, Func<(Type type, int size)[]> valueFactory) {
-        return archetypes.GetOrAdd(
-            new EquatableReadOnlyList<Type>(
-                componentTypes.OrderBy(x => x.GetHashCode()).ToArray()
-            ), _ => new Archetype(this, valueFactory())
-        );
+    internal Archetype GetArchetype(
+        IEnumerable<(Type type, int affectiveHashCode)> componentTypes,
+        Func<(Type type, int size, int affectiveHashCode)[]> valueFactory
+    ) {
+        Archetype archetype = archetypes.GetOrAdd(new EquatableReadOnlyList<(Type, int)>(
+            componentTypes.OrderBy(x => x.type.GetHashCode()
+        ).ToArray()), _ => new Archetype(this, valueFactory()));
+        archetype.Initialize();
+
+        return archetype;
     }
 
     internal void EnqueueToDespawnQueue(Entity entity) {
@@ -119,6 +159,11 @@ public class EntityWorld {
 
         despawnQueue.Enqueue(entity);
         despawnQueueResetEvent!.Set();
+    }
+
+    internal void RegisterArchetypesToSystem(EntitySystem system) {
+        foreach (Archetype archetype in archetypes.Values)
+            system.RegisterArchetype(archetype);
     }
 
     private void AssertSystemInterfaces<T>() where T : EntitySystem {
@@ -163,6 +208,8 @@ public class EntityWorld {
                 chunk.Archetype.ReleaseRecord(chunk, index);
             }
         }
+
+        resetEvent.Dispose();
     }
 
 }
