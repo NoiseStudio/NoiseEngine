@@ -26,8 +26,19 @@ public abstract class NeslAssembly {
 
     private NeslType? GetType(ReadOnlySpan<char> fullName) {
         int index = fullName.IndexOf("::");
-        if (index == -1)
-            return GetTypeLocal(fullName);
+        if (index == -1) {
+            NeslType? type = GetTypeLocal(fullName);
+            if (type is not null)
+                return type;
+
+            foreach (NeslAssembly dependency in Dependencies) {
+                type = dependency.GetTypeLocal(fullName);
+                if (type is not null)
+                    return type;
+            }
+
+            return null;
+        }
 
         ReadOnlySpan<char> assemblyName = fullName[..index];
         ReadOnlySpan<char> fullNameWithoutAssembly = fullName[(index + 2)..];

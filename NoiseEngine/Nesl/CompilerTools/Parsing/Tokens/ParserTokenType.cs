@@ -6,8 +6,20 @@ namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 internal enum ParserTokenType {
     [ParserToken(typeof(ModifiersToken))]
     Modifiers,
-    /*TypeIdentifier,
+    [ParserToken(typeof(TypeIdentifierToken))]
+    TypeIdentifier,
+    [ParserToken(typeof(TypeKindToken))]
+    TypeKind,
+    [ParserToken(typeof(NameToken))]
     Name,
+    [ParserToken(typeof(UsingToken))]
+    Using,
+    [ParserToken(typeof(RoundBracketsToken))]
     RoundBrackets,
-    CurlyBrackets*/
+    [ParserToken(typeof(CurlyBracketsToken))]
+    CurlyBrackets,
+    [ParserToken(typeof(SemicolonToken))]
+    Semicolon,
+    [ParserToken(typeof(CommaToken))]
+    Comma,
 }

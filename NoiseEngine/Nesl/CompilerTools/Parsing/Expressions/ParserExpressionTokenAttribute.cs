@@ -6,11 +6,9 @@ namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 internal class ParserExpressionTokenTypeAttribute : Attribute {
 
     public ParserTokenType TokenType { get; }
-    public string Value { get; }
 
-    public ParserExpressionTokenTypeAttribute(ParserTokenType tokenType, string value) {
+    public ParserExpressionTokenTypeAttribute(ParserTokenType tokenType) {
         TokenType = tokenType;
-        Value = value;
     }
 
 }

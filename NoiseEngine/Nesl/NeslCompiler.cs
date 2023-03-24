@@ -64,23 +64,27 @@ public static class NeslCompiler {
         string assemblyName, IEnumerable<NeslFile> files, [NotNullWhen(true)] out NeslAssembly? assembly,
         out IEnumerable<CompilationError> errors
     ) {
-        assembly = NeslAssemblyBuilder.DefineAssembly(assemblyName);
+        NeslAssemblyBuilder assemblyBuilder = NeslAssemblyBuilder.DefineAssembly(assemblyName);
 
         NeslFile[] filesArray = files.ToArray();
         Parser[] parsers = new Parser[filesArray.Length];
-        int fileIndex = -1;
 
+        int fileIndex = -1;
         Parallel.For(0, Math.Min(Environment.ProcessorCount, filesArray.Length), _ => {
             Lexer lexer = new Lexer();
             int i;
             while ((i = Interlocked.Increment(ref fileIndex)) < filesArray.Length) {
                 NeslFile file = filesArray[i];
                 TokenBuffer buffer = new TokenBuffer(lexer.Lex(file.Path, file.Code));
-                Parser parser = new Parser(ParserStep.TopLevel, buffer);
+                Parser parser = new Parser(null, assemblyBuilder, ParserStep.TopLevel, buffer);
                 parser.Parse();
                 parsers[i] = parser;
             }
         });
+
+        Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeTypes());
+        Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeFields());
+        Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeMethods());
 
         errors = parsers.SelectMany(x => x.Errors).OrderBy(x => x.Path).ThenBy(x => x.Line)
             .ThenBy(x => x.Column).ToArray();
@@ -90,6 +94,7 @@ public static class NeslCompiler {
             return false;
         }
 
+        assembly = assemblyBuilder;
         return true;
     }
 

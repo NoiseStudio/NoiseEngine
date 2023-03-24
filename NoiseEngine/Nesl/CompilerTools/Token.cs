@@ -7,4 +7,8 @@ internal readonly record struct Token(
     TokenType Type,
     int Length,
     string? Value
-);
+) {
+
+    public CodePointer Pointer => new CodePointer(Path, Line, Column);
+
+}

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 namespace NoiseEngine.Nesl;
 
 internal enum NeslModifier {
+    None,
     Static,
     Uniform
 }

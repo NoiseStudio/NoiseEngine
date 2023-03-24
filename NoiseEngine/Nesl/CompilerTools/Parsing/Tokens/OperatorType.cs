@@ -1,0 +1,31 @@
+﻿namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
+
+internal enum OperatorType {
+    None,
+    Addition,
+    Increment,
+    Subtraction,
+    Decrement,
+    Multiplication,
+    Exponentation,
+    Division,
+    Remainder,
+    Equality,
+    Inequality,
+    Greater,
+    GreaterOrEqual,
+    Less,
+    LessOrEqual,
+    Negation,
+    LogicalAnd,
+    LogicalOr,
+    LogicalXor,
+    ConditionalAnd,
+    ConditionalOr,
+    NullCoalescing,
+    Ternary,
+    TernaryElse,
+    Bitwise,
+    LeftShift,
+    RightShift
+}

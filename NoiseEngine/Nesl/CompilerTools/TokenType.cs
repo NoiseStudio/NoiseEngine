@@ -32,6 +32,8 @@ internal enum TokenType {
     ConditionalOrAssigment,
     NullCoalescing,
     NullCoalescingAssigment,
+    Bitwise,
+    BitwiseAssigment,
     Dot,
     Comma,
     Colon,
