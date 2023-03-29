@@ -22,12 +22,25 @@ internal class Parser {
     private List<Parser>? types;
 
     private NeslTypeBuilder? currentType;
+    private NeslMethodBuilder? currentMethod;
 
     public Parser? Parent { get; }
     public NeslAssemblyBuilder Assembly { get; }
     public ParserStep Step { get; }
     public TokenBuffer Buffer { get; }
     public IReadOnlyList<CompilationError> Errors => errors;
+    public CompilationErrorMode ErrorMode { get; } = new CompilationErrorMode();
+
+    public NeslMethodBuilder CurrentMethod {
+        get {
+            if (currentMethod is null)
+                currentMethod = CurrentType.DefineMethod(Guid.NewGuid().ToString());
+            return currentMethod;
+        }
+        init {
+            currentMethod = value;
+        }
+    }
 
     private NeslTypeBuilder CurrentType {
         get {
@@ -134,7 +147,7 @@ internal class Parser {
                     errors.Add(new CompilationError(token, CompilationErrorType.UnexpectedExpression));
                 } else {
                     Buffer.Index = mostCompabilityIndex;
-                    (MethodInfo method, _) = mostCompabilityExpression.ExpectedTokens[mostCompabilityCount + 1];
+                    (MethodInfo method, _) = mostCompabilityExpression.ExpectedTokens[mostCompabilityCount];
 
                     if ((bool)(
                         method.Invoke(null, parseParameters) ?? throw new NullReferenceException()
@@ -257,7 +270,17 @@ internal class Parser {
                     Throw(new CompilationError(
                         name.Pointer, CompilationErrorType.MethodAlreadyExists, name.Name
                     ));
+                    return;
                 }
+
+                Parser methodParser = new Parser(this, Assembly, ParserStep.Method, codeBlock) {
+                    CurrentType = CurrentType,
+                    CurrentMethod = method!
+                };
+                methodParser.Parse();
+
+                foreach (CompilationError error in methodParser.Errors)
+                    errors.Add(error);
             }
 
             definedMethods = null;

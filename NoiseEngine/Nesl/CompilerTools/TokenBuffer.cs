@@ -25,7 +25,7 @@ internal class TokenBuffer {
     }
 
     public bool TryReadNext(TokenType type, out Token token) {
-        if (TryReadNext(type, out token))
+        if (TryReadNext(out token))
             return token.Type == type;
         return false;
     }

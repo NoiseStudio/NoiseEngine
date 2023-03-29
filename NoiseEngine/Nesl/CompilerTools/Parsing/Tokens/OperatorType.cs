@@ -27,5 +27,6 @@ internal enum OperatorType {
     TernaryElse,
     Bitwise,
     LeftShift,
-    RightShift
+    RightShift,
+    ExplicitCast
 }

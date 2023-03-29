@@ -14,6 +14,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedUsing,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedReturn,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedSemicolon,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedComma,
@@ -39,6 +41,10 @@ public enum CompilationErrorType {
     ExpectedValue,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedTypeKind,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedExplicitCastNotValue,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedExplicitCastNotExpression,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]

@@ -14,6 +14,10 @@ internal enum ParserTokenType {
     Name,
     [ParserToken(typeof(UsingToken))]
     Using,
+    [ParserToken(typeof(ReturnToken))]
+    Return,
+    [ParserToken(typeof(ValueToken))]
+    Value,
     [ParserToken(typeof(RoundBracketsToken))]
     RoundBrackets,
     [ParserToken(typeof(CurlyBracketsToken))]
