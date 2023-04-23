@@ -27,19 +27,27 @@ internal class Archetype {
         World = world;
         ComponentTypes = componentTypes;
 
-        Type[] finalComponentTypes = new Type[componentTypes.Length + 1];
-        finalComponentTypes[0] = typeof(EntityInternalComponent);
         Offsets.Add(typeof(EntityInternalComponent), 0);
         nint offset = Unsafe.SizeOf<EntityInternalComponent>();
-
-        int i = 1;
         foreach ((Type type, int size, _) in componentTypes) {
-            finalComponentTypes[i++] = type;
             Offsets.Add(type, offset);
             offset += size;
         }
 
-        columnType = ArchetypeColumnCreator.CreateColumnType(finalComponentTypes);
+        Type? columnType = null;
+        for (int i = componentTypes.Length - 1; i >= 0; i--) {
+            if (columnType is null)
+                columnType = componentTypes[i].type;
+            else
+                columnType = typeof(ArchetypeColumn<,>).MakeGenericType(componentTypes[i].type, columnType);
+        }
+
+        if (columnType is null)
+            columnType = typeof(EntityInternalComponent);
+        else
+            columnType = typeof(ArchetypeColumn<,>).MakeGenericType(typeof(EntityInternalComponent), columnType);
+
+        this.columnType = columnType;
         RecordSize = offset;
     }
 
@@ -70,7 +78,7 @@ internal class Archetype {
                     return (chunk, index);
             }
 
-            ArchetypeChunk c = new ArchetypeChunk(this, columnType, RecordSize);
+            ArchetypeChunk c = new ArchetypeChunk(this, columnType);
             if (!c.TryTakeRecord(out nint i))
                 throw new InvalidOperationException();
 

@@ -72,7 +72,7 @@ internal class EntityScheduleWorker : IDisposable {
                     continue;
 
                 system.OrderWork();
-                packages.Enqueue(new SchedulePackage(false, system, chunk, 0, chunk.Count + 1));
+                packages.Enqueue(new SchedulePackage(false, system, chunk, 0, chunk.Count));
             }
         }
     }
@@ -165,9 +165,9 @@ internal class EntityScheduleWorker : IDisposable {
                         locker.ExitReadLock();
                     executionData.System.ReleaseWork();
 
-                    if (systemCommands.Commands.Count > 0) {
-                        new SystemCommandsExecutor(systemCommands.Commands).Invoke();
-                        systemCommands.Commands.Clear();
+                    if (systemCommands.Inner.Commands.Count > 0) {
+                        new SystemCommandsExecutor(systemCommands.Inner.Commands).Invoke();
+                        systemCommands.Inner.Commands.Clear();
                     }
                 }
 

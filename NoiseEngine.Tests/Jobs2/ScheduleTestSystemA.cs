@@ -1,4 +1,6 @@
 ﻿using NoiseEngine.Jobs2;
+using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace NoiseEngine.Tests.Jobs2;

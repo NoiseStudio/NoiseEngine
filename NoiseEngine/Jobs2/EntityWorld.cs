@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs2.Commands;
-using NoiseEngine.Jobs2.Internal;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace NoiseEngine.Jobs2;
 
-public class EntityWorld {
+public class EntityWorld : IDisposable {
 
     private readonly ConcurrentDictionary<EquatableReadOnlyList<(Type, int)>, Archetype> archetypes =
         new ConcurrentDictionary<EquatableReadOnlyList<(Type, int)>, Archetype>();
@@ -34,51 +33,57 @@ public class EntityWorld {
         DefaultSchedule = Application.EntitySchedule2;
     }
 
-    public void AddSystem<T>(T system, double? cycleTime = null) where T : EntitySystem,
-#pragma warning disable CS0618
-        NoiseEngineInternal_DoNotUse.INormalEntitySystem
-#pragma warning restore CS0618
-    {
-        if (Application.IsDebugMode)
-            AssertSystemInterfaces<T>();
+    public void Dispose() {
+        //throw new NotImplementedException();
+    }
 
+    public void AddSystem(EntitySystem system, double? cycleTime = null) {
         system.InternalInitialize(this);
         if (cycleTime.HasValue)
             system.CycleTime = cycleTime.Value;
-        if (system.Schedule is null)
-            system.Schedule = DefaultSchedule;
 
         systems.Add(system);
         RegisterArchetypesToSystem(system);
     }
 
-    public void AddAffectiveSystem<T>() where T : EntitySystem,
-#pragma warning disable CS0618
-        NoiseEngineInternal_DoNotUse.IAffectiveEntitySystem
-#pragma warning restore CS0618
-    {
-        if (Application.IsDebugMode)
-            AssertSystemInterfaces<T>();
+    public void AddAffectiveSystem(AffectiveSystem system) {
 
-        affectiveSystems.GetOrAdd(typeof(T), type => {
-            return type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                .Where(x => x.Name == "Construct")
-                .Single(x => x.GetParameters().Select(x => x.ParameterType).SequenceEqual(T.AffectiveComponents));
-        });
     }
 
+    /// <summary>
+    /// Executes <paramref name="commands"/> in current thread.
+    /// </summary>
+    /// <param name="commands"><see cref="SystemCommands"/> to execute.</param>
     public void ExecuteCommands(SystemCommands commands) {
-        if (Application.IsDebugMode) {
+        if (ApplicationJitConsts.IsDebugMode) {
             EntitySchedule.AssertNotScheduleLockThread(
                 "Use built in `SystemCommands` parameter in `OnUpdateEntity` instead."
             );
         }
 
-        new SystemCommandsExecutor(commands.Commands).Invoke();
+        SystemCommandsInner inner = commands.Inner;
+        FastList<SystemCommand> c = inner.Commands;
+        inner.Consume();
+
+        if (c.Count == 0)
+            return;
+
+        new SystemCommandsExecutor(c).Invoke();
     }
 
+    /// <summary>
+    /// Asynchronous executes <paramref name="commands"/> and returns <see cref="Task"/> that will be completed when all
+    /// commands will be executed.
+    /// </summary>
+    /// <param name="commands"><see cref="SystemCommands"/> to execute.</param>
+    /// <returns><see cref="Task"/> that will be completed when all commands will be executed.</returns>
     public Task ExecuteCommandsAsync(SystemCommands commands) {
-        FastList<SystemCommand> c = commands.Commands;
+        SystemCommandsInner inner = commands.Inner;
+        FastList<SystemCommand> c = inner.Commands;
+        inner.Consume();
+
+        if (c.Count == 0)
+            return Task.CompletedTask;
         return Task.Run(() => new SystemCommandsExecutor(c).Invoke());
     }
 
@@ -148,8 +153,8 @@ public class EntityWorld {
         if (despawnQueue is null) {
             lock (despawnQueueLocker) {
                 if (despawnQueue is null) {
-                    despawnQueue = new ConcurrentQueue<Entity>();
                     despawnQueueResetEvent = new AutoResetEvent(false);
+                    despawnQueue = new ConcurrentQueue<Entity>();
                     despawnQueueThreadWork = true;
 
                     new Thread(DespawnQueueThreadWorker) {
@@ -169,17 +174,8 @@ public class EntityWorld {
             system.RegisterArchetype(archetype);
     }
 
-    private void AssertSystemInterfaces<T>() where T : EntitySystem {
-#pragma warning disable CS0618
-        if (typeof(T).GetInterfaces().Count(x =>
-            x == typeof(NoiseEngineInternal_DoNotUse.INormalEntitySystem) ||
-            x == typeof(NoiseEngineInternal_DoNotUse.IAffectiveEntitySystem)
-        ) > 1) {
-            throw new InvalidOperationException($"{nameof(EntitySystem)} cannot implements {
-                typeof(NoiseEngineInternal_DoNotUse.INormalEntitySystem).FullName
-            } and {typeof(NoiseEngineInternal_DoNotUse.IAffectiveEntitySystem).FullName} simultaneously.");
-        }
-#pragma warning restore CS0618
+    internal void RemoveSystem(EntitySystem system) {
+        systems.Remove(system);
     }
 
     private void DespawnQueueThreadWorker() {
@@ -196,7 +192,6 @@ public class EntityWorld {
                 ArchetypeChunk chunk = entity.chunk!;
                 entity.chunk = null;
                 nint index = entity.index;
-                entity.index = 0;
 
                 unsafe {
                     fixed (byte* dp = chunk.StorageData) {

@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Jobs2.Commands;
 
-internal class EntityCommandsInner {
+internal sealed class EntityCommandsInner {
 
     public ConditionalEntityCommandsInner[] Conditionals = Array.Empty<ConditionalEntityCommandsInner>();
     public int ConditionalsCount;

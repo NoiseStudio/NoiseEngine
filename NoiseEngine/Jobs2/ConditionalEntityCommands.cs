@@ -10,7 +10,7 @@ public ref struct ConditionalEntityCommands {
 
     internal ref ConditionalEntityCommandsInner Inner => ref inner;
     internal readonly EntityCommands EntityCommands { get; }
-    internal FastList<SystemCommand> Commands => EntityCommands.Commands;
+    internal SystemCommandsInner SystemCommandsInner => EntityCommands.SystemCommandsInner;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     internal ConditionalEntityCommands(EntityCommands entityCommands, ref ConditionalEntityCommandsInner inner) {
@@ -23,9 +23,9 @@ public ref struct ConditionalEntityCommands {
         return new PostConditionalEntityCommands(this);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    /*[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public ConditionalEntityCommands Contains<T>() where T : IComponent {
-        Commands.Add(new SystemCommand(SystemCommandType.ConditionalEntityContains, null));
+        SystemCommandsInner.AddCommand(new SystemCommand(SystemCommandType.ConditionalEntityContains, null));
         return this;
     }
 
@@ -34,6 +34,6 @@ public ref struct ConditionalEntityCommands {
         Commands.Add(new SystemCommand(SystemCommandType.ConditionalEntityOr, null));
         Inner.UsedOr = true;
         return this;
-    }
+    }*/
 
 }

@@ -13,6 +13,25 @@ public class EntityCommandsTest : ApplicationTestEnvironment {
     }
 
     [Fact]
+    public void MultipleMutationTree() {
+        if (!Application.IsDebugMode)
+            return;
+
+        using Entity entityA = EntityWorld.Spawn();
+        using Entity entityB = EntityWorld.Spawn();
+
+        SystemCommands commands = new SystemCommands();
+        EntityCommands entityACommands = commands.GetEntity(entityA).Insert(MockComponentB.TestValueA);
+        commands.GetEntity(entityB).Insert(MockComponentC.TestValueA);
+
+        try {
+            entityACommands.Despawn();
+            Assert.True(false);
+        } catch (InvalidOperationException) {
+        }
+    }
+
+    [Fact]
     public void Despawn() {
         Entity entityA = EntityWorld.Spawn(MockComponentA.TestValueA);
         Entity entityB = EntityWorld.Spawn(MockComponentA.TestValueA);
@@ -28,7 +47,7 @@ public class EntityCommandsTest : ApplicationTestEnvironment {
         EntityWorld.ExecuteCommands(commands);
 
         Assert.False(entityA.Contains<MockComponentA>());
-        Assert.False(entityA.Contains<MockComponentA>());
+        Assert.False(entityB.Contains<MockComponentA>());
         Assert.True(entityA.IsDespawned);
         Assert.True(entityB.IsDespawned);
     }

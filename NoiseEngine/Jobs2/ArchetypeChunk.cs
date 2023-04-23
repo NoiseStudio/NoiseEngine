@@ -12,27 +12,32 @@ internal class ArchetypeChunk {
     private int count = -1;
 
     public Archetype Archetype { get; }
-    public int Count => count;
+    public int Capacity { get; }
+    public int Count => Math.Min(count, CapacityM);
 
     internal nint RecordSize { get; }
     internal byte[] StorageData { get; }
     internal Dictionary<Type, nint> Offsets { get; }
 
-    public ArchetypeChunk(Archetype archetype, Type columnType, nint recordSize) {
+    private int CapacityM { get; }
+
+    public ArchetypeChunk(Archetype archetype, Type columnType) {
         Archetype = archetype;
         Offsets = archetype.Offsets;
-        RecordSize = recordSize;
+        RecordSize = archetype.RecordSize;
 
-        nint length = 16000 / recordSize;
-        storage = Array.CreateInstance(columnType, length == 0 ? 1 : length);
+        int capacity = (int)(16000 / RecordSize);
+        Capacity = capacity == 0 ? 1 : capacity;
+        CapacityM = Capacity - 1;
+        storage = Array.CreateInstance(columnType, Capacity);
 
         StorageData = Unsafe.As<byte[]>(storage);
     }
 
     public bool TryTakeRecord(out nint index) {
-        if (count < storage.Length) {
+        if (count < CapacityM) {
             int i = Interlocked.Increment(ref count);
-            if (i < storage.Length) {
+            if (i < CapacityM) {
                 index = i * RecordSize;
                 return true;
             }

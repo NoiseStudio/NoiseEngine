@@ -284,7 +284,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         builder.AppendLine();
 
         builder.AppendIndentation(3)
-            .AppendLine("for (nint i = data.StartIndex; i < data.EndIndex; i += data.RecordSize) {")
+            .AppendLine("for (nint i = data.StartIndex; i <= data.EndIndex; i += data.RecordSize) {")
             .AppendIndentation(4).AppendLine("entity = data.GetInternalComponent(i);")
             .AppendIndentation(4).AppendLine("if (entity is null)")
             .AppendIndentation(5).AppendLine("continue;").AppendLine();

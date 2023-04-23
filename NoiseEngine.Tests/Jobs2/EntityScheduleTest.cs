@@ -15,7 +15,7 @@ public class EntityScheduleTest : ApplicationTestEnvironment {
         for (int i = 0; i < Entities; i++)
             EntityWorld.Spawn();
 
-        ScheduleTestSystemA system = new ScheduleTestSystemA();
+        using ScheduleTestSystemA system = new ScheduleTestSystemA();
         EntityWorld.AddSystem(system, 100);
 
         while (system.LateUpdateCount < 2)

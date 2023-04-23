@@ -1,27 +1,22 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Jobs2.Commands;
-using System;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Jobs2;
 
 public ref struct SystemCommands {
 
-    private FastList<SystemCommand>? commands;
-
-    internal FastList<SystemCommand> Commands => commands ?? throw new InvalidOperationException(
-        $"This {nameof(SystemCommands)} is already used."
-    );
+    internal SystemCommandsInner Inner { get; }
 
     public SystemCommands() : this(4) {
     }
 
     public SystemCommands(int capacity) {
-        commands = new FastList<SystemCommand>(capacity);
+        Inner = new SystemCommandsInner(new FastList<SystemCommand>(capacity));
     }
 
     internal SystemCommands(FastList<SystemCommand> commands) {
-        this.commands = commands;
+        Inner = new SystemCommandsInner(commands);
     }
 
     /// <summary>
@@ -32,7 +27,7 @@ public ref struct SystemCommands {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public EntityCommands GetEntity(Entity entity) {
         EntityCommandsInner inner = new EntityCommandsInner(entity);
-        Commands.Add(new SystemCommand(SystemCommandType.GetEntity, inner));
+        Inner.SetMutationTreeObjectAndAddCommand(inner, new SystemCommand(SystemCommandType.GetEntity, inner));
         return new EntityCommands(this, inner);
     }
 

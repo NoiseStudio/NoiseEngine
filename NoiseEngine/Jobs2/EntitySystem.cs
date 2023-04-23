@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace NoiseEngine.Jobs2;
 
-public abstract class EntitySystem {
+public abstract class EntitySystem : IDisposable {
 
     #region NoiseEngineInternal
 
@@ -50,7 +50,7 @@ public abstract class EntitySystem {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe static ref T NullRef<T>() {
-            return ref Unsafe.AsRef<T>((void*)0);
+            return ref Unsafe.AsRef<T>((void*)null);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -103,22 +103,36 @@ public abstract class EntitySystem {
     private EntityWorld? world;
     private uint ongoingWork;
     private AtomicBool isWorking;
+    private AtomicBool isDisposed;
     private EntitySchedule? schedule;
     private double? cycleTime;
+    private bool isDoneInitialize;
 
     public bool IsInitialized => world is not null;
     public bool IsWorking => isWorking;
-    public EntityWorld World => world ?? throw new InvalidOperationException("This system is not initialized.");
+    public bool IsDisposed => isDisposed;
+
+    public EntityWorld World {
+        get {
+            if (world is not null)
+                return world;
+
+            if (IsDisposed)
+                throw new ObjectDisposedException(GetType().FullName);
+            else
+                throw new InvalidOperationException("This system is not initialized.");
+        }
+    }
 
     public EntitySchedule? Schedule {
         get => schedule;
         set {
             lock (scheduleLocker) {
-                if (schedule is not null && CycleTime.HasValue)
+                if (schedule is not null && CycleTime.HasValue && isDoneInitialize)
                     schedule.Worker.UnregisterSystem(this);
 
                 schedule = value;
-                if (value is not null && CycleTime.HasValue)
+                if (value is not null && CycleTime.HasValue && isDoneInitialize)
                     value.Worker.RegisterSystem(this);
             }
         }
@@ -134,9 +148,9 @@ public abstract class EntitySystem {
                 }
 
                 if (value.HasValue) {
-                    if (!cycleTime.HasValue)
+                    if (!cycleTime.HasValue && isDoneInitialize)
                         Schedule.Worker.RegisterSystem(this);
-                } else if (cycleTime.HasValue) {
+                } else if (cycleTime.HasValue && isDoneInitialize) {
                     Schedule.Worker.UnregisterSystem(this);
                 }
 
@@ -155,17 +169,33 @@ public abstract class EntitySystem {
         .Select(x => x.Type);
 #pragma warning restore CS0618
 
+    /// <summary>
+    /// Disposes this <see cref="EntitySystem"/>.
+    /// </summary>
+    public void Dispose() {
+        if (isDisposed.Exchange(true))
+            return;
+
+        Schedule = null;
+        OnTerminate();
+
+        World.RemoveSystem(this);
+        world = null;
+    }
+
     internal void InternalInitialize(EntityWorld world) {
         if (Interlocked.CompareExchange(ref this.world, world, null) is not null)
             throw new InvalidOperationException("System is already initialized.");
-
-        if (Schedule is null)
-            Schedule = world.DefaultSchedule;
 
 #pragma warning disable CS0618
         NoiseEngineInternal_DoNotUse_Initialize();
 #pragma warning restore CS0618
         OnInitialize();
+
+        lock (scheduleLocker) {
+            isDoneInitialize = true;
+            Schedule ??= world.DefaultSchedule;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

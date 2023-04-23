@@ -8,7 +8,7 @@ public ref struct EntityCommands {
 
     internal readonly SystemCommands SystemCommands { get; }
     internal EntityCommandsInner Inner { get; }
-    internal FastList<SystemCommand> Commands => SystemCommands.Commands;
+    internal SystemCommandsInner SystemCommandsInner => SystemCommands.Inner;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     internal EntityCommands(SystemCommands systemCommands, EntityCommandsInner inner) {
@@ -18,13 +18,13 @@ public ref struct EntityCommands {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public EntityCommands Despawn() {
-        Commands.Add(new SystemCommand(SystemCommandType.EntityDespawn, null));
+        SystemCommandsInner.AddCommand(Inner, new SystemCommand(SystemCommandType.EntityDespawn, null));
         return this;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public EntityCommands Insert<T>(T component) where T : IComponent {
-        Commands.Add(new SystemCommand(
+        SystemCommandsInner.AddCommand(Inner, new SystemCommand(
             SystemCommandType.EntityInsert,
             ((IComponent)component, Unsafe.SizeOf<T>(), IAffectiveComponent.GetAffectiveHashCode(component))
         ));
@@ -33,7 +33,7 @@ public ref struct EntityCommands {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public EntityCommands Remove<T>() where T : IComponent {
-        Commands.Add(new SystemCommand(SystemCommandType.EntityRemove, typeof(T)));
+        SystemCommandsInner.AddCommand(Inner, new SystemCommand(SystemCommandType.EntityRemove, typeof(T)));
         return this;
     }
 
