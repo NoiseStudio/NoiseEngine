@@ -27,7 +27,7 @@ namespace NoiseEngine.InternalGenerator.Jobs {
                 builder.AppendLine("{");
 
                 builder.AppendLine();
-                builder.AppendIndentation().AppendLine("private protected override Type[] AffectiveComponents " +
+                builder.AppendIndentation().AppendLine("private protected override Type[] AffectiveComponentsInternal " +
                     "{ get; } = new Type[] {"
                 );
                 for (int j = 1; j <= i; j++)

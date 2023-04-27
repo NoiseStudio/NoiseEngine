@@ -47,6 +47,7 @@ public class ApplicationFixture : IDisposable {
         window?.Dispose();
         GraphicsDevices = Array.Empty<GraphicsDevice>();
         VulkanDevices = Array.Empty<VulkanDevice>();
+        EntityWorld.Dispose();
 
         Application.Exit();
     }

@@ -20,9 +20,7 @@ public class ArchetypeTest : ApplicationTestEnvironment {
         Assert.NotNull(entity.chunk);
         Archetype archetype = entity.chunk!.Archetype;
 
-        Assert.True(archetype.TryReadAnyRecord(new Type[] {
-            typeof(MockComponentA), typeof(MockComponentC)
-        }, out Dictionary<Type, object>? components));
+        Assert.True(archetype.TryReadAnyRecord(out Dictionary<Type, object>? components));
         Assert.Equal(MockComponentA.TestValueA, components![typeof(MockComponentA)]);
         Assert.Equal(MockComponentC.TestValueA, components[typeof(MockComponentC)]);
 
@@ -31,9 +29,7 @@ public class ArchetypeTest : ApplicationTestEnvironment {
         EntityWorld.ExecuteCommands(commands);
         Assert.Null(entity.chunk);
 
-        Assert.False(archetype.TryReadAnyRecord(new Type[] {
-            typeof(MockComponentB), typeof(MockComponentA)
-        }, out _));
+        Assert.False(archetype.TryReadAnyRecord(out _));
     }
 
 }

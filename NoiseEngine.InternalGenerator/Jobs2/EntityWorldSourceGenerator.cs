@@ -91,6 +91,7 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
                 builder.AppendLine(@"            }
         }
 
+        archetype.InitializeRecord();
         return entity;
     }
 ");

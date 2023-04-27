@@ -1,10 +1,11 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs2.Commands;
+using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Reflection;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace NoiseEngine.Jobs2;
 
 public partial class EntityWorld : IDisposable {
 
-    private readonly ConcurrentDictionary<int, Archetype> archetypes = new ConcurrentDictionary<int, Archetype>();
+    private readonly Dictionary<int, Archetype> archetypes = new Dictionary<int, Archetype>();
     private readonly ConcurrentList<AffectiveSystem> affectiveSystems = new ConcurrentList<AffectiveSystem>();
     private readonly ConcurrentList<EntitySystem> systems = new ConcurrentList<EntitySystem>();
     private readonly object despawnQueueLocker = new object();
@@ -21,9 +22,11 @@ public partial class EntityWorld : IDisposable {
     private ConcurrentQueue<Entity>? despawnQueue;
     private AutoResetEvent? despawnQueueResetEvent;
     private bool despawnQueueThreadWork;
+    private AtomicBool isDisposed;
 
     public EntitySchedule? DefaultSchedule { get; set; }
 
+    public bool IsDisposed => isDisposed;
     public IEnumerable<AffectiveSystem> AffectiveSystems => affectiveSystems;
     public IEnumerable<EntitySystem> Systems => systems;
 
@@ -31,12 +34,29 @@ public partial class EntityWorld : IDisposable {
         DefaultSchedule = Application.EntitySchedule2;
     }
 
+    /// <summary>
+    /// Disposes this <see cref="EntityWorld"/> and it's <see cref="Entity"/>s, <see cref="EntitySystem"/>s and
+    /// <see cref="AffectiveSystem"/>s.
+    /// </summary>
     public void Dispose() {
-        //throw new NotImplementedException();
+        if (isDisposed.Exchange(true))
+            return;
+
+        Parallel.ForEach(
+            affectiveSystems.Cast<IDisposable>().Concat(systems.Cast<IDisposable>()), (x, _) => x.Dispose()
+        );
     }
 
+    /// <summary>
+    /// Adds and initializes new <paramref name="system"/> to this <see cref="EntityWorld"/>.
+    /// </summary>
+    /// <param name="system">New, uninitialized <see cref="EntitySystem"/>.</param>
+    /// <param name="cycleTime">
+    /// Duration in milliseconds of the system execution cycle by <see cref="EntitySchedule"/>.
+    /// When <see langword="null"/>, the <see cref="EntitySchedule"/> is not used. Default <see langword="null"/>.
+    /// </param>
     public void AddSystem(EntitySystem system, double? cycleTime = null) {
-        system.InternalInitialize(this);
+        system.InternalInitialize(this, null);
         if (cycleTime.HasValue)
             system.CycleTime = cycleTime.Value;
 
@@ -44,11 +64,18 @@ public partial class EntityWorld : IDisposable {
         RegisterArchetypesToSystem(system);
     }
 
+    /// <summary>
+    /// Adds and initializes new <paramref name="system"/> to this <see cref="EntityWorld"/>.
+    /// </summary>
+    /// <param name="system">New, uninitialized <see cref="AffectiveSystem"/>.</param>
     public void AddAffectiveSystem(AffectiveSystem system) {
         system.InternalInitialize(this);
         affectiveSystems.Add(system);
 
-
+        lock (archetypes) {
+            foreach (Archetype archetype in archetypes.Values)
+                archetype.RegisterAffectiveSystem(system);
+        }
     }
 
     /// <summary>
@@ -105,16 +132,25 @@ public partial class EntityWorld : IDisposable {
             }
         }
 
+        archetype.InitializeRecord();
         return entity;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Archetype GetArchetype(int hashCode, Func<(Type type, int size, int affectiveHashCode)[]> valueFactory) {
-        return archetypes.GetOrAdd(hashCode, _ => {
-            Archetype archetype = new Archetype(this, valueFactory());
-            archetype.Initialize();
+        if (archetypes.TryGetValue(hashCode, out Archetype? archetype))
             return archetype;
-        });
+
+        lock (archetypes) {
+            if (archetypes.TryGetValue(hashCode, out archetype))
+                return archetype;
+
+            archetype = new Archetype(this, valueFactory());
+            archetypes.Add(hashCode, archetype);
+        }
+
+        archetype.Initialize();
+        return archetype;
     }
 
     internal void EnqueueToDespawnQueue(Entity entity) {

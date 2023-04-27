@@ -195,6 +195,7 @@ internal class SystemCommandsExecutor {
 
         held.Dispose();
         oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
+        newArchetype.InitializeRecord();
     }
 
     private void UpdateRecord(EntityLockerHeld held) {

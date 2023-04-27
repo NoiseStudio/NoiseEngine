@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -57,9 +53,7 @@ internal class ArchetypeChunk {
         return locker;
     }
 
-    public bool TryReadAnyRecord(
-        IEnumerable<Type> componentsToRead, [NotNullWhen(true)] out Dictionary<Type, object>? components
-    ) {
+    public bool TryReadAnyRecord([NotNullWhen(true)] out Dictionary<Type, object>? components) {
         if (count < 0) {
             components = null;
             return false;
@@ -75,8 +69,7 @@ internal class ArchetypeChunk {
                         continue;
 
                     components = new Dictionary<Type, object>();
-                    foreach (Type type in componentsToRead) {
-                        nint size = Archetype.ComponentTypes.First(x => x.type == type).size;
+                    foreach ((Type type, int size, _) in Archetype.ComponentTypes) {
                         object obj = Activator.CreateInstance(type, true) ?? throw new UnreachableException();
 
                         fixed (byte* vp = &Unsafe.As<object, byte>(ref obj)) {

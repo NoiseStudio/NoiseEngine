@@ -16,6 +16,7 @@ public abstract class AffectiveSystem : IDisposable {
     private AtomicBool isDisposed;
 
     public IEnumerable<EntitySystem> Systems => systems.Values;
+    public IReadOnlyList<Type> AffectiveComponents => AffectiveComponentsInternal;
     public bool IsDisposed => isDisposed;
     public EntityWorld World {
         get {
@@ -28,7 +29,7 @@ public abstract class AffectiveSystem : IDisposable {
         }
     }
 
-    private protected abstract Type[] AffectiveComponents { get; }
+    private protected abstract Type[] AffectiveComponentsInternal { get; }
 
     private protected abstract EntitySystem CreateFromComponents(Dictionary<Type, object> components);
 
@@ -40,7 +41,7 @@ public abstract class AffectiveSystem : IDisposable {
             return;
 
         foreach (EntitySystem system in systems.Values)
-            system.Dispose();
+            system.InternalDispose();
         systems.Clear();
     }
 
@@ -50,12 +51,12 @@ public abstract class AffectiveSystem : IDisposable {
             throw new InvalidOperationException("Affective system is already initialized.");
     }
 
-    internal void RegisterArchetypes(Archetype archetype) {
+    internal void RegisterArchetype(Archetype archetype, Dictionary<Type, object> components) {
         if (isDisposed || archetypes.Contains(archetype))
             return;
 
         int hashCode = unchecked((int)2166136261u);
-        foreach (Type type in AffectiveComponents) {
+        foreach (Type type in AffectiveComponentsInternal) {
             if (!archetype.Offsets.ContainsKey(type))
                 return;
 
@@ -69,10 +70,16 @@ public abstract class AffectiveSystem : IDisposable {
         if (!systems.TryGetValue(hashCode, out EntitySystem? system)) {
             lock (systems) {
                 if (!systems.TryGetValue(hashCode, out system)) {
+                    system = InternalCreateFromComponents(components);
+                    if (system is null)
+                        return;
 
+                    systems.Add(hashCode, system);
                 }
             }
         }
+
+        system.RegisterArchetype(archetype);
     }
 
     internal EntitySystem? InternalCreateFromComponents(Dictionary<Type, object> components) {
@@ -80,13 +87,13 @@ public abstract class AffectiveSystem : IDisposable {
             return null;
 
         EntitySystem newSystem = CreateFromComponents(components);
-        newSystem.InternalInitialize(World);
+        newSystem.InternalInitialize(World, this);
 
-        if (isDisposed) {
-            newSystem.Dispose();
-            return null;
-        }
-        return newSystem;
+        if (!isDisposed)
+            return newSystem;
+
+        newSystem.InternalDispose();
+        return null;
     }
 
     private void AssertIsNotDisposed() {

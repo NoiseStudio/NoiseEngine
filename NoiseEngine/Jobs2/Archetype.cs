@@ -5,8 +5,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace NoiseEngine.Jobs2;
 
@@ -17,8 +18,11 @@ internal class Archetype {
     private readonly Type columnType;
     private readonly ConcurrentQueue<(ArchetypeChunk, nint)> releasedRecords =
         new ConcurrentQueue<(ArchetypeChunk, nint)>();
+    private readonly ConcurrentQueue<AffectiveSystem> affectiveSystems =
+        new ConcurrentQueue<AffectiveSystem>();
 
     private AtomicBool isInitialized;
+    private uint queuedAffectiveSystems;
 
     public EntityWorld World { get; }
 
@@ -52,15 +56,24 @@ internal class Archetype {
 
         this.columnType = columnType;
         RecordSize = offset;
+
+        // Enqueue affective systems.
+        foreach (AffectiveSystem affectiveSystem in world.AffectiveSystems)
+            RegisterAffectiveSystem(affectiveSystem);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Initialize() {
         if (isInitialized.Exchange(true))
             return;
 
         foreach (EntitySystem system in World.Systems)
             system.RegisterArchetype(this);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void InitializeRecord() {
+        if (queuedAffectiveSystems > 0)
+            InitializeRecordWorker();
     }
 
     public (ArchetypeChunk chunk, nint index) TakeRecord() {
@@ -94,16 +107,31 @@ internal class Archetype {
         releasedRecords.Enqueue((chunk, index));
     }
 
-    public bool TryReadAnyRecord(
-        IEnumerable<Type> componentsToRead, [NotNullWhen(true)] out Dictionary<Type, object>? components
-    ) {
+    public bool TryReadAnyRecord([NotNullWhen(true)] out Dictionary<Type, object>? components) {
         foreach (ArchetypeChunk chunk in chunks) {
-            if (chunk.TryReadAnyRecord(componentsToRead, out components))
+            if (chunk.TryReadAnyRecord(out components))
                 return true;
         }
 
         components = null;
         return false;
+    }
+
+    public void RegisterAffectiveSystem(AffectiveSystem affectiveSystem) {
+        if (affectiveSystem.AffectiveComponents.All(Offsets.ContainsKey)) {
+            Interlocked.Increment(ref queuedAffectiveSystems);
+            affectiveSystems.Enqueue(affectiveSystem);
+        }
+    }
+
+    private void InitializeRecordWorker() {
+        if (!TryReadAnyRecord(out Dictionary<Type, object>? components))
+            return;
+
+        while (affectiveSystems.TryDequeue(out AffectiveSystem? affectiveSystem)) {
+            Interlocked.Decrement(ref queuedAffectiveSystems);
+            affectiveSystem.RegisterArchetype(this, components);
+        }
     }
 
 }

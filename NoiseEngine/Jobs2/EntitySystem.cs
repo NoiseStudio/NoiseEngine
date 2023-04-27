@@ -111,6 +111,7 @@ public abstract class EntitySystem : IDisposable {
     private double? cycleTime;
     private bool isDoneInitialize;
 
+    public AffectiveSystem? AffectiveSystem { get; private set; }
     public bool IsInitialized => world is not null;
     public bool IsWorking => isWorking;
     public bool IsDisposed => isDisposed;
@@ -193,21 +194,13 @@ public abstract class EntitySystem : IDisposable {
     /// Disposes this <see cref="EntitySystem"/>.
     /// </summary>
     public void Dispose() {
-        if (isDisposed.Exchange(true))
-            return;
-
-        Schedule = null;
-        lock (enabledLocker) {
-            Wait();
-            if (enabled) {
-                enabled = false;
-                OnStop();
-            }
-            OnDispose();
+        if (AffectiveSystem is not null) {
+            throw new InvalidOperationException(
+                $"The {ToString()} entity system is child of {AffectiveSystem} affective system and must only be " +
+                $"disposed by it."
+            );
         }
-
-        World.RemoveSystem(this);
-        world = null;
+        InternalDispose();
     }
 
     /// <summary>
@@ -268,10 +261,30 @@ public abstract class EntitySystem : IDisposable {
         workResetEvent.Wait();
     }
 
-    internal void InternalInitialize(EntityWorld world) {
+    internal void InternalDispose() {
+        if (isDisposed.Exchange(true))
+            return;
+
+        Schedule = null;
+        lock (enabledLocker) {
+            Wait();
+            if (enabled) {
+                enabled = false;
+                OnStop();
+            }
+            OnDispose();
+        }
+
+        World.RemoveSystem(this);
+        world = null;
+    }
+
+    internal void InternalInitialize(EntityWorld world, AffectiveSystem? affectiveSystem) {
         AssertIsNotDisposed();
         if (Interlocked.CompareExchange(ref this.world, world, null) is not null)
             throw new InvalidOperationException("System is already initialized.");
+
+        AffectiveSystem = affectiveSystem;
 
 #pragma warning disable CS0618
         NoiseEngineInternal_DoNotUse_Initialize();
