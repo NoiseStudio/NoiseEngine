@@ -60,6 +60,18 @@ internal class EntityScheduleWorker : IDisposable {
         systems.Remove(system);
     }
 
+    public void EnqueueCycleBegin(EntitySystem system) {
+        packages.Enqueue(new SchedulePackage(true, system, null, 0, 0));
+        SignalExecutorThreads();
+    }
+
+    public void EnqueuePackages(EntitySystem system) {
+        system.InternalUpdate();
+        EnqueuePackagesWorker(system);
+        SignalExecutorThreads();
+        system.ReleaseWork();
+    }
+
     private void SignalExecutorThreads() {
         Interlocked.Exchange(ref wakeUpExecutorThreadCount, ThreadCount);
         executorThreadsResetEvent.Set();
@@ -131,10 +143,7 @@ internal class EntityScheduleWorker : IDisposable {
             while (work) {
                 while (packages.TryDequeue(out executionData)) {
                     if (executionData.IsCycleBegin) {
-                        executionData.System.InternalUpdate();
-                        EnqueuePackagesWorker(executionData.System);
-                        SignalExecutorThreads();
-                        executionData.System.ReleaseWork();
+                        EnqueuePackages(executionData.System);
                         continue;
                     }
 

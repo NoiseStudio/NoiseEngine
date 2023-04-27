@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace NoiseEngine.Jobs2;
 
@@ -99,11 +100,13 @@ public abstract class EntitySystem : IDisposable {
     private readonly object workLocker = new object();
     private readonly ManualResetEventSlim workResetEvent = new ManualResetEventSlim(true);
     private readonly object scheduleLocker = new object();
+    private readonly object enabledLocker = new object();
 
     private EntityWorld? world;
     private uint ongoingWork;
     private AtomicBool isWorking;
     private AtomicBool isDisposed;
+    private bool enabled;
     private EntitySchedule? schedule;
     private double? cycleTime;
     private bool isDoneInitialize;
@@ -117,10 +120,8 @@ public abstract class EntitySystem : IDisposable {
             if (world is not null)
                 return world;
 
-            if (IsDisposed)
-                throw new ObjectDisposedException(GetType().FullName);
-            else
-                throw new InvalidOperationException("This system is not initialized.");
+            AssertIsNotDisposed();
+            throw new InvalidOperationException("This system is not initialized.");
         }
     }
 
@@ -159,6 +160,25 @@ public abstract class EntitySystem : IDisposable {
         }
     }
 
+    public bool Enabled {
+        get => enabled;
+        set {
+            lock (enabledLocker) {
+                if (enabled != value) {
+                    AssertIsNotDisposed();
+
+                    enabled = value;
+                    if (value) {
+                        OnStart();
+                    } else {
+                        Wait();
+                        OnStop();
+                    }
+                }
+            }
+        }
+    }
+
     protected double DeltaTime { get; private set; } = 1;
     protected float DeltaTimeF { get; private set; } = 1;
 
@@ -177,13 +197,79 @@ public abstract class EntitySystem : IDisposable {
             return;
 
         Schedule = null;
-        OnTerminate();
+        lock (enabledLocker) {
+            Wait();
+            if (enabled) {
+                enabled = false;
+                OnStop();
+            }
+            OnDispose();
+        }
 
         World.RemoveSystem(this);
         world = null;
     }
 
+    /// <summary>
+    /// Tries performs a cycle on this system with using schedule threads.
+    /// </summary>
+    /// <returns><see langword="true"/> when cycle was enqueued; otherwise <see langword="false"/>.</returns>
+    public bool TryExecute() {
+        EntitySchedule? schedule = Schedule;
+        if (schedule is null || !TryOrderWork())
+            return false;
+        schedule.Worker.EnqueueCycleBegin(this);
+        return true;
+    }
+
+    /// <summary>
+    /// Tries performs a cycle on this system with using schedule threads. And wait to end.
+    /// </summary>
+    /// <returns><see langword="true"/> when cycle was executed; otherwise <see langword="false"/>.</returns>
+    public bool TryExecuteAndWait() {
+        EntitySchedule? schedule = Schedule;
+        if (schedule is null || !TryOrderWork())
+            return false;
+        schedule.Worker.EnqueuePackages(this);
+        Wait();
+        return true;
+    }
+
+    /// <summary>
+    /// Performs a cycle on this system with using schedule threads.
+    /// </summary>
+    public void Execute() {
+        EntitySchedule? schedule = GetEntityScheduleOrThrowException();
+        AssertCouldExecute();
+
+        Task.Run(() => {
+            WaitWhenCanExecuteAndOrderWork();
+            schedule.Worker.EnqueuePackages(this);
+        });
+    }
+
+    /// <summary>
+    /// Performs a cycle on this system with using schedule threads. And wait to end.
+    /// </summary>
+    public void ExecuteAndWait() {
+        EntitySchedule? schedule = GetEntityScheduleOrThrowException();
+        AssertCouldExecute();
+
+        WaitWhenCanExecuteAndOrderWork();
+        schedule.Worker.EnqueuePackages(this);
+
+        Wait();
+    }
+
+    /// <summary>
+    /// Blocks the current thread until the cycle completes.
+    /// </summary>
+    public void Wait() {
+        workResetEvent.Wait();
+    }
+
     internal void InternalInitialize(EntityWorld world) {
+        AssertIsNotDisposed();
         if (Interlocked.CompareExchange(ref this.world, world, null) is not null)
             throw new InvalidOperationException("System is already initialized.");
 
@@ -191,6 +277,7 @@ public abstract class EntitySystem : IDisposable {
         NoiseEngineInternal_DoNotUse_Initialize();
 #pragma warning restore CS0618
         OnInitialize();
+        Enabled = true;
 
         lock (scheduleLocker) {
             isDoneInitialize = true;
@@ -261,7 +348,7 @@ public abstract class EntitySystem : IDisposable {
     }
 
     internal bool TryOrderWork() {
-        if (isWorking.Exchange(true))
+        if (!Enabled || IsDisposed || isWorking.Exchange(true))
             return false;
 
         OrderWork();
@@ -301,7 +388,31 @@ public abstract class EntitySystem : IDisposable {
     /// <summary>
     /// This method is executed when this system is destroying.
     /// </summary>
-    protected virtual void OnTerminate() {
+    protected virtual void OnDispose() {
+    }
+
+    private void WaitWhenCanExecuteAndOrderWork() {
+        while (!TryOrderWork()) {
+            AssertCouldExecute();
+            Wait();
+        }
+    }
+
+    private void AssertCouldExecute() {
+        AssertIsNotDisposed();
+        if (!Enabled)
+            throw new InvalidOperationException($"The {ToString()} entity system is disabled.");
+    }
+
+    private void AssertIsNotDisposed() {
+        if (isDisposed)
+            throw new ObjectDisposedException(ToString(), "Entity system is disposed.");
+    }
+
+    private EntitySchedule GetEntityScheduleOrThrowException() {
+        return Schedule ?? throw new InvalidOperationException(
+            $"{nameof(EntitySchedule)} assigned to this {ToString()} is null."
+        );
     }
 
 }

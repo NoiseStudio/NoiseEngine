@@ -56,9 +56,22 @@ namespace NoiseEngine.InternalGenerator.Jobs {
 
                 for (int j = 1; j <= i; j++)
                     builder.Append("T").Append(j).Append(" component").Append((char)(j + 64)).Append(", ");
+                builder.Remove(builder.Length - 2, 2).AppendLine(");").AppendLine();
+
+                // CreateFromEntity.
+                builder.AppendIndentation().AppendLine(@"private protected override EntitySystem CreateFromComponents(
+        System.Collections.Generic.Dictionary<Type, object> components
+    ) {"
+                );
+
+                builder.AppendIndentation(3).Append("return Create(");
+                for (int j = 1; j <= i; j++)
+                    builder.Append("(T").Append(j).Append(")components[typeof(T").Append(j).Append(")], ");
                 builder.Remove(builder.Length - 2, 2).AppendLine(");");
 
-                builder.AppendLine().AppendLine("}").AppendLine();
+                builder.AppendIndentation().AppendLine("}").AppendLine();
+
+                builder.AppendLine("}");
             }
 
             context.AddSource("AffectiveSystem.generated.cs", SourceText.From(builder.ToString(), Encoding.UTF8));

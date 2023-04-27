@@ -89,13 +89,21 @@ internal class SystemCommandsExecutor {
         }
 
         if (entityCommands.ConditionalsCount == 0) {
-            entity.TryGetWorld(out EntityWorld? world);
-            Archetype newArchetype = world!.GetArchetype(
-                components.Where(x => x.Value.value is not null).Select(x => (x.Key, x.Value.affectiveHashCode))
-                .UnionBy(entity.chunk!.Archetype.ComponentTypes.Select(x => (x.type, x.affectiveHashCode)).Where(
+            int hashCode = 0;
+            foreach ((Type type, int affectiveHashCode) in components.Where(
+                x => x.Value.value is not null
+            ).Select(x => (x.Key, x.Value.affectiveHashCode)).UnionBy(
+                entity.chunk!.Archetype.ComponentTypes.Select(x => (x.type, x.affectiveHashCode)).Where(
                     x => !components.TryGetValue(x.type, out (IComponent? value, int size, int affectiveHashCode) o) ||
                         o.value is not null
-                ), x => x.Item1),
+                ), x => x.Item1)
+            ) {
+                hashCode ^= unchecked(type.GetHashCode() + affectiveHashCode * 16777619);
+            }
+
+            entity.TryGetWorld(out EntityWorld? world);
+            Archetype newArchetype = world!.GetArchetype(
+                hashCode,
                 () => components.Where(x => x.Value.value is not null)
                 .Select(x => (x.Key, x.Value.size, x.Value.affectiveHashCode))
                 .UnionBy(entity.chunk!.Archetype.ComponentTypes.Where(

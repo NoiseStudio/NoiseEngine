@@ -1,6 +1,4 @@
 ﻿using NoiseEngine.Jobs2;
-using System;
-using System.Diagnostics;
 using System.Threading;
 
 namespace NoiseEngine.Tests.Jobs2;
@@ -13,14 +11,16 @@ internal partial class ScheduleTestSystemA : EntitySystem {
 
     public bool UsedUpdate { get; private set; }
     public bool UsedLateUpdate { get; private set; }
-    public int UpdateCount { get; private set; }
     public int LateUpdateCount { get; private set; }
+
+    public int UpdateCount;
+    public int DisposeCount;
 
     public AutoResetEvent LateUpdateResetEvent { get; } = new AutoResetEvent(false);
 
     protected override void OnUpdate() {
         UsedUpdate = true;
-        UpdateCount++;
+        Interlocked.Increment(ref UpdateCount);
 
         Assert.True(IsWorking);
     }
@@ -33,8 +33,9 @@ internal partial class ScheduleTestSystemA : EntitySystem {
         LateUpdateResetEvent.Set();
     }
 
-    protected override void OnTerminate() {
+    protected override void OnDispose() {
         LateUpdateResetEvent.Dispose();
+        Interlocked.Increment(ref DisposeCount);
     }
 
     private void OnUpdateEntity(Entity entity) {

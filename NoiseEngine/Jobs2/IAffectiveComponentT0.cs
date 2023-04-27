@@ -15,8 +15,9 @@ public interface IAffectiveComponent : IComponent {
     /// Computes affective hash code of this component.
     /// </summary>
     /// <remarks>
-    /// <see cref="IAffectiveSystem"/> uses this method to determine components. If two components have the same
-    /// affective hash code, they are considered into the same <see cref="IAffectiveSystem"/>.
+    /// <see cref="AffectiveSystem"/> uses this method to determine components. If two components have the same
+    /// affective hash code, they are considered into the same <see cref="AffectiveSystem"/>'s
+    /// <see cref="EntitySystem"/> child.
     /// </remarks>
     /// <returns>Affective hash code of this component.</returns>
     public int GetAffectiveHashCode();

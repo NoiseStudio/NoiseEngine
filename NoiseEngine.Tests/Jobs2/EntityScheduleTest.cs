@@ -15,7 +15,7 @@ public class EntityScheduleTest : ApplicationTestEnvironment {
         for (int i = 0; i < Entities; i++)
             EntityWorld.Spawn();
 
-        using ScheduleTestSystemA system = new ScheduleTestSystemA();
+        ScheduleTestSystemA system = new ScheduleTestSystemA();
         EntityWorld.AddSystem(system, 100);
 
         while (system.LateUpdateCount < 2)
@@ -39,6 +39,9 @@ public class EntityScheduleTest : ApplicationTestEnvironment {
 
         system.LateUpdateResetEvent.WaitOne();
         Assert.Equal(Entities * 2, system.UpdateEntityCount);
+
+        system.Dispose();
+        Assert.Equal(1, system.DisposeCount);
     }
 
 }

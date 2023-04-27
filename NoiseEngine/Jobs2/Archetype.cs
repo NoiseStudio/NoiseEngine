@@ -3,6 +3,9 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Jobs2;
@@ -80,7 +83,7 @@ internal class Archetype {
 
             ArchetypeChunk c = new ArchetypeChunk(this, columnType);
             if (!c.TryTakeRecord(out nint i))
-                throw new InvalidOperationException();
+                throw new UnreachableException();
 
             chunks.Add(c);
             return (c, i);
@@ -89,6 +92,18 @@ internal class Archetype {
 
     public void ReleaseRecord(ArchetypeChunk chunk, nint index) {
         releasedRecords.Enqueue((chunk, index));
+    }
+
+    public bool TryReadAnyRecord(
+        IEnumerable<Type> componentsToRead, [NotNullWhen(true)] out Dictionary<Type, object>? components
+    ) {
+        foreach (ArchetypeChunk chunk in chunks) {
+            if (chunk.TryReadAnyRecord(componentsToRead, out components))
+                return true;
+        }
+
+        components = null;
+        return false;
     }
 
 }
