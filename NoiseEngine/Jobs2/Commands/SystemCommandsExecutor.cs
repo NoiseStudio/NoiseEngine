@@ -163,10 +163,10 @@ internal class SystemCommandsExecutor {
                 fixed (byte* sp = oldChunk.StorageData) {
                     byte* si = sp + oldIndex;
 
-                    // Copy old components.
                     foreach ((Type type, int size, _) in newChunk.Archetype.ComponentTypes) {
                         (IComponent? value, int size, int affectiveHashCode) component;
                         if (oldChunk.Offsets.TryGetValue(type, out nint oldOffset)) {
+                            // Copy old components.
                             if (!components.TryGetValue(type, out component)) {
                                 Buffer.MemoryCopy(si + oldOffset, di + newChunk.Offsets[type], size, size);
                                 continue;
@@ -175,6 +175,7 @@ internal class SystemCommandsExecutor {
                             component = components[type];
                         }
 
+                        // Copy new components.
                         fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component.value!)) {
                             Buffer.MemoryCopy(
                                 (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)),

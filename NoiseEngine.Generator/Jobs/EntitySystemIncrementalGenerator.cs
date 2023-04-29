@@ -7,13 +7,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NoiseEngine.Generator;
+namespace NoiseEngine.Generator.Jobs;
 
 [Generator]
 public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
     private const string SystemFullName = "NoiseEngine.Jobs2.EntitySystem";
     private const string AffectiveSystemFullName = "NoiseEngine.Jobs2.IAffectiveSystem";
+    private const string AffectiveComponentFullName = "NoiseEngine.Jobs2.IAffectiveComponent";
     private const string EntityFullName = "NoiseEngine.Jobs2.Entity";
     private const string SystemCommandsFullName = "NoiseEngine.Jobs2.SystemCommands";
     private const string InternalInterfacesFullName = "NoiseEngine.Jobs2.Internal.NoiseEngineInternal_DoNotUse";
@@ -139,10 +140,10 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             builder.AppendLine("#error `OnUpdateEntity` method must return `void`.");
         }
 
-        (string parameterType, bool isRef, bool isIn, bool isOut)[] parameters =
+        (string parameterType, bool isRef, bool isIn, bool isOut, bool isAffective)[] parameters =
             GenerateInitializeMethod(compilation, builder, onUpdateEntity);
 
-        foreach ((string parameterType, bool isRef, bool isIn, bool isOut) in parameters) {
+        foreach ((string parameterType, bool isRef, bool isIn, bool isOut, _) in parameters) {
             if (isIn || isOut) {
                 builder.Append("#error Parameter `").Append(parameterType)
                     .AppendLine("` has `in` or `out` keyword which is not allowed in `OnUpdateEntity`.");
@@ -169,7 +170,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         builder.AppendLine("}");
     }
 
-    private (string parameterType, bool isRef, bool isIn, bool isOut)[] GenerateInitializeMethod(
+    private (string parameterType, bool isRef, bool isIn, bool isOut, bool isAffective)[] GenerateInitializeMethod(
         Compilation compilation, StringBuilder builder, MethodDeclarationSyntax? onUpdateEntity
     ) {
         builder.AppendIndentation(2)
@@ -177,16 +178,16 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             .AppendIndentation(2).Append("protected override void ").Append(GeneratorConstants.InternalThings)
             .AppendLine("_Initialize() {");
 
-        (string, bool, bool, bool)[] parameters;
+        (string, bool, bool, bool, bool)[] parameters;
         bool componentWriteAccess = false;
 
         builder.AppendIndentation(3).Append(GeneratorConstants.InternalThings).Append("_Storage.UsedComponents = ");
         if (onUpdateEntity is null || onUpdateEntity.ParameterList.Parameters.Count == 0) {
-            parameters = Array.Empty<(string, bool, bool, bool)>();
+            parameters = Array.Empty<(string, bool, bool, bool, bool)>();
             builder.AppendLine("System.Array.Empty<").Append(GeneratorConstants.InternalThings)
                 .Append(".ComponentUsage>()");
         } else {
-            parameters = new (string, bool, bool, bool)[onUpdateEntity.ParameterList.Parameters.Count];
+            parameters = new (string, bool, bool, bool, bool)[onUpdateEntity.ParameterList.Parameters.Count];
             int i = 0;
 
             bool empty = onUpdateEntity.ParameterList.Parameters.All(x => {
@@ -206,6 +207,9 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                 bool isRef = parameter.Modifiers.Any(x => x.IsKind(SyntaxKind.RefKeyword));
                 bool isIn = parameter.Modifiers.Any(x => x.IsKind(SyntaxKind.InKeyword));
                 bool isOut = parameter.Modifiers.Any(x => x.IsKind(SyntaxKind.OutKeyword));
+                bool isAffective = parameter.Type!.GetSymbol<ITypeSymbol>(compilation).AllInterfaces.Any(
+                    x => x.ToDisplayString() == AffectiveComponentFullName
+                );
 
                 if (name != EntityFullName && name != SystemCommandsFullName) {
                     builder.AppendIndentation(4).Append("new ").Append(GeneratorConstants.InternalThings)
@@ -214,7 +218,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                     componentWriteAccess |= isRef;
                 }
 
-                parameters[i++] = (name, isRef, isIn, isOut);
+                parameters[i++] = (name, isRef, isIn, isOut, isAffective);
             }
 
             if (!empty) {
@@ -234,7 +238,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
     private void GenerateSystemExecutionMethod(
         StringBuilder builder, MethodDeclarationSyntax onUpdateEntity,
-        (string parameterType, bool isRef, bool isIn, bool isOut)[] parameters
+        (string parameterType, bool isRef, bool isIn, bool isOut, bool isAffective)[] parameters
     ) {
         builder.AppendIndentation(2)
             .Append("[System.Obsolete(\"").Append(InternalMethodObsoleteMessage).AppendLine("\")]")
@@ -258,9 +262,13 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         ).Append(content).AppendLine("#endif").AppendLine();
 
         builder.AppendIndentation(3).Append(EntityFullName).AppendLine("? entity;");
+        if (parameters.Any(x => x.isAffective)) {
+            builder.AppendIndentation(3).AppendLine("bool changeArchetype;");
+            builder.AppendIndentation(3).AppendLine("int archetypeHashCode;");
+        }
 
         int i = 0;
-        foreach ((string parameterType, bool isRef, _, _) in parameters) {
+        foreach ((string parameterType, bool isRef, _, _, _) in parameters) {
             if (parameterType == EntityFullName || parameterType == SystemCommandsFullName)
                 continue;
 
@@ -290,7 +298,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             .AppendIndentation(5).AppendLine("continue;").AppendLine();
 
         i = 0;
-        foreach ((string parameterType, bool isRef, _, _) in parameters) {
+        foreach ((string parameterType, bool isRef, _, _, _) in parameters) {
             if (parameterType == EntityFullName || parameterType == SystemCommandsFullName)
                 continue;
 
@@ -308,7 +316,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
         builder.AppendIndentation(4).Append("OnUpdateEntity(");
         i = 0;
-        foreach ((string parameterType, bool isRef, _, _) in parameters) {
+        foreach ((string parameterType, bool isRef, _, _, _) in parameters) {
             if (parameterType == EntityFullName) {
                 builder.Append("entity");
             } else if (parameterType == SystemCommandsFullName) {
@@ -325,15 +333,69 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             builder.Remove(builder.Length - 2, 2);
         builder.AppendLine(");").AppendLine();
 
+        if (parameters.Any(x => x.isAffective))
+            builder.AppendIndentation(4).AppendLine("archetypeHashCode = 0;");
+
         i = 0;
-        foreach ((string parameterType, bool isRef, _, _) in parameters) {
-            if (!isRef) {
+        bool first = true;
+        foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
+            if (!isRef || !isAffective) {
                 i++;
                 continue;
             }
 
-            builder.AppendIndentation(4).Append("NoiseEngineInternal_DoNotUse.UpdateComponent(in oldParameter")
-                .Append(i).Append(", in parameter").Append(i++).AppendLine(");");
+            builder.AppendIndentation(4).Append("changeArchetype ");
+            if (first)
+                first = false;
+            else
+                builder.Append('|');
+
+            builder.Append(
+                "= NoiseEngineInternal_DoNotUse.CompareAffectiveComponent(ref archetypeHashCode, in oldParameter"
+            ).Append(i).Append(", in parameter").Append(i++).AppendLine(");");
+        }
+
+        // Update archetype.
+        if (!first) {
+            builder.AppendIndentation(4).AppendLine("if (changeArchetype) {");
+            builder.AppendIndentation(5).AppendLine(
+                "int hashCode = NoiseEngineInternal_DoNotUse.ArchetypeHashCode(entity);"
+            );
+
+            foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
+                if (!isRef || !isAffective)
+                    continue;
+
+                builder.AppendIndentation(5)
+                    .Append("hashCode ^= NoiseEngineInternal_DoNotUse.ArchetypeComponentHashCode<")
+                    .Append(parameterType).AppendLine(">(entity);");
+            }
+            builder.AppendLine();
+
+            builder.AppendIndentation(5).AppendLine("hashCode ^= archetypeHashCode;");
+            builder.AppendIndentation(5).AppendLine(
+                "NoiseEngineInternal_DoNotUse.ChangeArchetype(entity, hashCode, () => new (System.Type type, " +
+                "int size, int affectiveHashCode)[] {"
+            );
+
+            i = 0;
+            foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
+                if (!isRef || !isAffective) {
+                    i++;
+                    continue;
+                }
+
+                builder.AppendIndentation(6).AppendLine("(").AppendIndentation(7).Append("typeof(").Append(parameterType)
+                    .AppendLine("),").AppendIndentation(7).Append("System.Runtime.CompilerServices.Unsafe.SizeOf<")
+                    .Append(parameterType).AppendLine(">(),").AppendIndentation(7)
+                    .Append("IAffectiveComponent.GetAffectiveHashCode(data.Get<").Append(parameterType)
+                    .Append(">(i + offset").Append(i++).AppendLine("))").AppendIndentation(6).AppendLine("),");
+            }
+            builder.Remove(builder.Length - 1 - Environment.NewLine.Length, 1);
+
+            builder.AppendIndentation(5).AppendLine("});");
+
+            builder.AppendIndentation(4).AppendLine("}");
         }
 
         builder.AppendIndentation(3).AppendLine("}");

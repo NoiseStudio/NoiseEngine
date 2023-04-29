@@ -106,8 +106,7 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
         foreach (EntitySystem system in affectiveSystem.Systems)
             ((MockAffectiveSystemChildB)system).Value = ++i;
 
-        foreach (EntitySystem system in affectiveSystem.Systems)
-            system.ExecuteAndWait();
+        affectiveSystem.Systems.First().ExecuteAndWait();
 
         Assert.True(entityA.TryGet(out MockAffectiveComponentA a));
         Assert.Equal(MockAffectivePrecision.Medium, a.Precision);
@@ -115,39 +114,38 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
         Assert.Equal(1, d.Value);
 
         Assert.True(entityB.TryGet(out a));
-        Assert.Equal(MockAffectivePrecision.High, a.Precision);
+        Assert.Equal(MockAffectivePrecision.Medium, a.Precision);
         Assert.True(entityB.TryGet(out d));
-        Assert.Equal(2, d.Value);
+        Assert.Equal(-1, d.Value);
+
+        Assert.True(entityC.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.High, a.Precision);
+        Assert.True(entityC.TryGet(out d));
+        Assert.Equal(-1, d.Value);
+
+        // High to low.
+        affectiveSystem.Systems.Skip(2).First().ExecuteAndWait();
 
         Assert.True(entityC.TryGet(out a));
         Assert.Equal(MockAffectivePrecision.Low, a.Precision);
         Assert.True(entityC.TryGet(out d));
         Assert.Equal(3, d.Value);
 
-        // High to low.
-        affectiveSystem.Systems.Skip(2).First().ExecuteAndWait();
-
-        Assert.True(entityB.TryGet(out a));
-        Assert.Equal(MockAffectivePrecision.Low, a.Precision);
-        Assert.True(entityB.TryGet(out d));
-        Assert.Equal(3, d.Value);
-
         // Medium to low.
-        EntitySystem s = affectiveSystem.Systems.Skip(1).First();
-        s.ExecuteAndWait();
-        s.ExecuteAndWait();
+        foreach (EntitySystem system in affectiveSystem.Systems.Skip(1))
+            system.ExecuteAndWait();
 
         Assert.True(entityA.TryGet(out a));
         Assert.Equal(MockAffectivePrecision.Low, a.Precision);
         Assert.True(entityA.TryGet(out d));
         Assert.Equal(3, d.Value);
 
-        // Compare.
         Assert.True(entityB.TryGet(out a));
         Assert.Equal(MockAffectivePrecision.Low, a.Precision);
         Assert.True(entityB.TryGet(out d));
         Assert.Equal(3, d.Value);
 
+        // Compare.
         Assert.True(entityC.TryGet(out a));
         Assert.Equal(MockAffectivePrecision.Low, a.Precision);
         Assert.True(entityC.TryGet(out d));

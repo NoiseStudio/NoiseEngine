@@ -2,8 +2,10 @@
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -54,27 +56,109 @@ public abstract class EntitySystem : IDisposable {
             return ref Unsafe.AsRef<T>((void*)null);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ArchetypeHashCode(Entity entity) {
+            return entity.chunk!.ArchetypeHashCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ArchetypeComponentHashCode<T>(Entity entity) {
+            return entity.chunk!.HashCodes[typeof(T)];
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public static void UpdateComponent<T>(in T oldValue, in T newValue) where T : IComponent {
+        public static bool CompareAffectiveComponent<T>(
+            ref int archetypeHashCode, in T oldValue, in T newValue
+        ) where T : IAffectiveComponent<T> {
+            if (oldValue.AffectiveEquals(newValue))
+                return false;
+
+            archetypeHashCode ^=
+                typeof(T).GetHashCode() + IAffectiveComponent.GetAffectiveHashCode(newValue) * 16777619;
+            return true;
+        }
+
+        /*[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool UpdateComponent<T>(in T oldValue, in T newValue) where T : IComponent {
             if (oldValue is IAffectiveComponent<T> affective) {
                 if (affective.AffectiveEquals(newValue)) {
                     if (oldValue is IEquatable<T> equatable) {
                         if (equatable.Equals(newValue))
-                            return;
+                            return false;
                     } else {
                         WarnMissingEquatable<T>();
                         if (oldValue.Equals(newValue))
-                            return;
+                            return false;
                     }
                 }
+
+                return true;
             } else if (oldValue is IEquatable<T> equatable) {
                 if (equatable.Equals(newValue))
-                    return;
+                    return false;
             } else {
                 WarnMissingEquatable<T>();
                 if (oldValue.Equals(newValue))
-                    return;
+                    return false;
             }
+
+            return false;
+        }*/
+
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public static void ChangeArchetype(
+            Entity entity, int hashCode, Func<(Type type, int size, int affectiveHashCode)[]> valueFactory
+        ) {
+            Archetype oldArchetype = entity.chunk!.Archetype;
+            (Type type, int size, int affectiveHashCode)[] values = valueFactory();
+            Archetype newArchetype = oldArchetype.World.GetArchetype(
+                hashCode,
+                () => values.UnionBy(entity.chunk!.Archetype.ComponentTypes, x => x.type).ToArray()
+            );
+
+            if (ApplicationJitConsts.IsDebugMode && oldArchetype == newArchetype) {
+                StringBuilder builder = new StringBuilder("One or more affective component from ");
+                foreach ((Type type, _, _) in values)
+                    builder.Append(type.FullName).Append(", ");
+                builder.Remove(builder.Length - 2, 2);
+
+                builder.Append(" has repeating affective hash code for not comparable AffectiveEquals implementation");
+
+                Log.Warning(builder.ToString());
+            }
+
+            // Copy components.
+            ArchetypeChunk oldChunk = entity.chunk!;
+            (ArchetypeChunk newChunk, nint newIndex) = newArchetype.TakeRecord();
+
+            entity.chunk = newChunk;
+            nint oldIndex = entity.index;
+            entity.index = newIndex;
+
+            unsafe {
+                fixed (byte* dp = newChunk.StorageData) {
+                    byte* di = dp + newIndex;
+                    fixed (byte* sp = oldChunk.StorageData) {
+                        byte* si = sp + oldIndex;
+
+                        foreach ((Type type, int size, _) in newChunk.Archetype.ComponentTypes) {
+                            if (!oldChunk.Offsets.TryGetValue(type, out nint oldOffset))
+                                throw new UnreachableException();
+                            Buffer.MemoryCopy(si + oldOffset, di + newChunk.Offsets[type], size, size);
+                        }
+
+                        // Copy internal component.
+                        int iSize = Unsafe.SizeOf<EntityInternalComponent>();
+                        Buffer.MemoryCopy(si, di, iSize, iSize);
+
+                        // Clear old data.
+                        new Span<byte>(si, (int)oldChunk.Archetype.RecordSize).Clear();
+                    }
+                }
+            }
+
+            oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
+            newArchetype.InitializeRecord();
         }
 
         private static void WarnMissingEquatable<T>() {

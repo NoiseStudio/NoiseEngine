@@ -14,18 +14,22 @@ internal class ArchetypeChunk {
     private int count = -1;
 
     public Archetype Archetype { get; }
+    public int ArchetypeHashCode { get; }
     public int Capacity { get; }
     public int Count => Math.Min(count, CapacityM);
 
     internal nint RecordSize { get; }
     internal byte[] StorageData { get; }
     internal Dictionary<Type, nint> Offsets { get; }
+    internal Dictionary<Type, int> HashCodes { get; }
 
     private int CapacityM { get; }
 
     public ArchetypeChunk(Archetype archetype, Type columnType) {
         Archetype = archetype;
+        ArchetypeHashCode = archetype.HashCode;
         Offsets = archetype.Offsets;
+        HashCodes = archetype.HashCodes;
         RecordSize = archetype.RecordSize;
 
         int capacity = (int)(16000 / RecordSize);

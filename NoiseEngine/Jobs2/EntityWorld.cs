@@ -147,7 +147,7 @@ public partial class EntityWorld : IDisposable {
             if (archetypes.TryGetValue(hashCode, out archetype))
                 return archetype;
 
-            archetype = new Archetype(this, valueFactory());
+            archetype = new Archetype(this, hashCode, valueFactory());
             archetypes.Add(hashCode, archetype);
         }
 

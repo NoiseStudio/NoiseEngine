@@ -25,13 +25,16 @@ internal class Archetype {
     private uint queuedAffectiveSystems;
 
     public EntityWorld World { get; }
+    public int HashCode { get; }
 
     internal nint RecordSize { get; }
     internal (Type type, int size, int affectiveHashCode)[] ComponentTypes { get; }
     internal Dictionary<Type, nint> Offsets { get; } = new Dictionary<Type, nint>();
+    internal Dictionary<Type, int> HashCodes { get; } = new Dictionary<Type, int>();
 
-    public Archetype(EntityWorld world, (Type type, int size, int affectiveHashCode)[] componentTypes) {
+    public Archetype(EntityWorld world, int hashCode, (Type type, int size, int affectiveHashCode)[] componentTypes) {
         World = world;
+        HashCode = hashCode;
         ComponentTypes = componentTypes;
 
         Offsets.Add(typeof(EntityInternalComponent), 0);
@@ -56,6 +59,9 @@ internal class Archetype {
 
         this.columnType = columnType;
         RecordSize = offset;
+
+        foreach ((Type type, _, int affectiveHashCode) in componentTypes)
+            HashCodes.Add(type, type.GetHashCode() + affectiveHashCode * 16777619);
 
         // Enqueue affective systems.
         foreach (AffectiveSystem affectiveSystem in world.AffectiveSystems)
