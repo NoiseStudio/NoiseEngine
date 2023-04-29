@@ -75,19 +75,19 @@ internal class ArchetypeChunk {
                     components = new Dictionary<Type, object>();
                     foreach ((Type type, int size, _) in Archetype.ComponentTypes) {
                         object obj;
-                        if (type.IsValueType) {
+                        if (size == sizeof(nint) && !type.IsValueType) {
+                            obj = null!;
+                            fixed (byte* vp = &Unsafe.As<object, byte>(ref obj)) {
+                                Buffer.MemoryCopy(
+                                    (void*)(i + Offsets[type]), vp, size, size
+                                );
+                            }
+                        } else {
                             obj = Activator.CreateInstance(type, true) ?? throw new UnreachableException();
                             fixed (byte* vp = &Unsafe.As<object, byte>(ref obj)) {
                                 Buffer.MemoryCopy(
                                     (void*)(i + Offsets[type]),
                                     (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)), size, size
-                                );
-                            }
-                        } else {
-                            obj = null!;
-                            fixed (byte* vp = &Unsafe.As<object, byte>(ref obj)) {
-                                Buffer.MemoryCopy(
-                                    (void*)(i + Offsets[type]), vp, size, size
                                 );
                             }
                         }

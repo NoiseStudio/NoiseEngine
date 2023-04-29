@@ -220,18 +220,18 @@ internal class SystemCommandsExecutor {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe void ComponentMemoryCopy(ref IComponent component, Type type, byte* offset, int size) {
-        if (type.IsValueType) {
-            fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component)) {
-                Buffer.MemoryCopy(
-                    (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)),
-                    offset, size, size
-                );
-            }
+        if (size == sizeof(nint) && !type.IsValueType) {
+            fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component))
+                Buffer.MemoryCopy(vp, offset, size, size);
             return;
         }
 
-        fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component))
-            Buffer.MemoryCopy(vp, offset, size, size);
+        fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component)) {
+            Buffer.MemoryCopy(
+                (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)),
+                offset, size, size
+            );
+        }
     }
 
 }
