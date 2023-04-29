@@ -13,13 +13,9 @@ namespace NoiseEngine.Generator.Jobs;
 public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
     private const string SystemFullName = "NoiseEngine.Jobs2.EntitySystem";
-    private const string AffectiveSystemFullName = "NoiseEngine.Jobs2.IAffectiveSystem";
     private const string AffectiveComponentFullName = "NoiseEngine.Jobs2.IAffectiveComponent";
     private const string EntityFullName = "NoiseEngine.Jobs2.Entity";
     private const string SystemCommandsFullName = "NoiseEngine.Jobs2.SystemCommands";
-    private const string InternalInterfacesFullName = "NoiseEngine.Jobs2.Internal.NoiseEngineInternal_DoNotUse";
-    private const string InternalNormalSystemFullName = InternalInterfacesFullName + ".INormalEntitySystem";
-    private const string InternalAffectiveSystemFullName = InternalInterfacesFullName + ".IAffectiveEntitySystem";
     private const string InternalMethodObsoleteMessage =
         "This method is internal and is not part of the API. Do not use.";
 
@@ -72,60 +68,11 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             return;
         }
 
-        bool isAffective = false;
-        int genericAffectiveCount = 0;
-        string? genericAffectiveString = null;
-
-        foreach (INamedTypeSymbol i in system.GetDeclaredSymbol<ITypeSymbol>(compilation).AllInterfaces) {
-            string s = i.ToDisplayString();
-            if (s == InternalNormalSystemFullName) {
-                builder.Append("#error System defined `").Append(InternalNormalSystemFullName)
-                    .AppendLine("` which is not allowed.");
-                return;
-            } else if (s == InternalAffectiveSystemFullName) {
-                builder.Append("#error System defined `").Append(InternalAffectiveSystemFullName)
-                    .AppendLine("` which is not allowed.");
-                return;
-            } else if (!s.StartsWith(AffectiveSystemFullName)) {
-                continue;
-            }
-
-            isAffective = true;
-            if (s.Length > AffectiveSystemFullName.Length && i.TypeParameters.Length != 0) {
-                genericAffectiveCount++;
-                genericAffectiveString = s;
-            }
-        }
-
-        string[] inherited;
-        if (isAffective) {
-            if (genericAffectiveCount == 0)
-                builder.AppendLine("#error Affective system must define generic IAffectiveSystem.");
-            else if (genericAffectiveCount > 1)
-                builder.AppendLine("#error Affective system must define only one generic IAffectiveSystem.");
-
-            inherited = new string[] { InternalAffectiveSystemFullName };
-        } else {
-            inherited = new string[] { InternalNormalSystemFullName };
-        }
-
         GeneratorHelpers.GenerateUsings(builder, system);
         builder.AppendLine("#nullable enable");
         builder.AppendLine("#pragma warning disable 612, 618");
-        GeneratorHelpers.GenerateNamespaceWithType(builder, system, null, inherited);
+        GeneratorHelpers.GenerateNamespaceWithType(builder, system);
         builder.AppendLine();
-
-        if (genericAffectiveString is not null) {
-            builder.AppendIndentation(2).Append("static System.Type[] ").Append(InternalAffectiveSystemFullName)
-                .AppendLine(".AffectiveComponents { get; } = new System.Type[] {");
-
-            foreach (string type in GeneratorHelpers.GetGenerics(genericAffectiveString))
-                builder.AppendIndentation(3).Append("typeof(").Append(type).AppendLine("),");
-            builder.Remove(builder.Length - 1 - Environment.NewLine.Length, 1 + Environment.NewLine.Length)
-                .AppendLine();
-
-            builder.AppendIndentation(2).AppendLine("};").AppendLine();
-        }
 
         MethodDeclarationSyntax[] methods = system.ChildNodes().OfType<MethodDeclarationSyntax>()
             .Where(x => x.Identifier.Text == "OnUpdateEntity").ToArray();
