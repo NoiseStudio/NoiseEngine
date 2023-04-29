@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Tests.Jobs2.Affective;
 
-internal partial class MockAffectiveSystemChild : EntitySystem {
+internal partial class MockAffectiveSystemChildA : EntitySystem {
 
     public int Value { get; set; }
 

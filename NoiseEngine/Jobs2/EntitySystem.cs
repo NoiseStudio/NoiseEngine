@@ -61,15 +61,28 @@ public abstract class EntitySystem : IDisposable {
                     if (oldValue is IEquatable<T> equatable) {
                         if (equatable.Equals(newValue))
                             return;
-                    } else if (oldValue.Equals(newValue)) {
-                        return;
+                    } else {
+                        WarnMissingEquatable<T>();
+                        if (oldValue.Equals(newValue))
+                            return;
                     }
                 }
             } else if (oldValue is IEquatable<T> equatable) {
                 if (equatable.Equals(newValue))
                     return;
-            } else if (oldValue.Equals(newValue)) {
-                return;
+            } else {
+                WarnMissingEquatable<T>();
+                if (oldValue.Equals(newValue))
+                    return;
+            }
+        }
+
+        private static void WarnMissingEquatable<T>() {
+            if (ApplicationJitConsts.IsDebugMode) {
+                Log.Warning(
+                    $"Component {typeof(T)} does not implement {nameof(IEquatable<T>)} interface. " +
+                    "What affects performance."
+                );
             }
         }
 
@@ -201,6 +214,8 @@ public abstract class EntitySystem : IDisposable {
             );
         }
         InternalDispose();
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

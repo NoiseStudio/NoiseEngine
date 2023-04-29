@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Jobs2;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
+using System.Linq;
 
 namespace NoiseEngine.Tests.Jobs2.Affective;
 
@@ -10,8 +11,9 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
     }
 
     [Fact]
-    public void Swap() {
-        using MockAffectiveSystem affectiveSystem = new MockAffectiveSystem();
+    public void SwapByCommands() {
+        using MockAffectiveSystem<MockAffectiveSystemChildA> affectiveSystem =
+            new MockAffectiveSystem<MockAffectiveSystemChildA>();
         EntityWorld.AddAffectiveSystem(affectiveSystem);
 
         // Low.
@@ -24,7 +26,7 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
 
         int i = 0;
         foreach (EntitySystem system in affectiveSystem.Systems)
-            ((MockAffectiveSystemChild)system).Value = ++i;
+            ((MockAffectiveSystemChildA)system).Value = ++i;
 
         foreach (EntitySystem system in affectiveSystem.Systems)
             system.ExecuteAndWait();
@@ -40,7 +42,7 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
 
         i = 0;
         foreach (EntitySystem system in affectiveSystem.Systems)
-            ((MockAffectiveSystemChild)system).Value = ++i;
+            ((MockAffectiveSystemChildA)system).Value = ++i;
 
         foreach (EntitySystem system in affectiveSystem.Systems)
             system.ExecuteAndWait();
@@ -57,7 +59,7 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
 
         i = 0;
         foreach (EntitySystem system in affectiveSystem.Systems)
-            ((MockAffectiveSystemChild)system).Value = ++i;
+            ((MockAffectiveSystemChildA)system).Value = ++i;
 
         foreach (EntitySystem system in affectiveSystem.Systems)
             system.ExecuteAndWait();
@@ -70,7 +72,7 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
         // Execute only two.
         i = 30;
         foreach (EntitySystem system in affectiveSystem.Systems)
-            ((MockAffectiveSystemChild)system).Value = ++i;
+            ((MockAffectiveSystemChildA)system).Value = ++i;
 
         i = 0;
         foreach (EntitySystem system in affectiveSystem.Systems) {
@@ -86,6 +88,88 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
         Assert.Equal(31, d.Value);
         Assert.True(entityD.TryGet(out d));
         Assert.Equal(33, d.Value);
+    }
+
+    [Fact]
+    public void SwapBySystem() {
+        using MockAffectiveSystem<MockAffectiveSystemChildB> affectiveSystem =
+            new MockAffectiveSystem<MockAffectiveSystemChildB>();
+        EntityWorld.AddAffectiveSystem(affectiveSystem);
+
+        // Initialize.
+        MockComponentD m1 = new MockComponentD(-1);
+        Entity entityA = EntityWorld.Spawn(MockAffectiveComponentA.Low, m1);
+        Entity entityB = EntityWorld.Spawn(MockAffectiveComponentA.Medium, m1);
+        Entity entityC = EntityWorld.Spawn(MockAffectiveComponentA.High, m1);
+
+        int i = 0;
+        foreach (EntitySystem system in affectiveSystem.Systems)
+            ((MockAffectiveSystemChildB)system).Value = ++i;
+
+        foreach (EntitySystem system in affectiveSystem.Systems)
+            system.ExecuteAndWait();
+
+        Assert.True(entityA.TryGet(out MockAffectiveComponentA a));
+        Assert.Equal(MockAffectivePrecision.Medium, a.Precision);
+        Assert.True(entityA.TryGet(out MockComponentD d));
+        Assert.Equal(1, d.Value);
+
+        Assert.True(entityB.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.High, a.Precision);
+        Assert.True(entityB.TryGet(out d));
+        Assert.Equal(2, d.Value);
+
+        Assert.True(entityC.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.Low, a.Precision);
+        Assert.True(entityC.TryGet(out d));
+        Assert.Equal(3, d.Value);
+
+        // High to low.
+        affectiveSystem.Systems.Skip(2).First().ExecuteAndWait();
+
+        Assert.True(entityB.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.Low, a.Precision);
+        Assert.True(entityB.TryGet(out d));
+        Assert.Equal(3, d.Value);
+
+        // Medium to low.
+        EntitySystem s = affectiveSystem.Systems.Skip(1).First();
+        s.ExecuteAndWait();
+        s.ExecuteAndWait();
+
+        Assert.True(entityA.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.Low, a.Precision);
+        Assert.True(entityA.TryGet(out d));
+        Assert.Equal(3, d.Value);
+
+        // Compare.
+        Assert.True(entityB.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.Low, a.Precision);
+        Assert.True(entityB.TryGet(out d));
+        Assert.Equal(3, d.Value);
+
+        Assert.True(entityC.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.Low, a.Precision);
+        Assert.True(entityC.TryGet(out d));
+        Assert.Equal(3, d.Value);
+
+        // Low to medium.
+        affectiveSystem.Systems.First().ExecuteAndWait();
+
+        Assert.True(entityA.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.Medium, a.Precision);
+        Assert.True(entityA.TryGet(out d));
+        Assert.Equal(1, d.Value);
+
+        Assert.True(entityB.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.Medium, a.Precision);
+        Assert.True(entityB.TryGet(out d));
+        Assert.Equal(1, d.Value);
+
+        Assert.True(entityC.TryGet(out a));
+        Assert.Equal(MockAffectivePrecision.Medium, a.Precision);
+        Assert.True(entityC.TryGet(out d));
+        Assert.Equal(1, d.Value);
     }
 
 }

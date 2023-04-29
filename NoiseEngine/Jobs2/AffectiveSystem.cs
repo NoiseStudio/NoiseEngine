@@ -43,6 +43,8 @@ public abstract class AffectiveSystem : IDisposable {
         foreach (EntitySystem system in systems.Values)
             system.InternalDispose();
         systems.Clear();
+
+        GC.SuppressFinalize(this);
     }
 
     internal void InternalInitialize(EntityWorld world) {

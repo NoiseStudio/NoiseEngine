@@ -45,6 +45,8 @@ public partial class EntityWorld : IDisposable {
         Parallel.ForEach(
             affectiveSystems.Cast<IDisposable>().Concat(systems.Cast<IDisposable>()), (x, _) => x.Dispose()
         );
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
