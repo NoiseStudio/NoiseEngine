@@ -6,7 +6,7 @@ internal partial class MockAffectiveSystemChildA : EntitySystem {
 
     public int Value { get; set; }
 
-    private void OnUpdateEntity(ref MockComponentD d) {
+    private void OnUpdateEntity(MockComponentD d) {
         d.Value = Value;
     }
 

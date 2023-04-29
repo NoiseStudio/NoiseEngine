@@ -1,7 +1,9 @@
 ﻿using NoiseEngine.Collections;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -166,7 +168,7 @@ internal class SystemCommandsExecutor {
                     foreach ((Type type, int size, _) in newChunk.Archetype.ComponentTypes) {
                         (IComponent? value, int size, int affectiveHashCode) component;
                         if (oldChunk.Offsets.TryGetValue(type, out nint oldOffset)) {
-                            // Copy old components.
+                            // Copy old component.
                             if (!components.TryGetValue(type, out component)) {
                                 Buffer.MemoryCopy(si + oldOffset, di + newChunk.Offsets[type], size, size);
                                 continue;
@@ -175,13 +177,8 @@ internal class SystemCommandsExecutor {
                             component = components[type];
                         }
 
-                        // Copy new components.
-                        fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component.value!)) {
-                            Buffer.MemoryCopy(
-                                (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)),
-                                di + newChunk.Offsets[type], size, size
-                            );
-                        }
+                        // Copy new component.
+                        ComponentMemoryCopy(ref component.value!, type, di + newChunk.Offsets[type], size);
                     }
 
                     // Copy internal component.
@@ -213,16 +210,28 @@ internal class SystemCommandsExecutor {
                         continue;
 
                     IComponent component = value;
-                    fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component)) {
-                        Buffer.MemoryCopy(
-                            (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)), di + chunk.Offsets[type], size, size
-                        );
-                    }
+                    ComponentMemoryCopy(ref component, type, di + chunk.Offsets[type], size);
                 }
             }
         }
 
         held.Dispose();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void ComponentMemoryCopy(ref IComponent component, Type type, byte* offset, int size) {
+        if (type.IsValueType) {
+            fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component)) {
+                Buffer.MemoryCopy(
+                    (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)),
+                    offset, size, size
+                );
+            }
+            return;
+        }
+
+        fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component))
+            Buffer.MemoryCopy(vp, offset, size, size);
     }
 
 }

@@ -18,11 +18,10 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
 
         // Low.
         MockAffectiveComponentA low = new MockAffectiveComponentA(MockAffectivePrecision.Low);
-        MockComponentD m1 = new MockComponentD(-1);
-        Entity entityA = EntityWorld.Spawn(low, m1);
-        Entity entityB = EntityWorld.Spawn(low, m1);
-        Entity entityC = EntityWorld.Spawn(low, m1);
-        Entity entityD = EntityWorld.Spawn(low, m1);
+        Entity entityA = EntityWorld.Spawn(low, new MockComponentD(-1));
+        Entity entityB = EntityWorld.Spawn(low, new MockComponentD(-1));
+        Entity entityC = EntityWorld.Spawn(low, new MockComponentD(-1));
+        Entity entityD = EntityWorld.Spawn(low, new MockComponentD(-1));
 
         int i = 0;
         foreach (EntitySystem system in affectiveSystem.Systems)
@@ -31,8 +30,8 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
         foreach (EntitySystem system in affectiveSystem.Systems)
             system.ExecuteAndWait();
 
-        Assert.True(entityA.TryGet(out MockComponentD d));
-        Assert.Equal(1, d.Value);
+        Assert.True(entityA.TryGet(out MockComponentD? d));
+        Assert.Equal(1, d!.Value);
 
         // Medium.
         MockAffectiveComponentA medium = new MockAffectiveComponentA(MockAffectivePrecision.Medium);
@@ -48,7 +47,7 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
             system.ExecuteAndWait();
 
         Assert.True(entityB.TryGet(out d));
-        Assert.Equal(2, d.Value);
+        Assert.Equal(2, d!.Value);
 
         // High.
         MockAffectiveComponentA high = new MockAffectiveComponentA(MockAffectivePrecision.High);
@@ -65,9 +64,9 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
             system.ExecuteAndWait();
 
         Assert.True(entityA.TryGet(out d));
-        Assert.Equal(3, d.Value);
+        Assert.Equal(3, d!.Value);
         Assert.True(entityD.TryGet(out d));
-        Assert.Equal(3, d.Value);
+        Assert.Equal(3, d!.Value);
 
         // Execute only two.
         i = 30;
@@ -81,13 +80,13 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
         }
 
         Assert.True(entityA.TryGet(out d));
-        Assert.Equal(33, d.Value);
+        Assert.Equal(33, d!.Value);
         Assert.True(entityB.TryGet(out d));
-        Assert.Equal(2, d.Value);
+        Assert.Equal(2, d!.Value);
         Assert.True(entityC.TryGet(out d));
-        Assert.Equal(31, d.Value);
+        Assert.Equal(31, d!.Value);
         Assert.True(entityD.TryGet(out d));
-        Assert.Equal(33, d.Value);
+        Assert.Equal(33, d!.Value);
     }
 
     [Fact]
@@ -97,7 +96,7 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
         EntityWorld.AddAffectiveSystem(affectiveSystem);
 
         // Initialize.
-        MockComponentD m1 = new MockComponentD(-1);
+        MockComponentE m1 = new MockComponentE(-1);
         Entity entityA = EntityWorld.Spawn(MockAffectiveComponentA.Low, m1);
         Entity entityB = EntityWorld.Spawn(MockAffectiveComponentA.Medium, m1);
         Entity entityC = EntityWorld.Spawn(MockAffectiveComponentA.High, m1);
@@ -110,7 +109,7 @@ public class AffectiveSystemTest : ApplicationTestEnvironment {
 
         Assert.True(entityA.TryGet(out MockAffectiveComponentA a));
         Assert.Equal(MockAffectivePrecision.Medium, a.Precision);
-        Assert.True(entityA.TryGet(out MockComponentD d));
+        Assert.True(entityA.TryGet(out MockComponentE d));
         Assert.Equal(1, d.Value);
 
         Assert.True(entityB.TryGet(out a));

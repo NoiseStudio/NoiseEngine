@@ -2,4 +2,14 @@
 
 namespace NoiseEngine.Tests.Jobs2;
 
-internal record struct MockComponentD(int Value) : IComponent;
+internal record MockComponentD : IComponent {
+
+    public int Value { get; set; }
+
+    public MockComponentD() { }
+
+    public MockComponentD(int value) {
+        Value = value;
+    }
+
+}
