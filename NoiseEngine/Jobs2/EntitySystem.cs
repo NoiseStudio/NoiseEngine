@@ -115,10 +115,11 @@ public abstract class EntitySystem : IDisposable {
         ) {
             Archetype oldArchetype = entity.chunk!.Archetype;
             (Type type, int size, int affectiveHashCode)[] values = valueFactory();
-            Archetype newArchetype = oldArchetype.World.GetArchetype(
-                hashCode,
-                () => values.UnionBy(entity.chunk!.Archetype.ComponentTypes, x => x.type).ToArray()
-            );
+            if (!oldArchetype.World.TryGetArchetype(hashCode, out Archetype? newArchetype)) {
+                newArchetype = oldArchetype.World.CreateArchetype(
+                    hashCode, values.UnionBy(entity.chunk!.Archetype.ComponentTypes, x => x.type).ToArray()
+                );
+            }
 
             if (ApplicationJitConsts.IsDebugMode && oldArchetype == newArchetype) {
                 StringBuilder builder = new StringBuilder("One or more affective component from ");

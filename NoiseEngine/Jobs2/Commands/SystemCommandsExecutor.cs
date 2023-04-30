@@ -104,15 +104,16 @@ internal class SystemCommandsExecutor {
             }
 
             entity.TryGetWorld(out EntityWorld? world);
-            Archetype newArchetype = world!.GetArchetype(
-                hashCode,
-                () => components.Where(x => x.Value.value is not null)
-                .Select(x => (x.Key, x.Value.size, x.Value.affectiveHashCode))
-                .UnionBy(entity.chunk!.Archetype.ComponentTypes.Where(
-                    x => !components.TryGetValue(x.type, out (IComponent? value, int size, int affectiveHashCode) o) ||
-                    o.value is not null
-                ), x => x.Item1).ToArray()
-            );
+            if (!world!.TryGetArchetype(hashCode, out Archetype? newArchetype)) {
+                newArchetype = world.CreateArchetype(hashCode, components.Where(x => x.Value.value is not null)
+                    .Select(x => (x.Key, x.Value.size, x.Value.affectiveHashCode))
+                    .UnionBy(entity.chunk!.Archetype.ComponentTypes.Where(
+                        x => !components.TryGetValue(
+                            x.type, out (IComponent? value, int size, int affectiveHashCode) o
+                        ) || o.value is not null
+                    ), x => x.Item1).ToArray()
+                );
+            }
 
             if (newArchetype != entity.chunk.Archetype)
                 ChangeArchetype(newArchetype, held);

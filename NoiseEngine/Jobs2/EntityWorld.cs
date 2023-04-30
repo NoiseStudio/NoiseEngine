@@ -124,7 +124,7 @@ public partial class EntityWorld : IDisposable {
     /// </summary>
     /// <returns>New <see cref="Entity"/>.</returns>
     public Entity Spawn() {
-        if (!GetArchetype(0, out Archetype? archetype))
+        if (!TryGetArchetype(0, out Archetype? archetype))
             archetype = CreateArchetype(0, Array.Empty<(Type type, int size, int affectiveHashCode)>());
 
         (ArchetypeChunk chunk, nint index) = archetype.TakeRecord();
@@ -143,24 +143,7 @@ public partial class EntityWorld : IDisposable {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Archetype GetArchetype(int hashCode, Func<(Type type, int size, int affectiveHashCode)[]> valueFactory) {
-        if (archetypes.TryGetValue(hashCode, out Archetype? archetype))
-            return archetype;
-
-        lock (archetypes) {
-            if (archetypes.TryGetValue(hashCode, out archetype))
-                return archetype;
-
-            archetype = new Archetype(this, hashCode, valueFactory());
-            archetypes.Add(hashCode, archetype);
-        }
-
-        archetype.Initialize();
-        return archetype;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool GetArchetype(int hashCode, [NotNullWhen(true)] out Archetype? archetype) {
+    internal bool TryGetArchetype(int hashCode, [NotNullWhen(true)] out Archetype? archetype) {
         return archetypes.TryGetValue(hashCode, out archetype);
     }
 

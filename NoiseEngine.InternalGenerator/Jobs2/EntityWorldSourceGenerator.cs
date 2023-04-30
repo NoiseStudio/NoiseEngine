@@ -58,7 +58,7 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
                         builder.AppendLine(";");
                 }
 
-                builder.AppendIndentation(2).AppendLine("if (!GetArchetype(hashCode, out Archetype? archetype)) {");
+                builder.AppendIndentation(2).AppendLine("if (!TryGetArchetype(hashCode, out Archetype? archetype)) {");
                 builder.AppendIndentation(3).AppendLine(
                     "archetype = CreateArchetype(hashCode, new (Type type, int size, int affectiveHashCode)[] {"
                 );
