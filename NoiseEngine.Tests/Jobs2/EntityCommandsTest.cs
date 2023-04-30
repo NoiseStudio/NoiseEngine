@@ -36,7 +36,7 @@ public class EntityCommandsTest : ApplicationTestEnvironment {
         Entity entityA = EntityWorld.Spawn(MockComponentA.TestValueA);
         Entity entityB = EntityWorld.Spawn(MockComponentA.TestValueA);
 
-        Assert.True(entityA.TryGet(out MockComponentA componentA));
+        Assert.True(entityA.TryGet(out MockComponentA? componentA));
         Assert.Equal(MockComponentA.TestValueA, componentA);
         Assert.True(entityB.TryGet(out componentA));
         Assert.Equal(MockComponentA.TestValueA, componentA);
@@ -57,7 +57,7 @@ public class EntityCommandsTest : ApplicationTestEnvironment {
         using Entity entityA = EntityWorld.Spawn(MockComponentA.TestValueA);
         using Entity entityB = EntityWorld.Spawn(MockComponentA.TestValueA);
 
-        Assert.True(entityA.TryGet(out MockComponentA componentA));
+        Assert.True(entityA.TryGet(out MockComponentA? componentA));
         Assert.Equal(MockComponentA.TestValueA, componentA);
         Assert.True(entityB.TryGet(out componentA));
         Assert.Equal(MockComponentA.TestValueA, componentA);
@@ -78,7 +78,7 @@ public class EntityCommandsTest : ApplicationTestEnvironment {
         using Entity entityA = EntityWorld.Spawn(MockComponentA.TestValueA);
         using Entity entityB = EntityWorld.Spawn(MockComponentA.TestValueA);
 
-        Assert.True(entityA.TryGet(out MockComponentA componentA));
+        Assert.True(entityA.TryGet(out MockComponentA? componentA));
         Assert.Equal(MockComponentA.TestValueA, componentA);
         Assert.True(entityB.TryGet(out componentA));
         Assert.Equal(MockComponentA.TestValueA, componentA);
@@ -152,7 +152,7 @@ public class EntityCommandsTest : ApplicationTestEnvironment {
 
         foreach (Entity entity in entities) {
             if (!entity.IsDespawned) {
-                Assert.True(entity.TryGet(out MockComponentA componentA));
+                Assert.True(entity.TryGet(out MockComponentA? componentA));
                 Assert.Equal(MockComponentA.TestValueA, componentA);
                 entity.Despawn();
             }

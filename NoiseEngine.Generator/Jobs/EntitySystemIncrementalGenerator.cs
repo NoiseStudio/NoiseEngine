@@ -335,7 +335,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                 builder.AppendIndentation(6).AppendLine("(").AppendIndentation(7).Append("typeof(").Append(parameterType)
                     .AppendLine("),").AppendIndentation(7).Append("System.Runtime.CompilerServices.Unsafe.SizeOf<")
                     .Append(parameterType).AppendLine(">(),").AppendIndentation(7)
-                    .Append("IAffectiveComponent.GetAffectiveHashCode(data.Get<").Append(parameterType)
+                    .Append("NoiseEngineInternal_DoNotUse.GetAffectiveHashCode(data.Get<").Append(parameterType)
                     .Append(">(i + offset").Append(i++).AppendLine("))").AppendIndentation(6).AppendLine("),");
             }
             builder.Remove(builder.Length - 1 - Environment.NewLine.Length, 1);

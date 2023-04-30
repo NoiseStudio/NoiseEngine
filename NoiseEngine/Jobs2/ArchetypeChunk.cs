@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace NoiseEngine.Jobs2;
@@ -11,6 +12,7 @@ internal class ArchetypeChunk {
 
     private readonly EntityLocker locker = new EntityLocker();
     private readonly Array storage;
+    private readonly int sizeInBytes;
     private int count = -1;
 
     public Archetype Archetype { get; }
@@ -20,6 +22,10 @@ internal class ArchetypeChunk {
 
     internal nint RecordSize { get; }
     internal byte[] StorageData { get; }
+    internal Span<byte> StorageDataSpan {
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        get => MemoryMarshal.CreateSpan(ref StorageData[0], sizeInBytes);
+    }
     internal Dictionary<Type, nint> Offsets { get; }
     internal Dictionary<Type, int> HashCodes { get; }
 
@@ -32,12 +38,13 @@ internal class ArchetypeChunk {
         HashCodes = archetype.HashCodes;
         RecordSize = archetype.RecordSize;
 
-        int capacity = (int)(16000 / RecordSize);
+        int capacity = (int)(160000 / RecordSize);
         Capacity = capacity == 0 ? 1 : capacity;
         CapacityM = Capacity - 1;
         storage = Array.CreateInstance(columnType, Capacity);
 
         StorageData = Unsafe.As<byte[]>(storage);
+        sizeInBytes = (int)(StorageData.Length * RecordSize);
     }
 
     public bool TryTakeRecord(out nint index) {
@@ -47,6 +54,8 @@ internal class ArchetypeChunk {
                 index = i * RecordSize;
                 return true;
             }
+
+            Interlocked.Decrement(ref count);
         }
 
         index = default;

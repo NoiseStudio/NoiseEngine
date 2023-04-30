@@ -3,7 +3,6 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -23,6 +22,7 @@ internal class Archetype {
 
     private AtomicBool isInitialized;
     private uint queuedAffectiveSystems;
+    private ArchetypeChunk lastChunk;
 
     public EntityWorld World { get; }
     public int HashCode { get; }
@@ -66,6 +66,16 @@ internal class Archetype {
         // Enqueue affective systems.
         foreach (AffectiveSystem affectiveSystem in world.AffectiveSystems)
             RegisterAffectiveSystem(affectiveSystem);
+
+        lastChunk = new ArchetypeChunk(this, columnType);
+        chunks.Add(lastChunk);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    internal static int GetComponentHashCode<T>(T component) where T : IComponent {
+        if (component is IAffectiveComponent<T> affectiveComponent)
+            return unchecked(typeof(T).GetHashCode() + (affectiveComponent.GetAffectiveHashCode() * 16777619));
+        return typeof(T).GetHashCode();
     }
 
     public void Initialize() {
@@ -86,26 +96,26 @@ internal class Archetype {
         if (releasedRecords.TryDequeue(out (ArchetypeChunk, nint) o))
             return o;
 
-        foreach (ArchetypeChunk chunk in chunks) {
-            if (chunk.TryTakeRecord(out nint index))
-                return (chunk, index);
-        }
+        ArchetypeChunk chunk = lastChunk;
+        if (chunk.TryTakeRecord(out nint index))
+            return (chunk, index);
 
         lock (chunks) {
-            if (releasedRecords.TryDequeue(out o))
-                return o;
+            while (true) {
+                if (releasedRecords.TryDequeue(out o))
+                    return o;
 
-            foreach (ArchetypeChunk chunk in chunks) {
-                if (chunk.TryTakeRecord(out nint index))
+                chunk = lastChunk;
+                if (chunk.TryTakeRecord(out index))
                     return (chunk, index);
+
+                lastChunk = new ArchetypeChunk(this, columnType);
+                if (!lastChunk.TryTakeRecord(out nint i))
+                    continue;
+
+                chunks.Add(lastChunk);
+                return (lastChunk, i);
             }
-
-            ArchetypeChunk c = new ArchetypeChunk(this, columnType);
-            if (!c.TryTakeRecord(out nint i))
-                throw new UnreachableException();
-
-            chunks.Add(c);
-            return (c, i);
         }
     }
 

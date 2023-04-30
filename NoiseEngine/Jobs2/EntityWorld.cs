@@ -5,8 +5,10 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -122,7 +124,9 @@ public partial class EntityWorld : IDisposable {
     /// </summary>
     /// <returns>New <see cref="Entity"/>.</returns>
     public Entity Spawn() {
-        Archetype archetype = GetArchetype(0, () => Array.Empty<(Type, int, int)>());
+        if (!GetArchetype(0, out Archetype? archetype))
+            archetype = CreateArchetype(0, Array.Empty<(Type type, int size, int affectiveHashCode)>());
+
         (ArchetypeChunk chunk, nint index) = archetype.TakeRecord();
         Entity entity = new Entity(chunk, index);
 
@@ -148,6 +152,25 @@ public partial class EntityWorld : IDisposable {
                 return archetype;
 
             archetype = new Archetype(this, hashCode, valueFactory());
+            archetypes.Add(hashCode, archetype);
+        }
+
+        archetype.Initialize();
+        return archetype;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool GetArchetype(int hashCode, [NotNullWhen(true)] out Archetype? archetype) {
+        return archetypes.TryGetValue(hashCode, out archetype);
+    }
+
+    internal Archetype CreateArchetype(int hashCode, (Type type, int size, int affectiveHashCode)[] components) {
+        Archetype? archetype;
+        lock (archetypes) {
+            if (archetypes.TryGetValue(hashCode, out archetype))
+                return archetype;
+
+            archetype = new Archetype(this, hashCode, components);
             archetypes.Add(hashCode, archetype);
         }
 

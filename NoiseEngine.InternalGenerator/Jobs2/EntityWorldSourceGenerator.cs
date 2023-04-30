@@ -14,6 +14,7 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
             builder.AppendLine("using System;").AppendLine("using System.Runtime.CompilerServices;");
             builder.AppendLine().AppendLine("namespace NoiseEngine.Jobs2;").AppendLine();
 
+            builder.AppendLine("#nullable enable");
             builder.AppendLine("public partial class EntityWorld {").AppendLine();
 
             for (int i = 1; i <= JobsGeneratorHelper.ArgumentsCount; i++) {
@@ -46,28 +47,28 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
                     builder.AppendIndentation(2).Append("where T").Append(j).AppendLine(" : IComponent");
                 builder.AppendIndentation().AppendLine("{");
 
-                builder.AppendIndentation(2).AppendLine("int hashCode = unchecked(");
+                builder.AppendIndentation(2).AppendLine("int hashCode =");
                 for (int j = 1; j <= i; j++) {
-                    builder.AppendIndentation(3).Append("(typeof(T").Append(j)
-                        .Append(").GetHashCode() + IAffectiveComponent.GetAffectiveHashCode(component").Append(j)
-                        .Append(") * 16777619)");
+                    builder.AppendIndentation(3).Append("Archetype.GetComponentHashCode(component").Append(j)
+                        .Append(")");
 
                     if (j != i)
                         builder.AppendLine(" ^");
                     else
-                        builder.AppendLine();
+                        builder.AppendLine(";");
                 }
-                builder.AppendIndentation(2).AppendLine(");");
 
-                builder.AppendIndentation(2).AppendLine(
-                    "Archetype archetype = GetArchetype(hashCode, () => new (Type type, int size, int affectiveHashCode)[] {"
+                builder.AppendIndentation(2).AppendLine("if (!GetArchetype(hashCode, out Archetype? archetype)) {");
+                builder.AppendIndentation(3).AppendLine(
+                    "archetype = CreateArchetype(hashCode, new (Type type, int size, int affectiveHashCode)[] {"
                 );
                 for (int j = 1; j <= i; j++) {
-                    builder.AppendIndentation(3).Append("(typeof(T").Append(j).Append("), Unsafe.SizeOf<T").Append(j)
+                    builder.AppendIndentation(4).Append("(typeof(T").Append(j).Append("), Unsafe.SizeOf<T").Append(j)
                         .Append(">(), IAffectiveComponent.GetAffectiveHashCode(component").Append(j).Append("))")
                         .AppendLine(j == i ? "" : ",");
                 }
-                builder.AppendIndentation(2).AppendLine("});").AppendLine();
+                builder.AppendIndentation(3).AppendLine("});").AppendLine();
+                builder.AppendIndentation(2).AppendLine("}").AppendLine();
 
                 builder.AppendLine(@"        (ArchetypeChunk chunk, nint index) = archetype.TakeRecord();
         Entity entity = new Entity(chunk, index);").AppendLine();

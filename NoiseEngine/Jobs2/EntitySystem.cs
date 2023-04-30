@@ -66,6 +66,11 @@ public abstract class EntitySystem : IDisposable {
             return entity.chunk!.HashCodes[typeof(T)];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetAffectiveHashCode<T>(T component) where T : IComponent {
+            return IAffectiveComponent.GetAffectiveHashCode(component);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static bool CompareAffectiveComponent<T>(
             ref int archetypeHashCode, in T oldValue, in T newValue
@@ -73,8 +78,7 @@ public abstract class EntitySystem : IDisposable {
             if (oldValue.AffectiveEquals(newValue))
                 return false;
 
-            archetypeHashCode ^=
-                typeof(T).GetHashCode() + IAffectiveComponent.GetAffectiveHashCode(newValue) * 16777619;
+            archetypeHashCode ^= Archetype.GetComponentHashCode(newValue);
             return true;
         }
 

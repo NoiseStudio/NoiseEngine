@@ -21,7 +21,7 @@ public class EntityTest : ApplicationTestEnvironment {
     public void TryGet() {
         using Entity entity = EntityWorld.Spawn(MockComponentA.TestValueA);
 
-        Assert.True(entity.TryGet(out MockComponentA componentA));
+        Assert.True(entity.TryGet(out MockComponentA? componentA));
         Assert.Equal(MockComponentA.TestValueA, componentA);
     }
 

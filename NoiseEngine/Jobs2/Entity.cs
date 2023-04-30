@@ -93,7 +93,7 @@ public sealed class Entity : IDisposable {
     /// <see langword="true"/> when this <see cref="Entity"/> contains T component; otherwise <see langword="false"/>.
     /// </returns>
     public bool TryGet<T>([NotNullWhen(true)] out T? value) where T : IComponent {
-        do {
+        while (true) {
             ArchetypeChunk? chunk = this.chunk;
             nint index = this.index;
 
@@ -114,7 +114,7 @@ public sealed class Entity : IDisposable {
 
             if (chunk == this.chunk || index == this.index)
                 return true;
-        } while (true);
+        }
     }
 
 }
