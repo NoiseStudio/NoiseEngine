@@ -47,6 +47,13 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
                     builder.AppendIndentation(2).Append("where T").Append(j).AppendLine(" : IComponent");
                 builder.AppendIndentation().AppendLine("{");
 
+                // Unique validation.
+                if (i != 1) {
+                    UniqueValidation(i, builder);
+                    builder.AppendLine();
+                }
+
+                // Content.
                 builder.AppendIndentation(2).AppendLine("int hashCode =");
                 for (int j = 1; j <= i; j++) {
                     builder.AppendIndentation(3).Append("Archetype.GetComponentHashCode(component").Append(j)
@@ -104,6 +111,21 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
         }
 
         public void Initialize(GeneratorInitializationContext context) {
+        }
+
+        private void UniqueValidation(int i, StringBuilder builder) {
+            for (; i >= 2; i--) {
+                builder.AppendIndentation(2).Append("if (");
+                for (int j = i - 1; j >= 1; j--) {
+                    builder.Append("typeof(T").Append(i).Append(") == typeof(T").Append(j).Append(")");
+                    if (j != 1)
+                        builder.Append(" || ");
+                }
+                builder.AppendLine(")");
+                builder.AppendIndentation(3).Append(
+                    "throw new ArgumentException(\"Component type must be unique.\", nameof(component"
+                ).Append(i).AppendLine("));");
+            }
         }
 
     }
