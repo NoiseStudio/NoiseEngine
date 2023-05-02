@@ -212,6 +212,7 @@ public abstract class EntitySystem : IDisposable {
     private EntitySchedule? schedule;
     private double? cycleTime;
     private bool isDoneInitialize;
+    private IEntityFilter? filter;
 
     public AffectiveSystem? AffectiveSystem { get; private set; }
     public bool IsInitialized => world is not null;
@@ -277,6 +278,24 @@ public abstract class EntitySystem : IDisposable {
                         Wait();
                         OnStop();
                     }
+                }
+            }
+        }
+    }
+
+    public IEntityFilter? Filter {
+        get => filter;
+        set {
+            lock (archetypes) {
+                filter = value;
+                archetypes.Clear();
+
+                EntityWorld? world = this.world;
+                if (world is not null) {
+                    foreach (Archetype archetype in world.Archetypes)
+                        RegisterArchetype(archetype);
+                } else {
+                    AssertIsNotDisposed();
                 }
             }
         }
@@ -436,6 +455,9 @@ public abstract class EntitySystem : IDisposable {
             if (!archetype.Offsets.ContainsKey(type))
                 return;
         }
+
+        if (Filter?.CompareComponents(archetype.ComponentTypes.Select(x => x.type)) == false)
+            return;
 
         lock (archetypes) {
             if (!archetypes.Contains(archetype))

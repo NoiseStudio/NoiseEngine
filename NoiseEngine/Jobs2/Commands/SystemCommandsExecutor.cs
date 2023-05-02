@@ -1,9 +1,7 @@
 ﻿using NoiseEngine.Collections;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -103,8 +101,8 @@ internal class SystemCommandsExecutor {
                 hashCode ^= unchecked(type.GetHashCode() + affectiveHashCode * 16777619);
             }
 
-            entity.TryGetWorld(out EntityWorld? world);
-            if (!world!.TryGetArchetype(hashCode, out Archetype? newArchetype)) {
+            EntityWorld world = entity.chunk!.Archetype.World;
+            if (!world.TryGetArchetype(hashCode, out Archetype? newArchetype)) {
                 newArchetype = world.CreateArchetype(hashCode, components.Where(x => x.Value.value is not null)
                     .Select(x => (x.Key, x.Value.size, x.Value.affectiveHashCode))
                     .UnionBy(entity.chunk!.Archetype.ComponentTypes.Where(

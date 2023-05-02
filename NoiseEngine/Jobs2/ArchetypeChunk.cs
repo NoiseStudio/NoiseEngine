@@ -38,7 +38,7 @@ internal class ArchetypeChunk {
         HashCodes = archetype.HashCodes;
         RecordSize = archetype.RecordSize;
 
-        int capacity = (int)(160000 / RecordSize);
+        int capacity = (int)(16000 / RecordSize);
         Capacity = capacity == 0 ? 1 : capacity;
         CapacityM = Capacity - 1;
         storage = Array.CreateInstance(columnType, Capacity);

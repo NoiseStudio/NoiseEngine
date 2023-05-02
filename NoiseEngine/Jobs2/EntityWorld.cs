@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,6 +30,8 @@ public partial class EntityWorld : IDisposable {
     public bool IsDisposed => isDisposed;
     public IEnumerable<AffectiveSystem> AffectiveSystems => affectiveSystems;
     public IEnumerable<EntitySystem> Systems => systems;
+
+    internal IEnumerable<Archetype> Archetypes => archetypes.Values;
 
     public EntityWorld() {
         DefaultSchedule = Application.EntitySchedule2;
