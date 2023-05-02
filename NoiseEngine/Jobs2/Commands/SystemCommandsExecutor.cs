@@ -26,10 +26,13 @@ internal class SystemCommandsExecutor {
             SystemCommand command = commands[index];
             switch (command.Type) {
                 case SystemCommandType.GetEntity:
-                    ProcessEntity();
-                    components.Clear();
-                    writeAccess = false;
-                    entityCommands = (EntityCommandsInner)command.Value!;
+                    EntityCommandsInner entityCommandsTemp = (EntityCommandsInner)command.Value!;
+                    if (entityCommands?.Entity != entityCommandsTemp.Entity) {
+                        ProcessEntity();
+                        components.Clear();
+                        writeAccess = false;
+                    }
+                    entityCommands = entityCommandsTemp;
                     break;
                 case SystemCommandType.EntityDespawn:
                     DespawnEntity();
