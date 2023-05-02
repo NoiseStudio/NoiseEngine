@@ -74,6 +74,18 @@ public class EntityCommandsTest : ApplicationTestEnvironment {
     }
 
     [Fact]
+    public void InsertWithRepeats() {
+        using Entity entity = EntityWorld.Spawn();
+
+        SystemCommands commands = new SystemCommands();
+        commands.GetEntity(entity).Insert(MockComponentA.TestValueA).Insert(MockComponentA.TestValueB);
+        EntityWorld.ExecuteCommands(commands);
+
+        Assert.True(entity.TryGet(out MockComponentA? component));
+        Assert.Equal(MockComponentA.TestValueB, component);
+    }
+
+    [Fact]
     public void InsertUpdate() {
         using Entity entityA = EntityWorld.Spawn(MockComponentA.TestValueA);
         using Entity entityB = EntityWorld.Spawn(MockComponentA.TestValueA);
