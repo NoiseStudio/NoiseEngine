@@ -203,6 +203,7 @@ public abstract class EntitySystem : IDisposable {
     private readonly ManualResetEventSlim workResetEvent = new ManualResetEventSlim(true);
     private readonly object scheduleLocker = new object();
     private readonly object enabledLocker = new object();
+    private readonly Dictionary<EntitySystem, uint> dependencies = new Dictionary<EntitySystem, uint>();
 
     private EntityWorld? world;
     private uint ongoingWork;
@@ -213,11 +214,13 @@ public abstract class EntitySystem : IDisposable {
     private double? cycleTime;
     private bool isDoneInitialize;
     private IEntityFilter? filter;
+    private uint cycleCount;
 
     public AffectiveSystem? AffectiveSystem { get; private set; }
     public bool IsInitialized => world is not null;
     public bool IsWorking => isWorking;
     public bool IsDisposed => isDisposed;
+    public IEnumerable<EntitySystem> Dependencies => dependencies.Keys;
 
     public EntityWorld World {
         get {
@@ -384,6 +387,33 @@ public abstract class EntitySystem : IDisposable {
         workResetEvent.Wait();
     }
 
+    /// <summary>
+    /// Adds a <paramref name="system"/> as dependency of this <see cref="EntitySystem"/>.
+    /// </summary>
+    /// <remarks>
+    /// This affects the execution of this <see cref="EntitySystem"/> as dependencies must be executed first.
+    /// </remarks>
+    /// <param name="system">
+    /// <see cref="EntitySystem"/> which will become a dependency of this <see cref="EntitySystem"/>.
+    /// </param>
+    public void AddDependency(EntitySystem system) {
+        if (system == this)
+            throw new ArgumentException("Entity system cannot be dependency on itself.");
+        lock (dependencies)
+            dependencies.Add(system, system.cycleCount);
+    }
+
+    /// <summary>
+    /// Removes a <paramref name="system"/> from dependencies of this <see cref="EntitySystem"/>.
+    /// </summary>
+    /// <param name="system">
+    /// <see cref="EntitySystem"/> which will be removed from dependencies of this <see cref="EntitySystem"/>.
+    /// </param>
+    public void RemoveDependency(EntitySystem system) {
+        lock (dependencies)
+            dependencies.Remove(system);
+    }
+
     internal void InternalDispose() {
         if (isDisposed.Exchange(true))
             return;
@@ -481,6 +511,12 @@ public abstract class EntitySystem : IDisposable {
 
         OnLateUpdate();
         lock (workLocker) {
+            cycleCount++;
+            lock (dependencies) {
+                foreach (EntitySystem system in Dependencies)
+                    dependencies[system] = system.cycleCount;
+            }
+
             isWorking = false;
             workResetEvent.Set();
         }
@@ -489,6 +525,16 @@ public abstract class EntitySystem : IDisposable {
     internal bool TryOrderWork() {
         if (!Enabled || IsDisposed || isWorking.Exchange(true))
             return false;
+
+        foreach (EntitySystem system in Dependencies) {
+            if (system.cycleCount == dependencies[system]) {
+                lock (workLocker) {
+                    isWorking = false;
+                    workResetEvent.Set();
+                }
+                return false;
+            }
+        }
 
         OrderWork();
         return true;

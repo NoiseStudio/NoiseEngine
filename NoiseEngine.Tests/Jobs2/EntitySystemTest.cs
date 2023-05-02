@@ -34,4 +34,24 @@ public class EntitySystemTest : ApplicationTestEnvironment {
             entity.Despawn();
     }
 
+    [Fact]
+    public void Dependency() {
+        using TestSystemA systemA = new TestSystemA();
+        using TestSystemA systemB = new TestSystemA();
+
+        EntityWorld.AddSystem(systemA);
+        EntityWorld.AddSystem(systemB);
+
+        systemB.AddDependency(systemA);
+
+        Assert.False(systemB.TryExecute());
+        systemA.ExecuteAndWait();
+        Assert.True(systemB.TryExecuteAndWait());
+
+        Assert.False(systemB.TryExecute());
+        systemA.ExecuteAndWait();
+        systemA.ExecuteAndWait();
+        Assert.True(systemB.TryExecuteAndWait());
+    }
+
 }
