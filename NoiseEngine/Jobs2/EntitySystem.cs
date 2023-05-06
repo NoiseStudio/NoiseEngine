@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -59,54 +60,36 @@ public abstract class EntitySystem : IDisposable {
 
         public readonly record struct ComponentUsage(Type Type, bool WriteAccess);
 
-        public sealed class ChangedList {
+        [StructLayout(LayoutKind.Sequential)]
+        public readonly struct ChangedList {
 
-            private static readonly ConcurrentDictionary<Type, ConcurrentStack<ChangedList>> pool
-                = new ConcurrentDictionary<Type, ConcurrentStack<ChangedList>>();
+            private readonly Jobs2.ChangedList inner;
 
-            internal Array buffer;
-            internal int count;
+            public object? Inner => inner;
 
-            internal ChangedList(Array buffer) {
-                this.buffer = buffer;
+            private ChangedList(Jobs2.ChangedList inner) {
+                this.inner = inner;
             }
 
             public static ChangedList Rent<T>() where T : IComponent {
-                if (
-                    pool.TryGetValue(typeof(T), out ConcurrentStack<ChangedList>? stack) &&
-                    stack.TryPop(out ChangedList? obj)
-                ) {
-                    return obj;
-                }
-                return new ChangedList(Array.CreateInstance(typeof(ArchetypeColumn<nint, T>), 64));
-            }
-
-            internal static void Return(Type type, ChangedList obj) {
-                if (!pool.TryGetValue(type, out ConcurrentStack<ChangedList>? stack)) {
-                    pool.TryAdd(type, new ConcurrentStack<ChangedList>());
-                    if (!pool.TryGetValue(type, out stack))
-                        return;
-                }
-
-                obj.count = 0;
-                stack.Push(obj);
+                return new ChangedList(Jobs2.ChangedList.Rent<T>());
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Add<T>(nint entityPointer, T oldValue) where T : IComponent {
-                if (count >= buffer.Length)
+                if (inner.count >= inner.buffer.Length)
                     Resize<T>();
 
                 Unsafe.WriteUnaligned(
-                    ref Unsafe.As<byte[]>(buffer)[Unsafe.SizeOf<ArchetypeColumn<nint, T>>() * count++],
+                    ref Unsafe.As<byte[]>(inner.buffer)[inner.size * inner.count++],
                     new ArchetypeColumn<nint, T>(entityPointer, oldValue)
                 );
             }
 
             private void Resize<T>() where T : IComponent {
-                Array newBuffer = Array.CreateInstance(typeof(ArchetypeColumn<nint, T>), count * 2);
-                buffer.CopyTo(newBuffer, 0);
-                buffer = newBuffer;
+                Array newBuffer = Array.CreateInstance(typeof(ArchetypeColumn<nint, T>), inner.count * 2);
+                inner.buffer.CopyTo(newBuffer, 0);
+                inner.buffer = newBuffer;
             }
 
         }

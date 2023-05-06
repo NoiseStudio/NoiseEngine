@@ -5,6 +5,8 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace NoiseEngine.Jobs2;
@@ -167,6 +169,33 @@ internal class EntityScheduleWorker : IDisposable {
                                 (nint)(executionData.EndIndex * executionData.Chunk.RecordSize + ptr),
                                 systemCommands, changed
                             );
+
+                            foreach ((object? observersObject, object? listObject) in changed) {
+                                ChangedObserverContext[] observers =
+                                    Unsafe.As<ChangedObserverContext[]>(observersObject)!;
+                                ChangedList list = Unsafe.As<ChangedList>(listObject)!;
+
+                                Span<byte> buffer = MemoryMarshal.CreateSpan(
+                                    ref Unsafe.As<byte[]>(list.buffer)[0], list.size * list.count
+                                );
+
+                                for (int i = 0; i < buffer.Length; i += list.size) {
+                                    nint changedPtr = Unsafe.ReadUnaligned<nint>(ref buffer[i]);
+                                    Entity entity = Unsafe.ReadUnaligned<EntityInternalComponent>(
+                                        (void*)changedPtr
+                                    ).Entity!;
+                                    ref byte oldValue = ref buffer[i + Unsafe.SizeOf<nint>()];
+
+                                    foreach (ChangedObserverContext observer in observers) {
+                                        observer.Invoker.Invoke(
+                                            observer.Observer, entity, systemCommands.Inner, changedPtr,
+                                            executionData.Chunk.Offsets, ref oldValue
+                                        );
+                                    }
+                                }
+
+                                list.Return();
+                            }
                         }
                     }
                     EntitySchedule.isScheduleLockThread = false;
@@ -181,6 +210,8 @@ internal class EntityScheduleWorker : IDisposable {
                         new SystemCommandsExecutor(systemCommands.Inner.Commands).Invoke();
                         systemCommands.Inner.Commands.Clear();
                     }
+
+                    changed.Clear();
                 }
 
                 executorThreadsResetEvent.Wait();

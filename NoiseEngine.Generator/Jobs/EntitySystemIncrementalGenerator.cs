@@ -228,8 +228,8 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                 builder.AppendIndentation(3).Append(parameterType).Append(" oldParameter").Append(i).AppendLine(";");
                 builder.AppendIndentation(3).Append("object? observers").Append(i)
                     .Append(" = data.GetChangedObservers(typeof(").Append(parameterType).AppendLine("));");
-                builder.AppendIndentation(3).Append("NoiseEngineInternal_DoNotUse.ChangedList? changed").Append(i)
-                    .AppendLine(" = null;");
+                builder.AppendIndentation(3).Append("NoiseEngineInternal_DoNotUse.ChangedList changed").Append(i)
+                    .AppendLine(" = default;");
             }
 
             builder.AppendIndentation(3);
@@ -322,8 +322,9 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             builder.Append("NoiseEngineInternal_DoNotUse.CompareComponent(in oldParameter").Append(i)
                 .Append(", in parameter").Append(i).AppendLine(")) {");
 
-            builder.AppendIndentation(6).Append("changed").Append(i)
-                .Append(" ??= NoiseEngineInternal_DoNotUse.ChangedList.Rent<").Append(parameterType).AppendLine(">();");
+            builder.AppendIndentation(6).Append("if (changed").Append(i).AppendLine(".Inner is null)");
+            builder.AppendIndentation(7).Append("changed").Append(i)
+                .Append(" = NoiseEngineInternal_DoNotUse.ChangedList.Rent<").Append(parameterType).AppendLine(">();");
             builder.AppendIndentation(6).Append("changed").Append(i).Append(".Add(i, oldParameter").Append(i)
                 .AppendLine(");");
 
@@ -387,8 +388,10 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                 continue;
             }
 
-            builder.AppendIndentation(2).Append("data.Changed.Add((observers").Append(i).Append(", changed").Append(i)
-                .AppendLine("));");
+            builder.AppendIndentation(3).Append("if (observers").Append(i).Append(" is not null && changed")
+                .Append(i).AppendLine(".Inner is not null)");
+            builder.AppendIndentation(4).Append("data.Changed.Add((observers").Append(i).Append(", changed").Append(i)
+                .AppendLine(".Inner));");
         }
 
         builder.AppendIndentation(2).AppendLine("}").AppendLine();

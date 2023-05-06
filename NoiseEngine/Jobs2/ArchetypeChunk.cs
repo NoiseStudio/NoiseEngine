@@ -157,7 +157,7 @@ internal class ArchetypeChunk {
                 continue;
             }
 
-            if (parameters.Skip(skip).Select(x => x.ParameterType).Any(x => !Offsets.ContainsKey(x)))
+            if (parameters.Skip(skip + 1).Select(x => x.ParameterType).Any(x => !Offsets.ContainsKey(x)))
                 continue;
 
             result.Add(context);
