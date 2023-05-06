@@ -60,7 +60,7 @@ namespace NoiseEngine.InternalGenerator.Jobs {
 
                 // CreateFromEntity.
                 builder.AppendIndentation().AppendLine(@"private protected override EntitySystem CreateFromComponents(
-        System.Collections.Generic.Dictionary<Type, object> components
+        System.Collections.Generic.Dictionary<Type, IComponent> components
     ) {"
                 );
 

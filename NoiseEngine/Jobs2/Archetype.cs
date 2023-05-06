@@ -125,7 +125,7 @@ internal class Archetype {
         releasedRecords.Enqueue((chunk, index));
     }
 
-    public bool TryReadAnyRecord([NotNullWhen(true)] out Dictionary<Type, object>? components) {
+    public bool TryReadAnyRecord([NotNullWhen(true)] out Dictionary<Type, IComponent>? components) {
         foreach (ArchetypeChunk chunk in chunks) {
             if (chunk.TryReadAnyRecord(out components))
                 return true;
@@ -143,7 +143,7 @@ internal class Archetype {
     }
 
     private void InitializeRecordWorker() {
-        if (!TryReadAnyRecord(out Dictionary<Type, object>? components))
+        if (!TryReadAnyRecord(out Dictionary<Type, IComponent>? components))
             return;
 
         while (affectiveSystems.TryDequeue(out AffectiveSystem? affectiveSystem)) {

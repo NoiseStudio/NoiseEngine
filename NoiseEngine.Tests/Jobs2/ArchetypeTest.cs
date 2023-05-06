@@ -20,7 +20,7 @@ public class ArchetypeTest : ApplicationTestEnvironment {
         Assert.NotNull(entity.chunk);
         Archetype archetype = entity.chunk!.Archetype;
 
-        Assert.True(archetype.TryReadAnyRecord(out Dictionary<Type, object>? components));
+        Assert.True(archetype.TryReadAnyRecord(out Dictionary<Type, IComponent>? components));
         Assert.Equal(MockComponentA.TestValueA, components![typeof(MockComponentA)]);
         Assert.Equal(MockComponentC.TestValueA, components[typeof(MockComponentC)]);
 

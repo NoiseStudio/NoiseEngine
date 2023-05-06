@@ -92,6 +92,14 @@ public partial class EntityWorld : IDisposable {
         }
     }
 
+    public void AddObserver<T1>(Observers.ChangedObserverT1<T1> observer)
+        where T1 : IComponent
+    {
+        AddChangedObserverWorker(Observers.ChangedObserverT1Invoker<T1>, observer, new List<Type> {
+            typeof(T1)
+        });
+    }
+
     public void AddObserver<T1, T2>(Observers.ChangedObserverT2C<T1, T2> observer)
         where T1 : IComponent
         where T2 : IComponent

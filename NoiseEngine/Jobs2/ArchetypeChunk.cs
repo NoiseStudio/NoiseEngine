@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -67,7 +68,7 @@ internal class ArchetypeChunk {
         return locker;
     }
 
-    public bool TryReadAnyRecord([NotNullWhen(true)] out Dictionary<Type, object>? components) {
+    public bool TryReadAnyRecord([NotNullWhen(true)] out Dictionary<Type, IComponent>? components) {
         if (count < 0) {
             components = null;
             return false;
@@ -82,28 +83,9 @@ internal class ArchetypeChunk {
                     if (Unsafe.AsRef<EntityInternalComponent>((void*)i).Entity is null)
                         continue;
 
-                    components = new Dictionary<Type, object>();
-                    foreach ((Type type, int size, _) in Archetype.ComponentTypes) {
-                        object obj;
-                        if (size == sizeof(nint) && !type.IsValueType) {
-                            obj = null!;
-                            fixed (byte* vp = &Unsafe.As<object, byte>(ref obj)) {
-                                Buffer.MemoryCopy(
-                                    (void*)(i + Offsets[type]), vp, size, size
-                                );
-                            }
-                        } else {
-                            obj = Activator.CreateInstance(type, true) ?? throw new UnreachableException();
-                            fixed (byte* vp = &Unsafe.As<object, byte>(ref obj)) {
-                                Buffer.MemoryCopy(
-                                    (void*)(i + Offsets[type]),
-                                    (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)), size, size
-                                );
-                            }
-                        }
-
-                        components.Add(type, obj);
-                    }
+                    components = new Dictionary<Type, IComponent>();
+                    foreach ((Type type, int size, _) in Archetype.ComponentTypes)
+                        components.Add(type, ReadComponentBoxed(type, size, i + Offsets[type]));
 
                     if (Unsafe.AsRef<EntityInternalComponent>((void*)i).Entity is not null)
                         return true;
@@ -113,6 +95,25 @@ internal class ArchetypeChunk {
 
         components = null;
         return false;
+    }
+
+    public unsafe IComponent ReadComponentBoxed(Type type, int size, nint componentPointer) {
+        IComponent obj;
+        if (size == sizeof(nint) && !type.IsValueType) {
+            obj = null!;
+            fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref obj))
+                Buffer.MemoryCopy((void*)componentPointer, vp, size, size);
+            return obj;
+        }
+
+        obj = Unsafe.As<IComponent>(Activator.CreateInstance(type, true) ?? throw new UnreachableException());
+        fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref obj)) {
+            Buffer.MemoryCopy(
+                (void*)componentPointer,
+                (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)), size, size
+            );
+        }
+        return obj;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

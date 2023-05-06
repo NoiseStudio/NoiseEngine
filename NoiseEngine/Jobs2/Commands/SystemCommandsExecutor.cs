@@ -1,7 +1,9 @@
 ﻿using NoiseEngine.Collections;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -13,9 +15,11 @@ internal class SystemCommandsExecutor {
     private readonly Dictionary<Type, (IComponent? value, int size, int affectiveHashCode)> components =
         new Dictionary<Type, (IComponent? value, int size, int affectiveHashCode)>();
 
+    private SystemCommandsInner? inner;
     private int index;
     private EntityCommandsInner? entityCommands;
     private bool writeAccess;
+    private List<(Type, IComponent, int)>? changed;
 
     public SystemCommandsExecutor(FastList<SystemCommand> commands) {
         this.commands = commands;
@@ -175,12 +179,17 @@ internal class SystemCommandsExecutor {
                                 Buffer.MemoryCopy(si + oldOffset, di + newChunk.Offsets[type], size, size);
                                 continue;
                             }
+
+                            // Append changed observers.
+                            changed ??= new List<(Type, IComponent, int)>();
+                            changed.Add((type, component.value!, size));
                         } else {
                             component = components[type];
                         }
 
                         // Copy new component.
-                        ComponentMemoryCopy(ref component.value!, type, di + newChunk.Offsets[type], size);
+                        nint componentPointer = (nint)di + newChunk.Offsets[type];
+                        ComponentMemoryCopy(ref component.value!, type, componentPointer, size);
                     }
 
                     // Copy internal component.
@@ -189,12 +198,21 @@ internal class SystemCommandsExecutor {
 
                     // Clear old data.
                     new Span<byte>(si, (int)oldChunk.Archetype.RecordSize).Clear();
+                    oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
+
+                    // Notify changed observers.
+                    if (changed is not null) {
+                        foreach ((Type type, IComponent component, int size) in changed) {
+                            IComponent c = component;
+                            NotifyChangeObserver(ref c, entity, newChunk, type, (nint)di, size);
+                        }
+                        changed.Clear();
+                    }
                 }
             }
         }
 
         held.Dispose();
-        oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
         newArchetype.InitializeRecord();
     }
 
@@ -211,8 +229,11 @@ internal class SystemCommandsExecutor {
                     if (value is null)
                         continue;
 
+                    nint componentPointer = (nint)di + chunk.Offsets[type];
+                    IComponent old = chunk.ReadComponentBoxed(type, size, componentPointer);
                     IComponent component = value;
-                    ComponentMemoryCopy(ref component, type, di + chunk.Offsets[type], size);
+                    ComponentMemoryCopy(ref component, type, componentPointer, size);
+                    NotifyChangeObserver(ref old, entity, chunk, type, (nint)di, size);
                 }
             }
         }
@@ -221,18 +242,37 @@ internal class SystemCommandsExecutor {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe void ComponentMemoryCopy(ref IComponent component, Type type, byte* offset, int size) {
+    private unsafe void ComponentMemoryCopy(ref IComponent component, Type type, nint componentPointer, int size) {
         if (size == sizeof(nint) && !type.IsValueType) {
             fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component))
-                Buffer.MemoryCopy(vp, offset, size, size);
+                Buffer.MemoryCopy(vp, (void*)componentPointer, size, size);
             return;
         }
 
         fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref component)) {
             Buffer.MemoryCopy(
                 (void*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint)),
-                offset, size, size
+                (void*)componentPointer, size, size
             );
+        }
+    }
+
+    private unsafe void NotifyChangeObserver(
+        ref IComponent oldValue, Entity entity, ArchetypeChunk newChunk, Type type, nint entityPointer, int size
+    ) {
+        inner ??= new SystemCommandsInner(commands);
+        if (size == sizeof(nint) && !type.IsValueType) {
+            fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref oldValue)) {
+                foreach (ChangedObserverContext context in newChunk.GetChangedObservers(type))
+                    context.Invoker.Invoke(context.Observer, entity, inner, entityPointer, newChunk.Offsets, ref *vp);
+            }
+            return;
+        }
+
+        fixed (byte* vp = &Unsafe.As<IComponent, byte>(ref oldValue)) {
+            byte* ptr = (byte*)(Unsafe.Read<IntPtr>(vp) + sizeof(nint));
+            foreach (ChangedObserverContext context in newChunk.GetChangedObservers(type))
+                context.Invoker.Invoke(context.Observer, entity, inner, entityPointer, newChunk.Offsets, ref *ptr);
         }
     }
 

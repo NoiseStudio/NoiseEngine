@@ -31,7 +31,7 @@ public abstract class AffectiveSystem : IDisposable {
 
     private protected abstract Type[] AffectiveComponentsInternal { get; }
 
-    private protected abstract EntitySystem CreateFromComponents(Dictionary<Type, object> components);
+    private protected abstract EntitySystem CreateFromComponents(Dictionary<Type, IComponent> components);
 
     /// <summary>
     /// Disposes this <see cref="AffectiveSystem"/> and their <see cref="EntitySystem"/>s.
@@ -53,7 +53,7 @@ public abstract class AffectiveSystem : IDisposable {
             throw new InvalidOperationException("Affective system is already initialized.");
     }
 
-    internal void RegisterArchetype(Archetype archetype, Dictionary<Type, object> components) {
+    internal void RegisterArchetype(Archetype archetype, Dictionary<Type, IComponent> components) {
         if (isDisposed || archetypes.Contains(archetype))
             return;
 
@@ -84,7 +84,7 @@ public abstract class AffectiveSystem : IDisposable {
         system.RegisterArchetype(archetype);
     }
 
-    internal EntitySystem? InternalCreateFromComponents(Dictionary<Type, object> components) {
+    internal EntitySystem? InternalCreateFromComponents(Dictionary<Type, IComponent> components) {
         if (isDisposed)
             return null;
 

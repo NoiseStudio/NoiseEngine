@@ -160,6 +160,7 @@ internal class EntityScheduleWorker : IDisposable {
                         packages.Enqueue(executionData);
                         continue;
                     }
+                    bool lockedWrite = executionData.System.ComponentWriteAccess;
 
                     EntitySchedule.isScheduleLockThread = true;
                     unsafe {
@@ -170,6 +171,7 @@ internal class EntityScheduleWorker : IDisposable {
                                 systemCommands, changed
                             );
 
+                            // Notify changed.
                             foreach ((object? observersObject, object? listObject) in changed) {
                                 ChangedObserverContext[] observers =
                                     Unsafe.As<ChangedObserverContext[]>(observersObject)!;
@@ -200,7 +202,7 @@ internal class EntityScheduleWorker : IDisposable {
                     }
                     EntitySchedule.isScheduleLockThread = false;
 
-                    if (executionData.System.ComponentWriteAccess)
+                    if (lockedWrite)
                         locker.ExitWriteLock();
                     else
                         locker.ExitReadLock();
