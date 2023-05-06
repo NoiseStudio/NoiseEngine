@@ -1,7 +1,9 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs2.Commands;
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -138,6 +140,7 @@ internal class EntityScheduleWorker : IDisposable {
         ManualResetEventSlim executorThreadsResetEvent = this.executorThreadsResetEvent;
         SchedulePackage executionData;
         SystemCommands systemCommands = new SystemCommands();
+        List<(object?, object?)> changed = new List<(object?, object?)>();
 
         try {
             while (work) {
@@ -162,7 +165,7 @@ internal class EntityScheduleWorker : IDisposable {
                             executionData.System.SystemExecutionInternal(
                                 executionData.Chunk, (nint)(executionData.StartIndex + ptr),
                                 (nint)(executionData.EndIndex * executionData.Chunk.RecordSize + ptr),
-                                systemCommands
+                                systemCommands, changed
                             );
                         }
                     }

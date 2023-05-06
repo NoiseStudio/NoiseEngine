@@ -5,8 +5,10 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +16,8 @@ using System.Threading.Tasks;
 namespace NoiseEngine.Jobs2;
 
 public partial class EntityWorld : IDisposable {
+
+    internal readonly List<ChangedObserverContext> changedObservers = new List<ChangedObserverContext>();
 
     private readonly Dictionary<int, Archetype> archetypes = new Dictionary<int, Archetype>();
     private readonly ConcurrentList<AffectiveSystem> affectiveSystems = new ConcurrentList<AffectiveSystem>();
@@ -32,6 +36,11 @@ public partial class EntityWorld : IDisposable {
     public IEnumerable<EntitySystem> Systems => systems;
 
     internal IEnumerable<Archetype> Archetypes => archetypes.Values;
+
+    internal delegate void ChangedObserverInvoker(
+        Delegate observer, Entity entity, SystemCommandsInner commands, nint ptr, Dictionary<Type, nint> offsets,
+        ref byte oldValue
+    );
 
     public EntityWorld() {
         DefaultSchedule = Application.EntitySchedule2;
@@ -81,6 +90,15 @@ public partial class EntityWorld : IDisposable {
             foreach (Archetype archetype in archetypes.Values)
                 archetype.RegisterAffectiveSystem(system);
         }
+    }
+
+    public void AddObserver<T1, T2>(Observers.ChangedObserverT2C<T1, T2> observer)
+        where T1 : IComponent
+        where T2 : IComponent
+    {
+        AddChangedObserverWorker(Observers.ChangedObserverT2CInvoker<T1, T2>, observer, new List<Type> {
+            typeof(T1), typeof(T2)
+        });
     }
 
     /// <summary>
@@ -221,6 +239,57 @@ public partial class EntityWorld : IDisposable {
         }
 
         resetEvent.Dispose();
+    }
+
+    private void AddChangedObserverWorker(ChangedObserverInvoker invoker, Delegate observer, List<Type> types) {
+        AddObserverWorker(0, new ChangedObserverContext(invoker, observer), changedObservers, types);
+    }
+
+    private void AddObserverWorker(
+        int mode, ChangedObserverContext context, List<ChangedObserverContext> observers, List<Type> types
+    ) {
+        if (types.Count != types.Distinct().Count())
+            throw new InvalidOperationException("Duplicate component type in observer.");
+
+        MethodInfo method = context.Observer.Method;
+        types.AddRange(method.GetCustomAttributes<WithAttribute>().SelectMany(x => x.Components));
+        if (types.Count != types.Distinct().Count())
+            throw new InvalidOperationException($"Duplicate component type in {nameof(WithAttribute)}.");
+
+        Type[] without = method.GetCustomAttributes<WithoutAttribute>().SelectMany(x => x.Components).ToArray();
+        if (without.Any(types.Contains)) {
+            throw new InvalidOperationException(
+                $"{nameof(WithoutAttribute)} contains conflicting types with other requirements."
+            );
+        }
+        if (without.Length != without.Distinct().Count())
+            throw new InvalidOperationException($"Duplicate component type in {nameof(WithoutAttribute)}.");
+
+        Type type = types[0];
+        lock (observers) {
+            if (observers.Contains(context))
+                return;
+            observers.Add(context);
+
+            foreach (Archetype archetype in archetypes.Values) {
+                if (
+                    types.Any(x => !archetype.HashCodes.ContainsKey(x)) ||
+                    without.Any(archetype.HashCodes.ContainsKey)
+                ) {
+                    continue;
+                }
+
+                ConcurrentDictionary<Type, ChangedObserverContext[]> dictionary = mode switch {
+                    0 => archetype.ChangedObserversLookup,
+                    _ => throw new NotImplementedException(),
+                };
+
+                if (!dictionary.TryGetValue(type, out ChangedObserverContext[]? contexts))
+                    continue;
+                if (!dictionary.TryUpdate(type, contexts.Append(context).ToArray(), contexts))
+                    throw new UnreachableException();
+            }
+        }
     }
 
 }

@@ -19,6 +19,10 @@ public ref struct SystemCommands {
         Inner = new SystemCommandsInner(commands);
     }
 
+    internal SystemCommands(SystemCommandsInner inner) {
+        Inner = inner;
+    }
+
     /// <summary>
     /// Creates <see cref="EntityCommands"/> from given <paramref name="entity"/>.
     /// </summary>

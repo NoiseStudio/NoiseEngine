@@ -31,6 +31,8 @@ internal class Archetype {
     internal (Type type, int size, int affectiveHashCode)[] ComponentTypes { get; }
     internal Dictionary<Type, nint> Offsets { get; } = new Dictionary<Type, nint>();
     internal Dictionary<Type, int> HashCodes { get; } = new Dictionary<Type, int>();
+    internal ConcurrentDictionary<Type, ChangedObserverContext[]> ChangedObserversLookup { get; } =
+        new ConcurrentDictionary<Type, ChangedObserverContext[]>();
 
     public Archetype(EntityWorld world, int hashCode, (Type type, int size, int affectiveHashCode)[] componentTypes) {
         World = world;

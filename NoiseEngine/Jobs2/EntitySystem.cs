@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Threading;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -18,14 +19,18 @@ public abstract class EntitySystem : IDisposable {
     [Obsolete("This struct is internal and is not part of the API. Do not use.")]
     protected struct NoiseEngineInternal_DoNotUse {
 
-        public readonly record struct ExecutionData(nint RecordSize, nint StartIndex, nint EndIndex) {
+        public readonly record struct ExecutionData(
+            nint RecordSize, nint StartIndex, nint EndIndex, List<(object?, object?)> Changed
+        ) {
 
+            private readonly ArchetypeChunk chunk;
             private readonly Dictionary<Type, nint> offsets;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal ExecutionData(
-                ArchetypeChunk chunk, nint startIndex, nint endIndex
-            ) : this(chunk.RecordSize, startIndex, endIndex) {
+                ArchetypeChunk chunk, nint startIndex, nint endIndex, List<(object?, object?)> changed
+            ) : this(chunk.RecordSize, startIndex, endIndex, changed) {
+                this.chunk = chunk;
                 offsets = chunk.Offsets;
             }
 
@@ -35,18 +40,76 @@ public abstract class EntitySystem : IDisposable {
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public unsafe ref T Get<T>(nint index) where T : IComponent {
-                return ref Unsafe.AsRef<T>((byte*)index);
+            public unsafe ref T Get<T>(nint pointer) where T : IComponent {
+                return ref Unsafe.AsRef<T>((byte*)pointer);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Entity? GetInternalComponent(nint index) {
-                return Get<EntityInternalComponent>(index).Entity;
+            public Entity? GetInternalComponent(nint pointer) {
+                return Get<EntityInternalComponent>(pointer).Entity;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public object? GetChangedObservers(Type changedComponentType) {
+                ChangedObserverContext[] contexts = chunk.GetChangedObservers(changedComponentType);
+                return contexts.Length > 0 ? contexts : null;
             }
 
         }
 
         public readonly record struct ComponentUsage(Type Type, bool WriteAccess);
+
+        public sealed class ChangedList {
+
+            private static readonly ConcurrentDictionary<Type, ConcurrentStack<ChangedList>> pool
+                = new ConcurrentDictionary<Type, ConcurrentStack<ChangedList>>();
+
+            internal Array buffer;
+            internal int count;
+
+            internal ChangedList(Array buffer) {
+                this.buffer = buffer;
+            }
+
+            public static ChangedList Rent<T>() where T : IComponent {
+                if (
+                    pool.TryGetValue(typeof(T), out ConcurrentStack<ChangedList>? stack) &&
+                    stack.TryPop(out ChangedList? obj)
+                ) {
+                    return obj;
+                }
+                return new ChangedList(Array.CreateInstance(typeof(ArchetypeColumn<nint, T>), 64));
+            }
+
+            internal static void Return(Type type, ChangedList obj) {
+                if (!pool.TryGetValue(type, out ConcurrentStack<ChangedList>? stack)) {
+                    pool.TryAdd(type, new ConcurrentStack<ChangedList>());
+                    if (!pool.TryGetValue(type, out stack))
+                        return;
+                }
+
+                obj.count = 0;
+                stack.Push(obj);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Add<T>(nint entityPointer, T oldValue) where T : IComponent {
+                if (count >= buffer.Length)
+                    Resize<T>();
+
+                Unsafe.WriteUnaligned(
+                    ref Unsafe.As<byte[]>(buffer)[Unsafe.SizeOf<ArchetypeColumn<nint, T>>() * count++],
+                    new ArchetypeColumn<nint, T>(entityPointer, oldValue)
+                );
+            }
+
+            private void Resize<T>() where T : IComponent {
+                Array newBuffer = Array.CreateInstance(typeof(ArchetypeColumn<nint, T>), count * 2);
+                buffer.CopyTo(newBuffer, 0);
+                buffer = newBuffer;
+            }
+
+        }
 
         public ComponentUsage[] UsedComponents { get; set; }
         public bool ComponentWriteAccess { get; set; }
@@ -82,32 +145,19 @@ public abstract class EntitySystem : IDisposable {
             return true;
         }
 
-        /*[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public static bool UpdateComponent<T>(in T oldValue, in T newValue) where T : IComponent {
-            if (oldValue is IAffectiveComponent<T> affective) {
-                if (affective.AffectiveEquals(newValue)) {
-                    if (oldValue is IEquatable<T> equatable) {
-                        if (equatable.Equals(newValue))
-                            return false;
-                    } else {
-                        WarnMissingEquatable<T>();
-                        if (oldValue.Equals(newValue))
-                            return false;
-                    }
-                }
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool CompareComponent<T>(in T oldValue, in T newValue) where T : IComponent {
+            if (oldValue is IEquatable<T> equatable)
+                return !equatable.Equals(newValue);
 
-                return true;
-            } else if (oldValue is IEquatable<T> equatable) {
-                if (equatable.Equals(newValue))
-                    return false;
-            } else {
-                WarnMissingEquatable<T>();
-                if (oldValue.Equals(newValue))
-                    return false;
+            if (ApplicationJitConsts.IsDebugMode) {
+                Log.Warning(
+                    $"Component {typeof(T)} does not implement {nameof(IEquatable<T>)} interface. " +
+                    "What affects performance."
+                );
             }
-
-            return false;
-        }*/
+            return !oldValue.Equals(newValue);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static void ChangeArchetype(
@@ -304,6 +354,8 @@ public abstract class EntitySystem : IDisposable {
         }
     }
 
+    internal Type[] WritableComponents { get; private set; } = null!;
+
     protected double DeltaTime { get; private set; } = 1;
     protected float DeltaTimeF { get; private set; } = 1;
 
@@ -441,7 +493,10 @@ public abstract class EntitySystem : IDisposable {
 
 #pragma warning disable CS0618
         NoiseEngineInternal_DoNotUse_Initialize();
+        WritableComponents = NoiseEngineInternal_DoNotUse_Storage.UsedComponents.Where(x => x.WriteAccess)
+            .Select(x => x.Type).ToArray();
 #pragma warning restore CS0618
+
         OnInitialize();
         Enabled = true;
 
@@ -451,16 +506,17 @@ public abstract class EntitySystem : IDisposable {
         }
     }
 
+#pragma warning disable CS0618
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void SystemExecutionInternal(
-        ArchetypeChunk chunk, nint startPointer, nint endPointer, SystemCommands systemCommands
+        ArchetypeChunk chunk, nint startPointer, nint endPointer, SystemCommands systemCommands,
+        List<(object?, object?)> changed
     ) {
-#pragma warning disable CS0618
         NoiseEngineInternal_DoNotUse_SystemExecution(new NoiseEngineInternal_DoNotUse.ExecutionData(
-            chunk, startPointer, endPointer
+            chunk, startPointer, endPointer, changed
         ), systemCommands);
-#pragma warning restore CS0618
     }
+#pragma warning restore CS0618
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void InternalUpdate() {

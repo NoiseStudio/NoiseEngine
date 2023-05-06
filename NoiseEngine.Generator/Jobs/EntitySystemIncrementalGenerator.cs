@@ -211,6 +211,8 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         builder.AppendIndentation(3).Append(EntityFullName).AppendLine("? entity;");
         if (parameters.Any(x => x.isAffective)) {
             builder.AppendIndentation(3).AppendLine("bool changeArchetype;");
+            if (parameters.Count(x => x.isAffective) > 1)
+                builder.AppendIndentation(3).AppendLine("bool changeArchetypeTemp;");
             builder.AppendIndentation(3).AppendLine("int archetypeHashCode;");
         }
 
@@ -222,8 +224,13 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             builder.AppendIndentation(3).Append("nint offset").Append(i).Append(" = data.GetOffset<")
                 .Append(parameterType).AppendLine(">();");
 
-            if (isRef)
+            if (isRef) {
                 builder.AppendIndentation(3).Append(parameterType).Append(" oldParameter").Append(i).AppendLine(";");
+                builder.AppendIndentation(3).Append("object? observers").Append(i)
+                    .Append(" = data.GetChangedObservers(typeof(").Append(parameterType).AppendLine("));");
+                builder.AppendIndentation(3).Append("NoiseEngineInternal_DoNotUse.ChangedList? changed").Append(i)
+                    .AppendLine(" = null;");
+            }
 
             builder.AppendIndentation(3);
             if (isRef)
@@ -286,20 +293,46 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         i = 0;
         bool first = true;
         foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
-            if (!isRef || !isAffective) {
+            if (!isRef) {
                 i++;
                 continue;
             }
 
-            builder.AppendIndentation(4).Append("changeArchetype ");
-            if (first)
-                first = false;
-            else
-                builder.Append('|');
+            if (isAffective) {
+                builder.AppendIndentation(4).Append("changeArchetype");
+                if (!first)
+                    builder.Append("Temp");
 
-            builder.Append(
-                "= NoiseEngineInternal_DoNotUse.CompareAffectiveComponent(ref archetypeHashCode, in oldParameter"
-            ).Append(i).Append(", in parameter").Append(i++).AppendLine(");");
+                builder.Append(
+                    " = NoiseEngineInternal_DoNotUse.CompareAffectiveComponent(ref archetypeHashCode, in oldParameter"
+                ).Append(i).Append(", in parameter").Append(i).AppendLine(");");
+
+                if (!first)
+                    builder.AppendIndentation(4).AppendLine("changeArchetype |= changeArchetypeTemp;");
+            }
+
+            builder.AppendIndentation(4).Append("if (observers").Append(i).AppendLine(" is not null) {");
+            builder.AppendIndentation(5).Append("if (");
+            if (isAffective) {
+                builder.Append("changeArchetype");
+                if (!first)
+                    builder.Append("Temp");
+                builder.Append(" || ");
+            }
+            builder.Append("NoiseEngineInternal_DoNotUse.CompareComponent(in oldParameter").Append(i)
+                .Append(", in parameter").Append(i).AppendLine(")) {");
+
+            builder.AppendIndentation(6).Append("changed").Append(i)
+                .Append(" ??= NoiseEngineInternal_DoNotUse.ChangedList.Rent<").Append(parameterType).AppendLine(">();");
+            builder.AppendIndentation(6).Append("changed").Append(i).Append(".Add(i, oldParameter").Append(i)
+                .AppendLine(");");
+
+            builder.AppendIndentation(5).AppendLine("}");
+            builder.AppendIndentation(4).AppendLine("}").AppendLine();
+
+            if (isAffective && first)
+                first = false;
+            i++;
         }
 
         // Update archetype.
@@ -345,7 +378,19 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             builder.AppendIndentation(4).AppendLine("}");
         }
 
-        builder.AppendIndentation(3).AppendLine("}");
+        builder.AppendIndentation(3).AppendLine("}").AppendLine();
+
+        i = 0;
+        foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
+            if (!isRef) {
+                i++;
+                continue;
+            }
+
+            builder.AppendIndentation(2).Append("data.Changed.Add((observers").Append(i).Append(", changed").Append(i)
+                .AppendLine("));");
+        }
+
         builder.AppendIndentation(2).AppendLine("}").AppendLine();
     }
 

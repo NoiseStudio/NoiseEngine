@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -22,12 +25,9 @@ internal class ArchetypeChunk {
 
     internal nint RecordSize { get; }
     internal byte[] StorageData { get; }
-    internal Span<byte> StorageDataSpan {
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        get => MemoryMarshal.CreateSpan(ref StorageData[0], sizeInBytes);
-    }
     internal Dictionary<Type, nint> Offsets { get; }
     internal Dictionary<Type, int> HashCodes { get; }
+    internal ConcurrentDictionary<Type, ChangedObserverContext[]> ChangedObserversLookup { get; }
 
     private int CapacityM { get; }
 
@@ -36,6 +36,7 @@ internal class ArchetypeChunk {
         ArchetypeHashCode = archetype.HashCode;
         Offsets = archetype.Offsets;
         HashCodes = archetype.HashCodes;
+        ChangedObserversLookup = archetype.ChangedObserversLookup;
         RecordSize = archetype.RecordSize;
 
         int capacity = (int)(16000 / RecordSize);
@@ -112,6 +113,57 @@ internal class ArchetypeChunk {
 
         components = null;
         return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ChangedObserverContext[] GetChangedObservers(Type changedComponentType) {
+        if (ChangedObserversLookup.TryGetValue(changedComponentType, out ChangedObserverContext[]? observers))
+            return observers;
+        return CreateChangedObservers(changedComponentType);
+    }
+
+    private ChangedObserverContext[] CreateChangedObservers(Type changedComponentType) {
+        lock (Archetype.World.changedObservers) {
+            ChangedObserverContext[] observers = CreateObservers(0, changedComponentType);
+            ChangedObserversLookup.TryAdd(changedComponentType, observers);
+        }
+        return ChangedObserversLookup[changedComponentType];
+    }
+
+    private ChangedObserverContext[] CreateObservers(int mode, Type componentType) {
+        List<ChangedObserverContext> result = new List<ChangedObserverContext>();
+        foreach (ChangedObserverContext context in Archetype.World.changedObservers) {
+            MethodInfo method = context.Observer.Method;
+            if (
+                method.GetCustomAttributes<WithoutAttribute>().SelectMany(x => x.Components)
+                    .Any(Offsets.ContainsKey)
+            ) {
+                continue;
+            }
+            if (
+                method.GetCustomAttributes<WithAttribute>().SelectMany(x => x.Components)
+                    .Any(x => !Offsets.ContainsKey(x))
+            ) {
+                continue;
+            }
+
+            ParameterInfo[] parameters = context.Observer.Method.GetParameters();
+            int skip = parameters[1].ParameterType == typeof(SystemCommands) ? 2 : 1;
+
+            if (parameters[skip].ParameterType != mode switch {
+                0 => typeof(Changed<>).MakeGenericType(componentType),
+                _ => throw new NotImplementedException(),
+            }) {
+                continue;
+            }
+
+            if (parameters.Skip(skip).Select(x => x.ParameterType).Any(x => !Offsets.ContainsKey(x)))
+                continue;
+
+            result.Add(context);
+        }
+
+        return result.ToArray();
     }
 
 }
