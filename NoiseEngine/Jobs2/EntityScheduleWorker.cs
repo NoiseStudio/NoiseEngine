@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
-using System.Threading.Channels;
 
 namespace NoiseEngine.Jobs2;
 
@@ -143,6 +143,7 @@ internal class EntityScheduleWorker : IDisposable {
         ManualResetEventSlim executorThreadsResetEvent = this.executorThreadsResetEvent;
         SchedulePackage executionData;
         SystemCommands systemCommands = new SystemCommands();
+        List<(nint, int)> changeArchetype = new List<(nint, int)>();
         List<(object?, object?)> changed = new List<(object?, object?)>();
 
         try {
@@ -169,10 +170,11 @@ internal class EntityScheduleWorker : IDisposable {
                             executionData.System.SystemExecutionInternal(
                                 executionData.Chunk, (nint)(executionData.StartIndex + ptr),
                                 (nint)(executionData.EndIndex * executionData.Chunk.RecordSize + ptr),
-                                systemCommands, changed
+                                systemCommands, changeArchetype, changed
                             );
 
                             NotifyChanged(changed, executionData.Chunk.Offsets, systemCommands.Inner);
+                            ChangeArchetype(executionData.Chunk, changeArchetype);
                         }
                     }
                     EntitySchedule.isScheduleLockThread = false;
@@ -189,6 +191,7 @@ internal class EntityScheduleWorker : IDisposable {
                     }
 
                     changed.Clear();
+                    changeArchetype.Clear();
                 }
 
                 executorThreadsResetEvent.Wait();
@@ -231,6 +234,68 @@ internal class EntityScheduleWorker : IDisposable {
             }
 
             list.Return();
+        }
+    }
+
+    private unsafe void ChangeArchetype(ArchetypeChunk oldChunk, List<(nint, int)> changeArchetype) {
+        EntityWorld world = oldChunk.Archetype.World;
+        foreach ((nint ptr, int hashCode) in changeArchetype) {
+            if (!world.TryGetArchetype(hashCode, out Archetype? newArchetype)) {
+                (Type, int, int)[] componentTypes = ((Type, int, int)[])oldChunk.Archetype.ComponentTypes.Clone();
+
+                for (int i = 0; i < componentTypes.Length; i++) {
+                    (Type type, int size, int affectiveHashCode) = componentTypes[i];
+                    if (affectiveHashCode == 0 && !typeof(IAffectiveComponent).IsAssignableFrom(type))
+                        continue;
+
+                    componentTypes[i] = (type, size, ((IAffectiveComponent)oldChunk.ReadComponentBoxed(
+                        type, size, ptr + oldChunk.Offsets[type]
+                    )).GetAffectiveHashCode());
+                }
+
+                newArchetype = world.CreateArchetype(hashCode, componentTypes);
+            }
+
+            if (ApplicationJitConsts.IsDebugMode && oldChunk.Archetype == newArchetype) {
+                StringBuilder builder = new StringBuilder("One or more affective component from ");
+                foreach (
+                    Type type in newArchetype.ComponentTypes
+                        .Where(x => x.affectiveHashCode != 0 || typeof(IAffectiveComponent).IsAssignableFrom(x.type))
+                        .Select(x => x.type)
+                ) {
+                    builder.Append(type.FullName).Append(", ");
+                }
+                builder.Remove(builder.Length - 2, 2);
+
+                builder.Append(" has repeating affective hash code for not comparable AffectiveEquals implementation");
+
+                Log.Warning(builder.ToString());
+            }
+
+            Entity entity = Unsafe.ReadUnaligned<EntityInternalComponent>((void*)ptr).Entity!;
+            (ArchetypeChunk newChunk, nint newIndex) = newArchetype.TakeRecord();
+
+            entity.chunk = newChunk;
+            nint oldIndex = entity.index;
+            entity.index = newIndex;
+
+            fixed (byte* dp = newChunk.StorageData) {
+                byte* di = dp + newIndex;
+                int iSize = Unsafe.SizeOf<EntityInternalComponent>();
+
+                // Copy components.
+                nint size = newArchetype.RecordSize - iSize;
+                Buffer.MemoryCopy((void*)(ptr + iSize), di + iSize, size, size);
+
+                // Copy internal component.
+                Buffer.MemoryCopy((void*)ptr, di, iSize, iSize);
+
+                // Clear old data.
+                new Span<byte>((void*)ptr, (int)oldChunk.Archetype.RecordSize).Clear();
+            }
+
+            oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
+            newArchetype.InitializeRecord();
         }
     }
 

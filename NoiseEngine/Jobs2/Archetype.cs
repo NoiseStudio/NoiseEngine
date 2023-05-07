@@ -35,6 +35,8 @@ internal class Archetype {
         new ConcurrentDictionary<Type, ChangedObserverContext[]>();
 
     public Archetype(EntityWorld world, int hashCode, (Type type, int size, int affectiveHashCode)[] componentTypes) {
+        componentTypes = componentTypes.OrderBy(x => x.type.FullName).ToArray();
+
         World = world;
         HashCode = hashCode;
         ComponentTypes = componentTypes;

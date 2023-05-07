@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis.Text;
 using NoiseEngine.Generator;
 using NoiseEngine.InternalGenerator.Jobs;
-using System;
 using System.Text;
 
 namespace NoiseEngine.InternalGenerator.Jobs2 {
@@ -21,6 +20,7 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
 
             CreateObserverDelegates(builder);
             CreateSpawnMethods(builder);
+            CreateObserverAddWorker(builder);
 
             builder.AppendLine("}").AppendLine();
 
@@ -112,6 +112,60 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
                     builder.AppendLine().AppendIndentation(3).AppendLine(");");
 
                     builder.AppendIndentation(2).AppendLine("}").AppendLine();
+                }
+            }
+        }
+
+        private void CreateObserverAddWorker(StringBuilder builder) {
+            for (int i = 1; i <= JobsGeneratorHelper.ArgumentsCount; i++) {
+                for (int j = 0; j < 2; j++) {
+                    builder.AppendLine(@"    /// <summary>
+    /// Adds <paramref name=""observer""/> to this <see cref=""EntityWorld""/> as changed observer.
+    /// </summary>
+    /// <remarks>
+    /// If a component required by the <paramref name=""observer""/> is removed within the scope of a single component
+    /// set change, the <paramref name=""observer""/> will not be invoked.
+    /// </remarks>");
+
+                    for (int k = 1; k <= i; k++) {
+                        builder.AppendIndentation().Append("/// <typeparam name=\"T").Append(k)
+                            .AppendLine("\">Type of <see cref=\"IComponent\"/>.</typeparam>");
+                    }
+
+                    builder.Append(@"    /// <param name=""observer"">Changed Entity Observer.</param>
+    /// <returns>New <see cref=""EntityObserverLifetime""/> used to disposing this <paramref name=""observer""/>.</returns>
+    public EntityObserverLifetime AddObserver<");
+
+                    for (int k = 1; k <= i; k++)
+                        builder.Append('T').Append(k).Append(k == i ? "" : ", ");
+                    builder.Append(">(Observers.ChangedObserverT").Append(i);
+                    if (j == 0)
+                        builder.Append("C");
+
+                    builder.Append("<");
+                    for (int k = 1; k <= i; k++)
+                        builder.Append('T').Append(k).Append(k == i ? "" : ", ");
+                    builder.AppendLine("> observer)");
+
+                    for (int k = 1; k <= i; k++)
+                        builder.AppendIndentation(2).Append("where T").Append(k).AppendLine(" : IComponent");
+                    builder.AppendIndentation(1).AppendLine("{");
+
+                    builder.AppendIndentation(2).Append("return AddChangedObserverWorker(Observers.ChangedObserverT");
+                    builder.Append(i);
+                    if (j == 0)
+                        builder.Append("C");
+                    builder.Append("Invoker<");
+                    for (int k = 1; k <= i; k++)
+                        builder.Append('T').Append(k).Append(k == i ? "" : ", ");
+                    builder.AppendLine(">, observer, new List<Type> {");
+
+                    builder.AppendIndentation(3).Append("typeof(T1)");
+                    for (int k = 2; k <= i; k++)
+                        builder.Append(", typeof(T").Append(k).Append(')');
+                    builder.AppendLine().AppendIndentation(2).AppendLine("});");
+
+                    builder.AppendIndentation(1).AppendLine("}").AppendLine();
                 }
             }
         }

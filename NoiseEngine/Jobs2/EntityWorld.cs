@@ -111,33 +111,6 @@ public partial class EntityWorld : IDisposable {
     }
 
     /// <summary>
-    /// Adds <paramref name="observer"/> to this <see cref="EntityWorld"/> as changed observer.
-    /// </summary>
-    /// <remarks>
-    /// If a component required by the <paramref name="observer"/> is removed within the scope of a single component
-    /// set change, the <paramref name="observer"/> will not be invoked.
-    /// </remarks>
-    /// <typeparam name="T1"></typeparam>
-    /// <param name="observer">Changed Entity Observer.</param>
-    /// <returns>New <see cref="EntityObserverLifetime"/> used to disposing this <paramref name="observer"/>.</returns>
-    public EntityObserverLifetime AddObserver<T1>(Observers.ChangedObserverT1<T1> observer)
-        where T1 : IComponent
-    {
-        return AddChangedObserverWorker(Observers.ChangedObserverT1Invoker<T1>, observer, new List<Type> {
-            typeof(T1)
-        });
-    }
-
-    public EntityObserverLifetime AddObserver<T1, T2>(Observers.ChangedObserverT2C<T1, T2> observer)
-        where T1 : IComponent
-        where T2 : IComponent
-    {
-        return AddChangedObserverWorker(Observers.ChangedObserverT2CInvoker<T1, T2>, observer, new List<Type> {
-            typeof(T1), typeof(T2)
-        });
-    }
-
-    /// <summary>
     /// Executes <paramref name="commands"/> in current thread.
     /// </summary>
     /// <param name="commands"><see cref="SystemCommands"/> to execute.</param>
@@ -147,6 +120,7 @@ public partial class EntityWorld : IDisposable {
                 "Use built in `SystemCommands` parameter in `OnUpdateEntity` instead."
             );
         }
+        AssertIsNotDisposed();
 
         SystemCommandsInner inner = commands.Inner;
         FastList<SystemCommand> c = inner.Commands;
@@ -165,6 +139,7 @@ public partial class EntityWorld : IDisposable {
     /// <param name="commands"><see cref="SystemCommands"/> to execute.</param>
     /// <returns><see cref="Task"/> that will be completed when all commands will be executed.</returns>
     public Task ExecuteCommandsAsync(SystemCommands commands) {
+        AssertIsNotDisposed();
         SystemCommandsInner inner = commands.Inner;
         FastList<SystemCommand> c = inner.Commands;
         inner.Consume();
@@ -310,7 +285,13 @@ public partial class EntityWorld : IDisposable {
         AddObserverWorker(
             EntityObserverType.Changed, new ChangedObserverContext(invoker, observer), changedObservers, types
         );
-        return new EntityObserverLifetime(this, EntityObserverType.Changed, observer);
+
+        EntityObserverLifetime lifetime = new EntityObserverLifetime(this, EntityObserverType.Changed, observer);
+        if (IsDisposed) {
+            lifetime.Dispose();
+            AssertIsNotDisposed();
+        }
+        return lifetime;
     }
 
     private void AddObserverWorker(

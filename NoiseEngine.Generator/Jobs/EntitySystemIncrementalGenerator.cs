@@ -354,27 +354,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             builder.AppendLine();
 
             builder.AppendIndentation(5).AppendLine("hashCode ^= archetypeHashCode;");
-            builder.AppendIndentation(5).AppendLine(
-                "NoiseEngineInternal_DoNotUse.ChangeArchetype(entity, hashCode, () => new (System.Type type, " +
-                "int size, int affectiveHashCode)[] {"
-            );
-
-            i = 0;
-            foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
-                if (!isRef || !isAffective) {
-                    i++;
-                    continue;
-                }
-
-                builder.AppendIndentation(6).AppendLine("(").AppendIndentation(7).Append("typeof(").Append(parameterType)
-                    .AppendLine("),").AppendIndentation(7).Append("System.Runtime.CompilerServices.Unsafe.SizeOf<")
-                    .Append(parameterType).AppendLine(">(),").AppendIndentation(7)
-                    .Append("NoiseEngineInternal_DoNotUse.GetAffectiveHashCode(data.Get<").Append(parameterType)
-                    .Append(">(i + offset").Append(i++).AppendLine("))").AppendIndentation(6).AppendLine("),");
-            }
-            builder.Remove(builder.Length - 1 - Environment.NewLine.Length, 1);
-
-            builder.AppendIndentation(5).AppendLine("});");
+            builder.AppendIndentation(5).AppendLine("data.ChangeArchetype.Add((i, hashCode));");
 
             builder.AppendIndentation(4).AppendLine("}");
         }

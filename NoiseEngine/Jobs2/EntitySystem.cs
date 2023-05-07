@@ -1,13 +1,10 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Threading;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,7 +18,8 @@ public abstract class EntitySystem : IDisposable {
     protected struct NoiseEngineInternal_DoNotUse {
 
         public readonly record struct ExecutionData(
-            nint RecordSize, nint StartIndex, nint EndIndex, List<(object?, object?)> Changed
+            nint RecordSize, nint StartIndex, nint EndIndex, List<(nint, int)> ChangeArchetype,
+            List<(object?, object?)> Changed
         ) {
 
             private readonly ArchetypeChunk chunk;
@@ -29,8 +27,9 @@ public abstract class EntitySystem : IDisposable {
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal ExecutionData(
-                ArchetypeChunk chunk, nint startIndex, nint endIndex, List<(object?, object?)> changed
-            ) : this(chunk.RecordSize, startIndex, endIndex, changed) {
+                ArchetypeChunk chunk, nint startIndex, nint endIndex,
+                List<(nint, int)> changeArchetype, List<(object?, object?)> changed
+            ) : this(chunk.RecordSize, startIndex, endIndex, changeArchetype, changed) {
                 this.chunk = chunk;
                 offsets = chunk.Offsets;
             }
@@ -112,11 +111,6 @@ public abstract class EntitySystem : IDisposable {
             return entity.chunk!.HashCodes[typeof(T)];
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetAffectiveHashCode<T>(T component) where T : IComponent {
-            return IAffectiveComponent.GetAffectiveHashCode(component);
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static bool CompareAffectiveComponent<T>(
             ref int archetypeHashCode, in T oldValue, in T newValue
@@ -140,72 +134,6 @@ public abstract class EntitySystem : IDisposable {
                 );
             }
             return !oldValue.Equals(newValue);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static void ChangeArchetype(
-            Entity entity, int hashCode, Func<(Type type, int size, int affectiveHashCode)[]> valueFactory
-        ) {
-            Archetype oldArchetype = entity.chunk!.Archetype;
-            (Type type, int size, int affectiveHashCode)[] values = valueFactory();
-            if (!oldArchetype.World.TryGetArchetype(hashCode, out Archetype? newArchetype)) {
-                newArchetype = oldArchetype.World.CreateArchetype(
-                    hashCode, values.UnionBy(entity.chunk!.Archetype.ComponentTypes, x => x.type).ToArray()
-                );
-            }
-
-            if (ApplicationJitConsts.IsDebugMode && oldArchetype == newArchetype) {
-                StringBuilder builder = new StringBuilder("One or more affective component from ");
-                foreach ((Type type, _, _) in values)
-                    builder.Append(type.FullName).Append(", ");
-                builder.Remove(builder.Length - 2, 2);
-
-                builder.Append(" has repeating affective hash code for not comparable AffectiveEquals implementation");
-
-                Log.Warning(builder.ToString());
-            }
-
-            // Copy components.
-            ArchetypeChunk oldChunk = entity.chunk!;
-            (ArchetypeChunk newChunk, nint newIndex) = newArchetype.TakeRecord();
-
-            entity.chunk = newChunk;
-            nint oldIndex = entity.index;
-            entity.index = newIndex;
-
-            unsafe {
-                fixed (byte* dp = newChunk.StorageData) {
-                    byte* di = dp + newIndex;
-                    fixed (byte* sp = oldChunk.StorageData) {
-                        byte* si = sp + oldIndex;
-
-                        foreach ((Type type, int size, _) in newChunk.Archetype.ComponentTypes) {
-                            if (!oldChunk.Offsets.TryGetValue(type, out nint oldOffset))
-                                throw new UnreachableException();
-                            Buffer.MemoryCopy(si + oldOffset, di + newChunk.Offsets[type], size, size);
-                        }
-
-                        // Copy internal component.
-                        int iSize = Unsafe.SizeOf<EntityInternalComponent>();
-                        Buffer.MemoryCopy(si, di, iSize, iSize);
-
-                        // Clear old data.
-                        new Span<byte>(si, (int)oldChunk.Archetype.RecordSize).Clear();
-                    }
-                }
-            }
-
-            oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
-            newArchetype.InitializeRecord();
-        }
-
-        private static void WarnMissingEquatable<T>() {
-            if (ApplicationJitConsts.IsDebugMode) {
-                Log.Warning(
-                    $"Component {typeof(T)} does not implement {nameof(IEquatable<T>)} interface. " +
-                    "What affects performance."
-                );
-            }
         }
 
     }
@@ -493,10 +421,10 @@ public abstract class EntitySystem : IDisposable {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void SystemExecutionInternal(
         ArchetypeChunk chunk, nint startPointer, nint endPointer, SystemCommands systemCommands,
-        List<(object?, object?)> changed
+        List<(nint, int)> changeArchetype, List<(object?, object?)> changed
     ) {
         NoiseEngineInternal_DoNotUse_SystemExecution(new NoiseEngineInternal_DoNotUse.ExecutionData(
-            chunk, startPointer, endPointer, changed
+            chunk, startPointer, endPointer, changeArchetype, changed
         ), systemCommands);
     }
 #pragma warning restore CS0618

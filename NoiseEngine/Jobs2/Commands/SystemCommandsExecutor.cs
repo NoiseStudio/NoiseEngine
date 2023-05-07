@@ -1,9 +1,7 @@
 ﻿using NoiseEngine.Collections;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -182,7 +180,8 @@ internal class SystemCommandsExecutor {
 
                             // Append changed observers.
                             changed ??= new List<(Type, IComponent, int)>();
-                            changed.Add((type, component.value!, size));
+                            IComponent old = oldChunk.ReadComponentBoxed(type, size, (nint)si + oldChunk.Offsets[type]);
+                            changed.Add((type, old, size));
                         } else {
                             component = components[type];
                         }
