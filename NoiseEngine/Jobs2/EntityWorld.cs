@@ -54,9 +54,13 @@ public partial class EntityWorld : IDisposable {
         if (isDisposed.Exchange(true))
             return;
 
+        archetypes.Clear();
         Parallel.ForEach(
             affectiveSystems.Cast<IDisposable>().Concat(systems.Cast<IDisposable>()), (x, _) => x.Dispose()
         );
+        affectiveSystems.Clear();
+        systems.Clear();
+        changedObservers.Clear();
 
         GC.SuppressFinalize(this);
     }
@@ -70,12 +74,19 @@ public partial class EntityWorld : IDisposable {
     /// When <see langword="null"/>, the <see cref="EntitySchedule"/> is not used. Default <see langword="null"/>.
     /// </param>
     public void AddSystem(EntitySystem system, double? cycleTime = null) {
+        AssertIsNotDisposed();
+
         system.InternalInitialize(this, null);
         if (cycleTime.HasValue)
             system.CycleTime = cycleTime.Value;
 
         systems.Add(system);
         RegisterArchetypesToSystem(system);
+
+        if (IsDisposed) {
+            system.Dispose();
+            AssertIsNotDisposed();
+        }
     }
 
     /// <summary>
@@ -83,6 +94,8 @@ public partial class EntityWorld : IDisposable {
     /// </summary>
     /// <param name="system">New, uninitialized <see cref="AffectiveSystem"/>.</param>
     public void AddAffectiveSystem(AffectiveSystem system) {
+        AssertIsNotDisposed();
+
         system.InternalInitialize(this);
         affectiveSystems.Add(system);
 
@@ -90,21 +103,36 @@ public partial class EntityWorld : IDisposable {
             foreach (Archetype archetype in archetypes.Values)
                 archetype.RegisterAffectiveSystem(system);
         }
+
+        if (IsDisposed) {
+            system.Dispose();
+            AssertIsNotDisposed();
+        }
     }
 
-    public void AddObserver<T1>(Observers.ChangedObserverT1<T1> observer)
+    /// <summary>
+    /// Adds <paramref name="observer"/> to this <see cref="EntityWorld"/> as changed observer.
+    /// </summary>
+    /// <remarks>
+    /// If a component required by the <paramref name="observer"/> is removed within the scope of a single component
+    /// set change, the <paramref name="observer"/> will not be invoked.
+    /// </remarks>
+    /// <typeparam name="T1"></typeparam>
+    /// <param name="observer">Changed Entity Observer.</param>
+    /// <returns>New <see cref="EntityObserverLifetime"/> used to disposing this <paramref name="observer"/>.</returns>
+    public EntityObserverLifetime AddObserver<T1>(Observers.ChangedObserverT1<T1> observer)
         where T1 : IComponent
     {
-        AddChangedObserverWorker(Observers.ChangedObserverT1Invoker<T1>, observer, new List<Type> {
+        return AddChangedObserverWorker(Observers.ChangedObserverT1Invoker<T1>, observer, new List<Type> {
             typeof(T1)
         });
     }
 
-    public void AddObserver<T1, T2>(Observers.ChangedObserverT2C<T1, T2> observer)
+    public EntityObserverLifetime AddObserver<T1, T2>(Observers.ChangedObserverT2C<T1, T2> observer)
         where T1 : IComponent
         where T2 : IComponent
     {
-        AddChangedObserverWorker(Observers.ChangedObserverT2CInvoker<T1, T2>, observer, new List<Type> {
+        return AddChangedObserverWorker(Observers.ChangedObserverT2CInvoker<T1, T2>, observer, new List<Type> {
             typeof(T1), typeof(T2)
         });
     }
@@ -175,6 +203,7 @@ public partial class EntityWorld : IDisposable {
     }
 
     internal Archetype CreateArchetype(int hashCode, (Type type, int size, int affectiveHashCode)[] components) {
+        AssertIsNotDisposed();
         Archetype? archetype;
         lock (archetypes) {
             if (archetypes.TryGetValue(hashCode, out archetype))
@@ -185,6 +214,7 @@ public partial class EntityWorld : IDisposable {
         }
 
         archetype.Initialize();
+        AssertIsNotDisposed();
         return archetype;
     }
 
@@ -215,6 +245,31 @@ public partial class EntityWorld : IDisposable {
 
     internal void RemoveSystem(EntitySystem system) {
         systems.Remove(system);
+    }
+
+    internal void RemoveChangedObserver(Delegate observer) {
+        lock (changedObservers) {
+            ChangedObserverContext? context = null;
+            for (int i = 0; i < changedObservers.Count; i++) {
+                if (changedObservers[i].Observer != observer)
+                    continue;
+
+                context = changedObservers[i];
+                changedObservers.RemoveAt(i);
+                break;
+            }
+
+            if (context.HasValue) {
+                ParameterInfo[] parameters = observer.Method.GetParameters();
+                int skip = parameters[1].ParameterType == typeof(SystemCommands) ? 2 : 1;
+                Type type = parameters[skip].ParameterType.GenericTypeArguments[0];
+
+                foreach (Archetype archetype in Archetypes) {
+                    if (archetype.ChangedObserversLookup.TryGetValue(type, out ChangedObserverContext[]? contexts))
+                        archetype.ChangedObserversLookup[type] = contexts.Where(x => x != context).ToArray();
+                }
+            }
+        }
     }
 
     private void DespawnQueueThreadWorker() {
@@ -249,13 +304,23 @@ public partial class EntityWorld : IDisposable {
         resetEvent.Dispose();
     }
 
-    private void AddChangedObserverWorker(ChangedObserverInvoker invoker, Delegate observer, List<Type> types) {
-        AddObserverWorker(0, new ChangedObserverContext(invoker, observer), changedObservers, types);
+    private EntityObserverLifetime AddChangedObserverWorker(
+        ChangedObserverInvoker invoker, Delegate observer, List<Type> types
+    ) {
+        AddObserverWorker(
+            EntityObserverType.Changed, new ChangedObserverContext(invoker, observer), changedObservers, types
+        );
+        return new EntityObserverLifetime(this, EntityObserverType.Changed, observer);
     }
 
     private void AddObserverWorker(
-        int mode, ChangedObserverContext context, List<ChangedObserverContext> observers, List<Type> types
+        EntityObserverType observerType, ChangedObserverContext context, List<ChangedObserverContext> observers,
+        List<Type> types
     ) {
+        AssertIsNotDisposed();
+
+        if (observers.Contains(context))
+            return;
         if (types.Count != types.Distinct().Count())
             throw new InvalidOperationException("Duplicate component type in observer.");
 
@@ -287,8 +352,8 @@ public partial class EntityWorld : IDisposable {
                     continue;
                 }
 
-                ConcurrentDictionary<Type, ChangedObserverContext[]> dictionary = mode switch {
-                    0 => archetype.ChangedObserversLookup,
+                ConcurrentDictionary<Type, ChangedObserverContext[]> dictionary = observerType switch {
+                    EntityObserverType.Changed => archetype.ChangedObserversLookup,
                     _ => throw new NotImplementedException(),
                 };
 
@@ -298,6 +363,11 @@ public partial class EntityWorld : IDisposable {
                     throw new UnreachableException();
             }
         }
+    }
+
+    private void AssertIsNotDisposed() {
+        if (IsDisposed)
+            throw new ObjectDisposedException(GetType().FullName);
     }
 
 }

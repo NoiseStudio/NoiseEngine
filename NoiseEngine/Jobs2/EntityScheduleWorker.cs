@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Channels;
 
 namespace NoiseEngine.Jobs2;
 
@@ -152,7 +153,7 @@ internal class EntityScheduleWorker : IDisposable {
                         continue;
                     }
 
-                    EntityLocker locker = executionData.Chunk!.GetLocker(executionData.StartIndex);
+                    EntityLocker locker = executionData.Chunk!.GetLocker();
                     if (
                         executionData.System.ComponentWriteAccess ? !locker.TryEnterWriteLock(1) :
                         !locker.TryEnterReadLock(1)
@@ -171,33 +172,7 @@ internal class EntityScheduleWorker : IDisposable {
                                 systemCommands, changed
                             );
 
-                            // Notify changed.
-                            foreach ((object? observersObject, object? listObject) in changed) {
-                                ChangedObserverContext[] observers =
-                                    Unsafe.As<ChangedObserverContext[]>(observersObject)!;
-                                ChangedList list = Unsafe.As<ChangedList>(listObject)!;
-
-                                Span<byte> buffer = MemoryMarshal.CreateSpan(
-                                    ref Unsafe.As<byte[]>(list.buffer)[0], list.size * list.count
-                                );
-
-                                for (int i = 0; i < buffer.Length; i += list.size) {
-                                    nint changedPtr = Unsafe.ReadUnaligned<nint>(ref buffer[i]);
-                                    Entity entity = Unsafe.ReadUnaligned<EntityInternalComponent>(
-                                        (void*)changedPtr
-                                    ).Entity!;
-                                    ref byte oldValue = ref buffer[i + Unsafe.SizeOf<nint>()];
-
-                                    foreach (ChangedObserverContext observer in observers) {
-                                        observer.Invoker.Invoke(
-                                            observer.Observer, entity, systemCommands.Inner, changedPtr,
-                                            executionData.Chunk.Offsets, ref oldValue
-                                        );
-                                    }
-                                }
-
-                                list.Return();
-                            }
+                            NotifyChanged(changed, executionData.Chunk.Offsets, systemCommands.Inner);
                         }
                     }
                     EntitySchedule.isScheduleLockThread = false;
@@ -226,6 +201,36 @@ internal class EntityScheduleWorker : IDisposable {
         } finally {
             if (Interlocked.Decrement(ref activeExecutorThreadCount) == 0)
                 executorThreadsResetEvent.Dispose();
+        }
+    }
+
+    private unsafe void NotifyChanged(
+        List<(object?, object?)> changed, Dictionary<Type, nint> offsets, SystemCommandsInner commandsInner
+    ) {
+        foreach ((object? observersObject, object? listObject) in changed) {
+            ChangedObserverContext[] observers =
+                Unsafe.As<ChangedObserverContext[]>(observersObject)!;
+            ChangedList list = Unsafe.As<ChangedList>(listObject)!;
+
+            Span<byte> buffer = MemoryMarshal.CreateSpan(
+                ref Unsafe.As<byte[]>(list.buffer)[0], list.size * list.count
+            );
+
+            for (int i = 0; i < buffer.Length; i += list.size) {
+                nint changedPtr = Unsafe.ReadUnaligned<nint>(ref buffer[i]);
+                Entity entity = Unsafe.ReadUnaligned<EntityInternalComponent>(
+                    (void*)changedPtr
+                ).Entity!;
+                ref byte oldValue = ref buffer[i + Unsafe.SizeOf<nint>()];
+
+                foreach (ChangedObserverContext observer in observers) {
+                    observer.Invoker.Invoke(
+                        observer.Observer, entity, commandsInner, changedPtr, offsets, ref oldValue
+                    );
+                }
+            }
+
+            list.Return();
         }
     }
 

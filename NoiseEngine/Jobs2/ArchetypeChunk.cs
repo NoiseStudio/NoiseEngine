@@ -64,7 +64,7 @@ internal class ArchetypeChunk {
         return false;
     }
 
-    public EntityLocker GetLocker(nint index) {
+    public EntityLocker GetLocker() {
         return locker;
     }
 
@@ -125,13 +125,13 @@ internal class ArchetypeChunk {
 
     private ChangedObserverContext[] CreateChangedObservers(Type changedComponentType) {
         lock (Archetype.World.changedObservers) {
-            ChangedObserverContext[] observers = CreateObservers(0, changedComponentType);
+            ChangedObserverContext[] observers = CreateObservers(EntityObserverType.Changed, changedComponentType);
             ChangedObserversLookup.TryAdd(changedComponentType, observers);
         }
         return ChangedObserversLookup[changedComponentType];
     }
 
-    private ChangedObserverContext[] CreateObservers(int mode, Type componentType) {
+    private ChangedObserverContext[] CreateObservers(EntityObserverType type, Type componentType) {
         List<ChangedObserverContext> result = new List<ChangedObserverContext>();
         foreach (ChangedObserverContext context in Archetype.World.changedObservers) {
             MethodInfo method = context.Observer.Method;
@@ -151,8 +151,8 @@ internal class ArchetypeChunk {
             ParameterInfo[] parameters = context.Observer.Method.GetParameters();
             int skip = parameters[1].ParameterType == typeof(SystemCommands) ? 2 : 1;
 
-            if (parameters[skip].ParameterType != mode switch {
-                0 => typeof(Changed<>).MakeGenericType(componentType),
+            if (parameters[skip].ParameterType != type switch {
+                EntityObserverType.Changed => typeof(Changed<>).MakeGenericType(componentType),
                 _ => throw new NotImplementedException(),
             }) {
                 continue;

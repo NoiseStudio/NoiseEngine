@@ -16,8 +16,8 @@ public class EntityObserverTest : ApplicationTestEnvironment, IDisposable {
 
     [Fact]
     public void Changed() {
-        EntityWorld.AddObserver<MockComponentE, MockComponentB>(ChangedSystem);
-        EntityWorld.AddObserver<MockComponentB>(ChangedCommands);
+        EntityObserverLifetime lifetimeA = EntityWorld.AddObserver<MockComponentE, MockComponentB>(ChangedSystem);
+        EntityObserverLifetime lifetimeB = EntityWorld.AddObserver<MockComponentB>(ChangedCommands);
         using Entity entity = EntityWorld.Spawn(new MockComponentE(5), MockComponentB.TestValueA);
 
         using TestSystemB system = new TestSystemB();
@@ -27,6 +27,15 @@ public class EntityObserverTest : ApplicationTestEnvironment, IDisposable {
         Assert.True(invoked);
         if (!resetEvent.WaitOne(1000))
             throw new TimeoutException("The observer was not invoked.");
+
+        lifetimeA.Dispose();
+        lifetimeB.Dispose();
+
+        Assert.Empty(EntityWorld.changedObservers);
+        foreach (Archetype archetype in EntityWorld.Archetypes) {
+            foreach (ChangedObserverContext[] context in archetype.ChangedObserversLookup.Values)
+                Assert.Empty(context);
+        }
     }
 
     private void ChangedSystem(

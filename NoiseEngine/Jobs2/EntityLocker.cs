@@ -27,7 +27,7 @@ internal class EntityLocker {
                 return false;
             }
 
-            EntityLocker locker = chunk.GetLocker(entity.index);
+            EntityLocker locker = chunk.GetLocker();
             resetEvents[i] = writeAccess ? locker.writeResetEvent : locker.readResetEvent;
         }
 
@@ -51,7 +51,7 @@ internal class EntityLocker {
                 }
 
                 nint index = entity.index;
-                EntityLocker locker = chunk.GetLocker(entity.index);
+                EntityLocker locker = chunk.GetLocker();
 
                 if (writeAccess) {
                     if (locker.locker.IsWriteLockHeld)
