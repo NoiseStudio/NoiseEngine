@@ -20,7 +20,8 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
 
             CreateObserverDelegates(builder);
             CreateSpawnMethods(builder);
-            CreateObserverAddWorker(builder);
+            CreateAddObserverMethods(builder);
+            CreateGetQueryMethods(builder);
 
             builder.AppendLine("}").AppendLine();
 
@@ -34,8 +35,8 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
             builder.AppendIndentation(1).AppendLine("public static class Observers {").AppendLine();
 
             CreateObserverDelegatesWorker(builder, "Changed", "Changed<T1>");
-            CreateObserverDelegatesWorker(builder, "AddedOrChanged", "AddedOrChanged<T1>");
-            CreateObserverDelegatesWorker(builder, "", "T1");
+            //CreateObserverDelegatesWorker(builder, "AddedOrChanged", "AddedOrChanged<T1>");
+            //CreateObserverDelegatesWorker(builder, "", "T1");
 
             CreateObserverInvokersWorker(builder, "Changed", "Changed<T1>");
             //CreateObserverInvokersWorker(builder, "AddedOrChanged", "AddedOrChanged<T1>");
@@ -116,7 +117,7 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
             }
         }
 
-        private void CreateObserverAddWorker(StringBuilder builder) {
+        private void CreateAddObserverMethods(StringBuilder builder) {
             for (int i = 1; i <= JobsGeneratorHelper.ArgumentsCount; i++) {
                 for (int j = 0; j < 2; j++) {
                     builder.AppendLine(@"    /// <summary>
@@ -134,7 +135,7 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
 
                     builder.Append(@"    /// <param name=""observer"">Changed Entity Observer.</param>
     /// <returns>New <see cref=""EntityObserverLifetime""/> used to disposing this <paramref name=""observer""/>.</returns>
-    public EntityObserverLifetime AddObserver<");
+    public EntityObserverLifetime AddChangedObserver<");
 
                     for (int k = 1; k <= i; k++)
                         builder.Append('T').Append(k).Append(k == i ? "" : ", ");
@@ -272,6 +273,47 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
                 builder.AppendIndentation(3).Append(
                     "throw new ArgumentException(\"Component type must be unique.\", nameof(component"
                 ).Append(i).AppendLine("));");
+            }
+        }
+
+        private void CreateGetQueryMethods(StringBuilder builder) {
+            for (int i = 1; i <= JobsGeneratorHelper.ArgumentsCount; i++) {
+                builder.AppendLine(@"    /// <summary>
+    /// Returns <see cref=""EntityQuery""/> with given <paramref name=""filter""/>.
+    /// </summary>");
+
+                for (int k = 1; k <= i; k++) {
+                    builder.AppendIndentation().Append("/// <typeparam name=\"T").Append(k)
+                        .AppendLine("\">Type of <see cref=\"IComponent\"/>.</typeparam>");
+                }
+
+                builder.Append(@"    /// <param name=""filter""><see cref=""IEntityFilter""/> of returned <see cref=""EntityQuery""/>.</param>
+    /// <returns>Returns <see cref=""EntityQuery""/> with given <paramref name=""filter""/>.</returns>
+    public EntityQuery<");
+
+                for (int k = 1; k <= i; k++)
+                    builder.Append('T').Append(k).Append(k == i ? "" : ", ");
+                builder.Append("> GetQuery<");
+                for (int k = 1; k <= i; k++)
+                    builder.Append('T').Append(k).Append(k == i ? "" : ", ");
+                builder.AppendLine(">(IEntityFilter? filter = null)");
+
+                for (int k = 1; k <= i; k++)
+                    builder.AppendIndentation(2).Append("where T").Append(k).AppendLine(" : IComponent");
+                builder.AppendIndentation(1).AppendLine("{");
+
+                builder.AppendIndentation(2).Append("EntityQuery<");
+                for (int k = 1; k <= i; k++)
+                    builder.Append('T').Append(k).Append(k == i ? "" : ", ");
+                builder.Append("> query = new EntityQuery<");
+                for (int k = 1; k <= i; k++)
+                    builder.Append('T').Append(k).Append(k == i ? "" : ", ");
+                builder.AppendLine(">(this);");
+
+                builder.AppendLine(@"        InitializeQuery(query, filter);
+        return query;");
+
+                builder.AppendIndentation(1).AppendLine("}").AppendLine();
             }
         }
 

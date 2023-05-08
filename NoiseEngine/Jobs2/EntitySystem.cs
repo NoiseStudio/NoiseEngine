@@ -393,6 +393,10 @@ public abstract class EntitySystem : IDisposable {
 
         World.RemoveSystem(this);
         world = null;
+        archetypes.Clear();
+        dependencies.Clear();
+        filter = null;
+        AffectiveSystem = null;
     }
 
     internal void InternalInitialize(EntityWorld world, AffectiveSystem? affectiveSystem) {
@@ -453,8 +457,11 @@ public abstract class EntitySystem : IDisposable {
                 return;
         }
 
-        if (Filter?.CompareComponents(archetype.ComponentTypes.Select(x => x.type)) == false)
+        if (Filter?.CompareComponents(archetype.ComponentTypes.Select(x => new ComponentType(
+            x.type, x.affectiveHashCode
+        ))) == false) {
             return;
+        }
 
         lock (archetypes) {
             if (!archetypes.Contains(archetype))

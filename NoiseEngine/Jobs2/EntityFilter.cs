@@ -23,21 +23,21 @@ public class EntityFilter : IEntityFilter {
     }
 
     /// <summary>
-    /// Checks that the types of <see cref="IComponent"/> meet the requirements of this <see cref="IEntityFilter"/>.
+    /// Checks that the <see cref="ComponentType"/>s of <see cref="IComponent"/> meet the requirements of this <see cref="IEntityFilter"/>.
     /// </summary>
-    /// <param name="componentTypes">Types of <see cref="IComponent"/>.</param>
+    /// <param name="componentTypes"><see cref="ComponentType"/>s of <see cref="IComponent"/>.</param>
     /// <returns>
     /// If <paramref name="componentTypes"/> meet the filter's requirements returns <see langword="true"/>;
     /// otherwise <see langword="false"/>.
     /// </returns>
-    public bool CompareComponents(IEnumerable<Type> componentTypes) {
+    public bool CompareComponents(IEnumerable<ComponentType> componentTypes) {
         foreach (Type componentType in withComponents) {
-            if (componentTypes.Contains(componentType))
+            if (componentTypes.Select(x => x.Type).Contains(componentType))
                 return false;
         }
 
         foreach (Type componentType in withoutComponents) {
-            if (componentTypes.Contains(componentType))
+            if (componentTypes.Select(x => x.Type).Contains(componentType))
                 return false;
         }
 

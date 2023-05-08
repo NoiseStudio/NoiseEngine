@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace NoiseEngine.Jobs2;
@@ -27,6 +28,11 @@ internal class ArchetypeChunk {
     internal Dictionary<Type, nint> Offsets { get; }
     internal Dictionary<Type, int> HashCodes { get; }
     internal ConcurrentDictionary<Type, ChangedObserverContext[]> ChangedObserversLookup { get; }
+
+    internal Span<byte> StorageDataSpan {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => MemoryMarshal.CreateSpan(ref StorageData[0], sizeInBytes);
+    }
 
     private int CapacityM { get; }
 

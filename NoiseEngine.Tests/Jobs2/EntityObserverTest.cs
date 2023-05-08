@@ -15,10 +15,16 @@ public class EntityObserverTest : ApplicationTestEnvironment, IDisposable {
     public EntityObserverTest(ApplicationFixture fixture) : base(fixture) {
     }
 
+    public void Dispose() {
+        resetEvent.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     [Fact]
     public void Changed() {
-        EntityObserverLifetime lifetimeA = EntityWorld.AddObserver<MockComponentE, MockComponentB>(ChangedSystem);
-        EntityObserverLifetime lifetimeB = EntityWorld.AddObserver<MockComponentB>(ChangedCommands);
+        EntityObserverLifetime lifetimeA =
+            EntityWorld.AddChangedObserver<MockComponentE, MockComponentB>(ChangedSystem);
+        EntityObserverLifetime lifetimeB = EntityWorld.AddChangedObserver<MockComponentB>(ChangedCommands);
         using Entity entity = EntityWorld.Spawn(new MockComponentE(5), MockComponentB.TestValueA);
 
         using TestSystemB system = new TestSystemB();
@@ -42,9 +48,9 @@ public class EntityObserverTest : ApplicationTestEnvironment, IDisposable {
     [Fact]
     public void ChangedWithChangedAffectiveArchetype() {
         using EntityObserverLifetime lifetimeA =
-            EntityWorld.AddObserver<MockComponentE, MockAffectiveComponentA>(ChangedSystemAffective);
+            EntityWorld.AddChangedObserver<MockComponentE, MockAffectiveComponentA>(ChangedSystemAffective);
         using EntityObserverLifetime lifetimeB =
-            EntityWorld.AddObserver<MockComponentB, MockAffectiveComponentA>(ChangedCommandsAffective);
+            EntityWorld.AddChangedObserver<MockComponentB, MockAffectiveComponentA>(ChangedCommandsAffective);
         using Entity entity = EntityWorld.Spawn(
             new MockComponentE(15), MockComponentB.TestValueA, MockAffectiveComponentA.Medium
         );
@@ -93,10 +99,6 @@ public class EntityObserverTest : ApplicationTestEnvironment, IDisposable {
         Assert.Equal(MockComponentB.TestValueB, changed.Current);
         Assert.Equal(MockAffectiveComponentA.Medium, componentA);
         resetEvent.Set();
-    }
-
-    public void Dispose() {
-        resetEvent.Dispose();
     }
 
 }

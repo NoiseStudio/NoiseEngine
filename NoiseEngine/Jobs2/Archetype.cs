@@ -88,6 +88,11 @@ internal class Archetype {
 
         foreach (EntitySystem system in World.Systems)
             system.RegisterArchetype(this);
+
+        foreach (WeakReference<EntityQuery> query in World.Queries) {
+            if (query.TryGetTarget(out EntityQuery? q))
+                q.RegisterArchetype(this);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

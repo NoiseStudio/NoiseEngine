@@ -22,6 +22,8 @@ public partial class EntityWorld : IDisposable {
     private readonly Dictionary<int, Archetype> archetypes = new Dictionary<int, Archetype>();
     private readonly ConcurrentList<AffectiveSystem> affectiveSystems = new ConcurrentList<AffectiveSystem>();
     private readonly ConcurrentList<EntitySystem> systems = new ConcurrentList<EntitySystem>();
+    private readonly ConcurrentList<WeakReference<EntityQuery>> queries =
+        new ConcurrentList<WeakReference<EntityQuery>>();
     private readonly object despawnQueueLocker = new object();
 
     private ConcurrentQueue<Entity>? despawnQueue;
@@ -36,6 +38,7 @@ public partial class EntityWorld : IDisposable {
     public IEnumerable<EntitySystem> Systems => systems;
 
     internal IEnumerable<Archetype> Archetypes => archetypes.Values;
+    internal IEnumerable<WeakReference<EntityQuery>> Queries => queries;
 
     internal delegate void ChangedObserverInvoker(
         Delegate observer, Entity entity, SystemCommandsInner commands, nint ptr, Dictionary<Type, nint> offsets,
@@ -60,6 +63,7 @@ public partial class EntityWorld : IDisposable {
         );
         affectiveSystems.Clear();
         systems.Clear();
+        queries.Clear();
         changedObservers.Clear();
 
         GC.SuppressFinalize(this);
@@ -222,6 +226,10 @@ public partial class EntityWorld : IDisposable {
         systems.Remove(system);
     }
 
+    internal void RemoveQuery(EntityQuery query) {
+        queries.Remove(query.Weak);
+    }
+
     internal void RemoveChangedObserver(Delegate observer) {
         lock (changedObservers) {
             ChangedObserverContext? context = null;
@@ -245,6 +253,11 @@ public partial class EntityWorld : IDisposable {
                 }
             }
         }
+    }
+
+    private void InitializeQuery(EntityQuery query, IEntityFilter? filter) {
+        queries.Add(query.Weak);
+        query.Filter = filter;
     }
 
     private void DespawnQueueThreadWorker() {
@@ -282,10 +295,7 @@ public partial class EntityWorld : IDisposable {
     private EntityObserverLifetime AddChangedObserverWorker(
         ChangedObserverInvoker invoker, Delegate observer, List<Type> types
     ) {
-        AddObserverWorker(
-            EntityObserverType.Changed, new ChangedObserverContext(invoker, observer), changedObservers, types
-        );
-
+        AddChangedObserverWorkerInner(new ChangedObserverContext(invoker, observer), types);
         EntityObserverLifetime lifetime = new EntityObserverLifetime(this, EntityObserverType.Changed, observer);
         if (IsDisposed) {
             lifetime.Dispose();
@@ -294,18 +304,38 @@ public partial class EntityWorld : IDisposable {
         return lifetime;
     }
 
-    private void AddObserverWorker(
-        EntityObserverType observerType, ChangedObserverContext context, List<ChangedObserverContext> observers,
-        List<Type> types
-    ) {
+    private void AddChangedObserverWorkerInner(ChangedObserverContext context, List<Type> types) {
+        Type[] without = GetObserverWithAndWithoutAttributes(context.Observer.Method, types);
+        Type type = types[0];
+
+        lock (changedObservers) {
+            if (changedObservers.Contains(context))
+                return;
+            changedObservers.Add(context);
+
+            foreach (Archetype archetype in archetypes.Values) {
+                if (
+                    types.Any(x => !archetype.HashCodes.ContainsKey(x)) ||
+                    without.Any(archetype.HashCodes.ContainsKey)
+                ) {
+                    continue;
+                }
+
+                ConcurrentDictionary<Type, ChangedObserverContext[]> dictionary = archetype.ChangedObserversLookup;
+                if (!dictionary.TryGetValue(type, out ChangedObserverContext[]? contexts))
+                    continue;
+                if (!dictionary.TryUpdate(type, contexts.Append(context).ToArray(), contexts))
+                    throw new UnreachableException();
+            }
+        }
+    }
+
+    private Type[] GetObserverWithAndWithoutAttributes(MethodInfo method, List<Type> types) {
         AssertIsNotDisposed();
 
-        if (observers.Contains(context))
-            return;
         if (types.Count != types.Distinct().Count())
             throw new InvalidOperationException("Duplicate component type in observer.");
 
-        MethodInfo method = context.Observer.Method;
         types.AddRange(method.GetCustomAttributes<WithAttribute>().SelectMany(x => x.Components));
         if (types.Count != types.Distinct().Count())
             throw new InvalidOperationException($"Duplicate component type in {nameof(WithAttribute)}.");
@@ -319,31 +349,7 @@ public partial class EntityWorld : IDisposable {
         if (without.Length != without.Distinct().Count())
             throw new InvalidOperationException($"Duplicate component type in {nameof(WithoutAttribute)}.");
 
-        Type type = types[0];
-        lock (observers) {
-            if (observers.Contains(context))
-                return;
-            observers.Add(context);
-
-            foreach (Archetype archetype in archetypes.Values) {
-                if (
-                    types.Any(x => !archetype.HashCodes.ContainsKey(x)) ||
-                    without.Any(archetype.HashCodes.ContainsKey)
-                ) {
-                    continue;
-                }
-
-                ConcurrentDictionary<Type, ChangedObserverContext[]> dictionary = observerType switch {
-                    EntityObserverType.Changed => archetype.ChangedObserversLookup,
-                    _ => throw new NotImplementedException(),
-                };
-
-                if (!dictionary.TryGetValue(type, out ChangedObserverContext[]? contexts))
-                    continue;
-                if (!dictionary.TryUpdate(type, contexts.Append(context).ToArray(), contexts))
-                    throw new UnreachableException();
-            }
-        }
+        return without;
     }
 
     private void AssertIsNotDisposed() {
