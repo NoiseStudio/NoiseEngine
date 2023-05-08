@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -188,7 +189,42 @@ public partial class EntityWorld : IDisposable {
             if (archetypes.TryGetValue(hashCode, out archetype))
                 return archetype;
 
-            archetype = new Archetype(this, hashCode, components);
+            List<(Type type, int size, int affectiveHashCode)>? list = null;
+            int referenceHashCode = hashCode;
+
+            foreach ((Type type, _, _) in components) {
+                foreach (
+                    AppendComponentDefaultAttribute attribute in
+                    type.GetCustomAttributes<AppendComponentDefaultAttribute>()
+                ) {
+                    list ??= new List<(Type type, int size, int affectiveHashCode)>(components);
+                    foreach (Type t in attribute.Components) {
+                        if (list.Any(x => x.type == t))
+                            continue;
+
+                        object obj = Activator.CreateInstance(type, false) ?? throw new UnreachableException();
+
+                        int affectiveHashCode;
+                        if (obj is IAffectiveComponent affectiveComponent)
+                            affectiveHashCode = affectiveComponent.GetAffectiveHashCode();
+                        else
+                            affectiveHashCode = 0;
+
+                        list.Add((t, Marshal.SizeOf(obj), affectiveHashCode));
+                        referenceHashCode ^= unchecked(t.GetHashCode() + (affectiveHashCode * 16777619));
+                    }
+                }
+            }
+
+            if (list is not null && list.Count != components.Length) {
+                if (!TryGetArchetype(referenceHashCode, out archetype)) {
+                    archetype = new Archetype(this, referenceHashCode, list.ToArray());
+                    archetypes.Add(referenceHashCode, archetype);
+                }
+            } else {
+                archetype = new Archetype(this, hashCode, components);
+            }
+
             archetypes.Add(hashCode, archetype);
         }
 
