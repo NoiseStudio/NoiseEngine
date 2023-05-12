@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
 internal record ValueToken(
     OperatorType LeftOperator, IValueContent Value, OperatorType? RightOperator, ValueToken? NextValue
-) : IParserToken<ValueToken>, IValueContent {
+) : IParserToken<ValueToken>, IValueContent, IValueNodeElement {
 
     public OperatorType Operator { get; private set; }
 

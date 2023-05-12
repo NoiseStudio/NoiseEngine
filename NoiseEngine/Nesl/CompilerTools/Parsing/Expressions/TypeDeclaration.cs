@@ -1,5 +1,7 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes;
+using System.Diagnostics;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 
@@ -24,6 +26,11 @@ internal class TypeDeclaration : ParserExpressionContainer {
 
         if (!successful)
             return;
+        if (typeBuilder is null)
+            throw new UnreachableException();
+
+        if (typeKind.TypeKind == NeslTypeKind.Struct)
+            typeBuilder.AddAttribute(ValueTypeAttribute.Create());
 
         Parser.DefineType(typeBuilder!, codeBlock.Buffer);
     }

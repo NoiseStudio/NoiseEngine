@@ -2,6 +2,7 @@
 using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace NoiseEngine.Nesl.Emit;
 
@@ -11,6 +12,8 @@ public class IlGenerator : IlContainer {
     private readonly NeslMethodBuilder method;
     private readonly List<(OpCode opCode, uint tailIndex)> rawInstructions = new List<(OpCode, uint)>();
     private readonly SerializationWriter tail = new SerializationWriter();
+
+    private uint nextVariableId = 0;
 
     protected override IEnumerable<(OpCode opCode, uint tailIndex)> RawInstructions => rawInstructions;
 
@@ -100,6 +103,10 @@ public class IlGenerator : IlContainer {
     public void Emit(OpCode opCode, NeslType argument1) {
         EmitWorker(opCode, typeof(NeslType));
         tail.WriteUInt64(assembly.GetLocalTypeId(argument1));
+    }
+
+    internal uint GetNextVariableId() {
+        return nextVariableId++;
     }
 
     internal override ReadOnlySpan<byte> GetTail(int start) {

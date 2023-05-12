@@ -60,5 +60,7 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     TypeNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ConstructorNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     UsingGenericNotAllowed,
 }
