@@ -20,6 +20,7 @@ internal record ValueToken(
         out CompilationError error
     ) {
         OperatorToken? leftOperator = null;
+        int index = buffer.Index;
         if (
             OperatorToken.Parse(buffer, errorMode, out OperatorToken tempOperator, out _) &&
             !tempOperator.IsAssigment && (
@@ -32,7 +33,7 @@ internal record ValueToken(
         ) {
             leftOperator = tempOperator;
         } else {
-            buffer.Index--;
+            buffer.Index = index;
         }
 
         if (!buffer.TryReadNext(out Token token)) {
@@ -42,7 +43,6 @@ internal record ValueToken(
         }
 
         IValueContent value;
-        int index;
         if (token.Type == TokenType.Word) {
             bool isNew = token.Value == "new";
             if (!isNew)
@@ -121,6 +121,7 @@ internal record ValueToken(
         }
 
         OperatorToken? rightOperator = null;
+        index = buffer.Index;
         if (
             OperatorToken.Parse(buffer, errorMode, out tempOperator, out _) &&
             !tempOperator.IsAssigment && (
@@ -130,7 +131,7 @@ internal record ValueToken(
         ) {
             rightOperator = tempOperator;
         } else {
-            buffer.Index--;
+            buffer.Index = index;
         }
 
         index = buffer.Index;

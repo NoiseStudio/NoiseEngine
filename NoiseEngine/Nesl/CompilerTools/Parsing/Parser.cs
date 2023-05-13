@@ -347,6 +347,29 @@ internal class Parser {
         return false;
     }
 
+    public bool TryGetMethods(
+        TypeIdentifierToken identifier, out bool findedType, [NotNullWhen(true)] out IEnumerable<NeslMethod>? methods
+    ) {
+        int index = identifier.Identifier.LastIndexOf('.');
+        if (index == -1) {
+            findedType = true;
+            methods = CurrentType.Methods.Where(x => x.Name == identifier.Identifier);
+            return methods.Any();
+        }
+
+        TypeIdentifierToken i = identifier with { Identifier = identifier.Identifier[..index] };
+        if (!TryGetType(i, out NeslType? type)) {
+            findedType = false;
+            methods = null;
+            return false;
+        }
+
+        findedType = true;
+        string str = identifier.Identifier[(index + 1)..];
+        methods = type.Methods.Where(x => x.Name == str);
+        return methods.Any();
+    }
+
     public uint DefineVariable(NeslType type, string name) {
         variables ??= new Dictionary<string, VariableData>();
         uint id = CurrentMethod.IlGenerator.GetNextVariableId();

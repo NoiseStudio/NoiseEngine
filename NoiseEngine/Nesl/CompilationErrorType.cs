@@ -46,6 +46,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedExplicitCastNotExpression,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedAssignmentOperator,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]
     UsingAlreadyExists,
@@ -59,6 +61,12 @@ public enum CompilationErrorType {
     ParameterAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     TypeNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    FieldNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    MethodNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    MethodWithGivenArgumentsNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ConstructorNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]

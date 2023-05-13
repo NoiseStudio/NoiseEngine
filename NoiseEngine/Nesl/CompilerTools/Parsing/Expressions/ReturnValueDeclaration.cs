@@ -14,7 +14,7 @@ internal class ReturnValueDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.Value)]
     [ParserExpressionTokenType(ParserTokenType.Semicolon)]
     public void Define(ValueToken value) {
-        Parser.CurrentMethod.IlGenerator.Emit(OpCode.ReturnValue, ValueConstructor.Construct(value, Parser));
+        Parser.CurrentMethod.IlGenerator.Emit(OpCode.ReturnValue, ValueConstructor.Construct(value, Parser).Id);
     }
 
 }

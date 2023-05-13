@@ -66,6 +66,7 @@ internal readonly record struct TypeIdentifierToken(
 
     public NeslType? GetTypeFromAssembly(NeslAssembly assembly, IEnumerable<string> usings) {
         NeslType? type = assembly.GetType(Identifier);
+        IReadOnlyList<TypeIdentifierToken> genericTokens = GenericTokens;
         if (type is null) {
             foreach (string u in usings) {
                 type = assembly.GetType(u + "." + Identifier);
@@ -76,18 +77,21 @@ internal readonly record struct TypeIdentifierToken(
             if (type is null) {
                 if (TryGetBuiltInIdentifier(out TypeIdentifierToken ti)) {
                     type = assembly.GetType(ti.Identifier);
-                    return type;
+                    if (type is null)
+                        return null;
+                    genericTokens = ti.GenericTokens;
+                } else {
+                    return null;
                 }
-                return null;
             }
         }
 
-        if (GenericTokens.Count == 0)
+        if (genericTokens.Count == 0)
             return type;
 
-        NeslType[] genericTypes = new NeslType[GenericTokens.Count];
+        NeslType[] genericTypes = new NeslType[genericTokens.Count];
         for (int i = 0; i < genericTypes.Length; i++) {
-            NeslType? genericType = GenericTokens[i].GetTypeFromAssembly(assembly, usings);
+            NeslType? genericType = genericTokens[i].GetTypeFromAssembly(assembly, usings);
             if (genericType is null)
                 return null;
 

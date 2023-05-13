@@ -3,12 +3,13 @@ using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
 
 internal static class ValueConstructor {
 
-    public static uint Construct(ValueToken value, Parser parser) {
+    public static ValueData Construct(ValueToken value, Parser parser) {
         IValueNodeElement element = GetNodeElement(value);
         if (element is ValueToken token) {
             if (token.Value is ValueToken innerToken)
@@ -23,10 +24,10 @@ internal static class ValueConstructor {
             }
         }
 
-        return uint.MaxValue;
+        return ValueData.Invalid;
     }
 
-    private static uint ConstructNew(Parser parser, ExpressionValueContent expression) {
+    private static ValueData ConstructNew(Parser parser, ExpressionValueContent expression) {
         if (expression.Identifier is null)
             throw new UnreachableException();
         TypeIdentifierToken identifier = expression.Identifier.Value;
@@ -35,7 +36,7 @@ internal static class ValueConstructor {
             parser.Throw(new CompilationError(
                 identifier.Pointer, CompilationErrorType.TypeNotFound, identifier.Identifier
             ));
-            return uint.MaxValue;
+            return ValueData.Invalid;
         }
 
         NeslMethod? constructor = type.GetMethod(NeslOperators.Constructor);
@@ -43,30 +44,34 @@ internal static class ValueConstructor {
             parser.Throw(new CompilationError(
                 identifier.Pointer, CompilationErrorType.ConstructorNotFound, identifier.Identifier
             ));
-            return uint.MaxValue;
+            return ValueData.Invalid;
         }
 
         IlGenerator il = parser.CurrentMethod.IlGenerator;
         il.Emit(OpCode.DefVariable, type);
         uint variableId = il.GetNextVariableId();
         il.Emit(OpCode.Call, variableId, constructor, Array.Empty<uint>());
-        return variableId;
+
+        if (expression.CurlyBrackets is not null)
+            NewInitializer.Initialize(parser, type, variableId, expression.CurlyBrackets.Value.Buffer);
+
+        return new ValueData(type, variableId);
     }
 
-    private static uint ConstructValue(Parser parser, ExpressionValueContent expression) {
+    private static ValueData ConstructValue(Parser parser, ExpressionValueContent expression) {
         if (expression.Identifier is null)
             throw new UnreachableException();
         TypeIdentifierToken identifier = expression.Identifier.Value;
 
         int index = identifier.Identifier.IndexOf('.');
-        string variableName = index != -1 ? identifier.Identifier[..index] : identifier.Identifier;
+        string fragmentName = index != -1 ? identifier.Identifier[..index] : identifier.Identifier;
 
-        VariableData? variable = parser.GetVariable(variableName);
+        VariableData? variable = parser.GetVariable(fragmentName);
         if (variable is null)
-            throw new NotImplementedException();
+            return CallMethod(parser, expression);
 
         if (index == -1)
-            return variable.Value.Id;
+            return new ValueData(variable.Value.Type, variable.Value.Id);
 
         NeslType type = variable.Value.Type;
         NeslField? field;
@@ -94,7 +99,72 @@ internal static class ValueConstructor {
         il.Emit(OpCode.DefVariable, field.FieldType);
         uint variableId = il.GetNextVariableId();
         il.Emit(OpCode.LoadField, variableId, variable.Value.Id, field.Id);
-        return variableId;
+        return new ValueData(field.FieldType, variableId);
+    }
+
+    private static ValueData CallMethod(Parser parser, ExpressionValueContent expression) {
+        TypeIdentifierToken identifier = expression.Identifier!.Value;
+        if (!parser.TryGetMethods(identifier, out bool findedType, out IEnumerable<NeslMethod>? methods)) {
+            if (findedType) {
+                parser.Throw(new CompilationError(
+                    identifier.Pointer, CompilationErrorType.TypeNotFound, identifier.Identifier
+                ));
+            } else {
+                parser.Throw(new CompilationError(
+                    identifier.Pointer, CompilationErrorType.MethodNotFound, identifier.Identifier
+                ));
+            }
+            return ValueData.Invalid;
+        }
+
+        List<ValueData>? parameters = GetParameters(parser, expression.RoundBrackets!.Value.Buffer);
+        if (parameters is null)
+            return ValueData.Invalid;
+
+        NeslMethod? method = null;
+        foreach (NeslMethod m in methods) {
+            if (m.ParameterTypes.SequenceEqual(parameters.Select(x => x.Type))) {
+                method = m;
+                break;
+            }
+        }
+
+        if (method is null) {
+            parser.Throw(new CompilationError(
+                identifier.Pointer, CompilationErrorType.MethodWithGivenArgumentsNotFound, identifier.Identifier
+            ));
+            return ValueData.Invalid;
+        }
+
+        IlGenerator il = parser.CurrentMethod.IlGenerator;
+        il.Emit(OpCode.DefVariable, method.Type);
+        uint variableId = il.GetNextVariableId();
+        il.Emit(OpCode.Call, variableId, method, parameters.Select(x => x.Id).ToArray());
+        return new ValueData(method.Type, variableId);
+    }
+
+    private static List<ValueData>? GetParameters(Parser parser, TokenBuffer buffer) {
+        List<ValueData> list = new List<ValueData>();
+        if (!buffer.HasNextTokens)
+            return list;
+
+        while (true) {
+            if (!ValueToken.Parse(buffer, parser.ErrorMode, out ValueToken? value, out CompilationError error)) {
+                parser.Throw(error);
+                return null;
+            }
+
+            list.Add(Construct(value, parser));
+
+            if (!buffer.HasNextTokens)
+                break;
+
+            if (!buffer.TryReadNext(TokenType.Comma, out Token token)) {
+                parser.Throw(new CompilationError(token, CompilationErrorType.ExpectedComma));
+                return null;
+            }
+        }
+        return list;
     }
 
     private static IValueNodeElement GetNodeElement(ValueToken value) {
