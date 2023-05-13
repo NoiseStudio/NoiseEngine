@@ -26,20 +26,33 @@ public static class Application {
     private static bool isExited;
     private static ApplicationSettings? settings;
     private static GraphicsInstance? graphicsInstance;
+    private static JobsInvoker? jobsInvoker;
 
     public static Version? EngineVersion => typeof(Application).Assembly.GetName().Version;
 
     public static string Name => Settings.Name!;
     public static Version Version => Settings.Version!;
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
-    public static Jobs.EntitySchedule EntitySchedule2 { get; private set; } = new Jobs.EntitySchedule();
-    public static Jobs.JobsInvoker JobsInvoker { get; private set; } = new Jobs.JobsInvoker();
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
     public static IEnumerable<Window> Windows => WindowEventHandler.Windows;
 
     public static GraphicsInstance GraphicsInstance => GetGraphicsInstance();
     public static bool IsDebugMode => Settings.DebugMode!.Value;
+
+    public static JobsInvoker JobsInvoker {
+        get {
+            JobsInvoker? jobsInvoker = Application.jobsInvoker;
+            if (jobsInvoker is not null)
+                return jobsInvoker;
+
+            jobsInvoker = new JobsInvoker();
+            if (Interlocked.CompareExchange(ref Application.jobsInvoker, jobsInvoker, null) != null)
+                jobsInvoker.Dispose();
+            return JobsInvoker;
+        }
+        set => jobsInvoker = value;
+    }
 
     internal static ApplicationSettings Settings => settings ?? throw new InvalidOperationException(
         $"{nameof(Application)} has not been initialized with a call to {nameof(Initialize)}.");
@@ -113,8 +126,6 @@ public static class Application {
         Application.settings = settings with {
             EntitySchedule = settings.EntitySchedule ?? new EntitySchedule()
         };
-
-        EntitySchedule2 = new Jobs.EntitySchedule();
     }
 
     /// <summary>
@@ -137,6 +148,8 @@ public static class Application {
                 scene.Dispose();
 
             EntitySchedule.Dispose();
+            jobsInvoker?.Dispose();
+            jobsInvoker = null;
 
             graphicsInstance = null;
 

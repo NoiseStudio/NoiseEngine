@@ -33,7 +33,7 @@ public partial class EntityWorld : IDisposable {
     private bool despawnQueueThreadWork;
     private AtomicBool isDisposed;
 
-    public EntitySchedule? DefaultSchedule { get; set; } = Application.EntitySchedule2;
+    public EntitySchedule? DefaultSchedule { get; set; } = Application.EntitySchedule;
 
     public bool IsDisposed => isDisposed;
     public IEnumerable<AffectiveSystem> AffectiveSystems => affectiveSystems;

@@ -17,7 +17,7 @@ public class ApplicationFixture : IDisposable {
 
     private Window? window;
 
-    internal EntityWorld EntityWorld { get; } = new EntityWorld();
+    internal EntityWorld EntityWorld { get; }
     internal JobsWorld JobsWorld { get; } = new JobsWorld();
     internal IReadOnlyList<GraphicsDevice> GraphicsDevices { get; private set; }
     internal IReadOnlyList<VulkanDevice> VulkanDevices { get; private set; }
@@ -30,6 +30,7 @@ public class ApplicationFixture : IDisposable {
             DebugMode = true
         });
 
+        EntityWorld = new EntityWorld();
         Log.Logger.LogLevelMask = LogLevel.All;
 
         if (
