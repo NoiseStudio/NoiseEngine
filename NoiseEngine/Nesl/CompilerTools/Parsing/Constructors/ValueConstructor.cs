@@ -17,39 +17,84 @@ internal static class ValueConstructor {
                 throw new UnreachableException();
 
             foreach (ExpressionValueContent expression in container.Expressions) {
-                TypeIdentifierToken identifier;
-                if (expression.IsNew) {
-                    if (expression.Identifier is null)
-                        throw new UnreachableException();
-                    identifier = expression.Identifier.Value;
-                } else {
-                    throw new NotImplementedException();
-                }
-
-                if (!parser.TryGetType(identifier, out NeslType? type)) {
-                    parser.Throw(new CompilationError(
-                        identifier.Pointer, CompilationErrorType.TypeNotFound, identifier.Identifier
-                    ));
-                    return uint.MaxValue;
-                }
-
-                NeslMethod? constructor = type.GetMethod(NeslOperators.Constructor);
-                if (constructor is null) {
-                    parser.Throw(new CompilationError(
-                        identifier.Pointer, CompilationErrorType.ConstructorNotFound, identifier.Identifier
-                    ));
-                    return uint.MaxValue;
-                }
-
-                IlGenerator il = parser.CurrentMethod.IlGenerator;
-                il.Emit(OpCode.DefVariable, type);
-                uint variableId = il.GetNextVariableId();
-                il.Emit(OpCode.Call, variableId, constructor, Array.Empty<uint>());
-                return variableId;
+                if (expression.IsNew)
+                    return ConstructNew(parser, expression);
+                return ConstructValue(parser, expression);
             }
         }
 
         return uint.MaxValue;
+    }
+
+    private static uint ConstructNew(Parser parser, ExpressionValueContent expression) {
+        if (expression.Identifier is null)
+            throw new UnreachableException();
+        TypeIdentifierToken identifier = expression.Identifier.Value;
+
+        if (!parser.TryGetType(identifier, out NeslType? type)) {
+            parser.Throw(new CompilationError(
+                identifier.Pointer, CompilationErrorType.TypeNotFound, identifier.Identifier
+            ));
+            return uint.MaxValue;
+        }
+
+        NeslMethod? constructor = type.GetMethod(NeslOperators.Constructor);
+        if (constructor is null) {
+            parser.Throw(new CompilationError(
+                identifier.Pointer, CompilationErrorType.ConstructorNotFound, identifier.Identifier
+            ));
+            return uint.MaxValue;
+        }
+
+        IlGenerator il = parser.CurrentMethod.IlGenerator;
+        il.Emit(OpCode.DefVariable, type);
+        uint variableId = il.GetNextVariableId();
+        il.Emit(OpCode.Call, variableId, constructor, Array.Empty<uint>());
+        return variableId;
+    }
+
+    private static uint ConstructValue(Parser parser, ExpressionValueContent expression) {
+        if (expression.Identifier is null)
+            throw new UnreachableException();
+        TypeIdentifierToken identifier = expression.Identifier.Value;
+
+        int index = identifier.Identifier.IndexOf('.');
+        string variableName = index != -1 ? identifier.Identifier[..index] : identifier.Identifier;
+
+        VariableData? variable = parser.GetVariable(variableName);
+        if (variable is null)
+            throw new NotImplementedException();
+
+        if (index == -1)
+            return variable.Value.Id;
+
+        NeslType type = variable.Value.Type;
+        NeslField? field;
+
+        int sum = index + 1;
+        while (true) {
+            index = identifier.Identifier.AsSpan(sum).IndexOf('.');
+            string str = index != -1 ? identifier.Identifier[sum..index] : identifier.Identifier[sum..];
+
+            field = type.GetField(str);
+            if (field is null)
+                throw new NotImplementedException();
+
+            if (index == -1)
+                break;
+
+            type = field.FieldType;
+            sum += index;
+        }
+
+        if (field is null)
+            throw new NotImplementedException();
+
+        IlGenerator il = parser.CurrentMethod.IlGenerator;
+        il.Emit(OpCode.DefVariable, field.FieldType);
+        uint variableId = il.GetNextVariableId();
+        il.Emit(OpCode.LoadField, variableId, variable.Value.Id, field.Id);
+        return variableId;
     }
 
     private static IValueNodeElement GetNodeElement(ValueToken value) {

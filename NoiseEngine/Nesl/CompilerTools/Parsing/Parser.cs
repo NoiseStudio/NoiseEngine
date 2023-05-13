@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -24,6 +23,7 @@ internal class Parser {
 
     private NeslTypeBuilder? currentType;
     private NeslMethodBuilder? currentMethod;
+    private Dictionary<string, VariableData>? variables;
 
     public Parser? Parent { get; }
     public NeslAssemblyBuilder Assembly { get; }
@@ -281,9 +281,14 @@ internal class Parser {
                     return;
                 }
 
+                Dictionary<string, VariableData> variables = new Dictionary<string, VariableData>();
+                foreach ((NeslType type, string vname) in parameterParser.DefinedParameters)
+                    variables.Add(vname, new VariableData(type, vname, method.IlGenerator.GetNextVariableId()));
+
                 Parser methodParser = new Parser(this, Assembly, ParserStep.Method, codeBlock) {
                     CurrentType = CurrentType,
-                    CurrentMethod = method!
+                    CurrentMethod = method!,
+                    variables = variables
                 };
                 methodParser.Parse();
 
@@ -340,6 +345,20 @@ internal class Parser {
             typeIdentifier.Pointer, CompilationErrorType.TypeNotFound, typeIdentifier.Identifier
         ));
         return false;
+    }
+
+    public uint DefineVariable(NeslType type, string name) {
+        variables ??= new Dictionary<string, VariableData>();
+        uint id = CurrentMethod.IlGenerator.GetNextVariableId();
+        if (!variables.TryAdd(name, new VariableData(type, name, id)))
+            throw new NotImplementedException(); // TODO: Add error.
+        return id;
+    }
+
+    public VariableData? GetVariable(string name) {
+        if (variables is not null && variables.TryGetValue(name, out VariableData data))
+            return data;
+        return null;
     }
 
 }
