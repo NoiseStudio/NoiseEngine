@@ -87,8 +87,6 @@ public class EntityQueryTest : ApplicationTestEnvironment {
                         Assert.Equal(entityC, entity);
                         Assert.Equal(MockComponentB.TestValueA, b);
                         break;
-                    default:
-                        throw new UnreachableException();
                 }
             }
         }

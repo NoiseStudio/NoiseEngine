@@ -20,7 +20,7 @@ public partial class EntityWorld : IDisposable {
 
     internal readonly List<ChangedObserverContext> changedObservers = new List<ChangedObserverContext>();
 
-    private readonly Dictionary<int, Archetype> archetypes = new Dictionary<int, Archetype>();
+    private readonly ConcurrentDictionary<int, Archetype> archetypes = new ConcurrentDictionary<int, Archetype>();
     private readonly ConcurrentList<AffectiveSystem> affectiveSystems = new ConcurrentList<AffectiveSystem>();
     private readonly ConcurrentList<EntitySystem> systems = new ConcurrentList<EntitySystem>();
     private readonly ConcurrentList<WeakReference<EntityQuery>> queries =
@@ -32,7 +32,7 @@ public partial class EntityWorld : IDisposable {
     private bool despawnQueueThreadWork;
     private AtomicBool isDisposed;
 
-    public EntitySchedule? DefaultSchedule { get; set; }
+    public EntitySchedule? DefaultSchedule { get; set; } = Application.EntitySchedule2;
 
     public bool IsDisposed => isDisposed;
     public IEnumerable<AffectiveSystem> AffectiveSystems => affectiveSystems;
@@ -45,10 +45,6 @@ public partial class EntityWorld : IDisposable {
         Delegate observer, Entity entity, SystemCommandsInner commands, nint ptr, Dictionary<Type, nint> offsets,
         ref byte oldValue
     );
-
-    public EntityWorld() {
-        DefaultSchedule = Application.EntitySchedule2;
-    }
 
     /// <summary>
     /// Disposes this <see cref="EntityWorld"/> and it's <see cref="Entity"/>s, <see cref="EntitySystem"/>s and
@@ -219,13 +215,13 @@ public partial class EntityWorld : IDisposable {
             if (list is not null && list.Count != components.Length) {
                 if (!TryGetArchetype(referenceHashCode, out archetype)) {
                     archetype = new Archetype(this, referenceHashCode, list.ToArray());
-                    archetypes.Add(referenceHashCode, archetype);
+                    archetypes.TryAdd(referenceHashCode, archetype);
                 }
             } else {
                 archetype = new Archetype(this, hashCode, components);
             }
 
-            archetypes.Add(hashCode, archetype);
+            archetypes.TryAdd(hashCode, archetype);
         }
 
         archetype.Initialize();

@@ -33,6 +33,7 @@ public static class Application {
     public static Version Version => Settings.Version!;
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
     public static Jobs2.EntitySchedule EntitySchedule2 { get; private set; } = new Jobs2.EntitySchedule();
+    public static Jobs2.JobsInvoker JobsInvoker { get; private set; } = new Jobs2.JobsInvoker();
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
     public static IEnumerable<Window> Windows => WindowEventHandler.Windows;
