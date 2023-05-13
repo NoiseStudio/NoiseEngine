@@ -2,7 +2,7 @@ using NoiseEngine.Jobs;
 
 namespace NoiseEngine.Tests.Jobs;
 
-[Collection(nameof(JobsCollection))]
+[Collection(nameof(JobsCollectionOld))]
 public class JobTest {
 
     private JobsFixture Fixture { get; }

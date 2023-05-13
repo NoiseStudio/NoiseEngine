@@ -32,11 +32,14 @@ public static class Application {
     public static string Name => Settings.Name!;
     public static Version Version => Settings.Version!;
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
+    public static Jobs2.EntitySchedule EntitySchedule2 { get; private set; } = new Jobs2.EntitySchedule();
+    public static Jobs2.JobsInvoker JobsInvoker { get; private set; } = new Jobs2.JobsInvoker();
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
     public static IEnumerable<Window> Windows => WindowEventHandler.Windows;
 
     public static GraphicsInstance GraphicsInstance => GetGraphicsInstance();
+    public static bool IsDebugMode => Settings.DebugMode!.Value;
 
     internal static ApplicationSettings Settings => settings ?? throw new InvalidOperationException(
         $"{nameof(Application)} has not been initialized with a call to {nameof(Initialize)}.");
@@ -110,6 +113,8 @@ public static class Application {
         Application.settings = settings with {
             EntitySchedule = settings.EntitySchedule ?? new EntitySchedule()
         };
+
+        EntitySchedule2 = new Jobs2.EntitySchedule();
     }
 
     /// <summary>

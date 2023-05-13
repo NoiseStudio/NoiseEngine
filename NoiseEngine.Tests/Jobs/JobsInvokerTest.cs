@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace NoiseEngine.Tests.Jobs;
 
-[Collection(nameof(JobsCollection))]
+[Collection(nameof(JobsCollectionOld))]
 public class JobsInvokerTest {
 
     private readonly AutoResetEvent autoResetEvent = new AutoResetEvent(false);

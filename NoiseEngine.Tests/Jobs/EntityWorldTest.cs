@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace NoiseEngine.Tests.Jobs;
 
-[Collection(nameof(JobsCollection))]
+[Collection(nameof(JobsCollectionOld))]
 public class EntityWorldTest {
 
     private JobsFixture Fixture { get; }

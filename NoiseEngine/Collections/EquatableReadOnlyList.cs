@@ -8,12 +8,21 @@ namespace NoiseEngine.Collections;
 public class EquatableReadOnlyList<T> : IReadOnlyList<T>, IEquatable<EquatableReadOnlyList<T>> {
 
     private readonly IReadOnlyList<T> list;
+    private readonly int hashCode;
 
     public T this[int index] => list[index];
     public int Count => list.Count;
 
     public EquatableReadOnlyList(IReadOnlyList<T> list) {
         this.list = list;
+
+        hashCode = 17;
+        foreach (T obj in list) {
+            if (obj is not null)
+                hashCode = hashCode * 23 + obj.GetHashCode();
+            else
+                hashCode *= 31;
+        }
     }
 
     /// <summary>
@@ -58,16 +67,7 @@ public class EquatableReadOnlyList<T> : IReadOnlyList<T>, IEquatable<EquatableRe
     /// </summary>
     /// <returns>A 32-bit signed integer hash code.</returns>
     public override int GetHashCode() {
-        int result = 17;
-
-        foreach (T obj in list) {
-            if (obj is not null)
-                result = result * 23 + obj.GetHashCode();
-            else
-                result *= 31;
-        }
-
-        return result;
+        return hashCode;
     }
 
     IEnumerator IEnumerable.GetEnumerator() {

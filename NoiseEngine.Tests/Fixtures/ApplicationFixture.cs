@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Logging;
+﻿using NoiseEngine.Jobs2;
+using NoiseEngine.Logging;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Vulkan;
@@ -16,6 +17,8 @@ public class ApplicationFixture : IDisposable {
 
     private Window? window;
 
+    internal EntityWorld EntityWorld { get; } = new EntityWorld();
+    internal JobsWorld JobsWorld { get; } = new JobsWorld();
     internal IReadOnlyList<GraphicsDevice> GraphicsDevices { get; private set; }
     internal IReadOnlyList<VulkanDevice> VulkanDevices { get; private set; }
 
@@ -23,7 +26,8 @@ public class ApplicationFixture : IDisposable {
         Application.Initialize(new ApplicationSettings {
             AutoExitWhenAllWindowsAreClosed = false,
             ProcessExitOnApplicationExit = false,
-            EnableValidationLayers = true
+            EnableValidationLayers = true,
+            DebugMode = true
         });
 
         Log.Logger.LogLevelMask = LogLevel.All;
@@ -44,6 +48,7 @@ public class ApplicationFixture : IDisposable {
         window?.Dispose();
         GraphicsDevices = Array.Empty<GraphicsDevice>();
         VulkanDevices = Array.Empty<VulkanDevice>();
+        EntityWorld.Dispose();
 
         Application.Exit();
     }

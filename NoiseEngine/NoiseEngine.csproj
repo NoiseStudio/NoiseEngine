@@ -28,8 +28,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../NoiseEngine.CodeGenerators.Shared/NoiseEngine.CodeGenerators.Shared.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-        <ProjectReference Include="../NoiseEngine.CodeGenerators/NoiseEngine.CodeGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="../NoiseEngine.Generator/NoiseEngine.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="../NoiseEngine.InternalGenerator.Shared/NoiseEngine.InternalGenerator.Shared.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="../NoiseEngine.InternalGenerator/NoiseEngine.InternalGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <Import Project="../NoiseEngine.Shared.xml" />
