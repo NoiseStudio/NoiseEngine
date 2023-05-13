@@ -32,8 +32,8 @@ public static class Application {
     public static string Name => Settings.Name!;
     public static Version Version => Settings.Version!;
     public static EntitySchedule EntitySchedule => Settings.EntitySchedule!;
-    public static Jobs2.EntitySchedule EntitySchedule2 { get; private set; } = new Jobs2.EntitySchedule();
-    public static Jobs2.JobsInvoker JobsInvoker { get; private set; } = new Jobs2.JobsInvoker();
+    public static Jobs.EntitySchedule EntitySchedule2 { get; private set; } = new Jobs.EntitySchedule();
+    public static Jobs.JobsInvoker JobsInvoker { get; private set; } = new Jobs.JobsInvoker();
 
     public static IEnumerable<ApplicationScene> LoadedScenes => loadedScenes;
     public static IEnumerable<Window> Windows => WindowEventHandler.Windows;
@@ -114,7 +114,7 @@ public static class Application {
             EntitySchedule = settings.EntitySchedule ?? new EntitySchedule()
         };
 
-        EntitySchedule2 = new Jobs2.EntitySchedule();
+        EntitySchedule2 = new Jobs.EntitySchedule();
     }
 
     /// <summary>

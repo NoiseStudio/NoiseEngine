@@ -11,25 +11,18 @@ public class EntityWorldBenchmark {
     private readonly EntityWorld world = new EntityWorld();
 
     public EntityWorldBenchmark() {
-        world.NewEntity();
-        world.NewEntity(new TestComponentA(), new TestComponentB());
+        world.Spawn();
+        world.Spawn(new TestComponentA(), new TestComponentB());
     }
 
     [Benchmark]
     public void NewEntity() {
-        world.NewEntity();
+        world.Spawn();
     }
 
     [Benchmark]
     public void NewEntityWithComponents() {
-        world.NewEntity(new TestComponentA(), new TestComponentB());
-    }
-
-    [Benchmark]
-    public void GetGroupFromComponents() {
-        world.GetGroupFromComponents(new List<Type>() {
-            typeof(TestComponentA), typeof(TestComponentB)
-        });
+        world.Spawn(new TestComponentA(), new TestComponentB());
     }
 
 }

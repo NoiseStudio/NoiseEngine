@@ -1,119 +1,68 @@
-﻿using NoiseEngine.Collections.Concurrent;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 
 namespace NoiseEngine.Jobs;
 
-public class JobsInvokerWorker : IDisposable {
+internal sealed class JobsInvokerWorker : IDisposable {
 
-    private readonly AutoResetEvent toInvokeAutoResetEvent = new AutoResetEvent(false);
-    private readonly IReadOnlyList<AutoResetEvent> invokeAutoResetEvents;
-    private readonly ConcurrentList<JobsQueue> queues = new ConcurrentList<JobsQueue>();
-    private readonly ConcurrentQueue<(Job, JobsWorld)> toInvoke = new ConcurrentQueue<(Job, JobsWorld)>();
-    private readonly int threadCount;
+    private readonly ConcurrentQueue<Job> jobsToInvoke = new ConcurrentQueue<Job>();
+    private readonly ManualResetEventSlim executorThreadsResetEvent = new ManualResetEventSlim(false);
 
-    private long waitTime;
-    private int toInvokeAutoResetEventRelease;
-    private int nextInvokeThreadToSignal;
+    private bool work = true;
+    private int wakeUpExecutorThreadCount;
+    private int activeExecutorThreadCount;
 
-    public bool IsDisposed { get; private set; }
+    public int ThreadCount { get; }
 
-    /// <summary>
-    /// Creates new <see cref="JobsInvokerWorker"/>
-    /// </summary>
-    /// <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Error when using zero or negative threads</exception>
-    public JobsInvokerWorker(int? threadCount = null) {
-        if (threadCount == null)
-            threadCount = Environment.ProcessorCount;
+    public JobsInvokerWorker(int? threadCount) {
+        if (threadCount <= 0) {
+            throw new ArgumentOutOfRangeException(
+                nameof(threadCount), "The number of threads cannot be zero or negative."
+            );
+        }
 
-        if (threadCount <= 0)
-            throw new ArgumentOutOfRangeException("The number of threads cannot be zero or negative.");
+        ThreadCount = threadCount ?? Environment.ProcessorCount;
+        activeExecutorThreadCount = ThreadCount;
 
-        this.threadCount = (int)threadCount;
-
-        Thread thread = new Thread(ToInvokeThreadWork);
-        thread.Name = $"{nameof(JobsInvoker)} end queue";
-        thread.Start();
-
-        AutoResetEvent[] invokeAutoResetEvents = new AutoResetEvent[(int)threadCount];
-        this.invokeAutoResetEvents = invokeAutoResetEvents;
-
-        for (int i = 0; i < threadCount; i++) {
-            invokeAutoResetEvents[i] = new AutoResetEvent(false);
-
-            thread = new Thread(InvokeThreadWork);
-            thread.Name = $"{nameof(JobsInvoker)} worker #{i}";
-            thread.Start(i);
+        for (int i = 0; i < ThreadCount; i++) {
+            new Thread(ExecutorThreadWork) {
+                Name = $"{nameof(JobsInvoker)} worker #{i}",
+                IsBackground = true
+            }.Start();
         }
     }
 
-    /// <summary>
-    /// This <see cref="JobsInvokerWorker"/> will be deactivated and disposed
-    /// </summary>
     public void Dispose() {
-        IsDisposed = true;
+        work = false;
     }
 
-    internal void InvokeJob(Job job, JobsWorld world) {
-        toInvoke.Enqueue((job, world));
-        SignalInvokeThread();
+    public void EnqueueJobToInvoke(Job job) {
+        jobsToInvoke.Enqueue(job);
+        Interlocked.Exchange(ref wakeUpExecutorThreadCount, ThreadCount);
+        executorThreadsResetEvent.Set();
     }
 
-    internal void SetToInvokeWaitTime(long waitTime) {
-        if (waitTime < this.waitTime) {
-            Interlocked.Increment(ref toInvokeAutoResetEventRelease);
-            toInvokeAutoResetEvent.Set();
-        }
-    }
+    private void ExecutorThreadWork() {
+        ManualResetEventSlim executorThreadsResetEvent = this.executorThreadsResetEvent;
+        ConcurrentQueue<Job> jobsToInvoke = this.jobsToInvoke;
 
-    internal void AddJobsQueue(JobsQueue queue) {
-        queues.Add(queue);
-    }
+        try {
+            while (work) {
+                while (jobsToInvoke.TryDequeue(out Job? job))
+                    job.TryInvoke();
 
-    internal void RemoveJobsQueue(JobsQueue queue) {
-        queues.Remove(queue);
-    }
-
-    private void ToInvokeThreadWork() {
-        while (!IsDisposed) {
-            Interlocked.Exchange(ref toInvokeAutoResetEventRelease, 0);
-            long newWaitTime = long.MaxValue;
-
-            foreach (JobsQueue queue in queues)
-                queue.DequeueToInvoke(ref newWaitTime);
-
-            waitTime = newWaitTime;
-            if (waitTime > 0 && toInvokeAutoResetEventRelease != 0) {
-                toInvokeAutoResetEvent.Reset();
-                toInvokeAutoResetEvent.WaitOne((int)waitTime);
-                waitTime = 0;
+                executorThreadsResetEvent.Wait();
+                if (Interlocked.Decrement(ref wakeUpExecutorThreadCount) == 0)
+                    executorThreadsResetEvent.Reset();
             }
+        } catch (Exception exception) {
+            Log.Error($"Thread terminated due to an exception. {exception}");
+            throw;
+        } finally {
+            if (Interlocked.Decrement(ref activeExecutorThreadCount) == 0)
+                executorThreadsResetEvent.Dispose();
         }
-
-        toInvokeAutoResetEvent.Dispose();
-    }
-
-    private void InvokeThreadWork(object? threadIdObject) {
-        int threadId = (int)threadIdObject!;
-
-        AutoResetEvent autoResetEvent = invokeAutoResetEvents[threadId];
-
-        while (!IsDisposed) {
-            autoResetEvent.WaitOne();
-
-            while (toInvoke.TryDequeue(out (Job job, JobsWorld world) jobObject)) {
-                jobObject.job.Invoke(jobObject.world);
-            }
-        }
-
-        autoResetEvent.Dispose();
-    }
-
-    private void SignalInvokeThread() {
-        invokeAutoResetEvents[Interlocked.Increment(ref nextInvokeThreadToSignal) % threadCount].Set();
     }
 
 }

@@ -1,57 +1,79 @@
 ﻿using System;
-using System.Threading;
 
 namespace NoiseEngine.Jobs;
 
 public partial class JobsWorld : IDisposable {
 
-    internal readonly JobsQueue queue;
+    private readonly long startRealTime;
 
-    private readonly JobTime startTime;
-    private readonly double startRealTime;
+    private JobsQueue? queue;
+    private JobsInvoker invoker;
 
-    private ulong nextJobId;
-
-    public bool IsDisposed => queue.IsDisposed;
-
-    public JobTime WorldTime {
-        get {
-            ulong currentSessionTime = (ulong)(Time.UtcMilliseconds - startRealTime);
-            return new JobTime((ulong)startTime.Time + currentSessionTime);
+    public JobsInvoker Invoker {
+        get => invoker;
+        set {
+            invoker = value;
+            JobsQueue? queue = this.queue;
+            if (queue is not null)
+                queue.Invoker = value.Worker;
         }
     }
 
-    internal ComponentsStorage<Job> ComponentsStorage { get; } = new ComponentsStorage<Job>();
+    public long CurrentRawTime => CurrentRawTimeWorker(startRealTime);
 
     /// <summary>
     /// Creates new <see cref="JobsWorld"/>.
     /// </summary>
     /// <param name="invoker"><see cref="JobsInvoker"/> invoking <see cref="Job"/>s assigned to this world.</param>
-    /// <param name="queues">Job queues gaps (affect Jobs performance when default queue is used null).</param>
-    /// <param name="startTime">World time, useful for saving (when null time 0 is used).</param>
-    public JobsWorld(JobsInvoker invoker, uint[]? queues = null, JobTime? startTime = null) {
-        if (startTime == null)
-            startTime = JobTime.Zero;
-        this.startTime = (JobTime)startTime;
+    /// <param name="queues">Job queues gaps.</param>
+    /// <param name="startRawTime">World time, useful for saving (when null time 0 is used).</param>
+    public JobsWorld(JobsInvoker? invoker = null, uint[]? queues = null, long? startRawTime = null) {
+        startRealTime = Environment.TickCount64 - (startRawTime ?? 0);
 
-        startRealTime = Time.UtcMilliseconds;
-        queue = new JobsQueue(this, invoker, queues);
+        this.invoker = invoker ?? Application.JobsInvoker;
+        queue = new JobsQueue(Invoker, queues, startRealTime);
+    }
+
+    ~JobsWorld() {
+        ReleaseResources();
+    }
+
+    internal static long CurrentRawTimeWorker(long startRealTime) {
+        return Environment.TickCount64 - startRealTime;
     }
 
     /// <summary>
     /// Disposes this <see cref="JobsWorld"/>.
     /// </summary>
     public void Dispose() {
-        queue.Dispose();
+        ReleaseResources();
+        GC.SuppressFinalize(this);
     }
 
-    private Job EnqueueJobWorker(Delegate toExecute, uint relativeExecutionTime) {
-        JobTime jobTime = new JobTime((ulong)WorldTime.Time + relativeExecutionTime);
-        return new Job(Interlocked.Increment(ref nextJobId), toExecute, jobTime);
+    /// <summary>
+    /// Enqueues new <see cref="Job"/> in this <see cref="JobsWorld"/>.
+    /// </summary>
+    /// <param name="method">Method to invoke.</param>
+    /// <param name="time">Time to invoke new <see cref="Job"/>.</param>
+    /// <returns>
+    /// New <see cref="Job"/> in this <see cref="JobsWorld"/> which invokes <paramref name="method"/> after given
+    /// <paramref name="time"/>.
+    /// </returns>
+    public Job Enqueue(Action method, long time) {
+        time += CurrentRawTime;
+        JobEmpty job = new JobEmpty(this, time, method);
+        InitializeJob(job);
+        return job;
     }
 
-    private void AddNewJobToQueue(Job job) {
+    private void InitializeJob(Job job) {
+        JobsQueue queue = this.queue ?? throw new ObjectDisposedException(nameof(JobsWorld));
         queue.Enqueue(job);
+    }
+
+    private void ReleaseResources() {
+        queue?.Dispose();
+        queue = null;
     }
 
 }

@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Jobs;
 using System;
-using System.Collections.ObjectModel;
 
 namespace NoiseEngine.Tests.Jobs;
 
@@ -17,18 +16,20 @@ public class EntityFilterTest {
             }
         );
 
-        Assert.True(filter.CompareComponents(new ReadOnlyCollection<Type>(new Type[] {
-            typeof(int)
-        })));
-        Assert.True(filter.CompareComponents(new ReadOnlyCollection<Type>(new Type[] {
-            typeof(int), typeof(bool)
-        })));
-        Assert.False(filter.CompareComponents(new ReadOnlyCollection<Type>(new Type[] {
-            typeof(int), typeof(string)
-        })));
-        Assert.False(filter.CompareComponents(new ReadOnlyCollection<Type>(new Type[] {
-            typeof(bool)
-        })));
+        Assert.True(filter.CompareComponents(new ComponentType[] {
+            new ComponentType(typeof(int), 0)
+        }));
+        Assert.True(filter.CompareComponents(new ComponentType[] {
+            new ComponentType(typeof(int), 0),
+            new ComponentType(typeof(bool), 0)
+        }));
+        Assert.False(filter.CompareComponents(new ComponentType[] {
+            new ComponentType(typeof(int), 0),
+            new ComponentType(typeof(string), 0)
+        }));
+        Assert.False(filter.CompareComponents(new ComponentType[] {
+            new ComponentType(typeof(bool), 0)
+        }));
     }
 
 }

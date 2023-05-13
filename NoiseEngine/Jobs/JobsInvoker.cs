@@ -4,9 +4,7 @@ namespace NoiseEngine.Jobs;
 
 public class JobsInvoker : IDisposable {
 
-    private readonly JobsInvokerWorker worker;
-
-    public bool IsDisposed => worker.IsDisposed;
+    internal JobsInvokerWorker Worker { get; }
 
     /// <summary>
     /// Creates new <see cref="JobsInvoker"/>.
@@ -16,7 +14,7 @@ public class JobsInvoker : IDisposable {
     /// </param>
     /// <exception cref="ArgumentOutOfRangeException">Error when using zero or negative threads.</exception>
     public JobsInvoker(int? threadCount = null) {
-        worker = new JobsInvokerWorker(threadCount);
+        Worker = new JobsInvokerWorker(threadCount);
     }
 
     ~JobsInvoker() {
@@ -31,24 +29,8 @@ public class JobsInvoker : IDisposable {
         GC.SuppressFinalize(this);
     }
 
-    internal void InvokeJob(Job job, JobsWorld world) {
-        worker.InvokeJob(job, world);
-    }
-
-    internal void SetToInvokeWaitTime(long waitTime) {
-        worker?.SetToInvokeWaitTime(waitTime);
-    }
-
-    internal void AddJobsQueue(JobsQueue queue) {
-        worker.AddJobsQueue(queue);
-    }
-
-    internal void RemoveJobsQueue(JobsQueue queue) {
-        worker.RemoveJobsQueue(queue);
-    }
-
     private void ReleaseResources() {
-        worker.Dispose();
+        Worker.Dispose();
     }
 
 }

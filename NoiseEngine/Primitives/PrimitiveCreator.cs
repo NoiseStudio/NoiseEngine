@@ -29,7 +29,7 @@ public class PrimitiveCreator {
     public Entity CreateCube(
         Vector3<float>? position = null, Quaternion<float>? rotation = null, Vector3<float>? scale = null
     ) {
-        return scene.EntityWorld.NewEntity(
+        return scene.Spawn(
             new TransformComponent(
                 position ?? Vector3<float>.Zero, rotation ?? Quaternion<float>.Identity, scale ?? Vector3<float>.One
             ),

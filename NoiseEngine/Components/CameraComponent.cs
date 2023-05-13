@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Components;
 
-public readonly struct CameraComponent : IEntityComponent {
+public readonly struct CameraComponent : IComponent {
 
     public Camera Camera { get; }
 

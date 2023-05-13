@@ -18,7 +18,7 @@ public class JobsWorldBenchmark {
 
     [Benchmark]
     public void Enqueue() {
-        world.EnqueueJob(TestMethodEnqueuing, 0);
+        world.Enqueue(TestMethodEnqueuing, 0);
     }
 
     private void TestMethodEnqueuing() {

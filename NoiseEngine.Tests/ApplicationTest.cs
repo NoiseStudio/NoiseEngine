@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.DeveloperTools.Components;
 using NoiseEngine.DeveloperTools.Systems;
+using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
@@ -28,12 +29,14 @@ public class ApplicationTest : ApplicationTestEnvironment {
                 }
             }
 
-            camera.Entity.Add(scene.EntityWorld, new ApplicationTestSimpleSceneManagerComponent());
+            SystemCommands commands = new SystemCommands();
+            commands.GetEntity(camera.Entity).Insert(new ApplicationTestSimpleSceneManagerComponent());
+            camera.Scene.ExecuteCommands(commands);
             camera.Scene.AddFrameDependentSystem(new ApplicationTestSimpleSceneManagerSystem(scene, window));
 
             Thread.Sleep(1000);
 
-            if (scene.EntityWorld.HasAnySystem<DebugMovementSystem>()) {
+            if (scene.HasAnySystem<DebugMovementSystem>()) {
                 AutoResetEvent autoResetEvent = new AutoResetEvent(false);
                 window.Disposed += (_, _) => autoResetEvent.Set();
                 if (!window.IsDisposed)

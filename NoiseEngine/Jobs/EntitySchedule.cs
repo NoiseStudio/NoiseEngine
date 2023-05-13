@@ -1,56 +1,37 @@
 ﻿using System;
-using System.Collections.Concurrent;
 
 namespace NoiseEngine.Jobs;
 
 public class EntitySchedule : IDisposable {
 
-    private readonly EntityScheduleWorker worker;
+    [ThreadStatic]
+    internal static bool isScheduleLockThread;
 
-    internal ConcurrentDictionary<int, int> ThreadIds => worker.threadIds;
-    internal int ThreadIdCount => worker.threadIdCount;
+    internal EntityScheduleWorker Worker { get; }
 
-    /// <summary>
-    /// Creates new Entity Schedule
-    /// </summary>
-    /// <param name="threadCount">Number of used threads. When null the number of threads contained in the processor is used.</param>
-    /// <param name="maxPackageSize">The maximum size of an UpdateEntity package shared between threads</param>
-    /// <param name="minPackageSize">The minimum size of an UpdateEntity package shared between threads</param>
-    /// <exception cref="InvalidOperationException">Error when using zero or negative threads and when the minimum package size is greater than the maximum package size</exception>
-    public EntitySchedule(int? threadCount = null, int? maxPackageSize = null, int? minPackageSize = null) {
-        worker = new EntityScheduleWorker(threadCount, maxPackageSize, minPackageSize);
+    public EntitySchedule(int? threadCount = null) {
+        Worker = new EntityScheduleWorker(threadCount);
     }
 
     ~EntitySchedule() {
-        ReleaseResources();
+        Worker.Dispose();
+    }
+
+    internal static void AssertNotScheduleLockThread(string helpMessage) {
+        if (isScheduleLockThread) {
+            throw new InvalidOperationException(
+                "Calling this method from the schedule thread is not allowed because this can cause a deadlocks. " +
+                helpMessage
+            );
+        }
     }
 
     /// <summary>
     /// Disposes this <see cref="EntitySchedule"/>.
     /// </summary>
     public void Dispose() {
-        ReleaseResources();
+        Worker.Dispose();
         GC.SuppressFinalize(this);
-    }
-
-    internal void AddSystem(EntitySystemBase system) {
-        worker.AddSystem(system);
-    }
-
-    internal void RemoveSystem(EntitySystemBase system) {
-        worker.RemoveSystem(system);
-    }
-
-    internal bool HasSystem(EntitySystemBase system) {
-        return worker.HasSystem(system);
-    }
-
-    internal void EnqueuePackages(EntitySystemBase system) {
-        worker.EnqueuePackages(system);
-    }
-
-    private void ReleaseResources() {
-        worker.Dispose();
     }
 
 }

@@ -1,72 +1,46 @@
-﻿using System.Threading;
+﻿using NoiseEngine.Jobs;
+using NoiseEngine.Tests.Environments;
+using NoiseEngine.Tests.Fixtures;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NoiseEngine.Tests.Jobs;
 
-[Collection(nameof(JobsCollectionOld))]
-public class JobsWorldTest {
+public class JobsWorldTest : ApplicationTestEnvironment, IDisposable {
 
-    private readonly AutoResetEvent autoResetEvent = new AutoResetEvent(false);
+    private const string ValueA = "Hello";
+    private const float ValueB = 65.82f;
+
+    private readonly AutoResetEvent resetEvent = new AutoResetEvent(false);
 
     private int invokeCount;
-    private bool equal;
 
-    private JobsFixture Fixture { get; }
-
-    public JobsWorldTest(JobsFixture fixture) {
-        Fixture = fixture;
+    public JobsWorldTest(ApplicationFixture fixture) : base(fixture) {
     }
 
-    [Fact]
-    public void TestOneJob() {
-        Fixture.JobsWorldFast.EnqueueJob(TestMethod, 15);
-        autoResetEvent.WaitOne();
+    public void Dispose() {
+        resetEvent.Dispose();
     }
 
-    [Fact]
-    public void TestThousandJobs() {
-        for (int i = 0; i < 1000; i++)
-            Fixture.JobsWorldFast.EnqueueJob(TestMethodThousand, 15);
+    [Theory]
+    [InlineData(1)]
+    [InlineData(100000)]
+    public void EnqueueAndInvoke(int count) {
+        invokeCount = count;
+        Parallel.For(0, count, _ => JobsWorld.Enqueue(TestMethod, 15, this, ValueA, ValueB));
 
-        autoResetEvent.WaitOne();
+        if (!resetEvent.WaitOne(1000))
+            throw new TimeoutException("The Jobs was not invoked.");
     }
 
-    [Fact]
-    public void CreateWithoutQueues() {
-        Fixture.JobsWorld.EnqueueJob(TestMethodT0, 0);
-    }
+    private void TestMethod(JobsWorldTest test, string valueA, float valueB) {
+        Assert.Equal(this, test);
+        Assert.Equal(ValueA, valueA);
+        Assert.Equal(ValueB, valueB);
 
-    [Fact]
-    public void CreateWithQueues() {
-        Fixture.JobsWorldFast.EnqueueJob(TestMethodT0, 10);
-    }
-
-    [Fact]
-    public void EnqueueJobT0() {
-        Fixture.JobsWorld.EnqueueJob(TestMethodT0, 0);
-    }
-
-    [Fact]
-    public void EnqueueJobT1() {
-        Fixture.JobsWorld.EnqueueJob(TestMethodT1, 0, "Hello");
-        autoResetEvent.WaitOne();
-        Assert.True(equal);
-    }
-
-    private void TestMethodT0() {
-    }
-
-    private void TestMethodT1(string a) {
-        equal = a == "Hello";
-        autoResetEvent.Set();
-    }
-
-    private void TestMethod() {
-        autoResetEvent.Set();
-    }
-
-    private void TestMethodThousand() {
-        if (Interlocked.Increment(ref invokeCount) == 1000)
-            autoResetEvent.Set();
+        if (Interlocked.Decrement(ref invokeCount) == 0)
+            resetEvent.Set();
     }
 
 }

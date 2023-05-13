@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Benchmarks.Jobs;
 
-internal struct TestComponentB : IEntityComponent {
+internal struct TestComponentB : IComponent {
 
     public int A { get; set; }
 

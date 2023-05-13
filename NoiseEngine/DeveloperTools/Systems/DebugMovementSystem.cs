@@ -4,11 +4,10 @@ using NoiseEngine.Inputs;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using System;
-using System.Collections.Generic;
 
 namespace NoiseEngine.DeveloperTools.Systems;
 
-public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovementComponent> {
+public partial class DebugMovementSystem : EntitySystem {
 
     private const float MouseDownLookLimiter = (float)Math.PI / 2;
 
@@ -31,18 +30,12 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
         }
     }
 
-    public override IReadOnlyList<Type> WritableComponents { get; } = new Type[] {
-        typeof(TransformComponent), typeof(DebugMovementComponent)
-    };
-
     public DebugMovementSystem(Window window) {
         Window = window;
         Window.Input.CursorLockMode = CursorLockMode.Locked;
     }
 
-    protected override void OnUpdateEntity(
-        Entity entity, TransformComponent transform, DebugMovementComponent movement
-    ) {
+    private void OnUpdateEntity(ref TransformComponent transform, ref DebugMovementComponent movement) {
         WindowInput input = Window.Input;
 
         Vector3<float> position = transform.Position;
@@ -104,8 +97,7 @@ public class DebugMovementSystem : EntitySystem<TransformComponent, DebugMovemen
                 currentSpeed = Speed;
         }
 
-        entity.Set(this, transform with { Position = position, Rotation = rotation });
-        entity.Set(this, movement);
+        transform = transform with { Position = position, Rotation = rotation };
     }
 
 }

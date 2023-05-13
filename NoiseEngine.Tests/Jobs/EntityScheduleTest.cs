@@ -1,25 +1,23 @@
-﻿using System.Threading;
+﻿using NoiseEngine.Tests.Environments;
+using NoiseEngine.Tests.Fixtures;
 
 namespace NoiseEngine.Tests.Jobs;
 
-[Collection(nameof(JobsCollectionOld))]
-public class EntityScheduleTest {
+public class EntityScheduleTest : ApplicationTestEnvironment {
 
-    private JobsFixture Fixture { get; }
-
-    public EntityScheduleTest(JobsFixture fixture) {
-        Fixture = fixture;
+    public EntityScheduleTest(ApplicationFixture fixture) : base(fixture) {
     }
 
     [Fact]
-    public void Test1() {
+    public void Execution() {
         const int Entities = 1024;
 
-        using TestSystemScheduleA system = new TestSystemScheduleA();
-        system.Initialize(Fixture.EntityWorld, Fixture.EntitySchedule, 100);
-
         for (int i = 0; i < Entities; i++)
-            Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
+            EntityWorld.Spawn();
+
+        ScheduleTestSystemA system = new ScheduleTestSystemA();
+        EntityWorld.AddSystem(system, 100);
+
         while (system.LateUpdateCount < 2)
             system.LateUpdateResetEvent.WaitOne();
 
@@ -29,7 +27,7 @@ public class EntityScheduleTest {
         Assert.True(system.UsedLateUpdate);
 
         for (int i = 0; i < Entities; i++)
-            Fixture.EntityWorld.NewEntity(new TestComponentA(), new TestComponentB());
+            EntityWorld.Spawn();
 
         while (system.LateUpdateCount < 3)
             system.LateUpdateResetEvent.WaitOne();
@@ -41,6 +39,9 @@ public class EntityScheduleTest {
 
         system.LateUpdateResetEvent.WaitOne();
         Assert.Equal(Entities * 2, system.UpdateEntityCount);
+
+        system.Dispose();
+        Assert.Equal(1, system.DisposeCount);
     }
 
 }
