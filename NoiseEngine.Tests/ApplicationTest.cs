@@ -1,5 +1,4 @@
-﻿using NoiseEngine.DeveloperTools.Components;
-using NoiseEngine.DeveloperTools.Systems;
+﻿using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Tests.Environments;
@@ -12,7 +11,6 @@ public class ApplicationTest : ApplicationTestEnvironment {
 
     public ApplicationTest(ApplicationFixture fixture) : base(fixture) {
     }
-
 
     [FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
     public void SimpleScene() {
