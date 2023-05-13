@@ -35,6 +35,27 @@ public partial class DebugMovementSystem : EntitySystem {
         Window.Input.CursorLockMode = CursorLockMode.Locked;
     }
 
+    /// <summary>
+    /// Initializes new <see cref="DebugMovementSystem"/> to <paramref name="camera"/>.
+    /// </summary>
+    /// <param name="camera"><see cref="Camera"/> to which the system will be added.</param>
+    /// <returns>New <see cref="DebugMovementSystem"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// The <paramref name="camera"/>'s render target must be <see cref="Window"/>.
+    /// </exception>
+    public static DebugMovementSystem InitializeTo(Camera camera) {
+        if (camera.RenderTarget is not Window window)
+            throw new InvalidOperationException($"Camera's render target must be {nameof(Window)}.");
+
+        SystemCommands commands = new SystemCommands();
+        commands.GetEntity(camera.Entity).Insert(new DebugMovementComponent());
+        camera.Scene.ExecuteCommands(commands);
+
+        DebugMovementSystem system = new DebugMovementSystem(window);
+        camera.Scene.AddFrameDependentSystem(system);
+        return system;
+    }
+
     private void OnUpdateEntity(ref TransformComponent transform, ref DebugMovementComponent movement) {
         WindowInput input = Window.Input;
 
