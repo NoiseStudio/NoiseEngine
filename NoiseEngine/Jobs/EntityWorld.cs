@@ -3,6 +3,7 @@ using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs.Commands;
 using NoiseEngine.Threading;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -53,6 +54,9 @@ public partial class EntityWorld : IDisposable {
     public void Dispose() {
         if (isDisposed.Exchange(true))
             return;
+
+        OnDispose();
+        OnDisposeInternal();
 
         archetypes.Clear();
         Parallel.ForEach(
@@ -109,6 +113,41 @@ public partial class EntityWorld : IDisposable {
             system.Dispose();
             AssertIsNotDisposed();
         }
+    }
+
+    /// <summary>
+    /// Tries returns any T type <see cref="EntitySystem"/> on this <see cref="EntityWorld"/>.
+    /// </summary>
+    /// <typeparam name="T">Type of <see cref="EntitySystem"/>.</typeparam>
+    /// <param name="system">Founded <see cref="EntitySystem"/> or <see langword="null"/>.</param>
+    /// <returns>
+    /// Returns <see langword="true"/> when this <see cref="EntityWorld"/> contains T system; otherwise
+    /// <see langword="false"/>.
+    /// </returns>
+    public bool TryGetSystem<T>(out T? system) where T : EntitySystem {
+        system = (T?)Systems.FirstOrDefault(x => x.GetType() == typeof(T));
+        return system is not null;
+    }
+
+    /// <summary>
+    /// Returns all T type <see cref="EntitySystem"/> on this <see cref="EntityWorld"/>.
+    /// </summary>
+    /// <typeparam name="T">Type of <see cref="EntitySystem"/>.</typeparam>
+    /// <returns><see cref="IEnumerable{T}"/> with <see cref="EntitySystem"/>s.</returns>
+    public IEnumerable<T> GetSystems<T>() where T : EntitySystem {
+        return Systems.OfType<T>();
+    }
+
+    /// <summary>
+    /// Checks if this <see cref="EntityWorld"/> has any T type system.
+    /// </summary>
+    /// <typeparam name="T">Type of <see cref="EntitySystem"/>.</typeparam>
+    /// <returns>
+    /// Returns <see langword="true"/> when this <see cref="EntityWorld"/> contains T system; otherwise
+    /// <see langword="false"/>.
+    /// </returns>
+    public bool HasAnySystem<T>() where T : EntitySystem {
+        return Systems.Any(x => x.GetType() == typeof(T));
     }
 
     /// <summary>
@@ -171,6 +210,18 @@ public partial class EntityWorld : IDisposable {
 
         archetype.InitializeRecord();
         return entity;
+    }
+
+    /// <summary>
+    /// This method is executed when <see cref="Dispose"/> is called.
+    /// </summary>
+    protected virtual void OnDispose() {
+    }
+
+    /// <summary>
+    /// This method is executed when <see cref="Dispose"/> is called.
+    /// </summary>
+    private protected virtual void OnDisposeInternal() {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -4,7 +4,7 @@ using System;
 
 namespace NoiseEngine.Components;
 
-public readonly record struct MeshRendererComponent : IEntityComponent {
+public readonly record struct MeshRendererComponent : IComponent {
 
     public Mesh Mesh { get; }
     public Material Material { get; }

@@ -293,6 +293,9 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         i = 0;
         bool first = true;
         foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
+            if (parameterType == EntityFullName || parameterType == SystemCommandsFullName)
+                continue;
+
             if (!isRef) {
                 i++;
                 continue;
@@ -363,6 +366,9 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
         i = 0;
         foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
+            if (parameterType == EntityFullName || parameterType == SystemCommandsFullName)
+                continue;
+
             if (!isRef) {
                 i++;
                 continue;

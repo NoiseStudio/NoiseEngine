@@ -2,7 +2,6 @@
 using NoiseEngine.Jobs;
 using NoiseEngine.Primitives;
 using NoiseEngine.Rendering;
-using NoiseEngine.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,15 +9,12 @@ using System.Threading;
 
 namespace NoiseEngine;
 
-public class ApplicationScene : IDisposable {
+public class ApplicationScene : EntityWorld {
 
     private readonly ConcurrentList<Camera> cameras = new ConcurrentList<Camera>();
 
-    private AtomicBool isDisposed;
     private GraphicsDevice? graphicsDevice;
     private PrimitiveCreator? primitive;
-
-    public EntityWorld EntityWorld { get; } = new EntityWorld();
 
     public GraphicsDevice GraphicsDevice {
         get {
@@ -37,10 +33,9 @@ public class ApplicationScene : IDisposable {
         }
     }
 
-    public bool IsDisposed => isDisposed;
     public IEnumerable<Camera> Cameras => cameras;
 
-    internal ConcurrentList<EntitySystemBase> FrameDependentSystems { get; } = new ConcurrentList<EntitySystemBase>();
+    internal ConcurrentList<EntitySystem> FrameDependentSystems { get; } = new ConcurrentList<EntitySystem>();
 
     public ApplicationScene() {
         Application.AddSceneToLoaded(this);
@@ -49,40 +44,30 @@ public class ApplicationScene : IDisposable {
     /// <summary>
     /// Initializes and adds <paramref name="system"/> to systems witch will be executed on each render frame.
     /// </summary>
-    /// <param name="system"><see cref="EntitySystemBase"/> system witch will be
+    /// <param name="system"><see cref="EntitySystem"/> system witch will be
     /// executed on each render frame.</param>
-    public void AddFrameDependentSystem(EntitySystemBase system) {
-        system.Initialize(EntityWorld, Application.EntitySchedule);
+    public void AddFrameDependentSystem(EntitySystem system) {
+        AddSystem(system);
         FrameDependentSystems.Add(system);
     }
 
     /// <summary>
     /// Checks if this <see cref="ApplicationScene"/> has frame dependent system of a T type.
     /// </summary>
-    /// <typeparam name="T">Type of <see cref="EntitySystemBase"/>.</typeparam>
+    /// <typeparam name="T">Type of <see cref="EntitySystem"/>.</typeparam>
     /// <returns><see langword="true"/> when this <see cref="ApplicationScene"/> has frame dependent system
     /// of a T type; otherwise <see langword="false"/>.</returns>
-    public bool HasFrameDependentSystem<T>() where T : EntitySystemBase {
-        Type type = typeof(T);
-        return FrameDependentSystems.Any(x => x.GetType() == type);
+    public bool HasFrameDependentSystem<T>() where T : EntitySystem {
+        return FrameDependentSystems.Any(x => x.GetType() == typeof(T));
     }
 
-    /// <summary>
-    /// Disposes this <see cref="ApplicationScene"/>.
-    /// </summary>
-    public void Dispose() {
-        if (isDisposed.Exchange(true))
-            return;
-
+    private protected override void OnDisposeInternal() {
         Application.RemoveSceneFromLoaded(this);
-
-        OnDispose();
 
         foreach (Camera camera in Cameras)
             camera.RenderTarget = null;
 
         FrameDependentSystems.Clear();
-        EntityWorld.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -93,12 +78,6 @@ public class ApplicationScene : IDisposable {
 
     internal void RemoveCameraFromScene(Camera camera) {
         cameras.Remove(camera);
-    }
-
-    /// <summary>
-    /// This method is executed when <see cref="Dispose"/> is called.
-    /// </summary>
-    protected virtual void OnDispose() {
     }
 
 }

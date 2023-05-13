@@ -13,12 +13,12 @@ public class JobBenchmark {
     public JobBenchmark() {
         invoker = new JobsInvoker();
         world = new JobsWorld(invoker);
-        job = new Job(0, TestMethodEnqueuing, JobTime.Zero);
+        job = new JobEmpty(world, 0, TestMethodEnqueuing);
     }
 
     [Benchmark]
-    public void Invoke() {
-        job.Invoke(world);
+    public void TryInvoke() {
+        job.TryInvoke();
     }
 
     private void TestMethodEnqueuing() {

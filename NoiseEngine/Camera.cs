@@ -47,7 +47,7 @@ public class Camera : SimpleCamera {
         ApplicationScene scene, Vector3<float> position, Quaternion<float> rotation
     ) : base(scene.GraphicsDevice) {
         Scene = scene;
-        Entity = scene.EntityWorld.NewEntity(
+        Entity = scene.Spawn(
             new TransformComponent(position, rotation),
             new CameraComponent(this)
         );
@@ -77,24 +77,25 @@ public class Camera : SimpleCamera {
                 if (renderFrameResources is null) {
                     renderFrameResources = new RenderFrameResources(GraphicsDevice, this);
                     meshRendererSystem = new MeshRendererSystem(this);
-                    meshRendererSystem.Initialize(Scene.EntityWorld, Application.EntitySchedule);
+                    Scene.AddSystem(meshRendererSystem);
                     meshRendererSystem.Resources = renderFrameResources.MeshRendererResources;
                 }
 
-                foreach (EntitySystemBase system in Scene.FrameDependentSystems)
+                foreach (EntitySystem system in Scene.FrameDependentSystems)
                     system.TryExecute();
 
-                foreach (EntitySystemBase system in Scene.FrameDependentSystems)
+                foreach (EntitySystem system in Scene.FrameDependentSystems)
                     system.Wait();
             } finally {
                 if (window is not null)
                     Monitor.Exit(window.PoolEventsLocker);
             }
 
-            TransformComponent transform = Entity.Get<TransformComponent>(Scene.EntityWorld);
-            Position = transform.Position;
-            Rotation = transform.Rotation;
-            meshRendererSystem!.ExecuteParallelAndWait();
+            if (Entity.TryGet(out TransformComponent transform)) {
+                Position = transform.Position;
+                Rotation = transform.Rotation;
+            }
+            meshRendererSystem!.ExecuteAndWait();
 
             renderFrameResources.RecordAndExecute();
             renderFrameResources.Clear();

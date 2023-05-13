@@ -5,4 +5,4 @@ namespace NoiseEngine.DeveloperTools.Components;
 
 public readonly record struct DebugMovementComponent(
     Vector2<float> MouseRotation, float TimeUntilLastChangedPosition
-) : IEntityComponent;
+) : IComponent;

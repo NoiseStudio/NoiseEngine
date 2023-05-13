@@ -6,7 +6,7 @@ internal class TestSystemA : EntitySystem {
 
     private int count;
 
-    protected override void OnUpdateEntity(Entity entity) {
+    private void OnUpdateEntity(Entity entity) {
         count++;
     }
 

@@ -144,10 +144,10 @@ public sealed class PerformanceRenderLoop : RenderLoop {
         AutoResetEvent executeResetEvent = this.executeResetEvent ?? throw new NullReferenceException();
         ConcurrentStack<RenderFrameResources> frameResources = this.frameResources;
         object poolEventsLocker = window.PoolEventsLocker;
-        ConcurrentList<EntitySystemBase> frameDependentSystems = camera.Scene.FrameDependentSystems;
+        ConcurrentList<EntitySystem> frameDependentSystems = camera.Scene.FrameDependentSystems;
 
         MeshRendererSystem meshRendererSystem = new MeshRendererSystem(camera);
-        meshRendererSystem.Initialize(camera.Scene.EntityWorld, Application.EntitySchedule);
+        camera.Scene.AddSystem(meshRendererSystem);
 
         try {
             RenderFrameResources? frame;
@@ -158,7 +158,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
                 lock (poolEventsLocker) {
                     window.PoolEvents();
 
-                    foreach (EntitySystemBase system in frameDependentSystems)
+                    foreach (EntitySystem system in frameDependentSystems)
                         system.TryExecute();
 
                     if (rendererSignaler == 0)
@@ -168,16 +168,17 @@ public sealed class PerformanceRenderLoop : RenderLoop {
                     if (!frameResources.TryPop(out frame))
                         frame = new RenderFrameResources(camera.GraphicsDevice, camera);
 
-                    foreach (EntitySystemBase system in frameDependentSystems)
+                    foreach (EntitySystem system in frameDependentSystems)
                         system.Wait();
                 }
 
-                transform = camera.Entity.Get<TransformComponent>(camera.Scene.EntityWorld);
-                camera.Position = transform.Position;
-                camera.Rotation = transform.Rotation;
+                if (camera.Entity.TryGet(out transform)) {
+                    camera.Position = transform.Position;
+                    camera.Rotation = transform.Rotation;
+                }
 
                 meshRendererSystem.Resources = frame.MeshRendererResources;
-                meshRendererSystem.ExecuteParallelAndWait();
+                meshRendererSystem.ExecuteAndWait();
 
                 do {
                     exchanged = Interlocked.CompareExchange(ref currentFrame, frame, null);

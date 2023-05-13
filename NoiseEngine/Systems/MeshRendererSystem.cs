@@ -3,7 +3,7 @@ using NoiseEngine.Jobs;
 
 namespace NoiseEngine.Systems;
 
-internal class MeshRendererSystem : EntitySystem<TransformComponent, MeshRendererComponent> {
+internal partial class MeshRendererSystem : EntitySystem {
 
     public Camera Camera { get; }
 
@@ -13,9 +13,7 @@ internal class MeshRendererSystem : EntitySystem<TransformComponent, MeshRendere
         Camera = camera;
     }
 
-    protected override void OnUpdateEntity(
-        Entity entity, TransformComponent transform, MeshRendererComponent meshRenderer
-    ) {
+    private void OnUpdateEntity(TransformComponent transform, MeshRendererComponent meshRenderer) {
         Resources.AddMesh(meshRenderer.Mesh, meshRenderer.Material, transform.Matrix);
     }
 

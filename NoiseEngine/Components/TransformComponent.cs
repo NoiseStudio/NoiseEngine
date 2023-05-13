@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NoiseEngine.Components;
 
-public record struct TransformComponent : IEntityComponent {
+public record struct TransformComponent : IComponent {
 
     private readonly Vector3<float> position;
     private readonly Quaternion<float> rotation;

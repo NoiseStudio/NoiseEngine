@@ -176,6 +176,7 @@ public abstract class EntitySystem : IDisposable {
     private bool isDoneInitialize;
     private IEntityFilter? filter;
     private uint cycleCount;
+    private bool started;
 
     public AffectiveSystem? AffectiveSystem { get; private set; }
     public bool IsInitialized => world is not null;
@@ -237,10 +238,11 @@ public abstract class EntitySystem : IDisposable {
 
                     enabled = value;
                     if (value) {
+                        started = true;
                         OnStart();
-                    } else {
-                        Wait();
+                    } else if (!IsWorking) {
                         OnStop();
+                        started = false;
                     }
                 }
             }
@@ -493,6 +495,13 @@ public abstract class EntitySystem : IDisposable {
 
             isWorking = false;
             workResetEvent.Set();
+        }
+
+        if (!enabled) {
+            lock (enabledLocker) {
+                OnStop();
+                started = false;
+            }
         }
     }
 

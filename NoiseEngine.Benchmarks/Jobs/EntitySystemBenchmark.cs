@@ -7,7 +7,6 @@ namespace NoiseEngine.Benchmarks.Jobs;
 public class EntitySystemBenchmark {
 
     private readonly EntityWorld world = new EntityWorld();
-    private readonly EntitySchedule schedule;
     private readonly TestSystemA system;
 
     [Params(1024)]
@@ -15,16 +14,15 @@ public class EntitySystemBenchmark {
 
     public EntitySystemBenchmark() {
         for (int i = 0; i < EntityCount; i++)
-            world.NewEntity();
+            world.Spawn();
 
-        schedule = new EntitySchedule();
         system = new TestSystemA();
-        system.Initialize(world, schedule);
+        world.AddSystem(system);
     }
 
     [Benchmark]
     public void ExecuteMultithread() {
-        system.TryExecuteParallelAndWait();
+        system.ExecuteAndWait();
     }
 
 }

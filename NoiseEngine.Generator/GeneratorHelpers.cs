@@ -14,7 +14,7 @@ internal static class GeneratorHelpers {
             UsingDirectiveSyntax u in type.ParentNodes().First(x => x is BaseNamespaceDeclarationSyntax).Parent!
             .ChildNodes().OfType<UsingDirectiveSyntax>()
         ) {
-            builder.AppendLine(u.ToFullString());
+            builder.Append(u.ToFullString());
         }
     }
 
