@@ -28,7 +28,7 @@ public class EntitySystemTest : ApplicationTestEnvironment {
         };
 
         system.ExecuteAndWait();
-        Assert.Equal(1, system.UpdateEntityCount);
+        Assert.Equal(2, system.UpdateEntityCount);
 
         foreach (Entity entity in entities)
             entity.Despawn();

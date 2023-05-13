@@ -32,7 +32,7 @@ public class EntityFilter : IEntityFilter {
     /// </returns>
     public bool CompareComponents(IEnumerable<ComponentType> componentTypes) {
         foreach (Type componentType in withComponents) {
-            if (componentTypes.Select(x => x.Type).Contains(componentType))
+            if (!componentTypes.Select(x => x.Type).Contains(componentType))
                 return false;
         }
 
