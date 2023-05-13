@@ -24,12 +24,17 @@ public abstract class Job : IDisposable {
     /// <summary>
     /// Tries invokes this <see cref="Job"/>.
     /// </summary>
-    public void TryInvoke() {
+    /// <returns>
+    /// Returns <see langword="true"/> when <see cref="Job"/> was invoked by this call; otherwise
+    /// <see langword="false"/>.
+    /// </returns>
+    public bool TryInvoke() {
         if (Interlocked.CompareExchange(ref state, 2, 0) != 0)
-            return;
+            return false;
 
         InvokeWorker();
         DisposeWorker();
+        return true;
     }
 
     /// <summary>

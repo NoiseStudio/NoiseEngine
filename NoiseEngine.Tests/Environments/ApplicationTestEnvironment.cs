@@ -9,6 +9,7 @@ namespace NoiseEngine.Tests.Environments;
 public abstract class ApplicationTestEnvironment : GraphicsTestEnvironment {
 
     public EntityWorld EntityWorld => Fixture.EntityWorld;
+    public JobsWorld JobsWorld => Fixture.JobsWorld;
 
     protected ApplicationTestEnvironment(ApplicationFixture fixture) : base(fixture) {
     }

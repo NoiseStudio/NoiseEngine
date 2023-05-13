@@ -18,6 +18,7 @@ public class ApplicationFixture : IDisposable {
     private Window? window;
 
     internal EntityWorld EntityWorld { get; } = new EntityWorld();
+    internal JobsWorld JobsWorld { get; } = new JobsWorld();
     internal IReadOnlyList<GraphicsDevice> GraphicsDevices { get; private set; }
     internal IReadOnlyList<VulkanDevice> VulkanDevices { get; private set; }
 
