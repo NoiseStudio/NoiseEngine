@@ -1,6 +1,6 @@
-﻿using NoiseEngine.Jobs2;
+﻿using NoiseEngine.Jobs;
 
-namespace NoiseEngine.Tests.Jobs2;
+namespace NoiseEngine.Tests.Jobs;
 
 internal readonly record struct MockComponentB(float Value, string Text) : IComponent {
 

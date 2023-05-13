@@ -1,10 +1,10 @@
-﻿using NoiseEngine.Jobs2;
+﻿using NoiseEngine.Jobs;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System;
 using System.Threading.Tasks;
 
-namespace NoiseEngine.Tests.Jobs2;
+namespace NoiseEngine.Tests.Jobs;
 
 public class EntityWorldTest : ApplicationTestEnvironment {
 

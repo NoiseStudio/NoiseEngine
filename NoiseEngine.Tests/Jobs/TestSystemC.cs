@@ -1,7 +1,7 @@
-﻿using NoiseEngine.Jobs2;
-using NoiseEngine.Tests.Jobs2.Affective;
+﻿using NoiseEngine.Jobs;
+using NoiseEngine.Tests.Jobs.Affective;
 
-namespace NoiseEngine.Tests.Jobs2;
+namespace NoiseEngine.Tests.Jobs;
 
 internal partial class TestSystemC : EntitySystem {
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 internal sealed class JobEmpty : Job {
 

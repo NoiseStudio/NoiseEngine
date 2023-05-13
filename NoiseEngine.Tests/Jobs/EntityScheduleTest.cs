@@ -1,7 +1,7 @@
 ﻿using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 
-namespace NoiseEngine.Tests.Jobs2;
+namespace NoiseEngine.Tests.Jobs;
 
 public class EntityScheduleTest : ApplicationTestEnvironment {
 

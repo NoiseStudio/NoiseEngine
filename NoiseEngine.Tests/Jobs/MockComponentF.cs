@@ -1,6 +1,6 @@
-﻿using NoiseEngine.Jobs2;
+﻿using NoiseEngine.Jobs;
 
-namespace NoiseEngine.Tests.Jobs2;
+namespace NoiseEngine.Tests.Jobs;
 
 [AppendComponentDefault(typeof(MockComponentB))]
 internal record struct MockComponentF(decimal Value) : IComponent;

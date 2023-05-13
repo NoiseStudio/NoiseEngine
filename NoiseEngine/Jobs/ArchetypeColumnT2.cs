@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 [StructLayout(LayoutKind.Sequential)]
 internal readonly struct ArchetypeColumn<T1, T2> {

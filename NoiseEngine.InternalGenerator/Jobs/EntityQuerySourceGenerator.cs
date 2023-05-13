@@ -1,10 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using NoiseEngine.Generator;
-using NoiseEngine.InternalGenerator.Jobs;
 using System.Text;
 
-namespace NoiseEngine.InternalGenerator.Jobs2 {
+namespace NoiseEngine.InternalGenerator.Jobs {
     [Generator]
     public class EntityQuerySourceGenerator : ISourceGenerator {
 
@@ -15,7 +14,7 @@ namespace NoiseEngine.InternalGenerator.Jobs2 {
                 builder.AppendLine("using System;").AppendLine("using System.Collections;")
                     .AppendLine("using System.Collections.Generic;")
                     .AppendLine("using System.Runtime.CompilerServices;");
-                builder.AppendLine().AppendLine("namespace NoiseEngine.Jobs2;").AppendLine();
+                builder.AppendLine().AppendLine("namespace NoiseEngine.Jobs;").AppendLine();
 
                 builder.Append("public class EntityQuery<");
                 for (int j = 1; j <= i; j++)

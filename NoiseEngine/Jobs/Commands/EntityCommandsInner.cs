@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NoiseEngine.Jobs2.Commands;
+namespace NoiseEngine.Jobs.Commands;
 
 internal sealed class EntityCommandsInner {
 

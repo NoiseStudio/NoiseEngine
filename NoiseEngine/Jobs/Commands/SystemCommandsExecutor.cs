@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace NoiseEngine.Jobs2.Commands;
+namespace NoiseEngine.Jobs.Commands;
 
 internal class SystemCommandsExecutor {
 

@@ -1,5 +1,5 @@
 ﻿using System;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 public readonly record struct ComponentType(Type Type, int AffectiveHashCode);

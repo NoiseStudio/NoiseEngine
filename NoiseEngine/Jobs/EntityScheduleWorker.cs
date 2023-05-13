@@ -1,5 +1,5 @@
 ﻿using NoiseEngine.Collections.Concurrent;
-using NoiseEngine.Jobs2.Commands;
+using NoiseEngine.Jobs.Commands;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 internal class EntityScheduleWorker : IDisposable {
 

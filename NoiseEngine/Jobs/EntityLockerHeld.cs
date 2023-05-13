@@ -1,7 +1,7 @@
 ﻿using NoiseEngine.Collections;
 using System;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 internal struct EntityLockerHeld : IDisposable {
 

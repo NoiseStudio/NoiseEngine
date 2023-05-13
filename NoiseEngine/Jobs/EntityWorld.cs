@@ -1,6 +1,6 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Collections.Concurrent;
-using NoiseEngine.Jobs2.Commands;
+using NoiseEngine.Jobs.Commands;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 public partial class EntityWorld : IDisposable {
 

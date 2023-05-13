@@ -1,6 +1,6 @@
-﻿using NoiseEngine.Jobs2;
+﻿using NoiseEngine.Jobs;
 
-namespace NoiseEngine.Tests.Jobs2;
+namespace NoiseEngine.Tests.Jobs;
 
 internal record MockComponentA(string Text, object? B) : IComponent {
 

@@ -1,4 +1,4 @@
-﻿namespace NoiseEngine.Jobs2.Commands;
+﻿namespace NoiseEngine.Jobs.Commands;
 
 internal struct ConditionalEntityCommandsInner {
 

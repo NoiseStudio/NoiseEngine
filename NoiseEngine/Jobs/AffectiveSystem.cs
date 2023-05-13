@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 public abstract class AffectiveSystem : IDisposable {
 

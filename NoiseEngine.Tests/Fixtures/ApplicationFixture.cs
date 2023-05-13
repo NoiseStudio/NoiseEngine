@@ -1,4 +1,4 @@
-﻿using NoiseEngine.Jobs2;
+﻿using NoiseEngine.Jobs;
 using NoiseEngine.Logging;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;

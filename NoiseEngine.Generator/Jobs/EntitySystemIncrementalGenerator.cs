@@ -12,10 +12,10 @@ namespace NoiseEngine.Generator.Jobs;
 [Generator]
 public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
-    private const string SystemFullName = "NoiseEngine.Jobs2.EntitySystem";
-    private const string AffectiveComponentFullName = "NoiseEngine.Jobs2.IAffectiveComponent";
-    private const string EntityFullName = "NoiseEngine.Jobs2.Entity";
-    private const string SystemCommandsFullName = "NoiseEngine.Jobs2.SystemCommands";
+    private const string SystemFullName = "NoiseEngine.Jobs.EntitySystem";
+    private const string AffectiveComponentFullName = "NoiseEngine.Jobs.IAffectiveComponent";
+    private const string EntityFullName = "NoiseEngine.Jobs.Entity";
+    private const string SystemCommandsFullName = "NoiseEngine.Jobs.SystemCommands";
     private const string InternalMethodObsoleteMessage =
         "This method is internal and is not part of the API. Do not use.";
 

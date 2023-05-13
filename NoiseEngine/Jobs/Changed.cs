@@ -1,3 +1,3 @@
-﻿namespace NoiseEngine.Jobs2;
+﻿namespace NoiseEngine.Jobs;
 
 public readonly record struct Changed<T>(T Old, T Current) where T : IComponent;

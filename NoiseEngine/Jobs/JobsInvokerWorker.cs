@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 internal sealed class JobsInvokerWorker : IDisposable {
 

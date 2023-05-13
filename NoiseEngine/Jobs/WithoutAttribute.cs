@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 public class WithoutAttribute : Attribute {

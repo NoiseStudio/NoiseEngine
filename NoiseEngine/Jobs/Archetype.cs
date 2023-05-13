@@ -8,7 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 internal class Archetype {
 

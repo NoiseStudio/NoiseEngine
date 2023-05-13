@@ -2,7 +2,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace NoiseEngine.Jobs2.Commands;
+namespace NoiseEngine.Jobs.Commands;
 
 internal sealed class SystemCommandsInner {
 

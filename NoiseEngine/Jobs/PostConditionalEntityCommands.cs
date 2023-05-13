@@ -1,8 +1,8 @@
 ﻿using NoiseEngine.Collections;
-using NoiseEngine.Jobs2.Commands;
+using NoiseEngine.Jobs.Commands;
 using System.Runtime.CompilerServices;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 public ref struct PostConditionalEntityCommands {
 

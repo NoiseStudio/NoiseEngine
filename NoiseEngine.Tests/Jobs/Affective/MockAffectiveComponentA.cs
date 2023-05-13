@@ -1,6 +1,6 @@
-﻿using NoiseEngine.Jobs2;
+﻿using NoiseEngine.Jobs;
 
-namespace NoiseEngine.Tests.Jobs2.Affective;
+namespace NoiseEngine.Tests.Jobs.Affective;
 
 internal readonly record struct MockAffectiveComponentA(
     MockAffectivePrecision Precision

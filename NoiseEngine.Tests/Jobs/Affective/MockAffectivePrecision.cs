@@ -1,4 +1,4 @@
-﻿namespace NoiseEngine.Tests.Jobs2.Affective;
+﻿namespace NoiseEngine.Tests.Jobs.Affective;
 
 internal enum MockAffectivePrecision {
     Low = 0,

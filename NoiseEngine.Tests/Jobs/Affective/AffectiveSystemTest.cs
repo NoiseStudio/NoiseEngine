@@ -1,9 +1,9 @@
-﻿using NoiseEngine.Jobs2;
+﻿using NoiseEngine.Jobs;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System.Linq;
 
-namespace NoiseEngine.Tests.Jobs2.Affective;
+namespace NoiseEngine.Tests.Jobs.Affective;
 
 public class AffectiveSystemTest : ApplicationTestEnvironment {
 

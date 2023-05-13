@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 public abstract class Job : IDisposable {
 

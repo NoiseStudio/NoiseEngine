@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NoiseEngine.Jobs2;
+namespace NoiseEngine.Jobs;
 
 public abstract class EntitySystem : IDisposable {
 
@@ -62,16 +62,16 @@ public abstract class EntitySystem : IDisposable {
         [StructLayout(LayoutKind.Sequential)]
         public readonly struct ChangedList {
 
-            private readonly Jobs2.ChangedList inner;
+            private readonly Jobs.ChangedList inner;
 
             public object? Inner => inner;
 
-            private ChangedList(Jobs2.ChangedList inner) {
+            private ChangedList(Jobs.ChangedList inner) {
                 this.inner = inner;
             }
 
             public static ChangedList Rent<T>() where T : IComponent {
-                return new ChangedList(Jobs2.ChangedList.Rent<T>());
+                return new ChangedList(Jobs.ChangedList.Rent<T>());
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

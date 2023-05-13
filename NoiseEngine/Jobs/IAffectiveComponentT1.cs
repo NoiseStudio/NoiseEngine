@@ -1,4 +1,4 @@
-﻿namespace NoiseEngine.Jobs2;
+﻿namespace NoiseEngine.Jobs;
 
 public interface IAffectiveComponent<TSelf> : IAffectiveComponent {
 

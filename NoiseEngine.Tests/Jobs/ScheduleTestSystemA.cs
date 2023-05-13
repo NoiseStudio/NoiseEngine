@@ -1,7 +1,7 @@
-﻿using NoiseEngine.Jobs2;
+﻿using NoiseEngine.Jobs;
 using System.Threading;
 
-namespace NoiseEngine.Tests.Jobs2;
+namespace NoiseEngine.Tests.Jobs;
 
 internal partial class ScheduleTestSystemA : EntitySystem {
 
