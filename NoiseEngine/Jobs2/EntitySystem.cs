@@ -46,6 +46,9 @@ public abstract class EntitySystem : IDisposable {
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Entity? GetInternalComponent(nint pointer) {
+                unsafe {
+                    Log.Debug($"{nameof(GetInternalComponent)}: {Unsafe.ReadUnaligned<nint>((void*)pointer)}");
+                }
                 return Get<EntityInternalComponent>(pointer).Entity;
             }
 
