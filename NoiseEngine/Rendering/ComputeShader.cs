@@ -11,6 +11,8 @@ public class ComputeShader : ICommonShader {
 
     internal CommonShaderDelegationOld Delegation { get; }
 
+    ShaderType ICommonShader.Type => ShaderType.Compute;
+
     public ComputeShader(GraphicsDevice device, NeslType classData, ShaderSettings settings) {
         Device = device;
         ClassData = classData;

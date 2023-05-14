@@ -36,13 +36,14 @@ internal abstract class RenderPass {
 
     public GraphicsPipeline GetPipeline(Shader shader) {
         return pipelines.GetOrAdd(shader, _ => {
-            VulkanCommonShaderDelegation shaderDelegation = (VulkanCommonShaderDelegation)shader.Delegation;
+            VulkanVertexFragmentShaderDelegation shaderDelegation =
+                (VulkanVertexFragmentShaderDelegation)shader.Delegation;
             return new GraphicsPipeline(this, shaderDelegation.PipelineLayout, new PipelineShaderStage[] {
                 new PipelineShaderStage(
-                    ShaderStageFlags.Vertex, shaderDelegation.ModuleVertex, shaderDelegation.Vertex.Guid.ToString()
+                    ShaderStageFlags.Vertex, shaderDelegation.Module, shaderDelegation.Vertex.Guid.ToString()
                 ),
                 new PipelineShaderStage(
-                    ShaderStageFlags.Fragment, shaderDelegation.ModuleFragment, shaderDelegation.Fragment.Guid.ToString()
+                    ShaderStageFlags.Fragment, shaderDelegation.Module, shaderDelegation.Fragment.Guid.ToString()
                 )
             }, PipelineCreateFlags.None, new GraphicsPipelineCreateInfo() {
                 VertexInputBindingDescription = shaderDelegation.VertexDescription.Bindings,
