@@ -15,11 +15,12 @@ internal class Parser {
 
     private List<string>? usings;
     private List<(NeslTypeBuilder, TokenBuffer)>? definedTypes;
-    private List<(TypeIdentifierToken typeIdentifier, string name)>? definedParameters;
+    private List<(TypeIdentifierToken typeIdentifier, string name)>? definedFields;
     private List<(
         TypeIdentifierToken typeIdentifier, NameToken name, TokenBuffer parameters, TokenBuffer codeBlock
     )>? definedMethods;
     private List<Parser>? types;
+    private List<Parser>? methods;
 
     private NeslTypeBuilder? currentType;
     private NeslMethodBuilder? currentMethod;
@@ -42,6 +43,8 @@ internal class Parser {
             currentMethod = value;
         }
     }
+
+    internal IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
 
     private NeslTypeBuilder CurrentType {
         get {
@@ -212,31 +215,22 @@ internal class Parser {
     }
 
     public void AnalyzeFields() {
-        if (definedParameters is not null) {
-            foreach ((TypeIdentifierToken typeIdentifier, string name) in definedParameters) {
+        if (definedFields is not null) {
+            foreach ((TypeIdentifierToken typeIdentifier, string name) in definedFields) {
                 if (!TryGetType(typeIdentifier, out NeslType? fieldType))
                     continue;
 
                 CurrentType.DefineField(name, fieldType);
             }
 
-            // Add default constructor to value type.
-            if (CurrentType.IsValueType) {
-                IlGenerator il = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType).IlGenerator;
-                il.Emit(OpCode.DefVariable, CurrentType);
-                il.Emit(OpCode.ReturnValue, il.GetNextVariableId());
-            }
-
-            definedParameters = null;
+            definedFields = null;
         }
 
-        if (types is not null) {
-            foreach (Parser typeParser in types) {
-                typeParser.AnalyzeFields();
-
-                foreach (CompilationError error in typeParser.Errors)
-                    errors.Add(error);
-            }
+        // Add default constructor to value type.
+        if (CurrentType.IsValueType) {
+            IlGenerator il = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType).IlGenerator;
+            il.Emit(OpCode.DefVariable, CurrentType);
+            il.Emit(OpCode.ReturnValue, il.GetNextVariableId());
         }
     }
 
@@ -285,18 +279,26 @@ internal class Parser {
                 foreach ((NeslType type, string vname) in parameterParser.DefinedParameters)
                     variables.Add(vname, new VariableData(type, vname, method.IlGenerator.GetNextVariableId()));
 
-                Parser methodParser = new Parser(this, Assembly, ParserStep.Method, codeBlock) {
+                methods ??= new List<Parser>();
+                methods.Add(new Parser(this, Assembly, ParserStep.Method, codeBlock) {
                     CurrentType = CurrentType,
                     CurrentMethod = method!,
                     variables = variables
-                };
-                methodParser.Parse();
-
-                foreach (CompilationError error in methodParser.Errors)
-                    errors.Add(error);
+                });
             }
 
             definedMethods = null;
+        }
+    }
+
+    public void AnalyzeMethodBodies() {
+        if (methods is not null) {
+            foreach (Parser methodParser in methods) {
+                methodParser.Parse();
+                errors.AddRange(methodParser.Errors);
+            }
+
+            methods = null;
         }
     }
 
@@ -320,12 +322,12 @@ internal class Parser {
     }
 
     public bool TryDefineField(TypeIdentifierToken typeIdentifier, string name) {
-        definedParameters ??= new List<(TypeIdentifierToken typeIdentifier, string name)>();
-        foreach ((_, string n) in definedParameters) {
+        definedFields ??= new List<(TypeIdentifierToken typeIdentifier, string name)>();
+        foreach ((_, string n) in definedFields) {
             if (name == n)
                 return false;
         }
-        definedParameters.Add((typeIdentifier, name));
+        definedFields.Add((typeIdentifier, name));
         return true;
     }
 

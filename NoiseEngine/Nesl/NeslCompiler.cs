@@ -17,11 +17,12 @@ public static class NeslCompiler {
     /// Compiles the given <paramref name="files"/> into a <see cref="NeslAssembly"/>.
     /// </summary>
     /// <param name="assemblyName">Name of new <see cref="NeslAssembly"/>.</param>
+    /// <param name="assemblyPath">Path of directory with <paramref name="files"/>.</param>
     /// <param name="files"><see cref="NeslFile"/>s to compile.</param>
     /// <returns>New <see cref="NeslAssembly"/>.</returns>
-    public static NeslAssembly Compile(string assemblyName, IEnumerable<NeslFile> files) {
+    public static NeslAssembly Compile(string assemblyName, string assemblyPath, IEnumerable<NeslFile> files) {
         bool result = TryCompile(
-            assemblyName, files, out NeslAssembly? assembly, out IEnumerable<CompilationError> errors
+            assemblyName, assemblyPath, files, out NeslAssembly? assembly, out IEnumerable<CompilationError> errors
         );
 
         StringBuilder exceptionBuilder = new StringBuilder("Unable to compile NESL files.");
@@ -52,6 +53,7 @@ public static class NeslCompiler {
     /// Tries compiles the given <paramref name="files"/> into a <see cref="NeslAssembly"/>.
     /// </summary>
     /// <param name="assemblyName">Name of new <see cref="NeslAssembly"/>.</param>
+    /// <param name="assemblyPath">Path of directory with <paramref name="files"/>.</param>
     /// <param name="files"><see cref="NeslFile"/>s to compile.</param>
     /// <param name="assembly">
     /// New <see cref="NeslAssembly"/> or <see langword="null"/> when result is <see langword="false"/>.
@@ -61,8 +63,8 @@ public static class NeslCompiler {
     /// <see langword="true"/> when compilation produces zero errors; otherwise <see langword="false"/>.
     /// </returns>
     public static bool TryCompile(
-        string assemblyName, IEnumerable<NeslFile> files, [NotNullWhen(true)] out NeslAssembly? assembly,
-        out IEnumerable<CompilationError> errors
+        string assemblyName, string assemblyPath, IEnumerable<NeslFile> files,
+        [NotNullWhen(true)] out NeslAssembly? assembly, out IEnumerable<CompilationError> errors
     ) {
         NeslAssemblyBuilder assemblyBuilder = NeslAssemblyBuilder.DefineAssembly(assemblyName);
 
@@ -83,10 +85,12 @@ public static class NeslCompiler {
         });
 
         Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeTypes());
-        Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeFields());
-        Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeMethods());
+        IEnumerable<Parser> p = parsers.SelectMany(x => x.Types.Append(x));
+        Parallel.ForEach(p, (parser, _) => parser.AnalyzeFields());
+        Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethods());
+        Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethodBodies());
 
-        errors = parsers.SelectMany(x => x.Errors).OrderBy(x => x.Path).ThenBy(x => x.Line)
+        errors = p.SelectMany(x => x.Errors).OrderBy(x => x.Path).ThenBy(x => x.Line)
             .ThenBy(x => x.Column).ToArray();
 
         if (errors.Any(x => x.Severity == CompilationErrorSeverity.Error)) {

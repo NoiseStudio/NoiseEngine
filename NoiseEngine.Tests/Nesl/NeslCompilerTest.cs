@@ -17,7 +17,7 @@ public class NeslCompilerTest : ApplicationTestEnvironment {
     [Fact]
     public void Compile() {
         string path = "Path";
-        NeslAssembly assembly = NeslCompiler.Compile(nameof(Compile), new NeslFile[] { new NeslFile(path, @"
+        NeslAssembly assembly = NeslCompiler.Compile(nameof(Compile), "", new NeslFile[] { new NeslFile(path, @"
             using System;
 
             struct VertexData {
