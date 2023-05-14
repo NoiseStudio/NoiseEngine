@@ -2,24 +2,22 @@
 using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace NoiseEngine.Nesl.Emit;
 
 public class IlGenerator : IlContainer {
 
     private readonly NeslAssemblyBuilder assembly;
-    private readonly NeslMethodBuilder method;
     private readonly List<(OpCode opCode, uint tailIndex)> rawInstructions = new List<(OpCode, uint)>();
     private readonly SerializationWriter tail = new SerializationWriter();
 
-    private uint nextVariableId = 0;
+    private uint nextVariableId;
 
     protected override IEnumerable<(OpCode opCode, uint tailIndex)> RawInstructions => rawInstructions;
 
     internal IlGenerator(NeslAssemblyBuilder assembly, NeslMethodBuilder method) {
         this.assembly = assembly;
-        this.method = method;
+        nextVariableId = (uint)method.Type.Fields.Count;
     }
 
     /// <summary>

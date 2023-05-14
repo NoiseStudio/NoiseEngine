@@ -39,7 +39,18 @@ internal static class ValueConstructor {
             return ValueData.Invalid;
         }
 
-        NeslMethod? constructor = type.GetMethod(NeslOperators.Constructor);
+        List<ValueData>? parameters = GetParameters(parser, expression.RoundBrackets!.Value.Buffer);
+        if (parameters is null)
+            return ValueData.Invalid;
+
+        NeslMethod? constructor = null;
+        foreach (NeslMethod m in type.Methods.Where(x => x.Name == NeslOperators.Constructor)) {
+            if (m.ParameterTypes.SequenceEqual(parameters.Select(x => x.Type))) {
+                constructor = m;
+                break;
+            }
+        }
+
         if (constructor is null) {
             parser.Throw(new CompilationError(
                 identifier.Pointer, CompilationErrorType.ConstructorNotFound, identifier.Identifier
@@ -50,7 +61,7 @@ internal static class ValueConstructor {
         IlGenerator il = parser.CurrentMethod.IlGenerator;
         il.Emit(OpCode.DefVariable, type);
         uint variableId = il.GetNextVariableId();
-        il.Emit(OpCode.Call, variableId, constructor, Array.Empty<uint>());
+        il.Emit(OpCode.Call, variableId, constructor, parameters.Select(x => x.Id).ToArray());
 
         if (expression.CurlyBrackets is not null)
             NewInitializer.Initialize(parser, type, variableId, expression.CurlyBrackets.Value.Buffer);
@@ -76,29 +87,32 @@ internal static class ValueConstructor {
         NeslType type = variable.Value.Type;
         NeslField? field;
 
+        IlGenerator il = parser.CurrentMethod.IlGenerator;
+        uint variableId = variable.Value.Id;
+
         int sum = index + 1;
         while (true) {
             index = identifier.Identifier.AsSpan(sum).IndexOf('.');
-            string str = index != -1 ? identifier.Identifier[sum..index] : identifier.Identifier[sum..];
+            string str = index != -1 ? identifier.Identifier[sum..(sum + index)] : identifier.Identifier[sum..];
 
             field = type.GetField(str);
             if (field is null)
                 throw new NotImplementedException();
 
+            il.Emit(OpCode.DefVariable, field.FieldType);
+            uint newVariableId = il.GetNextVariableId();
+            il.Emit(OpCode.LoadField, newVariableId, variableId, field.Id);
+            variableId = newVariableId;
+
             if (index == -1)
                 break;
 
             type = field.FieldType;
-            sum += index;
+            sum += index + 1;
         }
 
         if (field is null)
             throw new NotImplementedException();
-
-        IlGenerator il = parser.CurrentMethod.IlGenerator;
-        il.Emit(OpCode.DefVariable, field.FieldType);
-        uint variableId = il.GetNextVariableId();
-        il.Emit(OpCode.LoadField, variableId, variable.Value.Id, field.Id);
         return new ValueData(field.FieldType, variableId);
     }
 
@@ -136,11 +150,14 @@ internal static class ValueConstructor {
             return ValueData.Invalid;
         }
 
+        if (method.ReturnType is null)
+            throw new NotImplementedException();
+
         IlGenerator il = parser.CurrentMethod.IlGenerator;
-        il.Emit(OpCode.DefVariable, method.Type);
+        il.Emit(OpCode.DefVariable, method.ReturnType);
         uint variableId = il.GetNextVariableId();
         il.Emit(OpCode.Call, variableId, method, parameters.Select(x => x.Id).ToArray());
-        return new ValueData(method.Type, variableId);
+        return new ValueData(method.ReturnType, variableId);
     }
 
     private static List<ValueData>? GetParameters(Parser parser, TokenBuffer buffer) {

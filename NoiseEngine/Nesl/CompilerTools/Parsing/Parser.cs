@@ -223,8 +223,8 @@ internal class Parser {
             // Add default constructor to value type.
             if (CurrentType.IsValueType) {
                 IlGenerator il = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType).IlGenerator;
-                il.Emit(Emit.OpCode.DefVariable, CurrentType);
-                il.Emit(Emit.OpCode.ReturnValue, il.GetNextVariableId());
+                il.Emit(OpCode.DefVariable, CurrentType);
+                il.Emit(OpCode.ReturnValue, il.GetNextVariableId());
             }
 
             definedParameters = null;

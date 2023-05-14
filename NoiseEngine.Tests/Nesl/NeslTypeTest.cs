@@ -1,8 +1,10 @@
 ﻿using NoiseEngine.Nesl;
+using NoiseEngine.Nesl.CompilerTools;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace NoiseEngine.Tests.Nesl;
@@ -38,11 +40,12 @@ public class NeslTypeTest {
         NeslField genericField = genericType.DefineField(FieldName, genericTypeParameter);
 
         NeslMethodBuilder genericMethod =
-            genericType.DefineMethod(MethodName, null, Buffers.GetReadWriteBuffer(genericTypeParameter));
+            genericType.DefineMethod(MethodName, genericType, Buffers.GetReadWriteBuffer(genericTypeParameter));
         IlGenerator il = genericMethod.IlGenerator;
 
         il.Emit(OpCode.Load, 0u, 0u);
-        il.Emit(OpCode.Return);
+        il.Emit(OpCode.DefVariable, genericType);
+        il.Emit(OpCode.ReturnValue, 1u);
 
         // Construct final type.
         NeslType genericParameterType = BuiltInTypes.Float32;
@@ -72,11 +75,31 @@ public class NeslTypeTest {
 
         Assert.NotNull(method);
         Assert.Equal(genericMethod.Name, method!.Name);
-        Assert.Null(method.ReturnType);
+        Assert.Equal(type, method.ReturnType);
         Assert.Equal(genericMethod.Attributes.Count(), method.Attributes.Count());
         Assert.Equal(genericMethod.ReturnValueAttributes.Count(), method.ReturnValueAttributes.Count());
         Assert.Equal(genericMethod.ParameterAttributes.Select(x => x.Count()),
             method.ParameterAttributes.Select(x => x.Count()));
+
+        // Check method body.
+        Assert.Equal(
+            genericMethod.GetIlContainer().GetInstructions().Count(),
+            method.GetIlContainer().GetInstructions().Count()
+        );
+
+        IEnumerator<Instruction> instructions = method.GetIlContainer().GetInstructions().GetEnumerator();
+        Assert.True(instructions.MoveNext());
+        Assert.Equal(OpCode.Load, instructions.Current.OpCode);
+        Assert.Equal(0u, instructions.Current.ReadUInt32());
+        Assert.Equal(0u, instructions.Current.ReadUInt32());
+
+        Assert.True(instructions.MoveNext());
+        Assert.Equal(OpCode.DefVariable, instructions.Current.OpCode);
+        Assert.Equal(type.Assembly.GetLocalTypeId(type), instructions.Current.ReadUInt64());
+
+        Assert.True(instructions.MoveNext());
+        Assert.Equal(OpCode.ReturnValue, instructions.Current.OpCode);
+        Assert.Equal(1u, instructions.Current.ReadUInt32());
     }
 
 }

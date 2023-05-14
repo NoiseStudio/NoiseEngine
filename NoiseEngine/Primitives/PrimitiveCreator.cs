@@ -12,6 +12,8 @@ public class PrimitiveCreator {
     public Shader DefaultShader => Shared.DefaultShader;
     public Material DefaultMaterial => Shared.DefaultMaterial;
 
+    public Mesh CubeMesh => Shared.CubeMesh;
+
     private PrimitiveCreatorShared Shared { get; }
 
     internal PrimitiveCreator(ApplicationScene scene) {
@@ -33,7 +35,7 @@ public class PrimitiveCreator {
             new TransformComponent(
                 position ?? Vector3<float>.Zero, rotation ?? Quaternion<float>.Identity, scale ?? Vector3<float>.One
             ),
-            new MeshRendererComponent(Shared.CubeMesh, DefaultMaterial)
+            new MeshRendererComponent(CubeMesh, DefaultMaterial)
         );
     }
 
