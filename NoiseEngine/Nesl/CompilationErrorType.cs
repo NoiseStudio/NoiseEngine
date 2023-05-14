@@ -60,6 +60,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ParameterAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    UsingNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     TypeNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     FieldNotFound,

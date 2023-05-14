@@ -32,12 +32,8 @@ internal static class ValueConstructor {
             throw new UnreachableException();
         TypeIdentifierToken identifier = expression.Identifier.Value;
 
-        if (!parser.TryGetType(identifier, out NeslType? type)) {
-            parser.Throw(new CompilationError(
-                identifier.Pointer, CompilationErrorType.TypeNotFound, identifier.Identifier
-            ));
+        if (!parser.TryGetType(identifier, out NeslType? type))
             return ValueData.Invalid;
-        }
 
         List<ValueData>? parameters = GetParameters(parser, expression.RoundBrackets!.Value.Buffer);
         if (parameters is null)
@@ -121,11 +117,11 @@ internal static class ValueConstructor {
         if (!parser.TryGetMethods(identifier, out bool findedType, out IEnumerable<NeslMethod>? methods)) {
             if (findedType) {
                 parser.Throw(new CompilationError(
-                    identifier.Pointer, CompilationErrorType.TypeNotFound, identifier.Identifier
+                    identifier.Pointer, CompilationErrorType.MethodNotFound, identifier.Identifier
                 ));
             } else {
                 parser.Throw(new CompilationError(
-                    identifier.Pointer, CompilationErrorType.MethodNotFound, identifier.Identifier
+                    identifier.Pointer, CompilationErrorType.TypeNotFound, identifier.Identifier
                 ));
             }
             return ValueData.Invalid;
