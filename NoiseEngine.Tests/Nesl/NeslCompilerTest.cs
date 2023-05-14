@@ -1,12 +1,11 @@
 ﻿using NoiseEngine.Components;
-using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl;
 using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
-using System.Linq;
-using System.Threading;
+using System;
 
 namespace NoiseEngine.Tests.Nesl;
 
@@ -17,7 +16,8 @@ public class NeslCompilerTest : ApplicationTestEnvironment {
 
     [Fact]
     public void Compile() {
-        NeslAssembly assembly = NeslCompiler.Compile(nameof(Compile), new NeslFile[] { new NeslFile("Path", @"
+        string path = "Path";
+        NeslAssembly assembly = NeslCompiler.Compile(nameof(Compile), new NeslFile[] { new NeslFile(path, @"
             using System;
 
             struct VertexData {
@@ -42,36 +42,59 @@ public class NeslCompilerTest : ApplicationTestEnvironment {
             }
         ") });
 
-        ExecuteOnAllDevices(scene => {
-            Shader shader = new Shader(scene.GraphicsDevice, assembly.Types.OrderByDescending(x => x.Name.Length).First());
+        // Executing.
+        Span<Color32> buffer = stackalloc Color32[16 * 16];
 
-            Window window = Fixture.GetWindow("A lot of X-Cuboids 3090 Ti.");
-            Camera camera = new Camera(scene) {
-                RenderTarget = window,
-                RenderLoop = new PerformanceRenderLoop()
+        ReadOnlySpan<(Vector3<float>, Vector3<float>)> vertices = stackalloc (Vector3<float>, Vector3<float>)[] {
+            (new Vector3<float>(-0.5f, -0.5f, 0f), Vector3<float>.Right),
+            (new Vector3<float>(-0.5f, 0.5f, 0f), Vector3<float>.Right),
+            (new Vector3<float>(-0.25f, -0.5f, 0f), Vector3<float>.Right),
+            (new Vector3<float>(-0.25f, 0.5f, 0f), Vector3<float>.Right),
+            (new Vector3<float>(0f, -0.5f, 0f), new Vector3<float>(1, 0, 1)),
+            (new Vector3<float>(0f, 0.5f, 0f), new Vector3<float>(1, 0, 1)),
+            (new Vector3<float>(0.25f, -0.5f, 0f), new Vector3<float>(1, 0, 1)),
+            (new Vector3<float>(0.25f, 0.5f, 0f), new Vector3<float>(1, 0, 1))
+        };
+        ReadOnlySpan<ushort> triangles = stackalloc ushort[] {
+            0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6
+        };
+
+        foreach (GraphicsDevice device in GraphicsDevices) {
+            Shader shader = new Shader(device, assembly.GetType(path)!);
+
+            Texture2D texture = new Texture2D(
+                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16, TextureFormat.R8G8B8A8_UNORM
+            );
+            SimpleCamera camera = new SimpleCamera(device) {
+                RenderTarget = new RenderTexture(texture),
+                ClearFlags = CameraClearFlags.SolidColor,
+                ClearColor = Color.Green,
+                DepthTesting = false,
+                ProjectionType = ProjectionType.Orthographic,
+                OrthographicSize = 0.5f
             };
 
-            for (int x = -10; x < 10; x += 2) {
-                for (int y = -10; y < 10; y += 2) {
-                    scene.EntityWorld.NewEntity(
-                        new TransformComponent(new Vector3<float>(x, 0, y)),
-                        new MeshRendererComponent(scene.Primitive.CubeMesh, new Material(shader))
-                    );
-                }
+            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
+            commandBuffer.AttachCameraUnchecked(camera);
+            commandBuffer.DrawMeshUnchecked(
+                new Mesh<(Vector3<float>, Vector3<float>), ushort>(device, vertices, triangles), new Material(shader),
+                new TransformComponent(new Vector3<float>(0, 0, 5)).Matrix
+            );
+            commandBuffer.DetachCameraUnchecked();
+
+            commandBuffer.Execute();
+            commandBuffer.Clear();
+
+            // Assert.
+            texture.GetPixels(buffer);
+
+            for (int i = 0; i < buffer.Length; i += (int)texture.Width) {
+                Assert.Equal(Color32.Red, buffer[i]);
+                Assert.Equal(Color32.Green, buffer[i + 4]);
+                Assert.Equal(Color32.Magenta, buffer[i + 8]);
+                Assert.Equal(Color32.Green, buffer[i + 12]);
             }
-
-            camera.Entity.Add(scene.EntityWorld, new ApplicationTestSimpleSceneManagerComponent());
-            camera.Scene.AddFrameDependentSystem(new ApplicationTestSimpleSceneManagerSystem(scene, window));
-
-            Thread.Sleep(1000);
-
-            if (scene.EntityWorld.HasAnySystem<DebugMovementSystem>()) {
-                AutoResetEvent autoResetEvent = new AutoResetEvent(false);
-                window.Disposed += (_, _) => autoResetEvent.Set();
-                if (!window.IsDisposed)
-                    autoResetEvent.WaitOne();
-            }
-        });
+        }
     }
 
 }

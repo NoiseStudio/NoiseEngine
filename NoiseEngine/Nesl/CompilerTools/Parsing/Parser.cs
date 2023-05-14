@@ -46,7 +46,7 @@ internal class Parser {
     private NeslTypeBuilder CurrentType {
         get {
             if (currentType is null)
-                currentType = Assembly.DefineType(Guid.NewGuid().ToString());
+                currentType = Assembly.DefineType(Buffer.Tokens[0].Path);
             return currentType;
         }
         init {
