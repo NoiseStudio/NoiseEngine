@@ -33,7 +33,7 @@ internal class VulkanCommonShaderDelegation : CommonShaderDelegation {
             //new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
         }, settings);
 
-        //System.IO.File.WriteAllBytes("tak.spv", result.GetCode());
+        System.IO.File.WriteAllBytes("tak.spv", result.GetCode());
 
         //ModuleFragment =
         ModuleVertex = new ShaderModule(Device, result.GetCode());

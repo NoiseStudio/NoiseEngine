@@ -3,7 +3,9 @@ using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 
 namespace NoiseEngine.Nesl;
 
-public struct CompilationError {
+public readonly struct CompilationError {
+
+    private readonly string received;
 
     public CompilationErrorType Type { get; }
     public string Path { get; }
@@ -11,13 +13,20 @@ public struct CompilationError {
     public uint Column { get; }
     public CompilationErrorSeverity Severity { get; }
 
-    internal CompilationError(Token token, CompilationErrorType type) {
+    internal CompilationError(CodePointer pointer, CompilationErrorType type, string received) {
+        this.received = received;
+
         Type = type;
-        Path = token.Path;
-        Line = token.Line;
-        Column = token.Column;
+        Path = pointer.Path;
+        Line = pointer.Line;
+        Column = pointer.Column;
 
         Severity = Type.GetCustomAttribute<CompilationErrorTypeAttribute>().Severity;
+    }
+
+    internal CompilationError(Token token, CompilationErrorType type) : this(
+        token.Pointer, type, token.Value ?? token.Type.ToString()
+    ) {
     }
 
     /// <summary>
@@ -25,7 +34,9 @@ public struct CompilationError {
     /// </summary>
     /// <returns>A string that represents the current object.</returns>
     public override string ToString() {
-        return $"{Path}({Line},{Column}): {Severity.ToString().ToLower()} NESL{(uint)Type:D4}: {Type}";
+        return $"{Path}({Line},{Column}): {
+            Severity.ToString().ToLower()
+        } NESL{(uint)Type:D4}: {Type} (received {received})";
     }
 
 }

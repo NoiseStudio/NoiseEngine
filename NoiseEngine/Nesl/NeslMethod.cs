@@ -142,13 +142,13 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
             // Return and parameter types.
             NeslType? methodReturnType = ReturnType;
             if (methodReturnType is not null)
-                methodReturnType = GenericHelper.GetFinalType(methodReturnType, targetTypes);
+                methodReturnType = GenericHelper.GetFinalType(Type, Type, methodReturnType, targetTypes);
 
             NeslType[] methodParameterTypes = new NeslType[ParameterTypes.Count];
 
             i = 0;
             foreach (NeslType parameterType in ParameterTypes)
-                methodParameterTypes[i++] = GenericHelper.GetFinalType(parameterType, targetTypes);
+                methodParameterTypes[i++] = GenericHelper.GetFinalType(Type, Type, parameterType, targetTypes);
 
             // Construct new method.
             return new SerializedNeslMethod(
@@ -160,7 +160,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
                 GenericHelper.RemoveGenericsFromAttributes(ReturnValueAttributes, targetTypes),
                 ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
                 Array.Empty<NeslGenericTypeParameter>(),
-                GenericIlGenerator.RemoveGenerics(this, targetTypes)
+                GenericIlGenerator.RemoveGenerics(Type, Type, this, targetTypes)
             );
         })).Value;
     }

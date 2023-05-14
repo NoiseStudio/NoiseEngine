@@ -8,7 +8,7 @@ internal static class Vectors {
     public const string Vector3Name = "System::System.Vector3`1";
     public const string Vector4Name = "System::System.Vector4`1";
 
-    private static readonly string[] units = new string[] { "x", "y", "z", "w", "v" };
+    private static readonly string[] units = new string[] { "X", "Y", "Z", "W", "V" };
 
     private static readonly NeslType vector3;
     private static readonly NeslType vector4;
@@ -36,6 +36,22 @@ internal static class Vectors {
 
         for (int i = 0; i < size; i++)
             type.DefineField(units[i], genericTypeParameter);
+
+        if (size == 4) {
+            NeslMethodBuilder method = type.DefineMethod(
+                NeslOperators.Constructor, type, GetVector3(genericTypeParameter), genericTypeParameter
+            );
+            IlGenerator il = method.IlGenerator;
+            il.Emit(OpCode.DefVariable, type);
+            il.Emit(OpCode.SetField, 7u, 3u, 6u);
+            il.Emit(OpCode.LoadField, 6u, 5u, 0u);
+            il.Emit(OpCode.SetField, 7u, 0u, 6u);
+            il.Emit(OpCode.LoadField, 6u, 5u, 1u);
+            il.Emit(OpCode.SetField, 7u, 1u, 6u);
+            il.Emit(OpCode.LoadField, 6u, 5u, 2u);
+            il.Emit(OpCode.SetField, 7u, 2u, 6u);
+            il.Emit(OpCode.ReturnValue, 7u);
+        }
 
         return type;
     }

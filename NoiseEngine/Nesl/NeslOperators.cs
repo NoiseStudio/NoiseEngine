@@ -10,4 +10,6 @@ public static class NeslOperators {
     public const string IndexerGet = "'indexerGet";
     public const string IndexerSet = "'indexerSet";
 
+    public const string Constructor = "'constructor";
+
 }

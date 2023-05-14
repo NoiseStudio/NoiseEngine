@@ -1,5 +1,4 @@
 ﻿using NoiseEngine.Collections;
-using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 

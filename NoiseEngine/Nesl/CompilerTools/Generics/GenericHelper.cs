@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Generics;
@@ -7,19 +6,36 @@ namespace NoiseEngine.Nesl.CompilerTools.Generics;
 internal static class GenericHelper {
 
     public static NeslType GetFinalType(
-        NeslType currentType, IDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+        NeslType oldType, NeslType newType, NeslType currentType,
+        IDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
-        if (currentType is NeslGenericTypeParameter genericTypeParameter) {
+        if (currentType is NeslGenericTypeParameter genericTypeParameter)
             return targetTypes[genericTypeParameter];
-        } else if (currentType is NotFullyConstructedGenericNeslType notFullyGenericMakedType) {
+        if (currentType is NotFullyConstructedGenericNeslType notFullyGenericMakedType) {
             return notFullyGenericMakedType.MakeGeneric(notFullyGenericMakedType.TypeArguments
                 .Select(x => x is NeslGenericTypeParameter genericTypeParameter ?
                     targetTypes[genericTypeParameter] : x)
                 .ToArray()
             );
-        } else {
-            return currentType;
         }
+        if (!currentType.IsGeneric)
+            return currentType;
+        if (oldType == currentType)
+            return newType;
+
+        NeslType[] typeParameters = currentType.GenericTypeParameters.ToArray();
+        bool changed = false;
+
+        for (int i = 0; i < typeParameters.Length; i++) {
+            if (targetTypes.TryGetValue((NeslGenericTypeParameter)typeParameters[i], out NeslType? n)) {
+                typeParameters[i] = n;
+                changed = true;
+            }
+        }
+
+        if (changed)
+            return currentType.MakeGeneric(typeParameters);
+        return currentType;
     }
 
     public static NeslAttribute[] RemoveGenericsFromAttributes(

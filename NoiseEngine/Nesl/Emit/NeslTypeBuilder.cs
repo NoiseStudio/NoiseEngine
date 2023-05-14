@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.Emit;
@@ -100,6 +101,28 @@ public class NeslTypeBuilder : NeslType {
     }
 
     /// <summary>
+    /// Tries to create new <see cref="NeslMethodBuilder"/> in this type.
+    /// </summary>
+    /// <param name="name">Name of new <see cref="NeslMethodBuilder"/>.</param>
+    /// <param name="method">
+    /// New <see cref="NeslMethodBuilder"/> or <see langword="null"/> when result is <see langword="false"/>.
+    /// </param>
+    /// <param name="returnType"><see cref="NeslType"/> returned from new method.</param>
+    /// <param name="parameterTypes"><see cref="NeslType"/> parameters of new method.</param>
+    /// <returns><see langword="true"/> when type is successfuly defined; otherwise <see langword="false"/>.</returns>
+    public bool TryDefineMethod(
+        string name, [NotNullWhen(true)] out NeslMethodBuilder? method, NeslType? returnType = null,
+        params NeslType[] parameterTypes
+    ) {
+        method = new NeslMethodBuilder(this, name, returnType, parameterTypes);
+        if (TryAddMethodToCollection(method))
+            return true;
+
+        method = null;
+        return false;
+    }
+
+    /// <summary>
     /// Adds <paramref name="attribute"/> to this <see cref="NeslTypeBuilder"/>.
     /// </summary>
     /// <param name="attribute"><see cref="NeslAttribute"/>.</param>
@@ -142,8 +165,12 @@ public class NeslTypeBuilder : NeslType {
         return idToField[localFieldId];
     }
 
+    private bool TryAddMethodToCollection(NeslMethodBuilder method) {
+        return methods.TryAdd(method.Identifier, method);
+    }
+
     private void AddMethodToCollection(NeslMethodBuilder method) {
-        if (methods.TryAdd(method.Identifier, method))
+        if (TryAddMethodToCollection(method))
             return;
 
         throw new InvalidOperationException(

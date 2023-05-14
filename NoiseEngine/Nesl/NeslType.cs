@@ -106,7 +106,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
             List<NeslField> fields = new List<NeslField>();
             foreach (NeslField field in Fields) {
                 fields.Add(new SerializedNeslField(
-                    type, field.Name, GenericHelper.GetFinalType(field.FieldType, targetTypes),
+                    type, field.Name, GenericHelper.GetFinalType(this, type, field.FieldType, targetTypes),
                     GenericHelper.RemoveGenericsFromAttributes(field.Attributes, targetTypes)
                 ));
 
@@ -128,13 +128,13 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
                 // Return and parameter types.
                 NeslType? methodReturnType = method.ReturnType;
                 if (methodReturnType is not null)
-                    methodReturnType = GenericHelper.GetFinalType(methodReturnType, targetTypes);
+                    methodReturnType = GenericHelper.GetFinalType(this, type, methodReturnType, targetTypes);
 
                 NeslType[] methodParameterTypes = new NeslType[method.ParameterTypes.Count];
 
                 i = 0;
                 foreach (NeslType parameterType in method.ParameterTypes)
-                    methodParameterTypes[i++] = GenericHelper.GetFinalType(parameterType, targetTypes);
+                    methodParameterTypes[i++] = GenericHelper.GetFinalType(this,type, parameterType, targetTypes);
 
                 // Construct new method.
                 methods.Add(new SerializedNeslMethod(
@@ -146,7 +146,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
                     GenericHelper.RemoveGenericsFromAttributes(method.ReturnValueAttributes, targetTypes),
                     method.ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
                     method.GenericTypeParameters.ToArray(),
-                    GenericIlGenerator.RemoveGenerics(method, targetTypes)
+                    GenericIlGenerator.RemoveGenerics(this, type, method, targetTypes)
                 ));
             }
 
