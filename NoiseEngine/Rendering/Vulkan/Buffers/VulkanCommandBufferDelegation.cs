@@ -6,6 +6,7 @@ using NoiseEngine.Rendering.Buffers.CommandBuffers;
 using NoiseEngine.Rendering.PushConstants;
 using NoiseEngine.Serialization;
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Rendering.Vulkan.Buffers;
@@ -15,8 +16,9 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
     private Matrix4x4<float> CameraProjectionViewMatrix { get; set; }
 
     private RenderPass? RenderPass { get; set; }
-    private Shader? AttachedShader { get; set; }
+    private object? AttachedPipeline { get; set; }
     private VulkanCommonShaderDelegation? AttachedCommonShaderDelegation { get; set; }
+    private CommonMaterial? AttachedMaterial { get; set; }
 
     public VulkanCommandBufferDelegation(
         GraphicsCommandBuffer commandBuffer, SerializationWriter writer, FastList<object> references,
@@ -26,19 +28,16 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
     public override void Clear() {
         RenderPass = null;
-        AttachedShader = null;
+        AttachedPipeline = null;
         AttachedCommonShaderDelegation = null;
+        AttachedMaterial = null;
     }
 
-    public override void DispatchWorker(ComputeKernel kernel, Vector3<uint> groupCount) {
-        VulkanComputeKernel vulkanKernel = (VulkanComputeKernel)kernel;
-        VulkanCommonShaderDelegationOld commonShader = (VulkanCommonShaderDelegationOld)kernel.Shader.Delegation;
-
-        commonShader.AssertInitialized();
+    public override void DispatchWorker(ComputeKernel kernel, ComputeMaterial material, Vector3<uint> groupCount) {
+        AttachKernel(kernel);
+        AttachMaterial(material);
 
         writer.WriteCommand(CommandBufferCommand.Dispatch);
-        writer.WriteIntN(vulkanKernel.Pipeline.Handle.Pointer);
-        writer.WriteIntN(commonShader.DescriptorSet.Handle.Pointer);
         writer.WriteUInt32(groupCount.X);
         writer.WriteUInt32(groupCount.Y);
         writer.WriteUInt32(groupCount.Z);
@@ -83,6 +82,7 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
     public override void DrawMeshWorker(Mesh mesh, Material material, Matrix4x4<float> transform) {
         AttachShader(material.Shader);
+        AttachMaterial(material);
 
         (GraphicsReadOnlyBuffer vertexBuffer, GraphicsReadOnlyBuffer indexBuffer) = mesh.GetBuffers();
 
@@ -120,15 +120,42 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
     }
 
     private void AttachShader(Shader shader) {
-        if (AttachedShader == shader)
+        if (AttachedPipeline == shader)
             return;
 
-        AttachedShader = shader;
+        AttachedPipeline = shader;
         references.Add(shader);
         AttachedCommonShaderDelegation = (VulkanCommonShaderDelegation)shader.Delegation;
 
-        writer.WriteCommand(CommandBufferCommand.AttachShader);
+        writer.WriteCommand(CommandBufferCommand.AttachPipeline);
+        writer.WriteUInt32((uint)PipelineBindPoint.Graphics);
         writer.WriteIntN(RenderPass!.GetPipeline(shader).Handle.Pointer);
+    }
+
+    private void AttachKernel(ComputeKernel kernel) {
+        if (AttachedPipeline == kernel)
+            return;
+
+        AttachedPipeline = kernel;
+        references.Add(kernel);
+
+        writer.WriteCommand(CommandBufferCommand.AttachPipeline);
+        writer.WriteUInt32((uint)PipelineBindPoint.Compute);
+        writer.WriteIntN(Unsafe.As<VulkanComputeKernel>(kernel).Pipeline.Handle.Pointer);
+    }
+
+    private void AttachMaterial(CommonMaterial material) {
+        if (AttachedMaterial == material || material.Delegation is null)
+            return;
+
+        AttachedMaterial = material;
+        references.Add(material);
+
+        VulkanCommonMaterialDelegation vulkan = Unsafe.As<VulkanCommonMaterialDelegation>(material.Delegation);
+        vulkan.AssertInitialized();
+
+        writer.WriteCommand(CommandBufferCommand.AttachMaterial);
+        writer.WriteIntN(vulkan.DescriptorSet.Handle.Pointer);
     }
 
 }

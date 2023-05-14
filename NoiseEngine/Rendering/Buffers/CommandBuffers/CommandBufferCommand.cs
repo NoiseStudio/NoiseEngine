@@ -10,5 +10,6 @@ internal enum CommandBufferCommand : ushort {
     DetachCamera = 6,
     DrawMesh = 7,
 
-    AttachShader = 10000
+    AttachPipeline = 10000,
+    AttachMaterial = 10001
 }

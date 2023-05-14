@@ -7,6 +7,7 @@ use crate::{
     interop::prelude::{InteropResult, InteropReadOnlySpan}
 };
 
+#[allow(clippy::redundant_allocation)]
 #[no_mangle]
 extern "C" fn rendering_vulkan_descriptors_set_layout_create<'dev: 'init, 'init: 'setl, 'setl>(
     device: &'dev Arc<VulkanDevice<'init>>, flags: vk::DescriptorSetLayoutCreateFlags,

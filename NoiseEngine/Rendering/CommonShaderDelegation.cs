@@ -1,10 +1,11 @@
-﻿namespace NoiseEngine.Rendering;
+﻿using NoiseEngine.Nesl;
+
+namespace NoiseEngine.Rendering;
 
 internal abstract class CommonShaderDelegation {
 
     public ICommonShader Shader { get; }
-
-    internal bool IsCompute => Shader is ComputeShader;
+    public (NeslField, MaterialProperty)[]? Properties { get; protected set; }
 
     protected CommonShaderDelegation(ICommonShader shader) {
         Shader = shader;

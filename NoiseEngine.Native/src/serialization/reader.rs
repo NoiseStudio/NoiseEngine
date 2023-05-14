@@ -18,7 +18,7 @@ impl<'a> SerializationReader<'a> {
 
         let mut ptr = self.data.as_ptr() as *const u8;
         ptr = unsafe {
-            ptr.offset(self.index as isize)
+            ptr.add(self.index)
         };
 
         self.index += size;
@@ -31,7 +31,7 @@ impl<'a> SerializationReader<'a> {
     pub fn read_unchecked<T>(&mut self) -> T {
         let mut ptr = self.data.as_ptr() as *const u8;
         ptr = unsafe {
-            ptr.offset(self.index as isize)
+            ptr.add(self.index)
         };
 
         self.index += mem::size_of::<T>();
@@ -44,7 +44,7 @@ impl<'a> SerializationReader<'a> {
     pub fn read_bytes_unchecked(&mut self, length: usize) -> &[u8] {
         let mut ptr = self.data.as_ptr() as *const u8;
         ptr = unsafe {
-            ptr.offset(self.index as isize)
+            ptr.add(self.index)
         };
 
         self.index += length;

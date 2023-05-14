@@ -27,7 +27,7 @@ pub fn attach_camera_window<'init: 'fam, 'fam>(
 
     let (
         pass, synchronized_fence, frame_index, image_index
-    ) = swapchain.get_swapchain_pass_and_accquire_next_image(render_pass, &used_fence)?;
+    ) = swapchain.get_swapchain_pass_and_accquire_next_image(render_pass, used_fence)?;
     let framebuffer = pass.get_framebuffer(image_index);
 
     attach_camera_worker(

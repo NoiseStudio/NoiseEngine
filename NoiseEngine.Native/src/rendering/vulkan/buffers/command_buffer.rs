@@ -14,7 +14,9 @@ use crate::{
     serialization::reader::SerializationReader, interop::prelude::InteropResult, common::pool::PoolItem
 };
 
-use super::command_buffers::{memory_commands, compute_commands, camera_commands::{self, AttachCameraWindowOutput}, draw_commands};
+use super::command_buffers::{
+    memory_commands, misc_commands, compute_commands, camera_commands::{self, AttachCameraWindowOutput}, draw_commands
+};
 
 pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     initialized: &'init VulkanDeviceInitialized<'init>,
@@ -23,7 +25,7 @@ pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
     command_pool: PoolItem<'fam, VulkanCommandPool<'init>>,
     used_fence: Option<Arc<VulkanFence<'init>>>,
     attached_camera_windows: Vec<AttachCameraWindowOutput<'init, 'fam>>,
-    attached_pipeline_layout: vk::PipelineLayout,
+    attached_pipeline_layout: (vk::PipelineLayout, vk::PipelineBindPoint),
     device: Arc<VulkanDevice<'init>>,
 }
 
@@ -59,7 +61,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             command_pool,
             used_fence: None,
             attached_camera_windows: Vec::new(),
-            attached_pipeline_layout: vk::PipelineLayout::null(),
+            attached_pipeline_layout: (vk::PipelineLayout::null(), vk::PipelineBindPoint::GRAPHICS),
             device: device.clone(),
         };
 
@@ -72,7 +74,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
         self.inner
     }
 
-    pub fn attached_pipeline_layout(&self) -> vk::PipelineLayout {
+    pub fn attached_pipeline_layout(&self) -> (vk::PipelineLayout, vk::PipelineBindPoint) {
         self.attached_pipeline_layout
     }
 
@@ -154,21 +156,23 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             let mut i = 0;
             for result in results {
                 if result == vk::Result::SUCCESS {
-                    i = i + 1;
+                    i += 1;
                     continue;
                 }
 
                 if result != vk::Result::ERROR_OUT_OF_DATE_KHR || result != vk::Result::SUBOPTIMAL_KHR {
-                    match Weak::upgrade(self.attached_camera_windows[i].pass.swapchain()) {
-                        Some(swapchain) => swapchain.recreate(None)?,
-                        None => (),
+                    if
+                        let Some(swapchain) =
+                        Weak::upgrade(self.attached_camera_windows[i].pass.swapchain()
+                    ) {
+                        swapchain.recreate(None)?;
                     }
                 } else {
                     let a: Result<(), vk::Result> = Err(result);
                     a?;
                 }
 
-                i = i + 1;
+                i += 1;
             }
         }
 
@@ -230,8 +234,10 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                     camera_commands::detach_camera(self, vulkan_device),
                 GraphicsCommandBufferCommand::DrawMesh =>
                     draw_commands::draw_mesh(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::AttachShader => self.attached_pipeline_layout =
-                    draw_commands::attach_shader(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::AttachPipeline => self.attached_pipeline_layout =
+                    misc_commands::attach_shader(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::AttachMaterial =>
+                    misc_commands::attach_material(&mut data, self, vulkan_device)
             };
         };
 

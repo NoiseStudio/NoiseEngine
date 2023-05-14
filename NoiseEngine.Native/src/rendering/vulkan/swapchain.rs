@@ -171,13 +171,10 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         &'init self, render_pass: &Arc<RenderPass<'init>>
     ) -> Result<Arc<SwapchainPass<'init, 'fam>>, VulkanUniversalError> {
         // Check if pass is created.
-        match self.pass.get() {
-            Some(current_pass) => {
-                if self.compare_render_pass(&current_pass, render_pass) {
-                    return Ok(current_pass)
-                }
-            },
-            None => (),
+        if let Some(current_pass) = self.pass.get() {
+            if self.compare_render_pass(&current_pass, render_pass) {
+                return Ok(current_pass)
+            }
         }
 
         self.create_pass(render_pass)
@@ -240,16 +237,12 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         }
 
         // Wait to frames in flight ends.
-        match self.pass.set(None) {
-            Some(pass) => {
-                for fence in &pass.in_flight_fences {
-                    match Weak::upgrade(&fence.get()) {
-                        Some(f) => _ = f.wait(),
-                        None => (),
-                    }
+        if let Some(pass) = self.pass.set(None) {
+            for fence in &pass.in_flight_fences {
+                if let Some(f) = Weak::upgrade(&fence.get()) {
+                    _ = f.wait();
                 }
-            },
-            None => (),
+            }
         };
 
         // Lock swapchain mutex.
@@ -411,10 +404,10 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
                     },
                 }];
 
-                framebuffers.push(SwapchainFramebuffer::new(&render_pass, image_view, dynamic.extent, attachments)?);
+                framebuffers.push(SwapchainFramebuffer::new(render_pass, image_view, dynamic.extent, attachments)?);
             } else {
                 framebuffers.push(SwapchainFramebuffer::new(
-                    &render_pass, image_view, dynamic.extent, &[]
+                    render_pass, image_view, dynamic.extent, &[]
                 )?);
             }
         }
@@ -422,16 +415,15 @@ impl<'init: 'fam, 'fam> Swapchain<'init, 'fam> {
         let in_flight_fences_length = dynamic.image_available_semaphores.len();
         let mut in_flight_fences =
             Vec::with_capacity(in_flight_fences_length);
-        let frame_index;
 
-        match old_pass {
+        let frame_index = match old_pass {
             Some(p) => {
                 for i in 0..cmp::min(p.in_flight_fences.len(), in_flight_fences_length) {
                     in_flight_fences.push(p.in_flight_fences[i].clone());
                 }
-                frame_index = p.frame_index.load(Ordering::Relaxed);
+                p.frame_index.load(Ordering::Relaxed)
             },
-            None => frame_index = 0
+            None => 0
         };
 
         while in_flight_fences.len() != in_flight_fences_length {
@@ -531,11 +523,10 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
             self.frame_index.fetch_add(1, Ordering::Relaxed) % self.in_flight_fences.len();
 
         let old_fence =
-            self.in_flight_fences[frame_index].set(Arc::downgrade(&new_fence));
+            self.in_flight_fences[frame_index].set(Arc::downgrade(new_fence));
 
-        match Weak::upgrade(&old_fence) {
-            Some(old_fence_arc) => _ = old_fence_arc.wait()?,
-            None => (),
+        if let Some(old_fence_arc) = Weak::upgrade(&old_fence) {
+            _ = old_fence_arc.wait()?;
         }
 
         Ok(frame_index)
@@ -610,9 +601,8 @@ impl<'init: 'fam, 'fam> SwapchainPass<'init, 'fam> {
 impl Drop for SwapchainPass<'_, '_> {
     fn drop(&mut self) {
         for fence in &self.in_flight_fences {
-            match Weak::upgrade(&fence.get()) {
-                Some(arc) => _ = arc.wait(),
-                None => (),
+            if let Some(arc) = Weak::upgrade(&fence.get()) {
+                _ = arc.wait();
             }
         }
 

@@ -70,13 +70,10 @@ impl<'init: 'devpool, 'devpool> VulkanDevicePool<'devpool> {
                 }
 
                 for (ty, count) in pool_sizes.map.iter() {
-                    match obj_pool_sizes.map.get(ty) {
-                        Some(c) => {
-                            if c >= count {
-                                continue
-                            }
-                        },
-                        None => (),
+                    if let Some(c) = obj_pool_sizes.map.get(ty) {
+                        if c >= count {
+                            continue
+                        }
                     };
 
                     return false

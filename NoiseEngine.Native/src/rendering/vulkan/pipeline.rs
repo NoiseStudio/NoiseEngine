@@ -107,9 +107,8 @@ impl<'init> Pipeline<'init> {
         };
 
         // Depth stencil.
-        let depth_stencil;
-        if render_pass.depth_testing() {
-            depth_stencil = vk::PipelineDepthStencilStateCreateInfo {
+        let depth_stencil = if render_pass.depth_testing() {
+            vk::PipelineDepthStencilStateCreateInfo {
                 s_type: vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
                 p_next: ptr::null(),
                 flags: vk::PipelineDepthStencilStateCreateFlags::empty(),
@@ -122,10 +121,10 @@ impl<'init> Pipeline<'init> {
                 back: vk::StencilOpState::default(),
                 min_depth_bounds: 0.0,
                 max_depth_bounds: 1.0,
-            };
+            }
         } else {
-            depth_stencil = vk::PipelineDepthStencilStateCreateInfo::default();
-        }
+            vk::PipelineDepthStencilStateCreateInfo::default()
+        };
 
         // Color blend.
         let color_blend_attachment = vk::PipelineColorBlendAttachmentState {

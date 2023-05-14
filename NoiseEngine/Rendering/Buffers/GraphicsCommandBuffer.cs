@@ -238,16 +238,21 @@ public class GraphicsCommandBuffer {
     /// <paramref name="groupCount"/>.
     /// </summary>
     /// <param name="kernel"><see cref="ComputeKernel"/> to dispatch.</param>
+    /// <param name="material"><see cref="ComputeMaterial"/> to dispatch.</param>
     /// <param name="groupCount">Number of local workgroups.</param>
     /// <exception cref="ArgumentException">Some unit of <paramref name="groupCount"/> is a zero.</exception>
-    public void Dispatch(ComputeKernel kernel, Vector3<uint> groupCount) {
+    public void Dispatch(ComputeKernel kernel, ComputeMaterial material, Vector3<uint> groupCount) {
         if (kernel.Device != Device)
             throw CreateInvalidDeviceException(nameof(kernel), "Compute kernel");
-
+        if (kernel.Shader != material.Shader) {
+            throw new ArgumentException(
+                $"Compute {nameof(kernel)} and {nameof(material)} must be from the same shader.", nameof(material)
+            );
+        }
         if (groupCount.X == 0 || groupCount.Y == 0 || groupCount.Z == 0)
             throw new ArgumentException("Group count cannot have zero on any unit.", nameof(groupCount));
 
-        DispatchUnchecked(kernel, groupCount);
+        DispatchUnchecked(kernel, material, groupCount);
     }
 
     internal void CopyUnchecked<T1, T2>(
@@ -313,10 +318,9 @@ public class GraphicsCommandBuffer {
             region.Write(writer);
     }
 
-    internal void DispatchUnchecked(ComputeKernel kernel, Vector3<uint> groupCount) {
+    internal void DispatchUnchecked(ComputeKernel kernel, ComputeMaterial material, Vector3<uint> groupCount) {
         computing = true;
-        references.Add(kernel);
-        delegation.DispatchWorker(kernel, groupCount);
+        delegation.DispatchWorker(kernel, material, groupCount);
     }
 
     internal void AttachCameraUnchecked(SimpleCamera camera) {

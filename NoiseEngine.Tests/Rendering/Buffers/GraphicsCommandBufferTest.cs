@@ -91,10 +91,11 @@ public class GraphicsCommandBufferTest : GraphicsTestEnvironment {
                 new GraphicsHostBuffer<float>(device, GraphicsBufferUsage.TransferSource, 1);
 
             ComputeShader shader = new ComputeShader(device, shaderType);
-            shader.GetProperty(buffer)!.SetBuffer(hostBuffer);
+            ComputeMaterial material = new ComputeMaterial(shader);
+            material.GetProperty(buffer)!.SetBuffer(hostBuffer);
 
             // Dispatch.
-            commandBuffer[i].Dispatch(shader.GetKernel(main)!, Vector3<uint>.One);
+            commandBuffer[i].Dispatch(shader.GetKernel(main)!, material, Vector3<uint>.One);
             commandBuffer[i].Execute();
             commandBuffer[i].Clear();
 

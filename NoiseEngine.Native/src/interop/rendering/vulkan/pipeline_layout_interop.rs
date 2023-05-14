@@ -7,6 +7,7 @@ use crate::{
     interop::{prelude::InteropResult, interop_read_only_span::InteropReadOnlySpan}
 };
 
+#[allow(clippy::redundant_allocation)]
 #[no_mangle]
 extern "C" fn rendering_vulkan_pipeline_layout_create<'init: 'setl, 'setl>(
     layouts: InteropReadOnlySpan<&'setl Arc<DescriptorSetLayout<'init>>>,

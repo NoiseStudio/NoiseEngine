@@ -13,6 +13,9 @@ public class Shader : ICommonShader {
 
     internal CommonShaderDelegation Delegation { get; }
 
+    ShaderType ICommonShader.Type => ShaderType.VertexFragment;
+    CommonShaderDelegation ICommonShader.Delegation => Delegation;
+
     public Shader(GraphicsDevice device, NeslType classData, ShaderSettings settings) {
         device.Initialize();
 
@@ -20,7 +23,7 @@ public class Shader : ICommonShader {
         ClassData = classData;
 
         Delegation = device.Instance.Api switch {
-            GraphicsApi.Vulkan => new VulkanCommonShaderDelegation(this, settings),
+            GraphicsApi.Vulkan => new VulkanVertexFragmentShaderDelegation(this, settings),
             _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
         };
     }

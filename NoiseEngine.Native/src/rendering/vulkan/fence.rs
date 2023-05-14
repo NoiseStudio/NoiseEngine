@@ -64,7 +64,7 @@ impl GraphicsFence for VulkanFence<'_> {
             self.device.initialized().unwrap().vulkan_device().get_fence_status(self.inner)
         } {
             Ok(i) => InteropResult::with_ok(i),
-            Err(err) => return InteropResult::with_err(err.into()),
+            Err(err) => InteropResult::with_err(err.into()),
         }
     }
 

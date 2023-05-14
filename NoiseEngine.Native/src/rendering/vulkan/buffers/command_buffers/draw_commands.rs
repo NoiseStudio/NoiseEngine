@@ -1,7 +1,7 @@
 use ash::vk;
 
 use crate::{
-    rendering::vulkan::{buffers::command_buffer::VulkanCommandBuffer, pipeline::Pipeline},
+    rendering::vulkan::{buffers::command_buffer::VulkanCommandBuffer},
     serialization::reader::SerializationReader
 };
 
@@ -29,8 +29,8 @@ pub fn draw_mesh(
 
         unsafe {
             vulkan_device.cmd_push_constants(
-                buffer.inner(), buffer.attached_pipeline_layout(),
-                vk::ShaderStageFlags::VERTEX,
+                buffer.inner(), buffer.attached_pipeline_layout().0,
+                vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
                 0, push_constants_data
             );
         }
@@ -42,19 +42,4 @@ pub fn draw_mesh(
             0, 0
         );
     }
-}
-
-pub fn attach_shader(
-    data: &mut SerializationReader, buffer: &mut VulkanCommandBuffer, vulkan_device: &ash::Device
-) -> vk::PipelineLayout {
-    let pipeline = data.read_unchecked::<&Pipeline>();
-
-    unsafe {
-        vulkan_device.cmd_bind_pipeline(
-            buffer.inner(), vk::PipelineBindPoint::GRAPHICS,
-            pipeline.inner()
-        );
-    }
-
-    pipeline.layout().inner()
 }
