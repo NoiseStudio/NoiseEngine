@@ -7,6 +7,7 @@ use crate::{
     interop::prelude::InteropResult
 };
 
+#[allow(clippy::redundant_allocation)]
 #[repr(C)]
 struct SwapchainCreateReturnValue<'init: 'fam, 'fam> {
     pub handle: Box<Arc<Swapchain<'init, 'fam>>>,

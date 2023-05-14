@@ -11,11 +11,10 @@ namespace NoiseEngine.Rendering.Vulkan;
 
 internal abstract class VulkanCommonShaderDelegation : CommonShaderDelegation {
 
-    private readonly DescriptorSetLayout layout;
-
     public VulkanDevice Device => Unsafe.As<VulkanDevice>(Shader.Device);
     public ShaderModule Module { get; }
     public PipelineLayout PipelineLayout { get; }
+    public DescriptorSetLayout Layout { get; }
     public PushConstantDescriptor[] PushConstantDescriptors { get; }
     public uint PushConstantSize { get; }
 
@@ -28,11 +27,15 @@ internal abstract class VulkanCommonShaderDelegation : CommonShaderDelegation {
         Span<DescriptorSetLayoutBinding> bindings = stackalloc DescriptorSetLayoutBinding[result.Bindings.Count];
         foreach ((NeslField field, uint binding) in result.Bindings) {
             bindings[i++] = new DescriptorSetLayoutBinding(
-                binding, DescriptorType.Storage, 1, ShaderStageFlags.Vertex | ShaderStageFlags.Fragment, 0
+                binding, DescriptorType.Storage, 1, shader.Type switch {
+                    ShaderType.VertexFragment => ShaderStageFlags.Vertex | ShaderStageFlags.Fragment,
+                    ShaderType.Compute => ShaderStageFlags.Compute,
+                    _ => throw new NotImplementedException()
+                }, 0
             );
         }
 
-        layout = new DescriptorSetLayout(Device, bindings);
+        Layout = new DescriptorSetLayout(Device, bindings);
 
         Span<PushConstantRange> pushConstantRanges = stackalloc PushConstantRange[
             PushConstantDescriptors.Length == 0 ? 0 : 1
@@ -52,7 +55,21 @@ internal abstract class VulkanCommonShaderDelegation : CommonShaderDelegation {
             }
         }
 
-        PipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { layout }, pushConstantRanges);
+        PipelineLayout = new PipelineLayout(new DescriptorSetLayout[] { Layout }, pushConstantRanges);
+
+        if (result.Bindings.Count > 0) {
+            Properties = new (NeslField, MaterialProperty)[result.Bindings.Count];
+            i = 0;
+            nuint dataIndex = 0;
+
+            foreach ((NeslField field, uint binding) in result.Bindings) {
+                VulkanMaterialProperty property = new VulkanMaterialProperty(
+                    null!, i, MaterialPropertyType.Buffer, field.Name, binding, dataIndex
+                );
+                dataIndex += (nuint)property.UpdateTemplateDataSize;
+                Properties[i++] = (field, property);
+            }
+        }
     }
 
 }

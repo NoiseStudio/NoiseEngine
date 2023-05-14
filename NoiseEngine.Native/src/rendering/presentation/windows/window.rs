@@ -86,7 +86,7 @@ pub struct WindowWindows {
 }
 
 impl WindowWindows {
-    pub fn new(
+    pub fn create(
         id: u64, title: String, width: u32, height: u32, settings: WindowSettings
     ) -> Result<Arc<dyn Window>, PlatformUniversalError> {
         let mut result = unsafe { mem::zeroed() };
@@ -360,6 +360,7 @@ impl WindowWindows {
         unsafe { &*self.data.get() }
     }
 
+    #[allow(clippy::mut_from_ref)]
     fn data_mut(&self) -> &mut WindowWindowsData {
         unsafe { &mut *self.data.get() }
     }
@@ -420,10 +421,9 @@ impl WindowWindows {
             WindowWindowsThreadTask::Dispose => self.dispose_thread(),
         };
 
-        match signal {
-            Some(s) => s.set(),
-            None => (),
-        };
+        if let Some(s) = signal {
+            s.set();
+        }
     }
 
     fn pool_events_thread(&self) {
@@ -461,10 +461,9 @@ impl WindowWindows {
         self.hide_thread();
 
         while let Some((_, signal, _)) = self.thread_task_queue.pop() {
-            match signal {
-                Some(s) => s.set(),
-                None => (),
-            };
+            if let Some(s) = signal {
+                s.set();
+            }
         }
     }
 }
@@ -472,12 +471,11 @@ impl WindowWindows {
 impl Drop for WindowWindows {
     fn drop(&mut self) {
         self.thread_end_reset_event.set();
-        match self.thread_join_handle.take() {
-            Some(j) => match j.join() {
+        if let Some(j) = self.thread_join_handle.take() {
+            match j.join() {
                 Ok(_) => (),
                 Err(_) => log::error("Window thread has panicked."),
-            },
-            None => (),
+            }
         }
 
         if unsafe { DestroyWindow(self.h_wnd) } != 0 {
@@ -651,10 +649,9 @@ unsafe extern "system" fn window_procedure(
         },
         // WM_CLOSE
         0x0010 => {
-            match window.thread_last_signaler.take() {
-                Some(s) => s.set(),
-                None => (),
-            };
+            if let Some(s) = window.thread_last_signaler.take() {
+                s.set();
+            }
 
             (event_handler.user_closed)(window.id);
         },

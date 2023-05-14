@@ -9,6 +9,7 @@ use crate::{
 
 use super::{application_info::VulkanApplicationInfo, device_value::VulkanDeviceValue};
 
+#[allow(clippy::redundant_allocation)]
 #[repr(C)]
 struct VulkanInstanceCreateReturnValue {
     pub handle: Box<Arc<VulkanInstance>>,
@@ -38,6 +39,7 @@ extern "C" fn rendering_vulkan_instance_interop_create(
     }
 }
 
+#[allow(clippy::redundant_allocation)]
 #[no_mangle]
 extern "C" fn rendering_vulkan_instance_interop_destroy(_handle: Box<Arc<VulkanInstance>>) {
 }

@@ -53,7 +53,7 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
     }
 
     [Fact]
-    public void Clone() {
+    public void ParrarelExecution() {
         float[] readData = new float[1];
         float[] readDataB = new float[1];
 
@@ -66,12 +66,13 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
                 device, GraphicsBufferUsage.TransferSource | GraphicsBufferUsage.Storage, 1
             );
 
-            ComputeShader shaderA = new ComputeShader(device, ShaderType);
-            shaderA.GetProperty(ShaderBufferA)!.SetBuffer(bufferAA);
-            shaderA.GetProperty(ShaderBufferB)!.SetBuffer(bufferAB);
+            ComputeShader shader = new ComputeShader(device, ShaderType);
+            ComputeMaterial materialA = new ComputeMaterial(shader);
+            materialA.GetProperty(ShaderBufferA)!.SetBuffer(bufferAA);
+            materialA.GetProperty(ShaderBufferB)!.SetBuffer(bufferAB);
 
             GraphicsCommandBuffer commandBuffer = Fixture.GetCommandBuffer(device);
-            commandBuffer.Dispatch(shaderA.GetKernel(ShaderMethodA)!, Vector3<uint>.One);
+            commandBuffer.Dispatch(shader.GetKernel(ShaderMethodA)!, materialA, Vector3<uint>.One);
             commandBuffer.Execute();
             commandBuffer.Clear();
 
@@ -83,12 +84,12 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
             Assert.Equal(new float[] { ValueAB }, readData);
 
             // Clone.
-            ComputeShader shaderB = shaderA.Clone();
+            ComputeMaterial materialB = new ComputeMaterial(shader);
 
             // Dispatch without setting properties.
-            commandBuffer.Dispatch(shaderA.GetKernel(ShaderMethodA)!, Vector3<uint>.One);
+            commandBuffer.Dispatch(shader.GetKernel(ShaderMethodA)!, materialA, Vector3<uint>.One);
             Assert.Throws<InvalidOperationException>(
-                () => commandBuffer.Dispatch(shaderB.GetKernel(ShaderMethodB)!, Vector3<uint>.One)
+                () => commandBuffer.Dispatch(shader.GetKernel(ShaderMethodB)!, materialB, Vector3<uint>.One)
             );
             commandBuffer.Execute();
             commandBuffer.Clear();
@@ -107,11 +108,11 @@ public class ComputeShaderTest : GraphicsTestEnvironment {
                 device, GraphicsBufferUsage.TransferSource | GraphicsBufferUsage.Storage, 1
             );
 
-            shaderB.GetProperty(ShaderBufferA)!.SetBuffer(bufferBA);
-            shaderB.GetProperty(ShaderBufferB)!.SetBuffer(bufferBB);
+            materialB.GetProperty(ShaderBufferA)!.SetBuffer(bufferBA);
+            materialB.GetProperty(ShaderBufferB)!.SetBuffer(bufferBB);
 
-            commandBuffer.Dispatch(shaderA.GetKernel(ShaderMethodA)!, Vector3<uint>.One);
-            commandBuffer.Dispatch(shaderB.GetKernel(ShaderMethodB)!, Vector3<uint>.One);
+            commandBuffer.Dispatch(shader.GetKernel(ShaderMethodA)!, materialA, Vector3<uint>.One);
+            commandBuffer.Dispatch(shader.GetKernel(ShaderMethodB)!, materialB, Vector3<uint>.One);
             commandBuffer.Execute();
             commandBuffer.Clear();
 

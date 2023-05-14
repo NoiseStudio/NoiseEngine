@@ -18,14 +18,14 @@ impl MemoryAllocator {
         physical_device: vk::PhysicalDevice,
     ) -> Result<Self, VulkanUniversalError> {
         let props = unsafe {
-            gpu_alloc_ash::device_properties(&instance.inner(), 0, physical_device)?
+            gpu_alloc_ash::device_properties(instance.inner(), 0, physical_device)?
         };
 
         // TODO: implement best suitable config.
         let config = Config::i_am_prototyping();
 
         Ok(MemoryAllocator {
-            device: device.clone(),
+            device,
             inner: Mutex::new(gpu_alloc::GpuAllocator::new(config, props))
         })
     }

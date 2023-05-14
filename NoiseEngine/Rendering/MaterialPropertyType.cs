@@ -1,5 +1,5 @@
 ﻿namespace NoiseEngine.Rendering;
 
-public enum ShaderPropertyType {
+public enum MaterialPropertyType {
     Buffer
 }

@@ -1,49 +1,40 @@
 ﻿using NoiseEngine.Nesl;
 using NoiseEngine.Rendering.Exceptions;
 using NoiseEngine.Rendering.Vulkan;
+using System.Collections.Generic;
 
 namespace NoiseEngine.Rendering;
 
 public class ComputeShader : ICommonShader {
 
+    private readonly Dictionary<NeslMethod, ComputeKernel> kernels;
+
     public GraphicsDevice Device { get; }
     public NeslType ClassData { get; }
 
-    internal CommonShaderDelegationOld Delegation { get; }
+    internal CommonShaderDelegation Delegation { get; }
 
     ShaderType ICommonShader.Type => ShaderType.Compute;
+    CommonShaderDelegation ICommonShader.Delegation => Delegation;
 
     public ComputeShader(GraphicsDevice device, NeslType classData, ShaderSettings settings) {
         Device = device;
         ClassData = classData;
 
-        Delegation = device.Instance.Api switch {
-            GraphicsApi.Vulkan => new VulkanCommonShaderDelegationOld(this, settings),
-            _ => throw new GraphicsApiNotSupportedException(device.Instance.Api),
-        };
+        switch (device.Instance.Api) {
+            case GraphicsApi.Vulkan:
+                VulkanComputeShaderDelegation d = new VulkanComputeShaderDelegation(this, settings);
+                kernels = d.Kernels;
+                Delegation = d;
+                break;
+            default:
+                throw new GraphicsApiNotSupportedException(device.Instance.Api);
+        }
     }
 
     public ComputeShader(GraphicsDevice device, NeslType classData) : this(
         device, classData, ShaderSettings.Conformant
     ) {
-    }
-
-    private ComputeShader(GraphicsDevice device, NeslType classData, CommonShaderDelegationOld delegation) {
-        Device = device;
-        ClassData = classData;
-        Delegation = delegation.Clone(this);
-    }
-
-    /// <summary>
-    /// Tries return <see cref="ShaderProperty"/> created from given <paramref name="neslProperty"/>.
-    /// </summary>
-    /// <param name="neslProperty">Origin <see cref="NeslField"/> of returned <see cref="ShaderProperty"/>.</param>
-    /// <returns>
-    /// <see cref="ShaderProperty"/> when this <see cref="ComputeShader"/> contains given
-    /// <paramref name="neslProperty"/>; otherwise null.
-    /// </returns>
-    public ShaderProperty? GetProperty(NeslField neslProperty) {
-        return Delegation.Properties.TryGetValue(neslProperty, out ShaderProperty? property) ? property : null;
     }
 
     /// <summary>
@@ -55,15 +46,7 @@ public class ComputeShader : ICommonShader {
     /// <paramref name="neslMethod"/>; otherwise null.
     /// </returns>
     public ComputeKernel? GetKernel(NeslMethod neslMethod) {
-        return Delegation.Kernels!.TryGetValue(neslMethod, out ComputeKernel? kernel) ? kernel : null;
-    }
-
-    /// <summary>
-    /// Clones this <see cref="ComputeShader"/>.
-    /// </summary>
-    /// <returns>Clone of this <see cref="ComputeShader"/> with no properties specified.</returns>
-    public ComputeShader Clone() {
-        return new ComputeShader(Device, ClassData, Delegation);
+        return kernels.TryGetValue(neslMethod, out ComputeKernel? kernel) ? kernel : null;
     }
 
 }

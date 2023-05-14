@@ -4,6 +4,7 @@ use ash::vk;
 
 use crate::{interop::prelude::{InteropResult, ResultError, ResultErrorKind, InteropArray}, rendering::vulkan::library};
 
+#[allow(clippy::redundant_allocation)]
 #[no_mangle]
 extern "C" fn rendering_vulkan_library_interop_create() -> InteropResult<Box<Arc<ash::Entry>>> {
     match library::create() {
@@ -14,6 +15,7 @@ extern "C" fn rendering_vulkan_library_interop_create() -> InteropResult<Box<Arc
     }
 }
 
+#[allow(clippy::redundant_allocation)]
 #[no_mangle]
 extern "C" fn rendering_vulkan_library_interop_destroy(_handle: Box<Arc<ash::Entry>>) {
 }

@@ -1,40 +1,36 @@
 ﻿using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
-using System;
+using NoiseEngine.Nesl.Emit.Attributes;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace NoiseEngine.Rendering.Vulkan;
 
 internal class VulkanComputeShaderDelegation : VulkanCommonShaderDelegation {
 
-    public NeslMethod Vertex { get; }
-    public NeslMethod Fragment { get; }
-    public VertexInputDescription VertexDescription { get; }
+    public Dictionary<NeslMethod, ComputeKernel> Kernels { get; } =
+        new Dictionary<NeslMethod, ComputeKernel>();
 
     public VulkanComputeShaderDelegation(ICommonShader shader, ShaderSettings settings) : base(Construct(
-        shader, settings, out NeslMethod vertex, out NeslMethod fragment, out SpirVCompilationResult result
+        shader, settings, out NeslMethod[] kernels, out SpirVCompilationResult result
     ), result) {
-        Vertex = vertex;
-        Fragment = fragment;
-        VertexDescription = result.VertexInputDesciptions[Vertex];
+        foreach (NeslMethod kernel in kernels) {
+            ComputePipeline pipeline = new ComputePipeline(PipelineLayout, new PipelineShaderStage(
+                ShaderStageFlags.Compute, Module, kernel.Guid.ToString()
+            ), PipelineCreateFlags.None);
+            Kernels.Add(kernel, new VulkanComputeKernel(kernel, (ComputeShader)shader, pipeline));
+        }
     }
 
     private static ICommonShader Construct(
-        ICommonShader shader, ShaderSettings settings, out NeslMethod vertex, out NeslMethod fragment,
-        out SpirVCompilationResult result
+        ICommonShader shader, ShaderSettings settings, out NeslMethod[] kernels, out SpirVCompilationResult result
     ) {
-        vertex = shader.ClassData.GetMethod("Vertex") ?? throw new NullReferenceException();
-        fragment = shader.ClassData.GetMethod("Fragment") ?? throw new NullReferenceException();
+        kernels = shader.ClassData.Methods.Where(x => x.Attributes.HasAnyAttribute(nameof(KernelAttribute))).ToArray();
 
-        /*System.IO.File.WriteAllBytes("tak.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
-            new NeslEntryPoint(vertex, ExecutionModel.Vertex),
-            //new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
-        }, settings).GetCode());*/
-
-        result = SpirVCompiler.Compile(new NeslEntryPoint[] {
-            new NeslEntryPoint(vertex, ExecutionModel.Vertex),
-            new NeslEntryPoint(fragment, ExecutionModel.Fragment),
-        }, settings);
+        result = SpirVCompiler.Compile(
+            kernels.Select(x => new NeslEntryPoint(x, ExecutionModel.GLCompute)), settings
+        );
 
         return shader;
     }

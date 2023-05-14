@@ -14,7 +14,7 @@ extern "C" fn rendering_presentation_window_interop_create(
     id: u64, title: InteropString, width: u32, height: u32, settings: WindowSettings
 ) -> InteropResult<Box<Arc<dyn Window>>> {
     #[cfg(target_os = "windows")]
-    match crate::rendering::presentation::windows::window::WindowWindows::new(
+    match crate::rendering::presentation::windows::window::WindowWindows::create(
         id, String::from(title), width, height, settings
     ) {
         Ok(w) => return InteropResult::with_ok(Box::new(w)),

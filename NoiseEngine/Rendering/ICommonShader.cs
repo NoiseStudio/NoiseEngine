@@ -7,5 +7,6 @@ internal interface ICommonShader {
     public GraphicsDevice Device { get; }
     public NeslType ClassData { get; }
     public ShaderType Type { get; }
+    public CommonShaderDelegation Delegation { get; }
 
 }

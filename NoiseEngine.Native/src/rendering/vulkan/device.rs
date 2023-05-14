@@ -212,7 +212,7 @@ impl<'init> VulkanDeviceInitialized<'init> {
     pub fn get_family(&self, support: VulkanDeviceSupport) -> Result<&VulkanQueueFamily<'init>, InvalidOperationError> {
         for family in &*self.queue_families {
             if support.is_suitable_to(&family.support) {
-                return Ok(&family);
+                return Ok(family);
             }
         }
 
@@ -255,13 +255,10 @@ impl<'fam> VulkanQueueFamily<'fam> {
     }
 
     pub fn try_get_queue(&self) -> Option<VulkanQueue<'fam, '_>> {
-        match self.queues.pop() {
-            Some(queue) => Some(VulkanQueue {
-                family: self,
-                queue
-            }),
-            None => None
-        }
+        self.queues.pop().map(|queue| VulkanQueue {
+            family: self,
+            queue
+        })
     }
 
     pub fn get_queue(&self) -> VulkanQueue<'fam, '_> {

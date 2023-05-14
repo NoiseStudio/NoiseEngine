@@ -52,10 +52,11 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
                 buffer.SetData(initialValues);
 
             ComputeShader shader = new ComputeShader(device, shaderType);
-            shader.GetProperty(shaderOutput)!.SetBuffer(buffer);
+            ComputeMaterial material = new ComputeMaterial(shader);
+            material.GetProperty(shaderOutput)!.SetBuffer(buffer);
 
             GraphicsCommandBuffer commandBuffer = fixture.GetCommandBuffer(device);
-            commandBuffer.Dispatch(shader.GetKernel(shaderMethod)!, Vector3<uint>.One);
+            commandBuffer.Dispatch(shader.GetKernel(shaderMethod)!, material, Vector3<uint>.One);
             commandBuffer.Execute();
             commandBuffer.Clear();
 

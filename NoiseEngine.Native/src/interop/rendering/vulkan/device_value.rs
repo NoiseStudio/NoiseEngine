@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use crate::{interop::prelude::InteropString, rendering::vulkan::device::VulkanDevice};
 
+#[allow(clippy::redundant_allocation)]
 #[repr(C)]
 pub(crate) struct VulkanDeviceValue<'init> {
     pub name: InteropString,

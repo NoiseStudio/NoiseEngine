@@ -14,6 +14,7 @@ public class Shader : ICommonShader {
     internal CommonShaderDelegation Delegation { get; }
 
     ShaderType ICommonShader.Type => ShaderType.VertexFragment;
+    CommonShaderDelegation ICommonShader.Delegation => Delegation;
 
     public Shader(GraphicsDevice device, NeslType classData, ShaderSettings settings) {
         device.Initialize();
