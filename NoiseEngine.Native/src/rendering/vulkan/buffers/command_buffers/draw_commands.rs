@@ -30,7 +30,7 @@ pub fn draw_mesh(
         unsafe {
             vulkan_device.cmd_push_constants(
                 buffer.inner(), buffer.attached_pipeline_layout().0,
-                vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
+                vk::ShaderStageFlags::VERTEX,
                 0, push_constants_data
             );
         }
