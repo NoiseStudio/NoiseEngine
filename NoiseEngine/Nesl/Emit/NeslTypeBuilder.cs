@@ -9,9 +9,6 @@ namespace NoiseEngine.Nesl.Emit;
 
 public class NeslTypeBuilder : NeslType {
 
-    private readonly Dictionary<uint, NeslField> idToField = new Dictionary<uint, NeslField>();
-    private readonly Dictionary<NeslField, uint> fieldToId = new Dictionary<NeslField, uint>();
-
     private readonly ConcurrentBag<NeslAttribute> attributes = new ConcurrentBag<NeslAttribute>();
     private readonly List<NeslGenericTypeParameterBuilder> genericTypeParameters =
         new List<NeslGenericTypeParameterBuilder>();
@@ -147,22 +144,6 @@ public class NeslTypeBuilder : NeslType {
         }
 
         AddMethodToCollection(method);
-    }
-
-    internal uint GetLocalFieldId(NeslField field) {
-        lock (idToField) {
-            if (!fieldToId.TryGetValue(field, out uint id)) {
-                id = (uint)idToField.Count;
-                idToField.Add(id, field);
-                fieldToId.Add(field, id);
-            }
-
-            return id;
-        }
-    }
-
-    internal override NeslField GetField(uint localFieldId) {
-        return idToField[localFieldId];
     }
 
     private bool TryAddMethodToCollection(NeslMethodBuilder method) {

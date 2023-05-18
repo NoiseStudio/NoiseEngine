@@ -3,6 +3,7 @@ using NoiseEngine.Nesl.CompilerTools;
 using NoiseEngine.Nesl.CompilerTools.Generics;
 using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Nesl.Serialization;
+using NoiseEngine.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ using System.Threading;
 
 namespace NoiseEngine.Nesl;
 
-public abstract class NeslMethod : INeslGenericTypeParameterOwner {
+public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable<NeslMethod> {
 
     private ConcurrentDictionary<NeslType[], Lazy<NeslMethod>>? genericMakedMethods;
 
@@ -58,6 +59,61 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
         ParameterTypes = parameterTypes;
 
         Guid = Guid.NewGuid();
+    }
+
+    /// <summary>
+    /// Creates new <see cref="NeslMethod"/> with data from <paramref name="reader"/>.
+    /// </summary>
+    /// <param name="reader"><see cref="SerializationReader"/>.</param>
+    /// <returns>New <see cref="NeslMethod"/> with data from <paramref name="reader"/>.</returns>
+    public static NeslMethod Deserialize(SerializationReader reader) {
+        NeslAssembly assembly = reader.GetFromStorage<NeslAssembly>();
+        return new SerializedNeslMethod(
+            assembly.GetType(reader.ReadUInt64()),
+            reader.ReadString(),
+            reader.ReadBool() ? assembly.GetType(reader.ReadUInt64()) : null,
+            reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray(),
+            reader.ReadEnumerable<NeslAttribute>().ToArray(),
+            reader.ReadEnumerable<NeslAttribute>().ToArray(),
+            DeserializeParameterAttributes(reader).ToArray(),
+            reader.ReadEnumerableUInt64().Select(assembly.GetType).Cast<NeslGenericTypeParameter>().ToArray(),
+            reader.ReadObject<IlContainer>()
+        );
+    }
+
+    private static IEnumerable<IEnumerable<NeslAttribute>> DeserializeParameterAttributes(SerializationReader reader) {
+        int length = reader.ReadInt32();
+        for (int i = 0; i < length; i++)
+            yield return reader.ReadEnumerable<NeslAttribute>().ToArray();
+    }
+
+    /// <summary>
+    /// Serializes this <see cref="NeslMethod"/> and writes it to the <paramref name="writer"/>.
+    /// </summary>
+    /// <param name="writer"><see cref="SerializationWriter"/>.</param>
+    public void Serialize(SerializationWriter writer) {
+        writer.WriteUInt64(Assembly.GetLocalTypeId(Type));
+        writer.WriteString(Name);
+
+        if (ReturnType is null) {
+            writer.WriteBool(false);
+        } else {
+            writer.WriteBool(true);
+            writer.WriteUInt64(Assembly.GetLocalTypeId(ReturnType));
+        }
+
+        writer.WriteEnumerable(ParameterTypes.Select(Assembly.GetLocalTypeId));
+
+        writer.WriteEnumerable(Attributes);
+        writer.WriteEnumerable(ReturnValueAttributes);
+
+        writer.WriteInt32(ParameterAttributes.Count);
+        foreach (IEnumerable<NeslAttribute> parameterAttribute in ParameterAttributes)
+            writer.WriteEnumerable(parameterAttribute);
+
+        writer.WriteEnumerable(GenericTypeParameters.Select(Assembly.GetLocalTypeId));
+
+        writer.WriteObject(IlContainer);
     }
 
     /// <summary>

@@ -6,6 +6,7 @@ using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System;
+using System.Collections.Generic;
 
 namespace NoiseEngine.Tests.Nesl;
 
@@ -14,35 +15,9 @@ public class NeslCompilerTest : ApplicationTestEnvironment {
     public NeslCompilerTest(ApplicationFixture fixture) : base(fixture) {
     }
 
-    [Fact]
-    public void Compile() {
-        string path = "Path";
-        NeslAssembly assembly = NeslCompiler.Compile(nameof(Compile), "", new NeslFile[] { new NeslFile(path, @"
-            using System;
-
-            struct VertexData {
-                f32v3 Position;
-                f32v3 Color;
-            }
-
-            struct FragmentData {
-                f32v4 Position;
-                f32v4 Color;
-            }
-
-            FragmentData Vertex(VertexData data) {
-                return new FragmentData() {
-                    Position = Vertex.ObjectToClipPos(data.Position),
-                    Color = new f32v4(data.Color, data.Color.X)
-                };
-            }
-
-            f32v4 Fragment(FragmentData data) {
-                return data.Color;
-            }
-        ") });
-
-        // Executing.
+    internal static void ExecuteVector3PositionVector3Color(
+        IEnumerable<GraphicsDevice> graphicsDevices, NeslAssembly assembly, string typeName
+    ) {
         Span<Color32> buffer = stackalloc Color32[16 * 16];
 
         ReadOnlySpan<(Vector3<float>, Vector3<float>)> vertices = stackalloc (Vector3<float>, Vector3<float>)[] {
@@ -59,8 +34,8 @@ public class NeslCompilerTest : ApplicationTestEnvironment {
             0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6
         };
 
-        foreach (GraphicsDevice device in GraphicsDevices) {
-            Shader shader = new Shader(device, assembly.GetType(path)!);
+        foreach (GraphicsDevice device in graphicsDevices) {
+            Shader shader = new Shader(device, assembly.GetType(typeName)!);
 
             Texture2D texture = new Texture2D(
                 device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16, TextureFormat.R8G8B8A8_UNORM
@@ -95,6 +70,37 @@ public class NeslCompilerTest : ApplicationTestEnvironment {
                 Assert.Equal(Color32.Green, buffer[i + 12]);
             }
         }
+    }
+
+    [Fact]
+    public void Compile() {
+        string path = "Path";
+        NeslAssembly assembly = NeslCompiler.Compile(nameof(Compile), "", new NeslFile[] { new NeslFile(path, @"
+            using System;
+
+            struct VertexData {
+                f32v3 Position;
+                f32v3 Color;
+            }
+
+            struct FragmentData {
+                f32v4 Position;
+                f32v4 Color;
+            }
+
+            FragmentData Vertex(VertexData data) {
+                return new FragmentData() {
+                    Position = Vertex.ObjectToClipPos(data.Position),
+                    Color = new f32v4(data.Color, data.Color.X)
+                };
+            }
+
+            f32v4 Fragment(FragmentData data) {
+                return data.Color;
+            }
+        ") });
+
+        ExecuteVector3PositionVector3Color(GraphicsDevices, assembly, path);
     }
 
 }

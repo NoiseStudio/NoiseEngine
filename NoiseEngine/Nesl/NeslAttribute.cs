@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Nesl.Serialization;
+using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -6,7 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace NoiseEngine.Nesl;
 
-public abstract class NeslAttribute {
+public abstract class NeslAttribute : ISerializable<NeslAttribute> {
 
     public string FullName { get; init; }
     public AttributeTargets Targets { get; init; }
@@ -23,12 +24,24 @@ public abstract class NeslAttribute {
     /// <param name="targets">Attribute targets.</param>
     /// <param name="bytes">Bytes of attribute tail.</param>
     /// <returns><see cref="NeslAttribute"/> with given parameters.</returns>
-    public static NeslAttribute Create(string fullName, AttributeTargets targets, byte[] bytes) {
+    public static NeslAttribute Create(string fullName, AttributeTargets targets, IEnumerable<byte>? bytes) {
         return new SerializedNeslAttribute {
             FullName = fullName,
             Targets = targets,
-            Bytes = bytes.ToImmutableArray()
+            Bytes = bytes?.ToImmutableArray() ?? ImmutableArray<byte>.Empty
         };
+    }
+
+    /// <summary>
+    /// Creates new <see cref="NeslAttribute"/> with data from <paramref name="reader"/>.
+    /// </summary>
+    /// <param name="reader"><see cref="SerializationReader"/>.</param>
+    /// <returns>New <see cref="NeslAttribute"/> with data from <paramref name="reader"/>.</returns>
+    public static NeslAttribute Deserialize(SerializationReader reader) {
+        return Create(
+            reader.ReadString(), (AttributeTargets)reader.ReadUInt32(),
+            reader.ReadBool() ? reader.ReadEnumerableUInt8() : null
+        );
     }
 
     /// <summary>
@@ -150,6 +163,22 @@ public abstract class NeslAttribute {
     /// </returns>
     protected bool CheckIfValidBytesLength(int expectedLength) {
         return (expectedLength == -1 && Bytes.IsDefault) || (Bytes.Length == expectedLength);
+    }
+
+    /// <summary>
+    /// Serializes this <see cref="NeslAttribute"/> and writes it to the <paramref name="writer"/>.
+    /// </summary>
+    /// <param name="writer"><see cref="SerializationWriter"/>.</param>
+    public void Serialize(SerializationWriter writer) {
+        writer.WriteString(FullName);
+        writer.WriteUInt32((uint)Targets);
+
+        if (Bytes.IsDefault) {
+            writer.WriteBool(false);
+        } else {
+            writer.WriteBool(true);
+            writer.WriteEnumerable(Bytes);
+        }
     }
 
 }

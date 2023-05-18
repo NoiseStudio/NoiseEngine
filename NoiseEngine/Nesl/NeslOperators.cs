@@ -2,14 +2,14 @@
 
 public static class NeslOperators {
 
-    public const string Phantom = "'phantom";
+    public const string Phantom = "'ph";
 
-    public const string PropertyGet = "'propertyGet";
-    public const string PropertySet = "'propertySet";
+    public const string PropertyGet = "'pG";
+    public const string PropertySet = "'pS";
 
-    public const string IndexerGet = "'indexerGet";
-    public const string IndexerSet = "'indexerSet";
+    public const string IndexerGet = "'iG";
+    public const string IndexerSet = "'iS";
 
-    public const string Constructor = "'constructor";
+    public const string Constructor = "'c";
 
 }
