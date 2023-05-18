@@ -9,6 +9,7 @@ namespace NoiseEngine.Serialization;
 public class SerializationReader : IReadOnlyList<byte> {
 
     private readonly SerializationReaderDelegation delegation;
+    private Dictionary<object, object>? storage;
 
     public int Position { get; set; }
 
@@ -29,6 +30,28 @@ public class SerializationReader : IReadOnlyList<byte> {
 
     public SerializationReader(IEnumerable<byte> data, bool isLittleEndian = true)
         : this(data.ToArray(), isLittleEndian) {
+    }
+
+    /// <summary>
+    /// Returns T object from storage using type of T as key.
+    /// </summary>
+    /// <typeparam name="T">Type of object from storage.</typeparam>
+    /// <returns>T object from storage.</returns>
+    /// <exception cref="InvalidOperationException">Storage is not set.</exception>
+    public T GetFromStorage<T>() {
+        if (storage is null)
+            throw new InvalidOperationException("Storage is not set.");
+        return (T)storage[typeof(T)];
+    }
+
+    /// <summary>
+    /// Adds object to storage with <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key">Key of the object.</param>
+    /// <param name="obj">Object to store.</param>
+    public void AddToStorage(object key, object obj) {
+        storage ??= new Dictionary<object, object>();
+        storage.Add(key, obj);
     }
 
     /// <summary>
@@ -55,6 +78,47 @@ public class SerializationReader : IReadOnlyList<byte> {
         Span<byte> span = length <= 1024 ? stackalloc byte[length] : new byte[length];
         ReadBytes(span);
         return Encoding.UTF8.GetString(span);
+    }
+
+    /// <summary>
+    /// Reads <see cref="IEnumerable{T}"/> of <see cref="byte"/>s from this <see cref="SerializationReader"/>.
+    /// </summary>
+    /// <returns>Read <see cref="IEnumerable{T}"/> of <see cref="byte"/>s.</returns>
+    public IEnumerable<byte> ReadEnumerableUInt8() {
+        int length = ReadInt32();
+        for (int i = 0; i < length; i++)
+            yield return ReadUInt8();
+    }
+
+    /// <summary>
+    /// Reads <see cref="IEnumerable{T}"/> of <see cref="ulong"/>s from this <see cref="SerializationReader"/>.
+    /// </summary>
+    /// <returns>Read <see cref="IEnumerable{T}"/> of <see cref="ulong"/>s.</returns>
+    public IEnumerable<ulong> ReadEnumerableUInt64() {
+        int length = ReadInt32();
+        for (int i = 0; i < length; i++)
+            yield return ReadUInt64();
+    }
+
+    /// <summary>
+    /// Reads <see cref="IEnumerable{T}"/> of <see cref="string"/>s from this <see cref="SerializationReader"/>.
+    /// </summary>
+    /// <returns>Read <see cref="IEnumerable{T}"/> of <see cref="string"/>s.</returns>
+    public IEnumerable<string> ReadEnumerableString() {
+        int length = ReadInt32();
+        for (int i = 0; i < length; i++)
+            yield return ReadString();
+    }
+
+    /// <summary>
+    /// Reads <see cref="IEnumerable{T}"/> from this <see cref="SerializationReader"/>.
+    /// </summary>
+    /// <typeparam name="T">Type of read data.</typeparam>
+    /// <returns>Read <see cref="IEnumerable{T}"/>.</returns>
+    public IEnumerable<T> ReadEnumerable<T>() where T : ISerializable<T> {
+        int length = ReadInt32();
+        for (int i = 0; i < length; i++)
+            yield return ReadObject<T>();
     }
 
     /// <summary>
@@ -187,6 +251,15 @@ public class SerializationReader : IReadOnlyList<byte> {
     /// <returns>Read <see cref="double"/>.</returns>
     public double ReadFloat64() {
         return delegation.ReadFloat64();
+    }
+
+    /// <summary>
+    /// Reads T from this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <typeparam name="T">Type of entered data.</typeparam>
+    /// <returns>Read T.</returns>
+    public T ReadObject<T>() where T : ISerializable<T> {
+        return T.Deserialize(this);
     }
 
     /// <summary>

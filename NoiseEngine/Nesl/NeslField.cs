@@ -1,10 +1,13 @@
 ﻿using NoiseEngine.Nesl.Emit.Attributes;
+using NoiseEngine.Nesl.Serialization;
+using NoiseEngine.Serialization;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace NoiseEngine.Nesl;
 
-public abstract class NeslField {
+public abstract class NeslField : ISerializable<NeslField> {
 
     public abstract IEnumerable<NeslAttribute> Attributes { get; }
     public abstract IReadOnlyList<byte>? DefaultData { get; }
@@ -13,6 +16,7 @@ public abstract class NeslField {
     public string Name { get; }
     public NeslType FieldType { get; }
 
+    public NeslAssembly Assembly => ParentType.Assembly;
     public bool IsStatic => Attributes.HasAnyAttribute(nameof(StaticAttribute));
 
     internal uint Id {
@@ -32,6 +36,40 @@ public abstract class NeslField {
         ParentType = parentType;
         Name = name;
         FieldType = fieldType;
+    }
+
+    /// <summary>
+    /// Creates new <see cref="NeslField"/> with data from <paramref name="reader"/>.
+    /// </summary>
+    /// <param name="reader"><see cref="SerializationReader"/>.</param>
+    /// <returns>New <see cref="NeslField"/> with data from <paramref name="reader"/>.</returns>
+    public static NeslField Deserialize(SerializationReader reader) {
+        NeslAssembly assembly = reader.GetFromStorage<NeslAssembly>();
+        return new SerializedNeslField(
+            assembly.GetType(reader.ReadUInt64()),
+            reader.ReadString(),
+            assembly.GetType(reader.ReadUInt64()),
+            reader.ReadEnumerable<NeslAttribute>().ToArray(),
+            reader.ReadBool() ? reader.ReadEnumerableUInt8().ToArray() : null
+        );
+    }
+
+    /// <summary>
+    /// Serializes this <see cref="NeslField"/> and writes it to the <paramref name="writer"/>.
+    /// </summary>
+    /// <param name="writer"><see cref="SerializationWriter"/>.</param>
+    public void Serialize(SerializationWriter writer) {
+        writer.WriteUInt64(Assembly.GetLocalTypeId(ParentType));
+        writer.WriteString(Name);
+        writer.WriteUInt64(Assembly.GetLocalTypeId(FieldType));
+        writer.WriteEnumerable(Attributes);
+
+        if (DefaultData is null) {
+            writer.WriteBool(false);
+        } else {
+            writer.WriteBool(true);
+            writer.WriteEnumerable(DefaultData);
+        }
     }
 
 }

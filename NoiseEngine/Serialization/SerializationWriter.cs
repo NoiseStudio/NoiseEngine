@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace NoiseEngine.Serialization;
@@ -60,6 +62,80 @@ public class SerializationWriter : IReadOnlyList<byte> {
         byte[] bytes = Encoding.UTF8.GetBytes(obj);
         WriteInt32(bytes.Length);
         delegation.Data.AddRange(bytes);
+    }
+
+    /// <summary>
+    /// Writes <paramref name="enumerable"/> to this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <param name="enumerable"><see cref="IEnumerable{T}"/> of <see cref="byte"/>s.</param>
+    public void WriteEnumerable(IEnumerable<byte> enumerable) {
+        byte[] array = enumerable.ToArray();
+        WriteInt32(array.Length);
+        delegation.Data.AddRange(array);
+    }
+
+    /// <summary>
+    /// Writes <paramref name="enumerable"/> to this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <param name="enumerable"><see cref="IEnumerable{T}"/> of <see cref="string"/>s.</param>
+    public void WriteEnumerable(IEnumerable<string> enumerable) {
+        int start = delegation.Data.Count;
+        WriteInt32(0);
+
+        int i = 0;
+        foreach (string obj in enumerable) {
+            WriteString(obj);
+            i++;
+        }
+
+        Span<byte> span = AsSpan(start);
+        if (IsLittleEndian)
+            BinaryPrimitives.WriteInt32LittleEndian(span, i);
+        else
+            BinaryPrimitives.WriteInt32BigEndian(span, i);
+    }
+
+    /// <summary>
+    /// Writes <paramref name="enumerable"/> to this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <param name="enumerable"><see cref="IEnumerable{T}"/> of <see cref="ulong"/>s.</param>
+    public void WriteEnumerable(IEnumerable<ulong> enumerable) {
+        int start = delegation.Data.Count;
+        WriteInt32(0);
+
+        int i = 0;
+        foreach (ulong obj in enumerable) {
+            WriteUInt64(obj);
+            i++;
+        }
+
+        Span<byte> span = AsSpan(start);
+        if (IsLittleEndian)
+            BinaryPrimitives.WriteInt32LittleEndian(span, i);
+        else
+            BinaryPrimitives.WriteInt32BigEndian(span, i);
+    }
+
+    /// <summary>
+    /// Converts <paramref name="enumerable"/> to bytes and writes it to this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <typeparam name="T">Type of entered data.</typeparam>
+    /// <param name="enumerable">T values.</param>
+    public void WriteEnumerable<T>(IEnumerable<T> enumerable) where T : ISerializable {
+        int start = delegation.Data.Count;
+        WriteInt32(0);
+
+        int i = 0;
+        foreach (T obj in enumerable) {
+            WriteObject(obj);
+            i++;
+        }
+
+        Span<byte> span = AsSpan(start);
+        if (IsLittleEndian)
+            BinaryPrimitives.WriteInt32LittleEndian(span, i);
+        else
+            BinaryPrimitives.WriteInt32BigEndian(span, i);
     }
 
     /// <summary>
@@ -174,6 +250,23 @@ public class SerializationWriter : IReadOnlyList<byte> {
     /// <param name="obj"><see cref="double"/> value.</param>
     public void WriteFloat64(double obj) {
         delegation.WriteFloat64(obj);
+    }
+
+    /// <summary>
+    /// Converts T to bytes and writes it to this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <typeparam name="T">Type of entered data.</typeparam>
+    /// <param name="obj">T value.</param>
+    public void WriteObject<T>(T obj) where T : ISerializable {
+        obj.Serialize(this);
+    }
+
+    /// <summary>
+    /// Converts <see cref="ISerializable"/> to bytes and writes it to this <see cref="SerializationWriter"/>.
+    /// </summary>
+    /// <param name="obj"><see cref="ISerializable"/> value.</param>
+    public void WriteObject(ISerializable obj) {
+        obj.Serialize(this);
     }
 
     /// <summary>

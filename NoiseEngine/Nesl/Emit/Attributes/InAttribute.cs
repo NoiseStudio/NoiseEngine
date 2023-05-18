@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NoiseEngine.Nesl.Emit.Attributes;
+﻿namespace NoiseEngine.Nesl.Emit.Attributes;
 
 public class InAttribute : NeslAttribute {
 

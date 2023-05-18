@@ -2,6 +2,7 @@
 using NoiseEngine.Nesl.CompilerTools.Generics;
 using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Nesl.Serialization;
+using NoiseEngine.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -30,8 +31,11 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     public string FullNameWithAssembly => $"{Assembly.Name}::{FullName}";
 
     public bool IsGeneric => GenericTypeParameters.Any();
+    public bool IsGenericMaked => GenericMakedTypeParameters.Any();
     public bool IsClass => !IsValueType;
     public bool IsValueType => Attributes.HasAnyAttribute(nameof(ValueTypeAttribute));
+
+    public virtual IEnumerable<NeslType> GenericMakedTypeParameters => Enumerable.Empty<NeslType>();
 
     private ConcurrentDictionary<NeslType[], Lazy<NeslType>> GenericMakedTypes {
         get {
@@ -97,24 +101,21 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
             // Create fully generic maked type.
             SerializedNeslType type = new SerializedNeslType(
-                Assembly, FullName, GenericHelper.RemoveGenericsFromAttributes(Attributes, targetTypes)
+                Assembly, FullName, GenericHelper.RemoveGenericsFromAttributes(Attributes, targetTypes),
+                typeArguments
             );
 
             // Create fields.
-            Dictionary<uint, NeslField> idToField = new Dictionary<uint, NeslField>();
-
             List<NeslField> fields = new List<NeslField>();
             foreach (NeslField field in Fields) {
                 fields.Add(new SerializedNeslField(
                     type, field.Name, GenericHelper.GetFinalType(this, type, field.FieldType, targetTypes),
-                    GenericHelper.RemoveGenericsFromAttributes(field.Attributes, targetTypes)
+                    GenericHelper.RemoveGenericsFromAttributes(field.Attributes, targetTypes),
+                    field.DefaultData?.ToArray()
                 ));
-
-                uint id = (uint)idToField.Count;
-                idToField.Add(id, field);
             }
 
-            type.SetFields(fields.ToArray(), idToField.ToImmutableDictionary());
+            type.SetFields(fields.ToArray());
 
             // Create methods.
             List<NeslMethod> methods = new List<NeslMethod>();
@@ -182,7 +183,32 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         return FullName;
     }
 
-    internal abstract NeslField GetField(uint localFieldId);
+    internal virtual bool SerializeHeader(NeslAssembly serializedAssembly, SerializationWriter writer) {
+        if (serializedAssembly != Assembly) {
+            writer.WriteBool(false);
+            writer.WriteString(Assembly.Name);
+            writer.WriteString(FullName);
+            return IsGenericMaked;
+        }
+
+        writer.WriteBool(true);
+        if (IsGenericMaked) {
+            writer.WriteUInt8((byte)NeslTypeUsageKind.GenericMaked);
+            writer.WriteString(FullName);
+            return true;
+        }
+
+        writer.WriteUInt8((byte)NeslTypeUsageKind.Normal);
+        writer.WriteString(FullName);
+        writer.WriteEnumerable(Attributes);
+        return false;
+    }
+
+    internal virtual void SerializeBody(SerializationWriter writer) {
+        writer.WriteEnumerable(GenericTypeParameters.Select(Assembly.GetLocalTypeId));
+        writer.WriteEnumerable(Fields);
+        writer.WriteEnumerable(Methods);
+    }
 
     internal ulong GetSize() {
         if (Attributes.TryCastAnyAttribute(out SizeAttribute? attribute))

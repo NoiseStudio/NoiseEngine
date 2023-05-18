@@ -8,12 +8,6 @@ namespace NoiseEngine.Nesl.Emit;
 
 public class NeslAssemblyBuilder : NeslAssembly {
 
-    private readonly Dictionary<ulong, NeslType> idToType = new Dictionary<ulong, NeslType>();
-    private readonly Dictionary<NeslType, ulong> typeToId = new Dictionary<NeslType, ulong>();
-
-    private readonly Dictionary<ulong, NeslMethod> idToMethod = new Dictionary<ulong, NeslMethod>();
-    private readonly Dictionary<NeslMethod, ulong> methodToId = new Dictionary<NeslMethod, ulong>();
-
     private readonly ConcurrentHashSet<NeslAssembly> dependencies =
         new ConcurrentHashSet<NeslAssembly>();
     private readonly ConcurrentDictionary<string, NeslTypeBuilder> types =
@@ -72,38 +66,6 @@ public class NeslAssemblyBuilder : NeslAssembly {
             return typeBuilder;
         throw new ArgumentException($"{nameof(NeslType)} named `{fullName}` already exists in `{Name}` assembly.",
             nameof(fullName));
-    }
-
-    internal override ulong GetLocalTypeId(NeslType type) {
-        lock (idToType) {
-            if (!typeToId.TryGetValue(type, out ulong id)) {
-                id = (ulong)idToType.Count;
-                idToType.Add(id, type);
-                typeToId.Add(type, id);
-            }
-
-            return id;
-        }
-    }
-
-    internal override ulong GetLocalMethodId(NeslMethod method) {
-        lock (idToMethod) {
-            if (!methodToId.TryGetValue(method, out ulong id)) {
-                id = (ulong)idToMethod.Count;
-                idToMethod.Add(id, method);
-                methodToId.Add(method, id);
-            }
-
-            return id;
-        }
-    }
-
-    internal override NeslType GetType(ulong localTypeId) {
-        return idToType[localTypeId];
-    }
-
-    internal override NeslMethod GetMethod(ulong localMethodId) {
-        return idToMethod[localMethodId];
     }
 
 }
