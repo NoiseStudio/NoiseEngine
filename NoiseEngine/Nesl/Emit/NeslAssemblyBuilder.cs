@@ -30,8 +30,15 @@ public class NeslAssemblyBuilder : NeslAssembly {
         return builder;
     }
 
-    internal static NeslAssemblyBuilder DefineAssemblyWithoutDefault(string name) {
-        return new NeslAssemblyBuilder(name);
+    internal static NeslAssemblyBuilder DefineAssemblyWithoutDefault(
+        string name, IEnumerable<NeslAssembly>? dependencies = null
+    ) {
+        NeslAssemblyBuilder builder = new NeslAssemblyBuilder(name);
+        if (dependencies is not null) {
+            foreach (NeslAssembly dependency in dependencies)
+                builder.dependencies.Add(dependency);
+        }
+        return builder;
     }
 
     /// <summary>

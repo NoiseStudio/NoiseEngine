@@ -13,8 +13,8 @@ internal class ParameterParser : Parser {
         definedParameters is null ? Array.Empty<(NeslType, string)>() : definedParameters;
 
     public ParameterParser(
-        Parser? parent, NeslAssemblyBuilder assembly, ParserStep step, TokenBuffer buffer
-    ) : base(parent, assembly, step, buffer) {
+        Parser? parent, NeslAssemblyBuilder assembly, string assemblyPath, ParserStep step, TokenBuffer buffer
+    ) : base(parent, assembly, assemblyPath, step, buffer) {
     }
 
     public void TryDefineParameter(TypeIdentifierToken typeIdentifier, NameToken name) {
