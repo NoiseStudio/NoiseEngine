@@ -37,7 +37,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="BuiltInResources/**" />
+        <Content Include="BuiltInResources/**">
+            <Pack>false</Pack>
+        </Content>
     </ItemGroup>
 
     <Import Project="../NoiseEngine.Shared.xml" />
