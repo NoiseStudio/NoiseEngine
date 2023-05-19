@@ -50,10 +50,9 @@
         <Copy SourceFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" DestinationFiles="$(PublishDir)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
     </Target>
 
-    <Target Name="RunBuilder" AfterTargets="AfterBuild" Condition="$(DoNotBuildResources) != 'true'">
+    <Target Name="RunBuilder" AfterTargets="AfterBuild"">
         <Copy SourceFiles="$(OutputPath)/NoiseEngine.dll" DestinationFiles="../NoiseEngine.Builder/.ne/NoiseEngine.dll" />
         <Copy SourceFiles="$(OutputPath)/NoiseEngine.xml" DestinationFiles="../NoiseEngine.Builder/.ne/NoiseEngine.xml" />
-        <Exec WorkingDirectory="../NoiseEngine.Builder/" Command="dotnet run -c Release $(OutputPath)" />
-    </Target>
+        <Exec WorkingDirectory="../NoiseEngine.Builder/" Command="dotnet run -c Release $(OutputPath)" Condition="$(DoNotBuildResources) != 'true' />"</Target>
 
 </Project>
