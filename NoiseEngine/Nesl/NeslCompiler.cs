@@ -19,10 +19,18 @@ public static class NeslCompiler {
     /// <param name="assemblyName">Name of new <see cref="NeslAssembly"/>.</param>
     /// <param name="assemblyPath">Path of directory with <paramref name="files"/>.</param>
     /// <param name="files"><see cref="NeslFile"/>s to compile.</param>
+    /// <param name="dependencies">
+    /// <see cref="NeslAssembly"/>s which is used as dependencies in compiled code. Regardless of the state, it always
+    /// contains the default library.
+    /// </param>
     /// <returns>New <see cref="NeslAssembly"/>.</returns>
-    public static NeslAssembly Compile(string assemblyName, string assemblyPath, IEnumerable<NeslFile> files) {
+    public static NeslAssembly Compile(
+        string assemblyName, string assemblyPath, IEnumerable<NeslFile> files,
+        IEnumerable<NeslAssembly>? dependencies = null
+    ) {
         bool result = TryCompile(
-            assemblyName, assemblyPath, files, out NeslAssembly? assembly, out IEnumerable<CompilationError> errors
+            assemblyName, assemblyPath, files, dependencies, out NeslAssembly? assembly,
+            out IEnumerable<CompilationError> errors
         );
 
         StringBuilder exceptionBuilder = new StringBuilder("Unable to compile NESL files.");
@@ -55,6 +63,10 @@ public static class NeslCompiler {
     /// <param name="assemblyName">Name of new <see cref="NeslAssembly"/>.</param>
     /// <param name="assemblyPath">Path of directory with <paramref name="files"/>.</param>
     /// <param name="files"><see cref="NeslFile"/>s to compile.</param>
+    /// <param name="dependencies">
+    /// <see cref="NeslAssembly"/>s which is used as dependencies in compiled code. Regardless of the state, it always
+    /// contains the default library.
+    /// </param>
     /// <param name="assembly">
     /// New <see cref="NeslAssembly"/> or <see langword="null"/> when result is <see langword="false"/>.
     /// </param>
@@ -63,10 +75,22 @@ public static class NeslCompiler {
     /// <see langword="true"/> when compilation produces zero errors; otherwise <see langword="false"/>.
     /// </returns>
     public static bool TryCompile(
-        string assemblyName, string assemblyPath, IEnumerable<NeslFile> files,
+        string assemblyName, string assemblyPath, IEnumerable<NeslFile> files, IEnumerable<NeslAssembly>? dependencies,
         [NotNullWhen(true)] out NeslAssembly? assembly, out IEnumerable<CompilationError> errors
     ) {
-        NeslAssemblyBuilder assemblyBuilder = NeslAssemblyBuilder.DefineAssembly(assemblyName);
+        IEnumerable<NeslAssembly> d = new NeslAssembly[] { Default.Manager.AssemblyBuilder };
+        if (dependencies is not null)
+            d = d.Concat(dependencies);
+        return TryCompileWithoutDefault(assemblyName, assemblyPath, files, d, out assembly, out errors);
+    }
+
+    internal static bool TryCompileWithoutDefault(
+        string assemblyName, string assemblyPath, IEnumerable<NeslFile> files, IEnumerable<NeslAssembly> dependencies,
+        [NotNullWhen(true)] out NeslAssembly? assembly, out IEnumerable<CompilationError> errors
+    ) {
+        NeslAssemblyBuilder assemblyBuilder = NeslAssemblyBuilder.DefineAssemblyWithoutDefault(
+            assemblyName, dependencies
+        );
 
         NeslFile[] filesArray = files.ToArray();
         Parser[] parsers = new Parser[filesArray.Length];
@@ -78,7 +102,7 @@ public static class NeslCompiler {
             while ((i = Interlocked.Increment(ref fileIndex)) < filesArray.Length) {
                 NeslFile file = filesArray[i];
                 TokenBuffer buffer = new TokenBuffer(lexer.Lex(file.Path, file.Code));
-                Parser parser = new Parser(null, assemblyBuilder, ParserStep.TopLevel, buffer);
+                Parser parser = new Parser(null, assemblyBuilder, assemblyPath, ParserStep.TopLevel, buffer);
                 parser.Parse();
                 parsers[i] = parser;
             }

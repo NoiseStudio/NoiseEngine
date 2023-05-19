@@ -44,6 +44,8 @@ jobs:
           dotnet-version: '7.x.x'
       - name: Restore dependencies
         run: dotnet restore
+      - name: Build engine
+        run: dotnet build NoiseEngine/NoiseEngine.csproj --no-restore --configuration Release /p:DoNotBuildMainNative=true /p:DoNotBuildResources=true
       - name: Build
         run: dotnet build --no-restore --configuration Release /p:DoNotBuildMainNative=true
       - name: Run tests

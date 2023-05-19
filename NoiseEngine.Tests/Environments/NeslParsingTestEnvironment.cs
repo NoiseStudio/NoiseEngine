@@ -13,7 +13,7 @@ public abstract class NeslParsingTestEnvironment {
 
     public void CompileSingleThrow(string code, params CompilationErrorType[] errors) {
         NeslCompiler.TryCompile(
-            nameof(CompileSingleThrow), "/Abc", new NeslFile[] { new NeslFile("/Abc/Example", code) }, out _,
+            nameof(CompileSingleThrow), "/Abc", new NeslFile[] { new NeslFile("/Abc/Example", code) }, null, out _,
             out IEnumerable<CompilationError> output
         );
 
@@ -35,7 +35,7 @@ public abstract class NeslParsingTestEnvironment {
 
     public void CompileSingleThrowAny(string code) {
         Assert.False(NeslCompiler.TryCompile(
-            nameof(CompileSingleThrow), "/Abc", new NeslFile[] { new NeslFile("/Abc/Example", code) }, out _,
+            nameof(CompileSingleThrow), "/Abc", new NeslFile[] { new NeslFile("/Abc/Example", code) }, null, out _,
             out IEnumerable<CompilationError> output
         ));
     }

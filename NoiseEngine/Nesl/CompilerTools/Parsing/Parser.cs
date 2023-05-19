@@ -28,6 +28,7 @@ internal class Parser {
 
     public Parser? Parent { get; }
     public NeslAssemblyBuilder Assembly { get; }
+    public string AssemblyPath { get; }
     public ParserStep Step { get; }
     public TokenBuffer Buffer { get; }
     public IReadOnlyList<CompilationError> Errors => errors;
@@ -48,8 +49,17 @@ internal class Parser {
 
     private NeslTypeBuilder CurrentType {
         get {
-            if (currentType is null)
-                currentType = Assembly.DefineType(Buffer.Tokens[0].Path);
+            if (currentType is null) {
+                string path = Buffer.Tokens[0].Path;
+                if (AssemblyPath.Length > 0 && path.StartsWith(AssemblyPath))
+                    path = path[AssemblyPath.Length..];
+                while (path.StartsWith('/') || path.StartsWith('\\'))
+                    path = path[1..];
+                while (path.EndsWith('/') || path.EndsWith('\\'))
+                    path = path[..^1];
+                path = path.Replace('/', '.').Replace('\\', '.');
+                currentType = Assembly.DefineType(path);
+            }
             return currentType;
         }
         init {
@@ -71,9 +81,12 @@ internal class Parser {
         }
     }
 
-    public Parser(Parser? parent, NeslAssemblyBuilder assembly, ParserStep step, TokenBuffer buffer) {
+    public Parser(
+        Parser? parent, NeslAssemblyBuilder assembly, string assemblyPath, ParserStep step, TokenBuffer buffer
+    ) {
         Parent = parent;
         Assembly = assembly;
+        AssemblyPath = assemblyPath;
         Step = step;
         Buffer = buffer;
     }
@@ -199,7 +212,7 @@ internal class Parser {
 
         types = new List<Parser>();
         foreach ((NeslTypeBuilder typeBuilder, TokenBuffer buffer) in definedTypes) {
-            Parser parser = new Parser(this, Assembly, ParserStep.Type, buffer) {
+            Parser parser = new Parser(this, Assembly, AssemblyPath, ParserStep.Type, buffer) {
                 CurrentType = typeBuilder
             };
             parser.Parse();
@@ -252,7 +265,7 @@ internal class Parser {
                 }
 
                 ParameterParser parameterParser = new ParameterParser(
-                    this, Assembly, ParserStep.Parameters, newParameters
+                    this, Assembly, AssemblyPath, ParserStep.Parameters, newParameters
                 );
                 parameterParser.Parse();
 
@@ -280,7 +293,7 @@ internal class Parser {
                     variables.Add(vname, new VariableData(type, vname, method.IlGenerator.GetNextVariableId()));
 
                 methods ??= new List<Parser>();
-                methods.Add(new Parser(this, Assembly, ParserStep.Method, codeBlock) {
+                methods.Add(new Parser(this, Assembly, AssemblyPath, ParserStep.Method, codeBlock) {
                     CurrentType = CurrentType,
                     CurrentMethod = method!,
                     variables = variables

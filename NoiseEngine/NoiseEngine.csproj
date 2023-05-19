@@ -25,6 +25,9 @@
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
             <_Parameter1>NoiseEngine.Benchmarks</_Parameter1>
         </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>NoiseEngine.Builder</_Parameter1>
+        </AssemblyAttribute>
     </ItemGroup>
 
     <ItemGroup>
@@ -33,12 +36,24 @@
         <ProjectReference Include="../NoiseEngine.InternalGenerator/NoiseEngine.InternalGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include="BuiltInResources/**">
+            <Pack>false</Pack>
+        </Content>
+    </ItemGroup>
+
     <Import Project="../NoiseEngine.Shared.xml" />
 
     <Target Name="CompileNative" BeforeTargets="AfterBuild" Condition="$(DoNotBuildMainNative) != 'true'">
         <Exec WorkingDirectory="../NoiseEngine.Native/" Command="cargo build $(CargoReleaseFlag)" />
         <Copy SourceFiles="../NoiseEngine.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_native.$(OSLibExt)" DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
         <Copy SourceFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" DestinationFiles="$(PublishDir)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
+    </Target>
+
+    <Target Name="RunBuilder" AfterTargets="AfterBuild">
+        <Copy SourceFiles="$(OutputPath)/NoiseEngine.dll" DestinationFiles="../NoiseEngine.Builder/.ne/NoiseEngine.dll" />
+        <Copy SourceFiles="$(OutputPath)/NoiseEngine.xml" DestinationFiles="../NoiseEngine.Builder/.ne/NoiseEngine.xml" />
+        <Exec WorkingDirectory="../NoiseEngine.Builder/" Command="dotnet run -c Release $(OutputPath)" Condition="$(DoNotBuildResources) != 'true'" />
     </Target>
 
 </Project>
