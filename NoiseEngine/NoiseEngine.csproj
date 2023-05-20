@@ -40,12 +40,7 @@
         <Content Include="BuiltInResources/**">
             <Pack>false</Pack>
         </Content>
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="BuiltInResources\Shaders\Float64.nesl" />
-      <None Remove="BuiltInResources\Shaders\Int32.nesl" />
-      <None Remove="BuiltInResources\Shaders\UInt32.nesl" />
+        <None Remove="BuiltInResources\**" />
     </ItemGroup>
 
     <Import Project="../NoiseEngine.Shared.xml" />
