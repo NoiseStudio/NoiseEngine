@@ -361,7 +361,6 @@ internal class Lexer {
     }
 
     private void AppendOperator(TokenType type, int length) {
-        AppendWord();
         tokens.Add(new Token(path, operatorLine, operatorColumn, type, length, null));
     }
 

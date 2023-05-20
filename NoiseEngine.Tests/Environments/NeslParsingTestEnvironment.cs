@@ -7,8 +7,10 @@ namespace NoiseEngine.Tests.Environments;
 
 public abstract class NeslParsingTestEnvironment {
 
-    public void CompileSingle(string code) {
-        NeslCompiler.Compile(nameof(CompileSingle), "/Abc/", new NeslFile[] { new NeslFile("/Abc/Example", code) });
+    public NeslAssembly CompileSingle(string code) {
+        return NeslCompiler.Compile(
+            nameof(CompileSingle), "/Abc/", new NeslFile[] { new NeslFile("/Abc/Example", code) }
+        );
     }
 
     public void CompileSingleThrow(string code, params CompilationErrorType[] errors) {

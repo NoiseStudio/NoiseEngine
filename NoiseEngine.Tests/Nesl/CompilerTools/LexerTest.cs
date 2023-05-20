@@ -261,4 +261,12 @@ public class LexerTest {
         Assert.Equal(new Token(Path, 2, 1, compound, c.Length, null), tokens[10]);
     }
 
+    [Fact]
+    public void OperatorAndWord() {
+        Token[] tokens = lexer.Lex(Path, $"-{Word2}");
+        Assert.Equal(2, tokens.Length);
+        Assert.Equal(new Token(Path, 1, 1, TokenType.Subtraction, 1, null), tokens[0]);
+        Assert.Equal(new Token(Path, 1, 2, TokenType.Word, Word2.Length, Word2), tokens[1]);
+    }
+
 }

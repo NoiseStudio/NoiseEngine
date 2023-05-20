@@ -1,9 +1,7 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
-using System;
 using System.Diagnostics;
-using System.IO;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 
@@ -13,14 +11,15 @@ internal class TypeDeclaration : ParserExpressionContainer {
     }
 
     [ParserExpression(ParserStep.TopLevel | ParserStep.Type)]
+    [ParserExpressionParameter(ParserTokenType.Attributes)]
     [ParserExpressionParameter(ParserTokenType.AccessModifiers)]
     [ParserExpressionParameter(ParserTokenType.Modifiers)]
     [ParserExpressionParameter(ParserTokenType.TypeKind)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
-        AccessModifiersToken accessModifiers, ModifiersToken modifiers, TypeKindToken typeKind, NameToken name,
-        CurlyBracketsToken codeBlock
+        AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
+        TypeKindToken typeKind, NameToken name, CurlyBracketsToken codeBlock
     ) {
         string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
         bool successful = true;
@@ -33,6 +32,9 @@ internal class TypeDeclaration : ParserExpressionContainer {
             return;
         if (typeBuilder is null)
             throw new UnreachableException();
+
+        foreach (NeslAttribute attribute in attributes.Compile(Parser, AttributeTargets.Type))
+            typeBuilder.AddAttribute(attribute);
 
         if (typeKind.TypeKind == NeslTypeKind.Struct)
             typeBuilder.AddAttribute(ValueTypeAttribute.Create());
