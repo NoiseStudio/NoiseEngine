@@ -1,0 +1,4 @@
+[Size(64)]
+[PlatformDependentTypeRepresentation("OpTypeFloat`64")]
+public struct Float64 {
+}

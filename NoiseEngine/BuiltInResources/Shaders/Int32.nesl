@@ -1,0 +1,4 @@
+[Size(32)]
+[PlatformDependentTypeRepresentation("OpTypeInt`32`1")]
+public struct Int32 {
+}

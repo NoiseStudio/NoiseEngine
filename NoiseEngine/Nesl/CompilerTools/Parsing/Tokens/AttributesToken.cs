@@ -147,11 +147,12 @@ internal readonly record struct AttributesToken(
                             attribute.Pointer, CompilationErrorType.AttributeTargetNotMatch,
                             attribute.Identifier.Identifier
                         ));
-                        continue;
+                        break;
                     }
 
                     result ??= new List<NeslAttribute>();
                     result.Add(a);
+                    break;
                 }
             }
 
@@ -165,6 +166,8 @@ internal readonly record struct AttributesToken(
                     ));
                 }
             }
+
+            parameters?.Clear();
         }
 
         return result is null ? Array.Empty<NeslAttribute>() : result;

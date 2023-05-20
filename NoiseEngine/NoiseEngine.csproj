@@ -42,6 +42,12 @@
         </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="BuiltInResources\Shaders\Float64.nesl" />
+      <None Remove="BuiltInResources\Shaders\Int32.nesl" />
+      <None Remove="BuiltInResources\Shaders\UInt32.nesl" />
+    </ItemGroup>
+
     <Import Project="../NoiseEngine.Shared.xml" />
 
     <Target Name="CompileNative" BeforeTargets="AfterBuild" Condition="$(DoNotBuildMainNative) != 'true'">

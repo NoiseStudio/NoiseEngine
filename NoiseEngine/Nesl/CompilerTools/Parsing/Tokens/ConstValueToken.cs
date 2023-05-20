@@ -109,7 +109,7 @@ internal readonly record struct ConstValueToken(
         TokenBuffer buffer, Token? previousToken, Token token, bool negative,
         [NotNullWhen(true)] out ConstValueToken result, out CompilationError error
     ) {
-        if (!buffer.TryReadNext(TokenType.StringEnd, out Token endToken)) {
+        if (!buffer.TryReadNext(TokenType.StringEnd, out Token endToken) || endToken.Path != token.Path) {
             result = default;
             error = new CompilationError(endToken, CompilationErrorType.ExpectedQuotationMark);
             return false;
