@@ -19,6 +19,7 @@ internal class Lexer {
     private uint startColumn;
 
     private bool isComment;
+    private bool isString;
     private bool isMultiline;
 
     private char? lastChar;
@@ -47,6 +48,7 @@ internal class Lexer {
             AnalyzeChar(c);
         }
         AnalyzeChar('\n');
+        EndString();
 
         this.path = null!;
         roundBracket.Clear();
@@ -62,6 +64,10 @@ internal class Lexer {
     private void AnalyzeChar(char c) {
         if (isComment && AnalyzeComment(c))
             return;
+        if (isString) {
+            AnalyzeString(c);
+            return;
+        }
 
         switch (secondLastChar) {
             case '*':
@@ -224,6 +230,11 @@ internal class Lexer {
                 AppendWordAndStoreOperator();
                 break;
 
+            case '"':
+                AppendSingle(TokenType.StringContent);
+                isString = true;
+                break;
+
             case '.':
                 AppendSingle(TokenType.Dot);
                 break;
@@ -353,6 +364,29 @@ internal class Lexer {
         }
 
         throw new NotImplementedException();
+    }
+
+    private void AnalyzeString(char c) {
+        if (c == '"' && lastChar != '\\') {
+            EndString();
+            return;
+        }
+
+        lastChar = c;
+        value.Append(c);
+    }
+
+    private void EndString() {
+        if (!isString)
+            return;
+
+        isString = false;
+        Token token = tokens[^1];
+        tokens[^1] = new Token(
+            path, token.Line, token.Column, TokenType.StringContent, value.Length + 2, value.ToString()
+        );
+        value.Clear();
+        AppendSingle(TokenType.StringEnd);
     }
 
     private void AppendSingle(TokenType type) {

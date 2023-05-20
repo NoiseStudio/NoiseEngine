@@ -37,6 +37,8 @@ internal readonly record struct ConstValueToken(
         switch (token.Type) {
             case TokenType.Word:
                 return GetFromWord(buffer, previousToken, token, negative, out result, out error);
+            case TokenType.StringContent:
+                return GetFromStringContent(buffer, previousToken, token, negative, out result, out error);
             default:
                 result = default;
                 error = new CompilationError(token, CompilationErrorType.ExpectedConstValue);
@@ -99,6 +101,29 @@ internal readonly record struct ConstValueToken(
             result = new ConstValueToken(token.Pointer, ConstValueType.Float, -floatValue);
         else
             result = new ConstValueToken(token.Pointer, ConstValueType.Float, floatValue);
+        error = default;
+        return true;
+    }
+
+    private static bool GetFromStringContent(
+        TokenBuffer buffer, Token? previousToken, Token token, bool negative,
+        [NotNullWhen(true)] out ConstValueToken result, out CompilationError error
+    ) {
+        if (!buffer.TryReadNext(TokenType.StringEnd, out Token endToken)) {
+            result = default;
+            error = new CompilationError(endToken, CompilationErrorType.ExpectedQuotationMark);
+            return false;
+        }
+
+        if (negative) {
+            result = default;
+            error = new CompilationError(
+                previousToken!.Value, CompilationErrorType.SubtractionOperatorNotMatchExpression
+            );
+            return false;
+        }
+
+        result = new ConstValueToken(token.Pointer, ConstValueType.String, token.Value!);
         error = default;
         return true;
     }

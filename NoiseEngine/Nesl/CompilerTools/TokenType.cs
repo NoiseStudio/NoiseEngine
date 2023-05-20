@@ -47,5 +47,7 @@ internal enum TokenType {
     CurlyBracketClosing,
     AngleBracketOpening,
     AngleBracketClosing,
+    StringContent,
+    StringEnd,
     Word
 }

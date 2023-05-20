@@ -269,4 +269,22 @@ public class LexerTest {
         Assert.Equal(new Token(Path, 1, 2, TokenType.Word, Word2.Length, Word2), tokens[1]);
     }
 
+    [Fact]
+    public void String() {
+        string content = $"{Word3} {Word1}";
+        Token[] tokens = lexer.Lex(Path, $"{Word2}\"{content}\"+");
+        Assert.Equal(4, tokens.Length);
+
+        uint column = 1;
+        Assert.Equal(new Token(Path, 1, column, TokenType.Word, Word2.Length, Word2), tokens[0]);
+        column += (uint)Word2.Length;
+
+        Assert.Equal(new Token(Path, 1, column, TokenType.StringContent, content.Length + 2, content), tokens[1]);
+        column += (uint)content.Length + 1;
+        Assert.Equal(new Token(Path, 1, column, TokenType.StringEnd, 1, null), tokens[2]);
+        column++;
+
+        Assert.Equal(new Token(Path, 1, column, TokenType.Addition, 1, null), tokens[3]);
+    }
+
 }

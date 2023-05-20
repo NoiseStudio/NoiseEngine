@@ -27,9 +27,18 @@ public class ConstValueTokenTest {
     [Theory]
     [InlineData("true", true)]
     [InlineData("false", false)]
-    public void FloatBool(string text, bool expected) {
+    public void Bool(string text, bool expected) {
         Assert.True(Parse(text, out ConstValueToken result, out _));
         Assert.True(result.ToBool(out bool a, out _));
+        Assert.Equal(expected, a);
+    }
+
+    [Theory]
+    [InlineData("\"Hello world\"", "Hello world")]
+    [InlineData("\"What do you mean \\\"?\"", "What do you mean \\\"?")]
+    public void String(string text, string expected) {
+        Assert.True(Parse(text, out ConstValueToken result, out _));
+        Assert.True(result.ToString(out string a, out _));
         Assert.Equal(expected, a);
     }
 
