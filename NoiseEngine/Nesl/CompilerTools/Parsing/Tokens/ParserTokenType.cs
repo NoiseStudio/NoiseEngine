@@ -4,6 +4,8 @@ using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
 internal enum ParserTokenType {
+    [ParserToken(typeof(AccessModifiersToken))]
+    AccessModifiers,
     [ParserToken(typeof(ModifiersToken))]
     Modifiers,
     [ParserToken(typeof(TypeIdentifierToken))]

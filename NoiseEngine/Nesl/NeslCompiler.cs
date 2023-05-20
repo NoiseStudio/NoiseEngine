@@ -3,11 +3,15 @@ using NoiseEngine.Nesl.CompilerTools.Parsing;
 using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace NoiseEngine.Nesl;
 
@@ -103,6 +107,18 @@ public static class NeslCompiler {
                 NeslFile file = filesArray[i];
                 TokenBuffer buffer = new TokenBuffer(lexer.Lex(file.Path, file.Code));
                 Parser parser = new Parser(null, assemblyBuilder, assemblyPath, ParserStep.TopLevel, buffer);
+
+                string fullName = Path.GetDirectoryName(file.Path) ?? "";
+                if (assemblyPath.Length > 0 && fullName.StartsWith(assemblyPath))
+                    fullName = fullName[assemblyPath.Length..];
+                while (fullName.StartsWith('/') || fullName.StartsWith('\\'))
+                    fullName = fullName[1..];
+                while (fullName.EndsWith('/') || fullName.EndsWith('\\'))
+                    fullName = fullName[..^1];
+                fullName = fullName.Replace('/', '.').Replace('\\', '.');
+                if (!parser.TryDefineUsing(fullName.Length > 0 ? $"{assemblyName}.{fullName}" : assemblyName))
+                    throw new UnreachableException();
+
                 parser.Parse();
                 parsers[i] = parser;
             }

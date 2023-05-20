@@ -24,7 +24,14 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     public abstract IEnumerable<NeslMethod> Methods { get; }
 
     public virtual string Name => FullName.Substring(FullName.LastIndexOf(Delimiter) + 1);
-    public virtual string Namespace => FullName.Substring(0, FullName.LastIndexOf(Delimiter));
+    public virtual string Namespace {
+        get {
+            int index = FullName.LastIndexOf(Delimiter);
+            if (index == -1)
+                return string.Empty;
+            return FullName.Substring(0, index);
+        }
+    }
 
     public NeslAssembly Assembly { get; }
     public string FullName { get; }
