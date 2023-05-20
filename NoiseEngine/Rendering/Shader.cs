@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Nesl;
 using NoiseEngine.Rendering.Exceptions;
 using NoiseEngine.Rendering.Vulkan;
+using System;
 
 namespace NoiseEngine.Rendering;
 
@@ -17,6 +18,9 @@ public class Shader : ICommonShader {
     CommonShaderDelegation ICommonShader.Delegation => Delegation;
 
     public Shader(GraphicsDevice device, NeslType classData, ShaderSettings settings) {
+        if (classData is null)
+            throw new ArgumentNullException(nameof(classData));
+
         device.Initialize();
 
         Device = device;

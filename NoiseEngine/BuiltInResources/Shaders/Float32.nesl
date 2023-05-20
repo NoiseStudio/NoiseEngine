@@ -1,2 +1,4 @@
-struct Float32 {
+[Size(32)]
+[PlatformDependentTypeRepresentation("OpTypeFloat`32")]
+public struct Float32 {
 }

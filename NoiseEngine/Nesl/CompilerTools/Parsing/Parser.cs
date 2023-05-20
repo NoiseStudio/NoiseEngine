@@ -4,8 +4,10 @@ using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -50,19 +52,26 @@ internal class Parser {
     private NeslTypeBuilder CurrentType {
         get {
             if (currentType is null) {
-                string path = Buffer.Tokens[0].Path;
-                if (AssemblyPath.Length > 0 && path.StartsWith(AssemblyPath))
-                    path = path[AssemblyPath.Length..];
-                while (path.StartsWith('/') || path.StartsWith('\\'))
-                    path = path[1..];
-                while (path.EndsWith('/') || path.EndsWith('\\'))
-                    path = path[..^1];
-                path = path.Replace('/', '.').Replace('\\', '.');
-                currentType = Assembly.DefineType(path);
+                string name = Buffer.Tokens[0].Path;
+                if (AssemblyPath.Length > 0 && name.StartsWith(AssemblyPath))
+                    name = name[AssemblyPath.Length..];
+                while (name.StartsWith('/') || name.StartsWith('\\'))
+                    name = name[1..];
+                while (name.EndsWith('/') || name.EndsWith('\\'))
+                    name = name[..^1];
+                name = name.Replace('/', '.').Replace('\\', '.');
+                currentType = Assembly.DefineType(name);
+
+                string u = currentType.Namespace.Length > 0 ?
+                    $"{Assembly.Name}.{currentType.Namespace}" : Assembly.Name;
+                if (u.Length > 0)
+                    TryDefineUsing(u);
             }
             return currentType;
         }
         init {
+            if (value.Namespace.Length > 0)
+                TryDefineUsing(value.Namespace);
             currentType = value;
         }
     }
@@ -70,8 +79,10 @@ internal class Parser {
     private IEnumerable<string> Usings {
         get {
             if (usings is not null) {
-                foreach (string u in usings)
-                    yield return u;
+                lock (usings) {
+                    foreach (string u in usings)
+                        yield return u;
+                }
             }
 
             if (Parent is not null) {
@@ -166,12 +177,16 @@ internal class Parser {
                     Buffer.Index = mostCompabilityIndex;
                     (MethodInfo method, _) = mostCompabilityExpression.ExpectedTokens[mostCompabilityCount];
 
-                    if ((bool)(
+                    bool result = (bool)(
                         method.Invoke(null, parseParameters) ?? throw new NullReferenceException()
-                    )) {
-                        throw new InvalidOperationException();
-                    }
+                    );
                     parseParameters[2] = null;
+                    if (result) {
+                        Buffer.Index = index;
+                        _ = Buffer.TryReadNext(TokenType.None, out Token token);
+                        errors.Add(new CompilationError(token, CompilationErrorType.UnexpectedExpression));
+                        continue;
+                    }
 
                     errors.Add((CompilationError)(parseParameters[3] ?? throw new NullReferenceException()));
                     Buffer.Index = mostCompabilityIndex;
@@ -204,6 +219,21 @@ internal class Parser {
             finalExpression.Method.Invoke(container, parserExpressionParameters.ToArray());
             parserExpressionParameters.Clear();
         }
+    }
+
+    public string GetNamespaceFromFilePath(string path) {
+        string fullName = Path.GetDirectoryName(path) ?? "";
+        if (AssemblyPath.Length > 0 && fullName.StartsWith(AssemblyPath))
+            fullName = fullName[AssemblyPath.Length..];
+        while (fullName.StartsWith('/') || fullName.StartsWith('\\'))
+            fullName = fullName[1..];
+        while (fullName.EndsWith('/') || fullName.EndsWith('\\'))
+            fullName = fullName[..^1];
+        fullName = fullName.Replace('/', '.').Replace('\\', '.');
+
+        if (fullName.Length == 0)
+            return Assembly.Name;
+        return $"{Assembly.Name}.{fullName}";
     }
 
     public void AnalyzeTypes() {
@@ -321,11 +351,13 @@ internal class Parser {
 
     public bool TryDefineUsing(string u) {
         usings ??= new List<string>();
-        foreach (string u2 in usings) {
-            if (u == u2)
-                return false;
+        lock (usings) {
+            foreach (string u2 in Usings) {
+                if (u == u2)
+                    return false;
+            }
+            usings.Add(u);
         }
-        usings.Add(u);
         return true;
     }
 

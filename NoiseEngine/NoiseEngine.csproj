@@ -40,6 +40,7 @@
         <Content Include="BuiltInResources/**">
             <Pack>false</Pack>
         </Content>
+        <None Remove="BuiltInResources\**" />
     </ItemGroup>
 
     <Import Project="../NoiseEngine.Shared.xml" />

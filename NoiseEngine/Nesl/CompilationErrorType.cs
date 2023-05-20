@@ -48,6 +48,40 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedAssignmentOperator,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedAttribute,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedConstValue,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedNumber,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedInt64,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedInt32,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedInt16,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedInt8,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedUInt64,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedUInt32,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedUInt16,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedUInt8,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedFloat64,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedFloat32,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedFloat16,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedBool,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedString,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedQuotationMark,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]
     UsingAlreadyExists,
@@ -72,5 +106,15 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ConstructorNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AttributeNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AttributeCreateMethodNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     UsingGenericNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AttributeGenericNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AttributeTargetNotMatch,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    SubtractionOperatorNotMatchExpression,
 }

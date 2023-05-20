@@ -3,11 +3,15 @@ using NoiseEngine.Nesl.CompilerTools.Parsing;
 using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace NoiseEngine.Nesl;
 
@@ -103,6 +107,9 @@ public static class NeslCompiler {
                 NeslFile file = filesArray[i];
                 TokenBuffer buffer = new TokenBuffer(lexer.Lex(file.Path, file.Code));
                 Parser parser = new Parser(null, assemblyBuilder, assemblyPath, ParserStep.TopLevel, buffer);
+                if (!parser.TryDefineUsing(parser.GetNamespaceFromFilePath(file.Path)))
+                    throw new UnreachableException();
+
                 parser.Parse();
                 parsers[i] = parser;
             }

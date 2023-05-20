@@ -11,16 +11,20 @@ internal class TypeDeclaration : ParserExpressionContainer {
     }
 
     [ParserExpression(ParserStep.TopLevel | ParserStep.Type)]
+    [ParserExpressionParameter(ParserTokenType.Attributes)]
+    [ParserExpressionParameter(ParserTokenType.AccessModifiers)]
     [ParserExpressionParameter(ParserTokenType.Modifiers)]
     [ParserExpressionParameter(ParserTokenType.TypeKind)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
-        ModifiersToken modifiers, TypeKindToken typeKind, NameToken name, CurlyBracketsToken codeBlock
+        AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
+        TypeKindToken typeKind, NameToken name, CurlyBracketsToken codeBlock
     ) {
+        string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
         bool successful = true;
-        if (!Assembly.TryDefineType(name.Name, out NeslTypeBuilder? typeBuilder)) {
-            Parser.Throw(new CompilationError(name.Pointer, CompilationErrorType.TypeAlreadyExists, name.Name));
+        if (!Assembly.TryDefineType(fullName, out NeslTypeBuilder? typeBuilder)) {
+            Parser.Throw(new CompilationError(name.Pointer, CompilationErrorType.TypeAlreadyExists, fullName));
             successful = false;
         }
 
@@ -28,6 +32,9 @@ internal class TypeDeclaration : ParserExpressionContainer {
             return;
         if (typeBuilder is null)
             throw new UnreachableException();
+
+        foreach (NeslAttribute attribute in attributes.Compile(Parser, AttributeTargets.Type))
+            typeBuilder.AddAttribute(attribute);
 
         if (typeKind.TypeKind == NeslTypeKind.Struct)
             typeBuilder.AddAttribute(ValueTypeAttribute.Create());
