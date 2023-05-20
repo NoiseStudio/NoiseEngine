@@ -23,9 +23,13 @@ internal class UsingDeclaration : ParserExpressionContainer {
             !Parser.Assembly.Types.Concat(Parser.Assembly.Dependencies.SelectMany(x => x.Types))
                 .Any(x => x.Namespace == typeIdentifier.Identifier)
         ) {
-            Parser.Throw(new CompilationError(
-                typeIdentifier.Pointer, CompilationErrorType.UsingNotFound, typeIdentifier.Identifier
-            ));
+            string ns = Parser.GetNamespaceFromFilePath(typeIdentifier.Pointer.Path);
+            if (!NamespaceUtils.IsPartOf(typeIdentifier.Identifier, ns)) {
+                Parser.Throw(new CompilationError(
+                    typeIdentifier.Pointer, CompilationErrorType.UsingNotFound, typeIdentifier.Identifier
+                ));
+                return;
+            }
         }
 
         if (!Parser.TryDefineUsing(typeIdentifier.Identifier)) {

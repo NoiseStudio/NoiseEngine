@@ -107,16 +107,7 @@ public static class NeslCompiler {
                 NeslFile file = filesArray[i];
                 TokenBuffer buffer = new TokenBuffer(lexer.Lex(file.Path, file.Code));
                 Parser parser = new Parser(null, assemblyBuilder, assemblyPath, ParserStep.TopLevel, buffer);
-
-                string fullName = Path.GetDirectoryName(file.Path) ?? "";
-                if (assemblyPath.Length > 0 && fullName.StartsWith(assemblyPath))
-                    fullName = fullName[assemblyPath.Length..];
-                while (fullName.StartsWith('/') || fullName.StartsWith('\\'))
-                    fullName = fullName[1..];
-                while (fullName.EndsWith('/') || fullName.EndsWith('\\'))
-                    fullName = fullName[..^1];
-                fullName = fullName.Replace('/', '.').Replace('\\', '.');
-                if (!parser.TryDefineUsing(fullName.Length > 0 ? $"{assemblyName}.{fullName}" : assemblyName))
+                if (!parser.TryDefineUsing(parser.GetNamespaceFromFilePath(file.Path)))
                     throw new UnreachableException();
 
                 parser.Parse();

@@ -4,8 +4,10 @@ using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -217,6 +219,21 @@ internal class Parser {
             finalExpression.Method.Invoke(container, parserExpressionParameters.ToArray());
             parserExpressionParameters.Clear();
         }
+    }
+
+    public string GetNamespaceFromFilePath(string path) {
+        string fullName = Path.GetDirectoryName(path) ?? "";
+        if (AssemblyPath.Length > 0 && fullName.StartsWith(AssemblyPath))
+            fullName = fullName[AssemblyPath.Length..];
+        while (fullName.StartsWith('/') || fullName.StartsWith('\\'))
+            fullName = fullName[1..];
+        while (fullName.EndsWith('/') || fullName.EndsWith('\\'))
+            fullName = fullName[..^1];
+        fullName = fullName.Replace('/', '.').Replace('\\', '.');
+
+        if (fullName.Length == 0)
+            return Assembly.Name;
+        return $"{Assembly.Name}.{fullName}";
     }
 
     public void AnalyzeTypes() {

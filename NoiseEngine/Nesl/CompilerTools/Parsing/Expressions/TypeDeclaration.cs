@@ -13,25 +13,16 @@ internal class TypeDeclaration : ParserExpressionContainer {
     }
 
     [ParserExpression(ParserStep.TopLevel | ParserStep.Type)]
-    //[ParserExpressionParameter(ParserTokenType.AccessModifiers)]
+    [ParserExpressionParameter(ParserTokenType.AccessModifiers)]
     [ParserExpressionParameter(ParserTokenType.Modifiers)]
     [ParserExpressionParameter(ParserTokenType.TypeKind)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
-        ModifiersToken modifiers, TypeKindToken typeKind, NameToken name,
+        AccessModifiersToken accessModifiers, ModifiersToken modifiers, TypeKindToken typeKind, NameToken name,
         CurlyBracketsToken codeBlock
     ) {
-        string fullName = Path.GetDirectoryName(name.Pointer.Path) ?? "";
-        if (Parser.AssemblyPath.Length > 0 && fullName.StartsWith(Parser.AssemblyPath))
-            fullName = fullName[Parser.AssemblyPath.Length..];
-        while (fullName.StartsWith('/') || fullName.StartsWith('\\'))
-            fullName = fullName[1..];
-        while (fullName.EndsWith('/') || fullName.EndsWith('\\'))
-            fullName = fullName[..^1];
-        fullName = fullName.Replace('/', '.').Replace('\\', '.');
-        fullName = $"{Assembly.Name}.{(fullName.Length > 0 ? fullName + '.' + name.Name : name.Name)}";
-
+        string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
         bool successful = true;
         if (!Assembly.TryDefineType(fullName, out NeslTypeBuilder? typeBuilder)) {
             Parser.Throw(new CompilationError(name.Pointer, CompilationErrorType.TypeAlreadyExists, fullName));
