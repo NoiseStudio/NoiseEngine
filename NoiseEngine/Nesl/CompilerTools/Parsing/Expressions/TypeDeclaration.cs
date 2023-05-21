@@ -23,6 +23,9 @@ internal class TypeDeclaration : ParserExpressionContainer {
         TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, CurlyBracketsToken codeBlock
     ) {
         string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
+        if (genericParameters.GenericParameters.Count > 0)
+            fullName += $"`{genericParameters.GenericParameters.Count}";
+
         bool successful = true;
         if (!Assembly.TryDefineType(fullName, out NeslTypeBuilder? typeBuilder)) {
             Parser.Throw(new CompilationError(name.Pointer, CompilationErrorType.TypeAlreadyExists, fullName));

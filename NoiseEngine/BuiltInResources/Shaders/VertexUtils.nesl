@@ -1,9 +1,9 @@
 public static class VertexUtils {
 
     [Intrinsic]
-    public static Int32 Index { get; }
+    public static i32 Index { get; }
 
     [Intrinsic]
-    public static Vector4<Float32> ObjectToClipPos(Vector3<Float32> position) {}
+    public static f32v4 ObjectToClipPos(f32v3 position) {}
 
 }

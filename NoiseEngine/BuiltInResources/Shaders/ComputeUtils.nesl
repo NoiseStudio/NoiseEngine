@@ -1,0 +1,6 @@
+public static class ComputeUtils {
+
+    [Intrinsic]
+    public static u32v3 GlobalInvocation3 { get; }
+
+}

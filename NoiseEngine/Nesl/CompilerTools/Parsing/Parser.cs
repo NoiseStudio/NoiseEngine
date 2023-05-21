@@ -417,14 +417,18 @@ internal class Parser {
     }
 
     public bool TryGetType(TypeIdentifierToken typeIdentifier, [NotNullWhen(true)] out NeslType? type) {
+        string name = typeIdentifier.Identifier;
+        if (typeIdentifier.GenericTokens.Count > 0)
+            name += $"`{typeIdentifier.GenericTokens.Count}";
+
         if (currentMethod is not null) {
-            type = currentMethod.GenericTypeParameters.FirstOrDefault(x => x.Name == typeIdentifier.Identifier);
+            type = currentMethod.GenericTypeParameters.FirstOrDefault(x => x.Name == name);
             if (type is not null)
                 return true;
         }
 
         if (currentType is not null) {
-            type = currentType.GenericTypeParameters.FirstOrDefault(x => x.Name == typeIdentifier.Identifier);
+            type = currentType.GenericTypeParameters.FirstOrDefault(x => x.Name == name);
             if (type is not null)
                 return true;
         }

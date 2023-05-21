@@ -67,11 +67,15 @@ internal readonly record struct TypeIdentifierToken(
     public NeslType? GetTypeFromAssembly(
         NeslAssembly assembly, IEnumerable<string> usings, out IReadOnlyList<TypeIdentifierToken> genericTokens
     ) {
-        NeslType? type = assembly.GetType(Identifier);
         genericTokens = GenericTokens;
+        string name = Identifier;
+        if (genericTokens.Count > 0)
+            name += $"`{genericTokens.Count}";
+
+        NeslType? type = assembly.GetType(name);
         if (type is null) {
             foreach (string u in usings) {
-                type = assembly.GetType(u + "." + Identifier);
+                type = assembly.GetType(u + "." + name);
                 if (type is not null)
                     return type;
             }
@@ -98,6 +102,48 @@ internal readonly record struct TypeIdentifierToken(
         }
 
         switch (Identifier) {
+            // Signed.
+            case "i32":
+                typeIdentifier = GetSystemType("Int32");
+                break;
+            case "i32v2":
+                typeIdentifier = GetSystemGenericType("Vector2", "Int32");
+                break;
+            case "i32v3":
+                typeIdentifier = GetSystemGenericType("Vector3", "Int32");
+                break;
+            case "i32v4":
+                typeIdentifier = GetSystemGenericType("Vector4", "Int32");
+                break;
+
+            // Unsigned.
+            case "u32":
+                typeIdentifier = GetSystemType("UInt32");
+                break;
+            case "u32v2":
+                typeIdentifier = GetSystemGenericType("Vector2", "UInt32");
+                break;
+            case "u32v3":
+                typeIdentifier = GetSystemGenericType("Vector3", "UInt32");
+                break;
+            case "u32v4":
+                typeIdentifier = GetSystemGenericType("Vector4", "UInt32");
+                break;
+
+            // Float.
+            case "f64":
+                typeIdentifier = GetSystemType("Float64");
+                break;
+            case "f64v2":
+                typeIdentifier = GetSystemGenericType("Vector2", "Float64");
+                break;
+            case "f64v3":
+                typeIdentifier = GetSystemGenericType("Vector3", "Float64");
+                break;
+            case "f64v4":
+                typeIdentifier = GetSystemGenericType("Vector4", "Float64");
+                break;
+
             case "f32":
                 typeIdentifier = GetSystemType("Float32");
                 break;
@@ -110,6 +156,8 @@ internal readonly record struct TypeIdentifierToken(
             case "f32v4":
                 typeIdentifier = GetSystemGenericType("Vector4", "Float32");
                 break;
+
+            // Default.
             default:
                 typeIdentifier = default;
                 return false;

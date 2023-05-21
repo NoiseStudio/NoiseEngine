@@ -16,7 +16,7 @@ public class GenericFields : NeslParsingTestEnvironment {
             struct Mock {}
         ");
 
-        NeslType? a = assembly.Types.SingleOrDefault(x => x.Name == "Mazdamer");
+        NeslType? a = assembly.Types.SingleOrDefault(x => x.Name == "Mazdamer`1");
         Assert.NotNull(a);
         NeslType? b = assembly.Types.SingleOrDefault(x => x.Name == "Mock");
         Assert.NotNull(b);
@@ -38,7 +38,7 @@ public class GenericFields : NeslParsingTestEnvironment {
             struct MockB {}
         ");
 
-        NeslType? a = assembly.Types.SingleOrDefault(x => x.Name == "Mazdamer");
+        NeslType? a = assembly.Types.SingleOrDefault(x => x.Name == "Mazdamer`2");
         Assert.NotNull(a);
         NeslType? b = assembly.Types.SingleOrDefault(x => x.Name == "MockA");
         Assert.NotNull(b);
@@ -69,13 +69,13 @@ public class GenericFields : NeslParsingTestEnvironment {
             struct MockB {}
         ");
 
-        NeslType? a = assembly.Types.SingleOrDefault(x => x.Name == "Mazdamer");
+        NeslType? a = assembly.Types.SingleOrDefault(x => x.Name == "Mazdamer`2");
         Assert.NotNull(a);
         NeslType? b = assembly.Types.SingleOrDefault(x => x.Name == "MockA");
         Assert.NotNull(b);
         NeslType? c = assembly.Types.SingleOrDefault(x => x.Name == "MockB");
         Assert.NotNull(c);
-        NeslType? compact = assembly.Types.SingleOrDefault(x => x.Name == "Compact");
+        NeslType? compact = assembly.Types.SingleOrDefault(x => x.Name == "Compact`1");
         Assert.NotNull(compact);
 
         NeslType maked = a!.MakeGeneric(b!, c!);
