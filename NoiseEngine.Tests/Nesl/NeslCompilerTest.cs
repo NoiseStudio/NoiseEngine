@@ -90,7 +90,7 @@ public class NeslCompilerTest : ApplicationTestEnvironment {
 
             FragmentData Vertex(VertexData data) {
                 return new FragmentData() {
-                    Position = Vertex.ObjectToClipPos(data.Position),
+                    Position = VertexUtils.ObjectToClipPos(data.Position),
                     Color = new f32v4(data.Color, data.Color.X)
                 };
             }

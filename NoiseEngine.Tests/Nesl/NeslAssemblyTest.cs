@@ -3,7 +3,6 @@ using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System;
-using System.IO;
 using System.Linq;
 
 namespace NoiseEngine.Tests.Nesl;

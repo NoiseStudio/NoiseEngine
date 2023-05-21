@@ -6,19 +6,19 @@ using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 
-internal class Vertex : IntrinsicsContainer {
+internal class VertexUtils : IntrinsicsContainer {
 
-    public Vertex(
+    public VertexUtils(
         SpirVGenerator generator, SpirVFunction function, IReadOnlyList<SpirVVariable> parameters
     ) : base(generator, function, parameters) {
     }
 
     public override void Process() {
         switch (NeslMethod.Name) {
-            case NeslOperators.PropertyGet + nameof(Default.Vertex.Index):
+            case NeslOperators.PropertyGet + nameof(Default.VertexUtils.Index):
                 EmitBuiltInVariable(BuiltInTypes.Int32, 42u);
                 break;
-            case nameof(Default.Vertex.ObjectToClipPos):
+            case nameof(Default.VertexUtils.ObjectToClipPos):
                 ObjectToClipPos();
                 break;
             default:

@@ -75,7 +75,7 @@ internal class SerializedNeslType : NeslType {
         if (GenericMakedFrom is null)
             throw new InvalidOperationException("This type is not generic maked.");
 
-        SetAttributes(GenericHelper.RemoveGenericsFromAttributes(Attributes, targetTypes));
+        SetAttributes(GenericHelper.RemoveGenericsFromAttributes(GenericMakedFrom.Attributes, targetTypes));
 
         // Create fields.
         List<NeslField> fields = new List<NeslField>();

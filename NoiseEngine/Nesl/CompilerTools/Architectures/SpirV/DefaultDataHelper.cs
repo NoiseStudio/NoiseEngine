@@ -8,7 +8,7 @@ internal static class DefaultDataHelper {
     public static void Store(
         SpirVCompiler compiler, SpirVVariable variable, NeslField neslField, SpirVGenerator generator
     ) {
-        if (neslField.FieldType.FullNameWithAssembly != Buffers.ReadWriteBufferName)
+        if (neslField.FieldType.FullNameWithAssembly != Buffers.RwBufferName)
             throw new NotImplementedException();
 
         SpirVId constId = compiler.Consts.GetConsts(variable.NeslType, neslField.DefaultData!);

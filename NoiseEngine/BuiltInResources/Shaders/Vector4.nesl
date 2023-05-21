@@ -7,10 +7,10 @@ public struct Vector4<T> {
     public T W;
 
     public Vector4(Vector3<T> xyz, T w) {
-        X = xyz.X;
-        Y = xyz.Y;
-        Z = xyz.Z;
-        W = w;
+        //X = xyz.X;
+        //Y = xyz.Y;
+        //Z = xyz.Z;
+        //W = w;
     }
 
 }

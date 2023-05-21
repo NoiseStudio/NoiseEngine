@@ -40,7 +40,7 @@ public class NeslTypeTest {
         NeslField genericField = genericType.DefineField(FieldName, genericTypeParameter);
 
         NeslMethodBuilder genericMethod =
-            genericType.DefineMethod(MethodName, genericType, Buffers.GetReadWriteBuffer(genericTypeParameter));
+            genericType.DefineMethod(MethodName, genericType, Buffers.GetRwBuffer(genericTypeParameter));
         IlGenerator il = genericMethod.IlGenerator;
 
         il.Emit(OpCode.Load, 0u, 0u);

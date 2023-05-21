@@ -18,11 +18,11 @@ internal static class IntrinsicsManager {
         }
 
         switch (function.NeslMethod.Type.FullName) {
-            case $"{DefaultAssembly}.{nameof(Compute)}":
-                 new Compute(generator, function, parameters).Process();
+            case $"{DefaultAssembly}.{nameof(ComputeUtils)}":
+                 new ComputeUtils(generator, function, parameters).Process();
                  break;
-            case $"{DefaultAssembly}.{nameof(Vertex)}Utils":
-                new Vertex(generator, function, parameters).Process();
+            case $"{DefaultAssembly}.{nameof(VertexUtils)}":
+                new VertexUtils(generator, function, parameters).Process();
                 break;
             default:
                 throw new InvalidOperationException($"Unable to find given {nameof(IntrinsicAttribute)} definition.");
