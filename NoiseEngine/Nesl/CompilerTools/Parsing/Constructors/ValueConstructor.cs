@@ -76,8 +76,19 @@ internal static class ValueConstructor {
         string fragmentName = index != -1 ? identifier.Identifier[..index] : identifier.Identifier;
 
         VariableData? variable = parser.GetVariable(fragmentName);
-        if (variable is null)
-            return CallMethod(parser, expression);
+        if (variable is null) {
+            uint i = 0;
+            foreach (NeslField f in parser.CurrentMethod.Type.Fields) {
+                if (f.Name == fragmentName) {
+                    variable = new VariableData(f.FieldType, f.Name, i);
+                    break;
+                }
+                i++;
+            }
+
+            if (variable is null)
+                return CallMethod(parser, expression);
+        }
 
         if (index == -1)
             return new ValueData(variable.Value.Type, variable.Value.Id);

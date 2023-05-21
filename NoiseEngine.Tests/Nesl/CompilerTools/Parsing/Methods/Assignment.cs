@@ -14,6 +14,17 @@ public class Assignment : NeslParsingTestEnvironment {
     }
 
     [Fact]
+    public void CompactValueFromVariableConstructor() {
+        CompileSingle(@"
+            struct Foo {
+                Foo(f32 a, f32v3 b) {
+                    a = b.Z;
+                }
+            }
+        ");
+    }
+
+    [Fact]
     public void CompactValueFromField() {
         CompileSingle(@"
             struct Foo {

@@ -300,7 +300,10 @@ internal class Parser {
 
                 ParameterParser parameterParser = new ParameterParser(
                     this, Assembly, AssemblyPath, ParserStep.Parameters, newParameters
-                );
+                ) {
+                    CurrentType = CurrentType
+                    // TODO: Add generic parameters from this method.
+                };
                 parameterParser.Parse();
 
                 foreach (CompilationError error in parameterParser.Errors)
