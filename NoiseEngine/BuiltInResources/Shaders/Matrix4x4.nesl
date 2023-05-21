@@ -1,0 +1,9 @@
+[PlatformDependentTypeRepresentation("OpTypeMatrix4`{&T}`4")]
+public struct Matrix4x4<T> {
+
+    public Vector4<T> C0;
+    public Vector4<T> C1;
+    public Vector4<T> C2;
+    public Vector4<T> C3;
+
+}

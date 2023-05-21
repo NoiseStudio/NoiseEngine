@@ -1,12 +1,15 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -17,9 +20,8 @@ internal class Parser {
     private List<string>? usings;
     private List<(NeslTypeBuilder, TokenBuffer)>? definedTypes;
     private List<(TypeIdentifierToken typeIdentifier, string name)>? definedFields;
-    private List<(
-        TypeIdentifierToken typeIdentifier, NameToken name, TokenBuffer parameters, TokenBuffer codeBlock
-    )>? definedMethods;
+    private List<PropertyDefinitionData>? definedProperties;
+    private List<MethodDefinitionData>? definedMethods;
     private List<Parser>? types;
     private List<Parser>? methods;
 
@@ -268,6 +270,8 @@ internal class Parser {
             definedFields = null;
         }
 
+        AnalyzeProperties();
+
         // Add default constructor to value type.
         if (currentType?.IsValueType == true) {
             IlGenerator il = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType).IlGenerator;
@@ -278,17 +282,14 @@ internal class Parser {
 
     public void AnalyzeMethods() {
         if (definedMethods is not null) {
-            foreach (
-                (TypeIdentifierToken typeIdentifier, NameToken name, TokenBuffer parameters, TokenBuffer codeBlock)
-                in definedMethods
-            ) {
+            foreach (MethodDefinitionData data in definedMethods) {
                 // Parameters.
                 TokenBuffer newParameters;
-                if (parameters.Tokens.Count == 0) {
-                    newParameters = parameters;
+                if (data.Parameters.Tokens.Count == 0) {
+                    newParameters = data.Parameters;
                 } else {
-                    Token last = parameters.Tokens[^1];
-                    newParameters = new TokenBuffer(parameters.Tokens.Append(new Token(
+                    Token last = data.Parameters.Tokens[^1];
+                    newParameters = new TokenBuffer(data.Parameters.Tokens.Append(new Token(
                         last.Path, last.Line, last.Column + 1, TokenType.Comma, 1, null
                     )).ToArray());
                 }
@@ -303,26 +304,33 @@ internal class Parser {
 
                 // Return type.
                 NeslType? returnType = null;
-                if (typeIdentifier.Identifier != "void")
-                    TryGetType(typeIdentifier, out returnType);
+                if (data.TypeIdentifier.Identifier != "void")
+                    TryGetType(data.TypeIdentifier, out returnType);
 
                 // Construct.
                 if (!CurrentType.TryDefineMethod(
-                    name.Name, out NeslMethodBuilder? method, returnType,
+                    data.Name.Name, out NeslMethodBuilder? method, returnType,
                     parameterParser.DefinedParameters.Select(x => x.type).ToArray()
                 )) {
                     Throw(new CompilationError(
-                        name.Pointer, CompilationErrorType.MethodAlreadyExists, name.Name
+                        data.Name.Pointer, CompilationErrorType.MethodAlreadyExists, data.Name.Name
                     ));
                     return;
                 }
+
+                foreach (NeslAttribute attribute in data.Attributes)
+                    method.AddAttribute(attribute);
+
+                // Ignore body when has intrinsic attribute.
+                if (method.Attributes.HasAnyAttribute(IntrinsicAttribute.Create().FullName))
+                    continue;
 
                 Dictionary<string, VariableData> variables = new Dictionary<string, VariableData>();
                 foreach ((NeslType type, string vname) in parameterParser.DefinedParameters)
                     variables.Add(vname, new VariableData(type, vname, method.IlGenerator.GetNextVariableId()));
 
                 methods ??= new List<Parser>();
-                methods.Add(new Parser(this, Assembly, AssemblyPath, ParserStep.Method, codeBlock) {
+                methods.Add(new Parser(this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock) {
                     CurrentType = CurrentType,
                     CurrentMethod = method!,
                     variables = variables
@@ -366,31 +374,61 @@ internal class Parser {
     }
 
     public bool TryDefineField(TypeIdentifierToken typeIdentifier, string name) {
-        definedFields ??= new List<(TypeIdentifierToken typeIdentifier, string name)>();
-        foreach ((_, string n) in definedFields) {
-            if (name == n)
-                return false;
+        if (definedFields is not null) {
+            foreach ((_, string n) in definedFields) {
+                if (name == n)
+                    return false;
+            }
         }
+        if (definedProperties is not null) {
+            foreach (string n in definedProperties.Select(x => x.Name.Name)) {
+                if (name == n)
+                    return false;
+            }
+        }
+
+        definedFields ??= new List<(TypeIdentifierToken typeIdentifier, string name)>();
         definedFields.Add((typeIdentifier, name));
         return true;
     }
 
-    public void DefineMethod(
-        TypeIdentifierToken typeIdentifier, NameToken name, TokenBuffer parameters, TokenBuffer codeBlock
-    ) {
-        definedMethods ??= new List<(TypeIdentifierToken, NameToken, TokenBuffer, TokenBuffer)>();
-        definedMethods.Add((typeIdentifier, name, parameters, codeBlock));
+    public bool TryDefineProperty(PropertyDefinitionData data) {
+        if (definedProperties is not null) {
+            foreach (string n in definedProperties.Select(x => x.Name.Name)) {
+                if (data.Name.Name == n)
+                    return false;
+            }
+        }
+        if (definedFields is not null) {
+            foreach ((_, string n) in definedFields) {
+                if (data.Name.Name == n)
+                    return false;
+            }
+        }
+
+        definedProperties ??= new List<PropertyDefinitionData>();
+        definedProperties.Add(data);
+        return true;
+    }
+
+    public void DefineMethod(MethodDefinitionData data) {
+        definedMethods ??= new List<MethodDefinitionData>();
+        definedMethods.Add(data);
     }
 
     public bool TryGetType(TypeIdentifierToken typeIdentifier, [NotNullWhen(true)] out NeslType? type) {
+        string name = typeIdentifier.Identifier;
+        if (typeIdentifier.GenericTokens.Count > 0)
+            name += $"`{typeIdentifier.GenericTokens.Count}";
+
         if (currentMethod is not null) {
-            type = currentMethod.GenericTypeParameters.FirstOrDefault(x => x.Name == typeIdentifier.Identifier);
+            type = currentMethod.GenericTypeParameters.FirstOrDefault(x => x.Name == name);
             if (type is not null)
                 return true;
         }
 
         if (currentType is not null) {
-            type = currentType.GenericTypeParameters.FirstOrDefault(x => x.Name == typeIdentifier.Identifier);
+            type = currentType.GenericTypeParameters.FirstOrDefault(x => x.Name == name);
             if (type is not null)
                 return true;
         }
@@ -455,6 +493,18 @@ internal class Parser {
         if (variables is not null && variables.TryGetValue(name, out VariableData data))
             return data;
         return null;
+    }
+
+    private void AnalyzeProperties() {
+        if (definedProperties is null)
+            return;
+
+        foreach (PropertyDefinitionData data in definedProperties) {
+            DefineMethod(new MethodDefinitionData(
+                data.TypeIdentifier, data.Name with { Name = NeslOperators.PropertyGet + data.Name.Name },
+                TokenBuffer.Empty, TokenBuffer.Empty, data.GetterAttributes
+            ));
+        }
     }
 
 }

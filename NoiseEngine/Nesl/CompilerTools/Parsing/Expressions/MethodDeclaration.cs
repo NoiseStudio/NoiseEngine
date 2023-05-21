@@ -8,16 +8,21 @@ internal class MethodDeclaration : ParserExpressionContainer {
     }
 
     [ParserExpression(ParserStep.TopLevel | ParserStep.Type)]
+    [ParserExpressionParameter(ParserTokenType.Attributes)]
+    [ParserExpressionParameter(ParserTokenType.AccessModifiers)]
     [ParserExpressionParameter(ParserTokenType.Modifiers)]
     [ParserExpressionParameter(ParserTokenType.TypeIdentifier)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.RoundBrackets)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
-        ModifiersToken modifiers, TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters,
-        CurlyBracketsToken codeBlock
+        AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
+        TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters, CurlyBracketsToken codeBlock
     ) {
-        Parser.DefineMethod(typeIdentifier, name, parameters.Buffer, codeBlock.Buffer);
+        Parser.DefineMethod(new MethodDefinitionData(
+            typeIdentifier, name, parameters.Buffer, codeBlock.Buffer,
+            attributes.Compile(Parser, AttributeTargets.Method
+        )));
     }
 
 }

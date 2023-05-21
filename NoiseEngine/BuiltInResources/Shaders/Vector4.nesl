@@ -1,9 +1,9 @@
 [PlatformDependentTypeRepresentation("OpTypeVector`{&T}`4")]
 public struct Vector4<T> {
 
-	public T X;
-	public T Y;
-	public T Z;
-	public T W;
+    public T X;
+    public T Y;
+    public T Z;
+    public T W;
 
 }

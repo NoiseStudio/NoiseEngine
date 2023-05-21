@@ -4,6 +4,7 @@ namespace NoiseEngine.Nesl.CompilerTools;
 
 internal class TokenBuffer {
 
+    public static TokenBuffer Empty => new TokenBuffer(ArraySegment<Token>.Empty);
 
     public ArraySegment<Token> Tokens { get; }
     public int Index { get; set; }

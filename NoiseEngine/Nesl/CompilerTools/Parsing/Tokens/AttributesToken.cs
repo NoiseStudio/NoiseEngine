@@ -77,14 +77,14 @@ internal readonly record struct AttributesToken(
                     .Where(x => x.Name == "Create")
             ) {
                 ParameterInfo[] p = m.GetParameters();
-                if (p.Length != parameters?.Count)
+                if (p.Length != (parameters?.Count ?? 0))
                     continue;
 
                 bool match = true;
                 object[] args = new object[p.Length];
                 for (int i = 0; i < p.Length; i++) {
                     Type type = p[i].ParameterType;
-                    ConstValueToken v = parameters[i];
+                    ConstValueToken v = parameters![i];
 
                     bool r = false;
                     CompilationError error = default;

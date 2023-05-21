@@ -1,0 +1,9 @@
+public static class VertexUtils {
+
+    [Intrinsic]
+    public static i32 Index { get; }
+
+    [Intrinsic]
+    public static f32v4 ObjectToClipPos(f32v3 position) {}
+
+}

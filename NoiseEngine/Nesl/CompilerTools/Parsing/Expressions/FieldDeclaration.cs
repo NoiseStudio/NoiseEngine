@@ -17,8 +17,11 @@ internal class FieldDeclaration : ParserExpressionContainer {
         AccessModifiersToken accessModifiers, ModifiersToken modifiers, TypeIdentifierToken typeIdentifier,
         NameToken name
     ) {
-        if (!Parser.TryDefineField(typeIdentifier, name.Name))
-            Parser.Throw(new CompilationError(name.Pointer, CompilationErrorType.FieldAlreadyExists, name.Name));
+        if (!Parser.TryDefineField(typeIdentifier, name.Name)) {
+            Parser.Throw(new CompilationError(
+                name.Pointer, CompilationErrorType.FieldOrPropertyAlreadyExists, name.Name
+            ));
+        }
     }
 
 }
