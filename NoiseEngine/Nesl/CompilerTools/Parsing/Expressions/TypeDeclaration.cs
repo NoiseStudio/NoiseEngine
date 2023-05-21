@@ -16,10 +16,11 @@ internal class TypeDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.Modifiers)]
     [ParserExpressionParameter(ParserTokenType.TypeKind)]
     [ParserExpressionParameter(ParserTokenType.Name)]
+    [ParserExpressionParameter(ParserTokenType.GenericDefine)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
-        TypeKindToken typeKind, NameToken name, CurlyBracketsToken codeBlock
+        TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, CurlyBracketsToken codeBlock
     ) {
         string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
         bool successful = true;
@@ -35,6 +36,8 @@ internal class TypeDeclaration : ParserExpressionContainer {
 
         foreach (NeslAttribute attribute in attributes.Compile(Parser, AttributeTargets.Type))
             typeBuilder.AddAttribute(attribute);
+        foreach (string genericParameterName in genericParameters.GenericParameters)
+            typeBuilder.DefineGenericTypeParameter(genericParameterName);
 
         if (typeKind.TypeKind == NeslTypeKind.Struct)
             typeBuilder.AddAttribute(ValueTypeAttribute.Create());

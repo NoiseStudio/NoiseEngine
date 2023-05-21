@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Xml.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -270,7 +269,7 @@ internal class Parser {
         }
 
         // Add default constructor to value type.
-        if (currentType is not null && currentType.IsValueType) {
+        if (currentType?.IsValueType == true) {
             IlGenerator il = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType).IlGenerator;
             il.Emit(OpCode.DefVariable, CurrentType);
             il.Emit(OpCode.ReturnValue, il.GetNextVariableId());
@@ -384,10 +383,23 @@ internal class Parser {
     }
 
     public bool TryGetType(TypeIdentifierToken typeIdentifier, [NotNullWhen(true)] out NeslType? type) {
+        if (currentMethod is not null) {
+            type = currentMethod.GenericTypeParameters.FirstOrDefault(x => x.Name == typeIdentifier.Identifier);
+            if (type is not null)
+                return true;
+        }
+
+        if (currentType is not null) {
+            type = currentType.GenericTypeParameters.FirstOrDefault(x => x.Name == typeIdentifier.Identifier);
+            if (type is not null)
+                return true;
+        }
+
         type = typeIdentifier.GetTypeFromAssembly(Assembly, Usings);
         if (type is not null)
             return true;
 
+        type = null;
         Throw(new CompilationError(
             typeIdentifier.Pointer, CompilationErrorType.TypeNotFound, typeIdentifier.Identifier
         ));

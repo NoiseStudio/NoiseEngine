@@ -1,0 +1,3 @@
+[PlatformDependentTypeRepresentation("OpTypeVector`{&T}`3")]
+public struct Vector3<T> {
+}
