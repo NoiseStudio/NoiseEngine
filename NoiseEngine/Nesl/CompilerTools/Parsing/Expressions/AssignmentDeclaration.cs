@@ -5,9 +5,9 @@ using System;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 
-internal class AssigmentDeclaration : ParserExpressionContainer {
+internal class AssignmentDeclaration : ParserExpressionContainer {
 
-    public AssigmentDeclaration(Parser parser) : base(parser) {
+    public AssignmentDeclaration(Parser parser) : base(parser) {
     }
 
     [ParserExpression(ParserStep.Method)]
@@ -24,7 +24,7 @@ internal class AssigmentDeclaration : ParserExpressionContainer {
             successful = false;
         }
         if (!op.IsAssigment) {
-            Parser.Throw(new CompilationError(op.Pointer, CompilationErrorType.ExpectedAssignmentOperator, op));
+            Parser.Throw(new CompilationError(op.Pointer, CompilationErrorType.ExpectedAssigmentOperator, op));
             successful = false;
         }
 

@@ -46,7 +46,7 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedExplicitCastNotExpression,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
-    ExpectedAssignmentOperator,
+    ExpectedAssigmentOperator,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedAttribute,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
