@@ -43,14 +43,14 @@ internal static class Vectors {
             );
             IlGenerator il = method.IlGenerator;
             il.Emit(OpCode.DefVariable, type);
-            il.Emit(OpCode.SetField, 7u, 3u, 6u);
-            il.Emit(OpCode.LoadField, 6u, 5u, 0u);
-            il.Emit(OpCode.SetField, 7u, 0u, 6u);
-            il.Emit(OpCode.LoadField, 6u, 5u, 1u);
-            il.Emit(OpCode.SetField, 7u, 1u, 6u);
-            il.Emit(OpCode.LoadField, 6u, 5u, 2u);
-            il.Emit(OpCode.SetField, 7u, 2u, 6u);
-            il.Emit(OpCode.ReturnValue, 7u);
+            il.Emit(OpCode.SetField, 6u, 3u, 5u);
+            il.Emit(OpCode.LoadField, 5u, 4u, 0u);
+            il.Emit(OpCode.SetField, 6u, 0u, 5u);
+            il.Emit(OpCode.LoadField, 5u, 4u, 1u);
+            il.Emit(OpCode.SetField, 6u, 1u, 5u);
+            il.Emit(OpCode.LoadField, 5u, 4u, 2u);
+            il.Emit(OpCode.SetField, 6u, 2u, 5u);
+            il.Emit(OpCode.ReturnValue, 6u);
         }
 
         return type;

@@ -2,8 +2,6 @@
 
 public static class NeslOperators {
 
-    public const string Phantom = "'ph";
-
     public const string PropertyGet = "'pG";
     public const string PropertySet = "'pS";
 
