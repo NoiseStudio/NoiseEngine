@@ -114,9 +114,13 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeCreateMethodNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    VariableOrFieldOrPropertyNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     UsingGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeGenericNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AssigmentGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeTargetNotMatch,
     [CompilationErrorType(CompilationErrorSeverity.Error)]

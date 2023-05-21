@@ -4,12 +4,11 @@ using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Xml.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -28,6 +27,7 @@ internal class Parser {
     private NeslTypeBuilder? currentType;
     private NeslMethodBuilder? currentMethod;
     private Dictionary<string, VariableData>? variables;
+    private bool replacedDefaultConstructor;
 
     public Parser? Parent { get; }
     public NeslAssemblyBuilder Assembly { get; }
@@ -46,6 +46,10 @@ internal class Parser {
         init {
             currentMethod = value;
         }
+    }
+
+    public bool CurrentMethodIsConstructor {
+        get => (currentMethod ?? throw new UnreachableException()).Name.StartsWith(NeslOperators.Constructor);
     }
 
     internal IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
@@ -304,8 +308,22 @@ internal class Parser {
 
                 // Return type.
                 NeslType? returnType = null;
-                if (data.TypeIdentifier.Identifier != "void")
-                    TryGetType(data.TypeIdentifier, out returnType);
+                if (data.IsConstructor)
+                    returnType = currentType ?? throw new UnreachableException();
+                else if (data.TypeIdentifier!.Value.Identifier != "void")
+                    TryGetType(data.TypeIdentifier.Value, out returnType);
+
+                // Replace default constructor.
+                if (
+                    data.IsConstructor && parameterParser.DefinedParameters.Count == 0 &&
+                    !replacedDefaultConstructor && CurrentType.IsValueType
+                ) {
+                    replacedDefaultConstructor = true;
+                    NeslMethodBuilder defaultConstructor = (NeslMethodBuilder)(
+                        CurrentType.GetMethod(data.Name.Name) ?? throw new UnreachableException()
+                    );
+                    CurrentType.RemoveMethod(defaultConstructor);
+                }
 
                 // Construct.
                 if (!CurrentType.TryDefineMethod(
@@ -315,7 +333,12 @@ internal class Parser {
                     Throw(new CompilationError(
                         data.Name.Pointer, CompilationErrorType.MethodAlreadyExists, data.Name.Name
                     ));
-                    return;
+
+                    // Create method with random name.
+                    while (!CurrentType.TryDefineMethod(
+                        $"{data.Name.Name}-{Random.Shared.NextInt64()}", out method, returnType,
+                        parameterParser.DefinedParameters.Select(x => x.type).ToArray()
+                    )) { }
                 }
 
                 foreach (NeslAttribute attribute in data.Attributes)
@@ -328,6 +351,9 @@ internal class Parser {
                 Dictionary<string, VariableData> variables = new Dictionary<string, VariableData>();
                 foreach ((NeslType type, string vname) in parameterParser.DefinedParameters)
                     variables.Add(vname, new VariableData(type, vname, method.IlGenerator.GetNextVariableId()));
+
+                if (data.IsConstructor)
+                    DefaultConstructorHelper.AppendHeader(method);
 
                 methods ??= new List<Parser>();
                 methods.Add(new Parser(this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock) {
@@ -345,6 +371,10 @@ internal class Parser {
         if (methods is not null) {
             foreach (Parser methodParser in methods) {
                 methodParser.Parse();
+
+                if (methodParser.CurrentMethodIsConstructor)
+                    DefaultConstructorHelper.AppendFooter(methodParser.CurrentMethod);
+
                 errors.AddRange(methodParser.Errors);
             }
 

@@ -5,7 +5,7 @@ namespace NoiseEngine.Nesl;
 
 public readonly struct CompilationError {
 
-    private readonly string received;
+    private readonly object received;
 
     public CompilationErrorType Type { get; }
     public string Path { get; }
@@ -13,7 +13,7 @@ public readonly struct CompilationError {
     public uint Column { get; }
     public CompilationErrorSeverity Severity { get; }
 
-    internal CompilationError(CodePointer pointer, CompilationErrorType type, string received) {
+    internal CompilationError(CodePointer pointer, CompilationErrorType type, object received) {
         this.received = received;
 
         Type = type;

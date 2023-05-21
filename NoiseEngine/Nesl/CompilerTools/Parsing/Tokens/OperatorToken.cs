@@ -3,7 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
-internal readonly record struct OperatorToken(OperatorType Type, bool IsAssigment) : IParserToken<OperatorToken> {
+internal readonly record struct OperatorToken(
+    CodePointer Pointer, OperatorType Type, bool IsAssigment
+) : IParserToken<OperatorToken> {
 
     public bool IsIgnored => false;
     public int Priority => 0;
@@ -189,7 +191,7 @@ internal readonly record struct OperatorToken(OperatorType Type, bool IsAssigmen
                 return false;
         }
 
-        result = new OperatorToken(type, isAssigment);
+        result = new OperatorToken(token.Pointer, type, isAssigment);
         error = default;
         return true;
     }
