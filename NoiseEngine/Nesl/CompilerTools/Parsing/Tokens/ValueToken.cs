@@ -36,88 +36,96 @@ internal record ValueToken(
             buffer.Index = index;
         }
 
-        if (!buffer.TryReadNext(out Token token)) {
-            result = null;
-            error = new CompilationError(token, CompilationErrorType.ExpectedValue);
-            return false;
-        }
-
         IValueContent value;
-        if (token.Type == TokenType.Word) {
-            bool isNew = token.Value == "new";
-            if (!isNew)
-                buffer.Index--;
-
-            // Get current expression.
-            if (!TryGetIdentifierWithRoundBrackets(
-                buffer, errorMode, out error, out TypeIdentifierToken identifier, out RoundBracketsToken? roundBrackets
-            )) {
+        index = buffer.Index;
+        if (ConstValueToken.Parse(buffer, errorMode, out ConstValueToken constValue, out error)) {
+            value = constValue;
+            // TODO: implement left operators.
+        } else {
+            buffer.Index = index;
+            if (!buffer.TryReadNext(out Token token)) {
                 result = null;
+                error = new CompilationError(token, CompilationErrorType.ExpectedValue);
                 return false;
             }
 
-            CurlyBracketsToken? curlyBrackets = null;
-            if (isNew) {
-                index = buffer.Index;
-                if (CurlyBracketsToken.Parse(buffer, errorMode, out CurlyBracketsToken tempCurlyBrackets, out _))
-                    curlyBrackets = tempCurlyBrackets;
-                else
-                    buffer.Index = index;
-            }
-
-            if (!TryGetIndexer(buffer, errorMode, out error, out ValueToken? indexer)) {
-                result = null;
-                return false;
-            }
-
-            List<ExpressionValueContent> expressions = new List<ExpressionValueContent> {
-                new ExpressionValueContent(isNew, identifier, roundBrackets, curlyBrackets, indexer)
-            };
-
-            // Get next expressions
-            while (buffer.TryReadNext(out token)) {
-                if (token.Type == TokenType.Dot) {
-                    if (!TryGetIdentifierWithRoundBrackets(
-                        buffer, errorMode, out error, out identifier, out roundBrackets
-                    )) {
-                        result = null;
-                        return false;
-                    }
-                } else if (token.Type != TokenType.SquareBracketOpening) {
+            if (token.Type == TokenType.Word) {
+                bool isNew = token.Value == "new";
+                if (!isNew)
                     buffer.Index--;
-                    break;
-                }
 
-                if (!TryGetIndexer(buffer, errorMode, out error, out indexer)) {
+                // Get current expression.
+                if (!TryGetIdentifierWithRoundBrackets(
+                    buffer, errorMode, out error, out TypeIdentifierToken identifier,
+                    out RoundBracketsToken? roundBrackets
+                )) {
                     result = null;
                     return false;
                 }
 
-                expressions.Add(new ExpressionValueContent(false, identifier, roundBrackets, null, indexer));
-            }
+                CurlyBracketsToken? curlyBrackets = null;
+                if (isNew) {
+                    index = buffer.Index;
+                    if (CurlyBracketsToken.Parse(buffer, errorMode, out CurlyBracketsToken tempCurlyBrackets, out _))
+                        curlyBrackets = tempCurlyBrackets;
+                    else
+                        buffer.Index = index;
+                }
 
-            // Create value
-            value = new ExpressionValueContentContainer(expressions);
-        } else if (token.Type == TokenType.RoundBracketOpening) {
-            index = buffer.Index;
-            if (Parse(buffer, errorMode, out ValueToken? innerValue, out error)) {
-                value = innerValue;
+                if (!TryGetIndexer(buffer, errorMode, out error, out ValueToken? indexer)) {
+                    result = null;
+                    return false;
+                }
+
+                List<ExpressionValueContent> expressions = new List<ExpressionValueContent> {
+                new ExpressionValueContent(isNew, identifier, roundBrackets, curlyBrackets, indexer)
+            };
+
+                // Get next expressions
+                while (buffer.TryReadNext(out token)) {
+                    if (token.Type == TokenType.Dot) {
+                        if (!TryGetIdentifierWithRoundBrackets(
+                            buffer, errorMode, out error, out identifier, out roundBrackets
+                        )) {
+                            result = null;
+                            return false;
+                        }
+                    } else if (token.Type != TokenType.SquareBracketOpening) {
+                        buffer.Index--;
+                        break;
+                    }
+
+                    if (!TryGetIndexer(buffer, errorMode, out error, out indexer)) {
+                        result = null;
+                        return false;
+                    }
+
+                    expressions.Add(new ExpressionValueContent(false, identifier, roundBrackets, null, indexer));
+                }
+
+                // Create value
+                value = new ExpressionValueContentContainer(expressions);
+            } else if (token.Type == TokenType.RoundBracketOpening) {
+                index = buffer.Index;
+                if (Parse(buffer, errorMode, out ValueToken? innerValue, out error)) {
+                    value = innerValue;
+                } else {
+                    result = default;
+                    return false;
+                }
+
+                if (token.Length <= 1) {
+                    result = null;
+                    error = new CompilationError(token, CompilationErrorType.ExpectedClosingRoundBracket);
+                    return false;
+                }
+
+                buffer.Index = index + token.Length - 1;
             } else {
-                result = default;
-                return false;
-            }
-
-            if (token.Length <= 1) {
                 result = null;
-                error = new CompilationError(token, CompilationErrorType.ExpectedClosingRoundBracket);
+                error = new CompilationError(token, CompilationErrorType.ExpectedValue);
                 return false;
             }
-
-            buffer.Index = index + token.Length - 1;
-        } else {
-            result = null;
-            error = new CompilationError(token, CompilationErrorType.ExpectedValue);
-            return false;
         }
 
         OperatorToken? rightOperator = null;

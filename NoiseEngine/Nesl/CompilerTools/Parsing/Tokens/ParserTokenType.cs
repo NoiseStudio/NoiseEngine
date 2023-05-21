@@ -22,6 +22,8 @@ internal enum ParserTokenType {
     Return,
     [ParserToken(typeof(ValueToken))]
     Value,
+    [ParserToken(typeof(OperatorToken))]
+    Operator,
     [ParserToken(typeof(RoundBracketsToken))]
     RoundBrackets,
     [ParserToken(typeof(CurlyBracketsToken))]

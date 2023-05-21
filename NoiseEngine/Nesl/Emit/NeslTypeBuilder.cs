@@ -138,6 +138,10 @@ public class NeslTypeBuilder : NeslType {
         AddMethodToCollection(method);
     }
 
+    internal void RemoveMethod(NeslMethodBuilder method) {
+        methods.TryRemove(new KeyValuePair<NeslMethodIdentifier, NeslMethodBuilder>(method.Identifier, method));
+    }
+
     private bool TryAddMethodToCollection(NeslMethodBuilder method) {
         return methods.TryAdd(method.Identifier, method);
     }
