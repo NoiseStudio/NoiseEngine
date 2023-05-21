@@ -395,9 +395,23 @@ internal class Parser {
                 return true;
         }
 
-        type = typeIdentifier.GetTypeFromAssembly(Assembly, Usings);
-        if (type is not null)
+        type = typeIdentifier.GetTypeFromAssembly(
+            Assembly, Usings, out IReadOnlyList<TypeIdentifierToken> genericTokens
+        );
+        if (type is not null) {
+            if (genericTokens.Count == 0)
+                return true;
+
+            NeslType[] genericTypes = new NeslType[genericTokens.Count];
+            for (int i = 0; i < genericTypes.Length; i++) {
+                if (!TryGetType(genericTokens[i], out NeslType? genericType))
+                    return false;
+                genericTypes[i] = genericType;
+            }
+
+            type = type.MakeGeneric(genericTypes);
             return true;
+        }
 
         type = null;
         Throw(new CompilationError(
