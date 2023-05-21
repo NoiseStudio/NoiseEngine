@@ -9,7 +9,7 @@ public class Constructors : NeslParsingTestEnvironment {
         CompileSingle(@"
             struct Foo {
 
-                public i32 X;
+                public u32 X;
 
                 public Foo() {
                     X = 42;
@@ -24,9 +24,9 @@ public class Constructors : NeslParsingTestEnvironment {
         CompileSingle(@"
             struct Foo {
 
-                public i32 X;
+                public f32 X;
 
-                public Foo(i32 x) {
+                public Foo(f32 x) {
                     X = x;
                 }
 

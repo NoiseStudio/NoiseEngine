@@ -116,6 +116,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     VariableOrFieldOrPropertyNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ImplicitCastOperatorNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     UsingGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeGenericNotAllowed,

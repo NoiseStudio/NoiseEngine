@@ -58,8 +58,9 @@ internal class AssignmentDeclaration : ParserExpressionContainer {
         }
 
         ValueData valueData = ValueConstructor.Construct(value, Parser);
-        if (!successful)
+        if (!successful || valueData.IsInvalid)
             return;
+        valueData = valueData.LoadConst(Parser, variable!.Value.Type);
 
         IlGenerator il = Parser.CurrentMethod.IlGenerator;
         if (!isField) {

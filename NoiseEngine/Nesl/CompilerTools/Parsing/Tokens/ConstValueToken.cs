@@ -6,7 +6,7 @@ namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
 internal readonly record struct ConstValueToken(
     CodePointer Pointer, ConstValueType Type, object Value
-) : IParserToken<ConstValueToken> {
+) : IParserToken<ConstValueToken>, IValueContent {
 
     public bool IsIgnored => false;
     public int Priority => 0;

@@ -14,6 +14,8 @@ internal static class ValueConstructor {
         if (element is ValueToken token) {
             if (token.Value is ValueToken innerToken)
                 return Construct(innerToken, parser);
+            if (token.Value is ConstValueToken constValue)
+                return new ValueData(null!, uint.MaxValue, constValue);
             if (token.Value is not ExpressionValueContentContainer container)
                 throw new UnreachableException();
 
