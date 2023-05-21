@@ -2,6 +2,7 @@
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit.Attributes;
 using System;
+using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -105,7 +106,9 @@ internal class SpirVVariable {
             return null;
         }
 
-        ulong size = neslField.FieldType.GetField($"{NeslOperators.Phantom}T")!.FieldType.GetSize();
+        if (!neslField.FieldType.IsGenericMaked)
+            throw new InvalidOperationException($"{nameof(Nesl.NeslType)} {neslField.FieldType} is not generic maked.");
+        ulong size = neslField.FieldType.GenericMakedTypeParameters.Single().GetSize();
         return (uint)((ulong)neslField.DefaultData.Count * 8 / size);
     }
 

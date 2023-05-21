@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
@@ -18,7 +17,7 @@ internal readonly record struct RoundBracketsToken(TokenBuffer Buffer) : IParser
             return false;
         }
 
-        if (token.Length == 1) {
+        if (token.Length <= 1) {
             result = default;
             error = new CompilationError(token, CompilationErrorType.ExpectedClosingRoundBracket);
             return false;

@@ -54,7 +54,7 @@ internal class SpirVConsts {
     }
 
     private SpirVId GetConstsBuffer(NeslType type, IReadOnlyList<byte> data) {
-        NeslType elementType = type.GetField($"{NeslOperators.Phantom}T")!.FieldType;
+        NeslType elementType = type.GenericMakedTypeParameters.Single();
         ulong elementSize = elementType.GetSize() / 8;
         uint length = (uint)((ulong)data.Count / elementSize);
 

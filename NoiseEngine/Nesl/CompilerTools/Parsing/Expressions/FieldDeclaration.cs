@@ -8,11 +8,15 @@ internal class FieldDeclaration : ParserExpressionContainer {
     }
 
     [ParserExpression(ParserStep.TopLevel | ParserStep.Type)]
+    [ParserExpressionParameter(ParserTokenType.AccessModifiers)]
     [ParserExpressionParameter(ParserTokenType.Modifiers)]
     [ParserExpressionParameter(ParserTokenType.TypeIdentifier)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionTokenType(ParserTokenType.Semicolon)]
-    public void Define(ModifiersToken modifiers, TypeIdentifierToken typeIdentifier, NameToken name) {
+    public void Define(
+        AccessModifiersToken accessModifiers, ModifiersToken modifiers, TypeIdentifierToken typeIdentifier,
+        NameToken name
+    ) {
         if (!Parser.TryDefineField(typeIdentifier, name.Name))
             Parser.Throw(new CompilationError(name.Pointer, CompilationErrorType.FieldAlreadyExists, name.Name));
     }

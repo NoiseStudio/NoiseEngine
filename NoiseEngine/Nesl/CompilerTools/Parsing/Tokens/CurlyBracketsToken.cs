@@ -17,7 +17,7 @@ internal readonly record struct CurlyBracketsToken(TokenBuffer Buffer) : IParser
             return false;
         }
 
-        if (token.Length == 1) {
+        if (token.Length <= 1) {
             result = default;
             error = new CompilationError(token, CompilationErrorType.ExpectedClosingCurlyBracket);
             return false;

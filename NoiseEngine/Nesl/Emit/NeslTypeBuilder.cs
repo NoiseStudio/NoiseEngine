@@ -45,9 +45,6 @@ public class NeslTypeBuilder : NeslType {
             NeslGenericTypeParameterBuilder genericTypeParameter = new NeslGenericTypeParameterBuilder(this, name);
             genericTypeParameters.Add(genericTypeParameter);
 
-            NeslFieldBuilder phantom = DefineField(NeslOperators.Phantom + name, genericTypeParameter);
-            phantom.AddAttribute(StaticAttribute.Create());
-
             return genericTypeParameter;
         }
     }
@@ -69,12 +66,7 @@ public class NeslTypeBuilder : NeslType {
                 throw new ArgumentException($"{nameof(NeslField)} named `{name}` already exists in `{Name}` type.",
                     nameof(name));
             }
-
-            int index = fields.FindIndex(x => x.Name.StartsWith(NeslOperators.Phantom));
-            if (index == -1)
-                fields.Add(field);
-            else
-                fields.Insert(index, field);
+            fields.Add(field);
         }
 
         return field;

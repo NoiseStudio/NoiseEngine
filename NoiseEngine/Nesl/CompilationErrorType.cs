@@ -82,6 +82,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedQuotationMark,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedGenericParameter,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]
     UsingAlreadyExists,

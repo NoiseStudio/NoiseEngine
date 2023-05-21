@@ -2,6 +2,7 @@
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Rendering.Vulkan;
+using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -103,7 +104,7 @@ internal class EntryPointHelper {
         ref uint location, ref uint offset, NeslType type, FastList<VertexInputAttributeDescription> inputAttributes,
         FastList<SpirVVariable> innerVariables, uint size, VulkanFormat floatFormat
     ) {
-        NeslType tType = type.GetField($"{NeslOperators.Phantom}T")!.FieldType;
+        NeslType tType = type.GenericMakedTypeParameters.Single();
         switch (tType.FullNameWithAssembly) {
             case BuiltInTypes.Float32Name:
                 SpirVVariable variable = new SpirVVariable(
