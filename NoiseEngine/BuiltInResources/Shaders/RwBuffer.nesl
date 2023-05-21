@@ -1,0 +1,3 @@
+[PlatformDependentTypeRepresentation("OpTypeArray`{&T}")]
+public class RwBuffer<T> {
+}

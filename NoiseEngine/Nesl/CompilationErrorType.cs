@@ -84,13 +84,15 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedGenericParameter,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedGetter,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]
     UsingAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     TypeAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
-    FieldAlreadyExists,
+    FieldOrPropertyAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     MethodAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
