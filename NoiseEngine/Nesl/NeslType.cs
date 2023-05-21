@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
@@ -38,11 +39,12 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     public string FullNameWithAssembly => $"{Assembly.Name}::{FullName}";
 
     public bool IsGeneric => GenericTypeParameters.Any();
-    public bool IsGenericMaked => GenericMakedTypeParameters.Any();
+    public bool IsGenericMaked => GenericMakedFrom is not null;
     public bool IsClass => !IsValueType;
     public bool IsValueType => Attributes.HasAnyAttribute(nameof(ValueTypeAttribute));
 
     public virtual IEnumerable<NeslType> GenericMakedTypeParameters => Enumerable.Empty<NeslType>();
+    public virtual NeslType? GenericMakedFrom { get; }
 
     private ConcurrentDictionary<NeslType[], Lazy<NeslType>> GenericMakedTypes {
         get {
@@ -58,9 +60,10 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         }
     }
 
-    protected NeslType(NeslAssembly assembly, string fullName) {
+    protected NeslType(NeslAssembly assembly, string fullName, NeslType? genericMakedFrom = null) {
         Assembly = assembly;
         FullName = fullName;
+        GenericMakedFrom = genericMakedFrom;
     }
 
     /// <summary>
@@ -87,79 +90,16 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         }
 
         return GenericMakedTypes.GetOrAdd(typeArguments, _ => new Lazy<NeslType>(() => {
-            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
-                new Dictionary<NeslGenericTypeParameter, NeslType>();
-
-            bool hasGenericTypeArguments = false;
-
-            int i = 0;
-            foreach (NeslGenericTypeParameter genericTypeParameter in GenericTypeParameters) {
-                NeslType typeArgument = typeArguments[i++];
-
-                genericTypeParameter.AssertConstraints(typeArgument);
-                targetTypes.Add(genericTypeParameter, typeArgument);
-
-                hasGenericTypeArguments |= typeArgument is NeslGenericTypeParameter;
-            }
+            Dictionary<NeslGenericTypeParameter, NeslType>? targetTypes =
+                UnsafeTargetTypesFromMakeGeneric(GenericTypeParameters, typeArguments);
 
             // Create not fully generic maked type.
-            if (hasGenericTypeArguments)
+            if (targetTypes is null)
                 return new NotFullyConstructedGenericNeslType(this, typeArguments.ToImmutableArray());
 
             // Create fully generic maked type.
-            SerializedNeslType type = new SerializedNeslType(
-                Assembly, FullName, GenericHelper.RemoveGenericsFromAttributes(Attributes, targetTypes),
-                typeArguments
-            );
-
-            // Create fields.
-            List<NeslField> fields = new List<NeslField>();
-            foreach (NeslField field in Fields) {
-                fields.Add(new SerializedNeslField(
-                    type, field.Name, GenericHelper.GetFinalType(this, type, field.FieldType, targetTypes),
-                    GenericHelper.RemoveGenericsFromAttributes(field.Attributes, targetTypes),
-                    field.DefaultData?.ToArray()
-                ));
-            }
-
-            type.SetFields(fields.ToArray());
-
-            // Create methods.
-            List<NeslMethod> methods = new List<NeslMethod>();
-
-            foreach (NeslMethod method in Methods) {
-                if (method.IsGeneric) {
-                    methods.Add(new GenericNeslMethodInConstructedGenericNeslType(type, method, targetTypes));
-                    continue;
-                }
-
-                // Return and parameter types.
-                NeslType? methodReturnType = method.ReturnType;
-                if (methodReturnType is not null)
-                    methodReturnType = GenericHelper.GetFinalType(this, type, methodReturnType, targetTypes);
-
-                NeslType[] methodParameterTypes = new NeslType[method.ParameterTypes.Count];
-
-                i = 0;
-                foreach (NeslType parameterType in method.ParameterTypes)
-                    methodParameterTypes[i++] = GenericHelper.GetFinalType(this,type, parameterType, targetTypes);
-
-                // Construct new method.
-                methods.Add(new SerializedNeslMethod(
-                    type,
-                    method.Name,
-                    methodReturnType,
-                    methodParameterTypes,
-                    GenericHelper.RemoveGenericsFromAttributes(method.Attributes, targetTypes),
-                    GenericHelper.RemoveGenericsFromAttributes(method.ReturnValueAttributes, targetTypes),
-                    method.ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
-                    method.GenericTypeParameters.ToArray(),
-                    GenericIlGenerator.RemoveGenerics(this, type, method, targetTypes)
-                ));
-            }
-
-            type.SetMethods(methods.ToArray());
-
+            SerializedNeslType type = UnsafeCreateTypeFromMakeGeneric(typeArguments);
+            type.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
             return type;
         })).Value;
     }
@@ -190,6 +130,19 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         return FullName;
     }
 
+    internal virtual void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {
+        if (serializedAssembly != Assembly)
+            return;
+
+        used.Add(this, GenericTypeParameters);
+
+        if (!IsGenericMaked)
+            return;
+
+        used.Add(this, GenericMakedFrom!);
+        used.Add(this, GenericMakedTypeParameters);
+    }
+
     internal virtual bool SerializeHeader(NeslAssembly serializedAssembly, SerializationWriter writer) {
         if (serializedAssembly != Assembly) {
             writer.WriteBool(false);
@@ -201,7 +154,8 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         writer.WriteBool(true);
         if (IsGenericMaked) {
             writer.WriteUInt8((byte)NeslTypeUsageKind.GenericMaked);
-            writer.WriteString(FullName);
+            writer.WriteUInt64(Assembly.GetLocalTypeId(GenericMakedFrom!));
+            writer.WriteEnumerable(GenericMakedTypeParameters.Select(Assembly.GetLocalTypeId));
             return true;
         }
 
@@ -211,10 +165,17 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         return false;
     }
 
-    internal virtual void SerializeBody(SerializationWriter writer) {
-        writer.WriteEnumerable(GenericTypeParameters.Select(Assembly.GetLocalTypeId));
-        writer.WriteEnumerable(Fields);
-        writer.WriteEnumerable(Methods);
+    internal virtual void SerializeBody(SerializationUsed used, SerializationWriter writer) {
+        used.Add(this, GenericTypeParameters);
+        writer.WriteEnumerable(GenericTypeParameters.Select(Assembly.GetLocalTypeId));;
+
+        writer.WriteInt32(Fields.Count);
+        foreach (NeslField field in Fields)
+            field.Serialize(used, writer);
+
+        writer.WriteInt32(Methods.Count());
+        foreach (NeslMethod method in Methods)
+            method.Serialize(used, writer);
     }
 
     internal ulong GetSize() {
@@ -228,6 +189,37 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         }
 
         return size;
+    }
+
+    internal void UnsafeAddToGenericMaked(SerializedNeslType type) {
+        if (!GenericMakedTypes.TryAdd(type.GenericMakedTypeParameters.ToArray(), new Lazy<NeslType>(type)))
+            throw new UnreachableException();
+    }
+
+    internal SerializedNeslType UnsafeCreateTypeFromMakeGeneric(NeslType[] typeArguments) {
+        return new SerializedNeslType(
+            Assembly, FullName, Array.Empty<NeslAttribute>(), this, typeArguments
+        );
+    }
+
+    internal Dictionary<NeslGenericTypeParameter, NeslType>? UnsafeTargetTypesFromMakeGeneric(
+        IEnumerable<NeslGenericTypeParameter> genericTypeParameters, NeslType[] typeArguments
+    ) {
+        Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
+            new Dictionary<NeslGenericTypeParameter, NeslType>();
+
+        int i = 0;
+        foreach (NeslGenericTypeParameter genericTypeParameter in genericTypeParameters) {
+            NeslType typeArgument = typeArguments[i++];
+
+            genericTypeParameter.AssertConstraints(typeArgument);
+            targetTypes.Add(genericTypeParameter, typeArgument);
+
+            if (typeArgument is NeslGenericTypeParameter)
+                return null;
+        }
+
+        return targetTypes;
     }
 
 }

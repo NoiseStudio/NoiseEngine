@@ -56,7 +56,7 @@ public class NeslMethodBuilder : NeslMethod {
                 );
             }
 
-            NeslGenericTypeParameterBuilder genericTypeParameter = new NeslGenericTypeParameterBuilder(this, name);
+            NeslGenericTypeParameterBuilder genericTypeParameter = new NeslGenericTypeParameterBuilder(Assembly, name);
             genericTypeParameters.Add(genericTypeParameter);
             return genericTypeParameter;
         }

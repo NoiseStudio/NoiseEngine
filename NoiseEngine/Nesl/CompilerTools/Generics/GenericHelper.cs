@@ -7,7 +7,7 @@ internal static class GenericHelper {
 
     public static NeslType GetFinalType(
         NeslType oldType, NeslType newType, NeslType currentType,
-        IDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+        IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
         if (currentType is NeslGenericTypeParameter genericTypeParameter)
             return targetTypes[genericTypeParameter];

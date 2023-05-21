@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace NoiseEngine.Nesl;
 
-public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable<NeslMethod> {
+public abstract class NeslMethod : INeslGenericTypeParameterOwner {
 
     private ConcurrentDictionary<NeslType[], Lazy<NeslMethod>>? genericMakedMethods;
 
@@ -66,7 +66,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable
     /// </summary>
     /// <param name="reader"><see cref="SerializationReader"/>.</param>
     /// <returns>New <see cref="NeslMethod"/> with data from <paramref name="reader"/>.</returns>
-    public static NeslMethod Deserialize(SerializationReader reader) {
+    internal static NeslMethod Deserialize(SerializationReader reader) {
         NeslAssembly assembly = reader.GetFromStorage<NeslAssembly>();
         return new SerializedNeslMethod(
             assembly.GetType(reader.ReadUInt64()),
@@ -87,11 +87,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable
             yield return reader.ReadEnumerable<NeslAttribute>().ToArray();
     }
 
-    /// <summary>
-    /// Serializes this <see cref="NeslMethod"/> and writes it to the <paramref name="writer"/>.
-    /// </summary>
-    /// <param name="writer"><see cref="SerializationWriter"/>.</param>
-    public void Serialize(SerializationWriter writer) {
+    internal void Serialize(SerializationUsed used, SerializationWriter writer) {
         writer.WriteUInt64(Assembly.GetLocalTypeId(Type));
         writer.WriteString(Name);
 
@@ -99,9 +95,11 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable
             writer.WriteBool(false);
         } else {
             writer.WriteBool(true);
+            used.Add(Type, ReturnType);
             writer.WriteUInt64(Assembly.GetLocalTypeId(ReturnType));
         }
 
+        used.Add(Type, ParameterTypes);
         writer.WriteEnumerable(ParameterTypes.Select(Assembly.GetLocalTypeId));
 
         writer.WriteEnumerable(Attributes);
@@ -111,6 +109,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable
         foreach (IEnumerable<NeslAttribute> parameterAttribute in ParameterAttributes)
             writer.WriteEnumerable(parameterAttribute);
 
+        used.Add(Type, GenericTypeParameters);
         writer.WriteEnumerable(GenericTypeParameters.Select(Assembly.GetLocalTypeId));
 
         writer.WriteObject(IlContainer);

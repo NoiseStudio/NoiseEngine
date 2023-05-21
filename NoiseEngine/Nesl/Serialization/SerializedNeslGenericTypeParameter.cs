@@ -7,8 +7,8 @@ internal sealed class SerializedNeslGenericTypeParameter : NeslGenericTypeParame
     public override IEnumerable<NeslAttribute> Attributes { get; }
 
     public SerializedNeslGenericTypeParameter(
-        INeslGenericTypeParameterOwner owner, string name, IEnumerable<NeslAttribute> attributes
-    ) : base(owner, name) {
+        NeslAssembly assembly, string name, IEnumerable<NeslAttribute> attributes
+    ) : base(assembly, name) {
         Attributes = attributes;
     }
 

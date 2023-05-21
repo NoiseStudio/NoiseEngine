@@ -21,7 +21,7 @@ internal static class IntrinsicsManager {
             case $"{DefaultAssembly}.{nameof(Compute)}":
                  new Compute(generator, function, parameters).Process();
                  break;
-            case $"{DefaultAssembly}.{nameof(Vertex)}":
+            case $"{DefaultAssembly}.{nameof(Vertex)}Utils":
                 new Vertex(generator, function, parameters).Process();
                 break;
             default:

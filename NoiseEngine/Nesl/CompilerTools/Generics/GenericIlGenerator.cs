@@ -9,7 +9,7 @@ internal static class GenericIlGenerator {
 
     public static IlContainer RemoveGenerics(
         NeslType oldType, NeslType newType, NeslMethod genericMethod,
-        IDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+        IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
         SerializedIlContainer container = new SerializedIlContainer(
             genericMethod.GetIlContainer().GetRawInstructions(),

@@ -44,6 +44,7 @@
     <Target Name="CompileTestsNative" BeforeTargets="AfterBuild">
         <Exec WorkingDirectory="../NoiseEngine.Tests.Native/" Command="cargo build $(CargoReleaseFlag)" />
         <Copy SourceFiles="../NoiseEngine.Tests.Native/$(CargoBuildPath)/$(OSLibPrefix)noise_engine_tests_native.$(OSLibExt)" DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" />
+        <Copy SourceFiles="../NoiseEngine/$(OutputPath)/System.nesil" DestinationFiles="$(OutputPath)/Resources/Shaders/System.nesil" />
     </Target>
 
 </Project>

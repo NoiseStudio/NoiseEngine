@@ -8,7 +8,8 @@ string builtInResourcesPath = Path.Combine(
     Directory.GetParent(Environment.CurrentDirectory)!.FullName, "NoiseEngine", "BuiltInResources"
 );
 string outputPath = Path.Combine(
-    Directory.GetParent(Environment.CurrentDirectory)!.FullName, "NoiseEngine", args[0]
+    Directory.GetParent(Environment.CurrentDirectory)!.FullName, "NoiseEngine",
+    args.Length == 0 ? "bin\\Debug\\net7.0\\" : args[0]
 );
 
 Console.Write("Compiling built-in shaders...");
