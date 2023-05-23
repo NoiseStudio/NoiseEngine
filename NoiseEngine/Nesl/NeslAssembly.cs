@@ -102,7 +102,15 @@ public abstract class NeslAssembly {
         }
         assembly.SetTypes(types.ToArray());
 
+        // Deserialize methods.
         int l = reader.ReadInt32();
+        for (int i = 0; i < l; i++) {
+            SerializedNeslType type = (SerializedNeslType)assembly.GetType(reader.ReadUInt64());
+            type.DeserializeMethods(reader);
+        }
+
+        // Create generics.
+        l = reader.ReadInt32();
         for (int i = 0; i < l; i++) {
             ulong id = reader.ReadUInt64();
             NeslType type = assembly.GetType(id);
@@ -114,8 +122,10 @@ public abstract class NeslAssembly {
                 SerializedNeslType serialized = (SerializedNeslType)type;
                 serialized.UnsafeInitializeTypeFromMakeGeneric(serialized.UnsafeTargetTypesFromMakeGeneric(
                     serialized.GenericMakedFrom!.GenericTypeParameters,
-                    serialized.GenericMakedTypeParameters.ToArray()
-                ) ?? throw new UnreachableException());
+                    serialized.GenericMakedTypeParameters.ToArray(),
+                    out bool isFullyConstructed
+                ));
+                Debug.Assert(isFullyConstructed);
             }
 
             assembly.typeToId[type] = id;
@@ -155,10 +165,15 @@ public abstract class NeslAssembly {
 
         SerializationUsed used = new SerializationUsed();
         Dictionary<NeslType, (int, int)> typeWriters = new Dictionary<NeslType, (int, int)>();
+        Dictionary<NeslType, (int, int)> methodsWriters = new Dictionary<NeslType, (int, int)>();
         foreach (NeslType type in Types) {
             int start = typeWriter.Count;
             type.SerializeBody(used, typeWriter);
             typeWriters[type] = (start, typeWriter.Count - start);
+
+            start = typeWriter.Count;
+            type.SerializeMethods(typeWriter);
+            methodsWriters[type] = (start, typeWriter.Count - start);
         }
 
         int methodStart = typeWriter.Count;
@@ -174,6 +189,7 @@ public abstract class NeslAssembly {
 
         List<(NeslType, bool)> genericMakedTypes = new List<(NeslType, bool)>();
 
+        // Write type headers.
         int startCount = writer.Count;
         writer.WriteInt32(-1);
 
@@ -194,6 +210,14 @@ public abstract class NeslAssembly {
         else
             BinaryPrimitives.WriteInt32BigEndian(span, i);
 
+        // Write methods.
+        writer.WriteInt32(methodsWriters.Count);
+        foreach ((NeslType type, (int start, int length)) in methodsWriters) {
+            writer.WriteUInt64(GetLocalTypeId(type));
+            writer.WriteBytes(typeWriter.AsSpan(start, length));
+        }
+
+        // Write generic types.
         writer.WriteInt32(genericMakedTypes.Count);
         foreach ((NeslType type, bool isLocal) in genericMakedTypes) {
             writer.WriteUInt64(GetLocalTypeId(type));

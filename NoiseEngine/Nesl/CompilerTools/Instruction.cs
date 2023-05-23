@@ -11,6 +11,8 @@ internal struct Instruction {
 
     public OpCode OpCode { get; }
 
+    private NeslAssembly Assembly => container.Assembly;
+
     internal Instruction(OpCode opCode, uint tailIndex, IlContainer container) {
         OpCode = opCode;
         this.tailIndex = tailIndex;
@@ -41,8 +43,24 @@ internal struct Instruction {
         return result;
     }
 
+    public override string ToString() {
+        string? result = OpCode switch {
+            OpCode.DefVariable => StringReadType(),
+            OpCode.ReturnValue => $"{ReadUInt32()}u",
+            _ => null
+        };
+
+        if (result is null)
+            return OpCode.ToString();
+        return $"{OpCode} {result}";
+    }
+
     private ReadOnlySpan<byte> GetTail() {
         return container.GetTail((int)tailIndex);
+    }
+
+    private string StringReadType() {
+        return Assembly.GetType(ReadUInt64()).ToString();
     }
 
 }

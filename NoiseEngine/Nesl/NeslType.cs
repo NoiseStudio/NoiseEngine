@@ -90,12 +90,12 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         }
 
         return GenericMakedTypes.GetOrAdd(typeArguments, _ => new Lazy<NeslType>(() => {
-            Dictionary<NeslGenericTypeParameter, NeslType>? targetTypes =
-                UnsafeTargetTypesFromMakeGeneric(GenericTypeParameters, typeArguments);
+            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
+                UnsafeTargetTypesFromMakeGeneric(GenericTypeParameters, typeArguments, out bool isFullyConstructed);
 
             // Create not fully generic maked type.
-            if (targetTypes is null)
-                return new NotFullyConstructedGenericNeslType(this, typeArguments.ToImmutableArray());
+            if (!isFullyConstructed)
+                return new NotFullyConstructedGenericNeslType(this, targetTypes, typeArguments.ToImmutableArray());
 
             // Create fully generic maked type.
             SerializedNeslType type = UnsafeCreateTypeFromMakeGeneric(typeArguments);
@@ -165,17 +165,19 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         return false;
     }
 
-    internal virtual void SerializeBody(SerializationUsed used, SerializationWriter writer) {
+    internal void SerializeBody(SerializationUsed used, SerializationWriter writer) {
         used.Add(this, GenericTypeParameters);
         writer.WriteEnumerable(GenericTypeParameters.Select(Assembly.GetLocalTypeId));;
 
         writer.WriteInt32(Fields.Count);
         foreach (NeslField field in Fields)
             field.Serialize(used, writer);
+    }
 
+    internal void SerializeMethods(SerializationWriter writer) {
         writer.WriteInt32(Methods.Count());
         foreach (NeslMethod method in Methods)
-            method.Serialize(used, writer);
+            method.Serialize(writer);
     }
 
     internal ulong GetSize() {
@@ -202,9 +204,11 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         );
     }
 
-    internal Dictionary<NeslGenericTypeParameter, NeslType>? UnsafeTargetTypesFromMakeGeneric(
-        IEnumerable<NeslGenericTypeParameter> genericTypeParameters, NeslType[] typeArguments
+    internal Dictionary<NeslGenericTypeParameter, NeslType> UnsafeTargetTypesFromMakeGeneric(
+        IEnumerable<NeslGenericTypeParameter> genericTypeParameters, NeslType[] typeArguments,
+        out bool isFullyConstructed
     ) {
+        isFullyConstructed = true;
         Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
             new Dictionary<NeslGenericTypeParameter, NeslType>();
 
@@ -215,8 +219,8 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
             genericTypeParameter.AssertConstraints(typeArgument);
             targetTypes.Add(genericTypeParameter, typeArgument);
 
-            if (typeArgument is NeslGenericTypeParameter)
-                return null;
+            if (isFullyConstructed && typeArgument is NeslGenericTypeParameter)
+                isFullyConstructed = false;
         }
 
         return targetTypes;

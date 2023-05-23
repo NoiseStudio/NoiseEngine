@@ -12,6 +12,7 @@ internal static class GenericIlGenerator {
         IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
         SerializedIlContainer container = new SerializedIlContainer(
+            genericMethod.Assembly,
             genericMethod.GetIlContainer().GetRawInstructions(),
             genericMethod.GetIlContainer().GetTail(0).ToArray()
         );

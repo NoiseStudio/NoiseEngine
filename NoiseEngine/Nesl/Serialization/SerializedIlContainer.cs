@@ -11,7 +11,9 @@ internal class SerializedIlContainer : IlContainer {
 
     protected override IEnumerable<(OpCode opCode, uint tailIndex)> RawInstructions { get; }
 
-    public SerializedIlContainer(IEnumerable<(OpCode opCode, uint tailIndex)> rawInstructions, byte[] tail) {
+    public SerializedIlContainer(
+        NeslAssembly assembly, IEnumerable<(OpCode opCode, uint tailIndex)> rawInstructions, byte[] tail
+    ) : base(assembly) {
         RawInstructions = rawInstructions;
         this.tail = tail;
     }

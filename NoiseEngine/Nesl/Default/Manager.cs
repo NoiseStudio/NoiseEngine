@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Nesl.Emit;
-using System;
+﻿using System;
 using System.IO;
 
 namespace NoiseEngine.Nesl.Default;

@@ -42,7 +42,9 @@ internal class SerializedNeslType : NeslType {
         for (int i = 0; i < fields.Length; i++)
             fields[i] = NeslField.Deserialize(reader);
         SetFields(fields);
+    }
 
+    internal void DeserializeMethods(SerializationReader reader) {
         NeslMethod[] methods = new NeslMethod[reader.ReadInt32()];
         for (int i = 0; i < methods.Length; i++)
             methods[i] = NeslMethod.Deserialize(reader);

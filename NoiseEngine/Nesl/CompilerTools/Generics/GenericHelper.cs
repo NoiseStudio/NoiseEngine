@@ -9,8 +9,11 @@ internal static class GenericHelper {
         NeslType oldType, NeslType newType, NeslType currentType,
         IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
-        if (currentType is NeslGenericTypeParameter genericTypeParameter)
+        if (currentType is NeslGenericTypeParameter genericTypeParameter) {
+            if (!targetTypes.ContainsKey(genericTypeParameter))
+                throw null!;
             return targetTypes[genericTypeParameter];
+        }
         if (currentType is NotFullyConstructedGenericNeslType notFullyGenericMakedType) {
             return notFullyGenericMakedType.MakeGeneric(notFullyGenericMakedType.TypeArguments
                 .Select(x => x is NeslGenericTypeParameter genericTypeParameter ?

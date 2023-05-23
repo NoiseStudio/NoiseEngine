@@ -15,9 +15,9 @@ public class IlGenerator : IlContainer {
 
     protected override IEnumerable<(OpCode opCode, uint tailIndex)> RawInstructions => rawInstructions;
 
-    internal IlGenerator(NeslAssemblyBuilder assembly, NeslMethodBuilder method) {
+    internal IlGenerator(NeslAssemblyBuilder assembly, NeslMethodBuilder method) : base(assembly) {
         this.assembly = assembly;
-        nextVariableId = (uint)method.Type.Fields.Count;
+        nextVariableId = (uint)method.Type.Fields.Count + (uint)method.ParameterTypes.Count;
     }
 
     /// <summary>

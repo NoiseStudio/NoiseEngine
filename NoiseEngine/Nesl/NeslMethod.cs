@@ -87,7 +87,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
             yield return reader.ReadEnumerable<NeslAttribute>().ToArray();
     }
 
-    internal void Serialize(SerializationUsed used, SerializationWriter writer) {
+    internal void Serialize(SerializationWriter writer) {
         writer.WriteUInt64(Assembly.GetLocalTypeId(Type));
         writer.WriteString(Name);
 
@@ -95,11 +95,9 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
             writer.WriteBool(false);
         } else {
             writer.WriteBool(true);
-            used.Add(Type, ReturnType);
             writer.WriteUInt64(Assembly.GetLocalTypeId(ReturnType));
         }
 
-        used.Add(Type, ParameterTypes);
         writer.WriteEnumerable(ParameterTypes.Select(Assembly.GetLocalTypeId));
 
         writer.WriteEnumerable(Attributes);
@@ -109,7 +107,6 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
         foreach (IEnumerable<NeslAttribute> parameterAttribute in ParameterAttributes)
             writer.WriteEnumerable(parameterAttribute);
 
-        used.Add(Type, GenericTypeParameters);
         writer.WriteEnumerable(GenericTypeParameters.Select(Assembly.GetLocalTypeId));
 
         writer.WriteObject(IlContainer);
