@@ -26,7 +26,7 @@ public class NeslAssemblyBuilder : NeslAssembly {
     /// <returns>New <see cref="NeslAssemblyBuilder"/>.</returns>
     public static NeslAssemblyBuilder DefineAssembly(string name) {
         NeslAssemblyBuilder builder = new NeslAssemblyBuilder(name);
-        builder.dependencies.Add(Default.Manager.AssemblyBuilder);
+        builder.dependencies.Add(Default.Manager.Assembly);
         return builder;
     }
 

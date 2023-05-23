@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.Serialization;
+﻿using NoiseEngine.Nesl.Emit.Attributes;
+using NoiseEngine.Nesl.Serialization;
 using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
@@ -25,11 +26,15 @@ public abstract class NeslAttribute : ISerializable<NeslAttribute> {
     /// <param name="bytes">Bytes of attribute tail.</param>
     /// <returns><see cref="NeslAttribute"/> with given parameters.</returns>
     public static NeslAttribute Create(string fullName, AttributeTargets targets, IEnumerable<byte>? bytes) {
-        return new SerializedNeslAttribute {
+        NeslAttribute attribute = new SerializedNeslAttribute {
             FullName = fullName,
             Targets = targets,
             Bytes = bytes?.ToImmutableArray() ?? ImmutableArray<byte>.Empty
         };
+
+        if (fullName == PlatformDependentTypeRepresentationAttribute.ExpectedFullName)
+            return attribute.Cast<PlatformDependentTypeRepresentationAttribute>();
+        return attribute;
     }
 
     /// <summary>

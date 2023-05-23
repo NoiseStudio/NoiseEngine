@@ -120,7 +120,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
         il.Emit(OpCode.DefVariable, BuiltInTypes.Float32);
 
         il.Emit(OpCode.LoadField, 3u, 0u, 0u);
-        il.Emit(OpCode.Call, 2u, Vertex.ObjectToClipPos, stackalloc uint[] { 3u });
+        il.Emit(OpCode.Call, 2u, VertexUtils.ObjectToClipPos, stackalloc uint[] { 3u });
         il.Emit(OpCode.SetField, 1u, 0u, 2u);
 
         il.Emit(OpCode.LoadField, 3u, 0u, 1u);

@@ -1,20 +1,29 @@
-﻿using NoiseEngine.Nesl.Emit;
+﻿using System;
+using System.IO;
 
 namespace NoiseEngine.Nesl.Default;
 
 internal static class Manager {
 
-    public static NeslAssemblyBuilder AssemblyBuilder { get; }
+    private static readonly object locker = new object();
+    private static WeakReference<NeslAssembly>? assembly;
 
-    static Manager() {
-        AssemblyBuilder = NeslAssemblyBuilder.DefineAssemblyWithoutDefault("System");
+    public static NeslAssembly Assembly {
+        get {
+            WeakReference<NeslAssembly>? weak = Manager.assembly;
+            if (weak is not null && weak.TryGetTarget(out NeslAssembly? assembly))
+                return assembly;
 
-        _ = Buffers.GetReadWriteBuffer(BuiltInTypes.Float32);
-        _ = BuiltInTypes.Float32;
-        _ = Compute.GlobalInvocation3;
-        _ = Matrices.GetMatrix4x4(BuiltInTypes.Float32);
-        _ = Vectors.GetVector4(BuiltInTypes.Float32);
-        _ = Vertex.ObjectToClipPos;
+            lock (locker) {
+                weak = Manager.assembly;
+                if (weak is not null && weak.TryGetTarget(out assembly))
+                    return assembly;
+
+                assembly = NeslAssembly.LoadWithoutDefault(File.ReadAllBytes("Resources/Shaders/System.nesil"));
+                Manager.assembly = new WeakReference<NeslAssembly>(assembly);
+                return assembly;
+            }
+        }
     }
 
 }

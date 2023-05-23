@@ -28,7 +28,7 @@ internal class SpirVConsts {
                     return Compiler.GetConst(BinaryPrimitives.ReadInt32LittleEndian(data.ToArray()));
                 case BuiltInTypes.Float32Name:
                     return Compiler.GetConst(BinaryPrimitives.ReadSingleLittleEndian(data.ToArray()));
-                case Buffers.ReadWriteBufferName:
+                case Buffers.RwBufferName:
                     return GetConstsBuffer(type, data);
             }
 

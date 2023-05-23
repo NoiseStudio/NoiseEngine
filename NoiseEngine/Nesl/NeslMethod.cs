@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace NoiseEngine.Nesl;
 
-public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable<NeslMethod> {
+public abstract class NeslMethod : INeslGenericTypeParameterOwner {
 
     private ConcurrentDictionary<NeslType[], Lazy<NeslMethod>>? genericMakedMethods;
 
@@ -66,7 +66,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable
     /// </summary>
     /// <param name="reader"><see cref="SerializationReader"/>.</param>
     /// <returns>New <see cref="NeslMethod"/> with data from <paramref name="reader"/>.</returns>
-    public static NeslMethod Deserialize(SerializationReader reader) {
+    internal static NeslMethod Deserialize(SerializationReader reader) {
         NeslAssembly assembly = reader.GetFromStorage<NeslAssembly>();
         return new SerializedNeslMethod(
             assembly.GetType(reader.ReadUInt64()),
@@ -87,11 +87,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner, ISerializable
             yield return reader.ReadEnumerable<NeslAttribute>().ToArray();
     }
 
-    /// <summary>
-    /// Serializes this <see cref="NeslMethod"/> and writes it to the <paramref name="writer"/>.
-    /// </summary>
-    /// <param name="writer"><see cref="SerializationWriter"/>.</param>
-    public void Serialize(SerializationWriter writer) {
+    internal void Serialize(SerializationWriter writer) {
         writer.WriteUInt64(Assembly.GetLocalTypeId(Type));
         writer.WriteString(Name);
 

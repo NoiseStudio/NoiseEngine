@@ -11,6 +11,13 @@ public abstract class IlContainer : ISerializable<IlContainer> {
 
     protected abstract IEnumerable<(OpCode opCode, uint tailIndex)> RawInstructions { get; }
 
+    internal NeslAssembly Assembly { get; }
+    internal IEnumerable<Instruction> Instructions => GetInstructions();
+
+    protected IlContainer(NeslAssembly assembly) {
+        Assembly = assembly;
+    }
+
     /// <summary>
     /// Creates new <see cref="IlContainer"/> with data from <paramref name="reader"/>.
     /// </summary>
@@ -24,7 +31,7 @@ public abstract class IlContainer : ISerializable<IlContainer> {
         for (int i = 0; i < rawInstructions.Length; i++)
             rawInstructions[i] = ((OpCode)reader.ReadUInt16(), reader.ReadUInt32());
 
-        return new SerializedIlContainer(rawInstructions, tail);
+        return new SerializedIlContainer(reader.GetFromStorage<NeslAssembly>(), rawInstructions, tail);
     }
 
     internal abstract ReadOnlySpan<byte> GetTail(int start);

@@ -7,7 +7,7 @@ namespace NoiseEngine.Nesl.Emit.Attributes;
 
 public class PlatformDependentTypeRepresentationAttribute : NeslAttribute {
 
-    private const string ExpectedFullName = nameof(PlatformDependentTypeRepresentationAttribute);
+    internal const string ExpectedFullName = nameof(PlatformDependentTypeRepresentationAttribute);
     private const AttributeTargets ExpectedTargets = AttributeTargets.Type;
 
     public string? SpirVTargetName => AttributeHelper.ReadString(Bytes.AsSpan());

@@ -63,11 +63,10 @@ internal class AssignmentDeclaration : ParserExpressionContainer {
         valueData = valueData.LoadConst(Parser, variable!.Value.Type);
 
         IlGenerator il = Parser.CurrentMethod.IlGenerator;
-        if (!isField) {
+        if (!isField)
             il.Emit(OpCode.Load, variable!.Value.Id, valueData.Id);
-        } else {
-            il.Emit(OpCode.SetField, (uint)Parser.CurrentMethod.Type.Fields.Count, variable!.Value.Id, valueData.Id);
-        }
+        else
+            il.Emit(OpCode.SetField, Parser.InstanceVariableId, variable!.Value.Id, valueData.Id);
     }
 
 }

@@ -9,7 +9,9 @@ internal static class DefaultConstructorHelper {
         NeslType type = method.ReturnType ?? throw new UnreachableException();
         IlGenerator il = method.IlGenerator;
 
-        il.GetNextVariableId();
+        uint a = il.GetNextVariableId();
+        Debug.Assert(type.Fields.Count + method.ParameterTypes.Count == a);
+
         il.Emit(OpCode.DefVariable, type);
     }
 
@@ -17,7 +19,7 @@ internal static class DefaultConstructorHelper {
         NeslType type = method.ReturnType ?? throw new UnreachableException();
         IlGenerator il = method.IlGenerator;
 
-        il.Emit(OpCode.ReturnValue, (uint)type.Fields.Count);
+        il.Emit(OpCode.ReturnValue, (uint)type.Fields.Count + (uint)method.ParameterTypes.Count);
     }
 
 }

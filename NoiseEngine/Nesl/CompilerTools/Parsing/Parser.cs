@@ -36,6 +36,8 @@ internal class Parser {
     public TokenBuffer Buffer { get; }
     public IReadOnlyList<CompilationError> Errors => errors;
     public CompilationErrorMode ErrorMode { get; } = new CompilationErrorMode();
+    public IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
+    public uint InstanceVariableId => (uint)CurrentMethod.Type.Fields.Count + (uint)CurrentMethod.ParameterTypes.Count;
 
     public NeslMethodBuilder CurrentMethod {
         get {
@@ -51,8 +53,6 @@ internal class Parser {
     public bool CurrentMethodIsConstructor {
         get => (currentMethod ?? throw new UnreachableException()).Name.StartsWith(NeslOperators.Constructor);
     }
-
-    internal IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
 
     private NeslTypeBuilder CurrentType {
         get {
@@ -306,8 +306,7 @@ internal class Parser {
                 };
                 parameterParser.Parse();
 
-                foreach (CompilationError error in parameterParser.Errors)
-                    errors.Add(error);
+                errors.AddRange(parameterParser.Errors);
 
                 // Return type.
                 NeslType? returnType = null;
@@ -352,8 +351,9 @@ internal class Parser {
                     continue;
 
                 Dictionary<string, VariableData> variables = new Dictionary<string, VariableData>();
+                uint index = (uint)method.Type.Fields.Count;
                 foreach ((NeslType type, string vname) in parameterParser.DefinedParameters)
-                    variables.Add(vname, new VariableData(type, vname, method.IlGenerator.GetNextVariableId()));
+                    variables.Add(vname, new VariableData(type, vname, index++));
 
                 if (data.IsConstructor)
                     DefaultConstructorHelper.AppendHeader(method);
@@ -470,6 +470,7 @@ internal class Parser {
             Assembly, Usings, out IReadOnlyList<TypeIdentifierToken> genericTokens
         );
         if (type is not null) {
+            Debug.Assert(type.GenericTypeParameters.Count() == genericTokens.Count);
             if (genericTokens.Count == 0)
                 return true;
 

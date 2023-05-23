@@ -30,7 +30,7 @@ public class DefaultDataTest : NeslTestEnvironment {
         BufferOutputTestHelper<Vector4<float>> helper = CreateBufferOutputTestHelper<Vector4<float>>();
 
         NeslFieldBuilder field = helper.DefineField(
-            Buffers.GetReadWriteBuffer(Vectors.GetVector4(BuiltInTypes.Float32))
+            Buffers.GetRwBuffer(Vectors.GetVector4(BuiltInTypes.Float32))
         );
         byte[] data = new byte[4 * sizeof(float) * vectors.Length];
 
@@ -54,7 +54,7 @@ public class DefaultDataTest : NeslTestEnvironment {
 
         il.Emit(OpCode.DefVariable, BuiltInTypes.UInt32);
         il.Emit(OpCode.DefVariable, Vectors.GetVector3(BuiltInTypes.UInt32));
-        il.Emit(OpCode.Call, 3u, Compute.GlobalInvocation3, stackalloc uint[0]);
+        il.Emit(OpCode.Call, 3u, ComputeUtils.GlobalInvocation3, stackalloc uint[0]);
         il.Emit(OpCode.LoadField, 2u, 3u, 0u);
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
         il.Emit(OpCode.LoadElement, 4u, 1u, 2u);

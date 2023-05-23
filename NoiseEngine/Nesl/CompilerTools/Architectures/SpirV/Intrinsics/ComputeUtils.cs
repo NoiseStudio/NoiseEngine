@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 
-internal class Compute : IntrinsicsContainer {
+internal class ComputeUtils : IntrinsicsContainer {
 
-    public Compute(
+    public ComputeUtils(
         SpirVGenerator generator, SpirVFunction function, IReadOnlyList<SpirVVariable> parameters
     ) : base(generator, function, parameters) {
     }
@@ -19,7 +19,7 @@ internal class Compute : IntrinsicsContainer {
             case NeslOperators.PropertyGet + nameof(Default.Compute.WorkgroupSize3):
                 EmitBuiltInVariable(Vectors.GetVector3(BuiltInTypes.UInt32), 25u);
                 break;*/
-            case NeslOperators.PropertyGet + nameof(Default.Compute.GlobalInvocation3):
+            case NeslOperators.PropertyGet + nameof(Default.ComputeUtils.GlobalInvocation3):
                 EmitBuiltInVariable(Vectors.GetVector3(BuiltInTypes.UInt32), 28u);
                 break;
             default:

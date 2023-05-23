@@ -82,7 +82,7 @@ public static class NeslCompiler {
         string assemblyName, string assemblyPath, IEnumerable<NeslFile> files, IEnumerable<NeslAssembly>? dependencies,
         [NotNullWhen(true)] out NeslAssembly? assembly, out IEnumerable<CompilationError> errors
     ) {
-        IEnumerable<NeslAssembly> d = new NeslAssembly[] { Default.Manager.AssemblyBuilder };
+        IEnumerable<NeslAssembly> d = new NeslAssembly[] { Default.Manager.Assembly };
         if (dependencies is not null)
             d = d.Concat(dependencies);
         return TryCompileWithoutDefault(assemblyName, assemblyPath, files, d, out assembly, out errors);

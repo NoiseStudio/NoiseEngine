@@ -1,10 +1,11 @@
-﻿using NoiseEngine.Nesl.Serialization;
+﻿using NoiseEngine.Nesl.Default;
+using NoiseEngine.Nesl.Serialization;
 using NoiseEngine.Serialization;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Runtime.Intrinsics.X86;
 
 namespace NoiseEngine.Nesl;
 
@@ -29,67 +30,114 @@ public abstract class NeslAssembly {
     /// Loads a <see cref="NeslAssembly"/> from <paramref name="rawBytes"/>.
     /// </summary>
     /// <param name="rawBytes">Raw <see cref="byte"/>s of <see cref="NeslAssembly"/>.</param>
+    /// <param name="dependencies">
+    /// Dependencies of loading <see cref="NeslAssembly"/>. Regardless of the state, it always contains the default
+    /// library.
+    /// </param>
+    /// <returns>Loaded <see cref="NeslAssembly"/>.</returns>
+    public static NeslAssembly Load(byte[] rawBytes, IEnumerable<NeslAssembly>? dependencies = null) {
+        return LoadWithoutDefault(rawBytes,
+            dependencies is null ? new NeslAssembly[] { Manager.Assembly } : dependencies.Prepend(Manager.Assembly)
+        );
+    }
+
+    /// <summary>
+    /// Loads a <see cref="NeslAssembly"/> from <paramref name="rawBytes"/>.
+    /// </summary>
+    /// <param name="rawBytes">Raw <see cref="byte"/>s of <see cref="NeslAssembly"/>.</param>
     /// <param name="dependencies">Dependencies of loading <see cref="NeslAssembly"/>.</param>
     /// <returns>Loaded <see cref="NeslAssembly"/>.</returns>
-    public static NeslAssembly Load(byte[] rawBytes, IEnumerable<NeslAssembly> dependencies) {
+    internal static NeslAssembly LoadWithoutDefault(byte[] rawBytes, IEnumerable<NeslAssembly>? dependencies = null) {
         SerializationReader reader = new SerializationReader(rawBytes);
         if (reader.ReadUInt32() != 0)
             throw new ArgumentException("Unsupported serialization version.", nameof(rawBytes));
 
         string name = reader.ReadString();
         List<NeslAssembly> finalDependencies = new List<NeslAssembly>();
-        foreach (string dependencyName in reader.ReadEnumerableString())
-            finalDependencies.Add(dependencies.First(x => x.Name == dependencyName));
+        foreach (string dependencyName in reader.ReadEnumerableString()) {
+            NeslAssembly? dependency = dependencies?.FirstOrDefault(x => x.Name == dependencyName);
+            if (dependency is null)
+                throw new ArgumentException($"Cannot find dependency {dependencyName}.", nameof(rawBytes));
+            finalDependencies.Add(dependency);
+        }
+        dependencies = null;
+
         SerializedNeslAssembly assembly = new SerializedNeslAssembly(name, finalDependencies);
 
         reader.AddToStorage(typeof(NeslAssembly), assembly);
 
         ulong length = (ulong)reader.ReadInt32();
+        List<NeslType> types = new List<NeslType>();
         for (ulong i = 0; i < length; i++) {
+            ulong id = reader.ReadUInt64();
+
             NeslType type;
-            if (reader.ReadBool()) {
-                NeslTypeUsageKind usage = (NeslTypeUsageKind)reader.ReadUInt8();
+            bool own = reader.ReadBool();
+            NeslTypeUsageKind usage = default;
+            if (own) {
+                usage = (NeslTypeUsageKind)reader.ReadUInt8();
                 type = usage switch {
-                    NeslTypeUsageKind.Normal => new SerializedNeslType(
+                    NeslTypeUsageKind.Normal => new SerializedNeslType(assembly, reader),
+                    NeslTypeUsageKind.GenericTypeParameter => new SerializedNeslGenericTypeParameter(
                         assembly, reader.ReadString(), reader.ReadEnumerable<NeslAttribute>().ToArray()
                     ),
-                    NeslTypeUsageKind.GenericTypeParameter => new SerializedNeslGenericTypeParameter(
-                        reader.ReadBool() ?
-                            assembly.GetType(reader.ReadUInt64()) : assembly.GetMethod(reader.ReadUInt64()),
-                        reader.ReadString(), reader.ReadEnumerable<NeslAttribute>().ToArray()
-                    ),
-                    NeslTypeUsageKind.GenericMaked => throw new NotImplementedException(),
+                    NeslTypeUsageKind.GenericMaked => assembly.DeserializeGenericMaked(reader),
+                    NeslTypeUsageKind.GenericNotFullyConstructed =>
+                        assembly.DeserializeGenericNotFullyConstructed(reader),
                     _ => throw new NotImplementedException(),
                 };
             } else {
                 string temp = reader.ReadString();
-                type = dependencies.First(x => x.Name == temp).GetType(reader.ReadString())
-                    ?? throw new NullReferenceException();
+                NeslAssembly? dependency = finalDependencies.Find(x => x.Name == temp);
+                if (dependency is null)
+                    throw new InvalidOperationException($"Unable to find NESL dependency named `{temp}`.");
+
+                temp = reader.ReadString();
+                NeslType? tempType = dependency.GetType(temp);
+                if (tempType is null)
+                    throw new InvalidOperationException($"Unable to find NESL type named `{temp}`.");
+                type = tempType;
+
+                if (reader.ReadBool()) {
+                    type = type.MakeGeneric(
+                        reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray()
+                    );
+                }
             }
 
-            assembly.typeToId[type] = i;
-            assembly.idToType[i] = type;
-        }
+            assembly.typeToId[type] = id;
+            assembly.idToType[id] = type;
 
+            if (own && usage == NeslTypeUsageKind.Normal && type is SerializedNeslType serialized) {
+                serialized.DeserializeBody(reader);
+                types.Add(type);
+            }
+        }
+        assembly.SetTypes(types.ToArray());
+
+        // Deserialize methods.
         int l = reader.ReadInt32();
         for (int i = 0; i < l; i++) {
+            SerializedNeslType type = (SerializedNeslType)assembly.GetType(reader.ReadUInt64());
+            type.DeserializeMethods(reader);
+        }
+
+        // Create generics.
+        l = reader.ReadInt32();
+        for (int i = 0; i < l; i++) {
             ulong id = reader.ReadUInt64();
-            NeslType type = assembly.GetType(id).MakeGeneric(
-                reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray()
-            );
+
+            SerializedNeslType type = (SerializedNeslType)assembly.GetType(id);
+            type.UnsafeInitializeTypeFromMakeGeneric(type.UnsafeTargetTypesFromMakeGeneric(
+                type.GenericMakedFrom!.GenericTypeParameters,
+                type.GenericMakedTypeParameters.ToArray(),
+                out bool isFullyConstructed
+            ));
+            Debug.Assert(isFullyConstructed);
 
             assembly.typeToId[type] = id;
             assembly.idToType[id] = type;
         }
-
-        l = reader.ReadInt32();
-        NeslType[] types = new NeslType[l];
-        for (int i = 0; i < l; i++) {
-            SerializedNeslType type = (SerializedNeslType)assembly.GetType(reader.ReadUInt64());
-            type.DeserializeBody(reader);
-            types[i] = type;
-        }
-        assembly.SetTypes(types);
 
         length = (ulong)reader.ReadInt32();
         for (ulong i = 0; i < length; i++) {
@@ -121,12 +169,21 @@ public abstract class NeslAssembly {
         writer.WriteEnumerable(Dependencies.Select(x => x.Name));
 
         SerializationWriter typeWriter = new SerializationWriter();
-        typeWriter.WriteInt32(Types.Count());
+
+        SerializationUsed used = new SerializationUsed();
+        Dictionary<NeslType, (int, int)> typeWriters = new Dictionary<NeslType, (int, int)>();
+        Dictionary<NeslType, (int, int)> methodsWriters = new Dictionary<NeslType, (int, int)>();
         foreach (NeslType type in Types) {
-            typeWriter.WriteUInt64(GetLocalTypeId(type));
-            type.SerializeBody(typeWriter);
+            int start = typeWriter.Count;
+            type.SerializeBody(used, typeWriter);
+            typeWriters[type] = (start, typeWriter.Count - start);
+
+            start = typeWriter.Count;
+            type.SerializeMethods(typeWriter);
+            methodsWriters[type] = (start, typeWriter.Count - start);
         }
 
+        int methodStart = typeWriter.Count;
         typeWriter.WriteInt32(idToMethod.Count);
         foreach (NeslMethod method in idToMethod.Values) {
             typeWriter.WriteUInt64(GetLocalTypeId(method.Type));
@@ -135,21 +192,45 @@ public abstract class NeslAssembly {
             typeWriter.WriteEnumerable(method.ParameterTypes.Select(GetLocalTypeId));
         }
 
+        foreach (NeslType type in idToType.Values)
+            type.PrepareHeader(used, this);
+
         List<NeslType> genericMakedTypes = new List<NeslType>();
 
-        writer.WriteInt32(idToType.Count);
-        foreach (NeslType type in idToType.Values) {
+        // Write type headers.
+        int startCount = writer.Count;
+        writer.WriteInt32(-1);
+
+        int i = 0;
+        foreach (NeslType type in used.OrderedTypes.Concat(idToType.Values.Except(used.Types)).Distinct().ToArray()) {
+            writer.WriteUInt64(GetLocalTypeId(type));
             if (type.SerializeHeader(this, writer))
                 genericMakedTypes.Add(type);
+
+            if (typeWriters.TryGetValue(type, out (int, int) o))
+                writer.WriteBytes(typeWriter.AsSpan(o.Item1, o.Item2));
+            i++;
         }
 
-        writer.WriteInt32(genericMakedTypes.Count);
-        foreach (NeslType type in genericMakedTypes) {
+        Span<byte> span = writer.AsSpan(startCount);
+        if (writer.IsLittleEndian)
+            BinaryPrimitives.WriteInt32LittleEndian(span, i);
+        else
+            BinaryPrimitives.WriteInt32BigEndian(span, i);
+
+        // Write methods.
+        writer.WriteInt32(methodsWriters.Count);
+        foreach ((NeslType type, (int start, int length)) in methodsWriters) {
             writer.WriteUInt64(GetLocalTypeId(type));
-            writer.WriteEnumerable(type.GenericMakedTypeParameters.Select(GetLocalTypeId));
+            writer.WriteBytes(typeWriter.AsSpan(start, length));
         }
 
-        writer.WriteBytes(typeWriter.AsSpan());
+        // Write generic types.
+        writer.WriteInt32(genericMakedTypes.Count);
+        foreach (NeslType type in genericMakedTypes)
+            writer.WriteUInt64(GetLocalTypeId(type));
+
+        writer.WriteBytes(typeWriter.AsSpan(methodStart));
 
         return writer.ToArray();
     }
@@ -232,6 +313,20 @@ public abstract class NeslAssembly {
 
     internal NeslMethod GetMethod(ulong localMethodId) {
         return idToMethod[localMethodId];
+    }
+
+    private NeslType DeserializeGenericMaked(SerializationReader reader) {
+        NeslType parent = GetType(reader.ReadUInt64());
+        SerializedNeslType result = parent.UnsafeCreateTypeFromMakeGeneric(
+            reader.ReadEnumerableUInt64().Select(GetType).ToArray()
+        );
+        parent.UnsafeAddToGenericMaked(result);
+        return result;
+    }
+
+    private NeslType DeserializeGenericNotFullyConstructed(SerializationReader reader) {
+        NeslType parent = GetType(reader.ReadUInt64());
+        return parent.MakeGeneric(reader.ReadEnumerableUInt64().Select(GetType).ToArray());
     }
 
 }

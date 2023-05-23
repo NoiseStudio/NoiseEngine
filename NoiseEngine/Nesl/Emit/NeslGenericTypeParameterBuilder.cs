@@ -10,7 +10,7 @@ public class NeslGenericTypeParameterBuilder : NeslGenericTypeParameter {
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
 
-    internal NeslGenericTypeParameterBuilder(INeslGenericTypeParameterOwner owner, string name) : base(owner, name) {
+    internal NeslGenericTypeParameterBuilder(NeslAssembly assembly, string name) : base(assembly, name) {
     }
 
     /// <summary>

@@ -30,7 +30,7 @@ internal class SpirVVariable {
 
         SpirVType type;
         if (
-            neslType.FullNameWithAssembly == Buffers.ReadWriteBufferName &&
+            neslType.FullNameWithAssembly == Buffers.RwBufferName &&
             storageClass != StorageClass.Uniform
         ) {
             type = Compiler.GetSpirVType(neslType, additionalData);
@@ -101,7 +101,7 @@ internal class SpirVVariable {
     private static object? GetAdditionalData(NeslField neslField) {
         if (
             neslField.DefaultData is null ||
-            neslField.FieldType.FullNameWithAssembly != Buffers.ReadWriteBufferName
+            neslField.FieldType.FullNameWithAssembly != Buffers.RwBufferName
         ) {
             return null;
         }

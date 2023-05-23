@@ -25,7 +25,7 @@ public class ShaderTest : ApplicationTestEnvironment {
         NeslTypeBuilder shaderClassData = TestEmitHelper.NewType();
 
         NeslFieldBuilder positions = shaderClassData.DefineField(
-            "positions", NoiseEngine.Nesl.Default.Buffers.GetReadWriteBuffer(Vectors.GetVector4(BuiltInTypes.Float32))
+            "positions", NoiseEngine.Nesl.Default.Buffers.GetRwBuffer(Vectors.GetVector4(BuiltInTypes.Float32))
         );
         byte[] data = new byte[4 * sizeof(float) * 3];
 
@@ -55,7 +55,7 @@ public class ShaderTest : ApplicationTestEnvironment {
         il.Emit(OpCode.DefVariable, vertexData);
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
         il.Emit(OpCode.DefVariable, BuiltInTypes.Int32);
-        il.Emit(OpCode.Call, 4u, Vertex.Index, stackalloc uint[0]);
+        il.Emit(OpCode.Call, 4u, VertexUtils.Index, stackalloc uint[0]);
         il.Emit(OpCode.LoadElement, 3u, 0u, 4u);
         il.Emit(OpCode.SetField, 2u, 0u, 3u);
         il.Emit(OpCode.ReturnValue, 2u);

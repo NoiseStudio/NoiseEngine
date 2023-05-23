@@ -25,7 +25,7 @@ public class GlobalInvocationTest : NeslTestEnvironment {
 
         il.Emit(OpCode.DefVariable, BuiltInTypes.UInt32);
         il.Emit(OpCode.DefVariable, Vectors.GetVector3(BuiltInTypes.UInt32));
-        il.Emit(OpCode.Call, 2u, Compute.GlobalInvocation3, stackalloc uint[0]);
+        il.Emit(OpCode.Call, 2u, ComputeUtils.GlobalInvocation3, stackalloc uint[0]);
         il.Emit(OpCode.LoadField, 1u, 2u, 0u);
         il.Emit(OpCode.SetElement, 0u, 1u, 1u);
         il.Emit(OpCode.Return);

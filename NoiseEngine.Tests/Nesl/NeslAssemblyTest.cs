@@ -3,7 +3,6 @@ using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System;
-using System.IO;
 using System.Linq;
 
 namespace NoiseEngine.Tests.Nesl;
@@ -46,7 +45,7 @@ public class NeslAssemblyTest : ApplicationTestEnvironment {
 
             FragmentData Vertex(VertexData data) {
                 return new FragmentData() {
-                    Position = Vertex.ObjectToClipPos(data.Position),
+                    Position = VertexUtils.ObjectToClipPos(data.Position),
                     Color = new f32v4(data.Color, data.Color.X)
                 };
             }
@@ -59,15 +58,13 @@ public class NeslAssemblyTest : ApplicationTestEnvironment {
         NeslCompilerTest.ExecuteVector3PositionVector3Color(GraphicsDevices, created, path);
 
         byte[] bytes = created.GetRawBytes();
-        NeslAssembly loaded = NeslAssembly.Load(
-            bytes, new NeslAssembly[] { NoiseEngine.Nesl.Default.Manager.AssemblyBuilder }
-        );
+        NeslAssembly loaded = NeslAssembly.Load(bytes);
 
         Assert.Equal(created.Name, loaded.Name);
         Assert.True(created.Dependencies.Select(x => x.Name).SequenceEqual(loaded.Dependencies.Select(x => x.Name)));
         Assert.True(
-            created.Types.Select(x => x.FullNameWithAssembly)
-            .SequenceEqual(loaded.Types.Select(x => x.FullNameWithAssembly))
+            created.Types.Select(x => x.FullNameWithAssembly).OrderBy(x => x)
+            .SequenceEqual(loaded.Types.Select(x => x.FullNameWithAssembly).OrderBy(x => x))
         );
 
         NeslCompilerTest.ExecuteVector3PositionVector3Color(GraphicsDevices, loaded, path);

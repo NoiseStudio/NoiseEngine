@@ -2,6 +2,7 @@
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Rendering.Vulkan;
+using System.Diagnostics;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
@@ -104,6 +105,8 @@ internal class EntryPointHelper {
         ref uint location, ref uint offset, NeslType type, FastList<VertexInputAttributeDescription> inputAttributes,
         FastList<SpirVVariable> innerVariables, uint size, VulkanFormat floatFormat
     ) {
+        Debug.Assert(!type.IsGeneric, "Type cannot be generic.");
+
         NeslType tType = type.GenericMakedTypeParameters.Single();
         switch (tType.FullNameWithAssembly) {
             case BuiltInTypes.Float32Name:
