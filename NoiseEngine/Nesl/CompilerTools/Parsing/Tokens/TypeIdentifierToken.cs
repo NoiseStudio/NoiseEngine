@@ -64,6 +64,27 @@ internal readonly record struct TypeIdentifierToken(
         return true;
     }
 
+    public IEnumerable<Token> ToTokens() {
+        string[] split = Identifier.Split('.');
+        for (int i = 0; i < split.Length; i++) {
+            yield return new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.Word, split[i].Length, split[i]);
+            if (i < split.Length - 1)
+                yield return new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.Dot, 1, null);
+        }
+
+        if (GenericTokens.Count > 0) {
+            yield return new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.AngleBracketOpening, 1, null);
+            for (int i = 0; i < GenericTokens.Count; i++) {
+                foreach (Token token in GenericTokens[i].ToTokens())
+                    yield return token;
+
+                if (i < GenericTokens.Count - 1)
+                    yield return new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.Comma, 1, null);
+            }
+            yield return new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.AngleBracketClosing, 1, null);
+        }
+    }
+
     public NeslType? GetTypeFromAssembly(
         NeslAssembly assembly, IEnumerable<string> usings, out IReadOnlyList<TypeIdentifierToken> genericTokens
     ) {

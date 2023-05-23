@@ -23,4 +23,13 @@ internal readonly record struct NameToken(CodePointer Pointer, string Name) : IP
         return true;
     }
 
+    public void AssertNameForFieldOrProperty(Parser parser) {
+        if (Name != "this")
+            return;
+
+        parser.Throw(new CompilationError(
+            Pointer, CompilationErrorType.ThisNameForFieldOrPropertyNotAllowed, Name
+        ));
+    }
+
 }

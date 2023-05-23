@@ -94,7 +94,7 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     TypeAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
-    FieldOrPropertyAlreadyExists,
+    FieldOrPropertyOrIndexerAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     MethodAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
@@ -125,6 +125,10 @@ public enum CompilationErrorType {
     AttributeGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AssigmentGenericNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    InitializerForIndexerNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ThisNameForFieldOrPropertyNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeTargetNotMatch,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
