@@ -131,9 +131,6 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     }
 
     internal virtual void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {
-        if (serializedAssembly != Assembly)
-            return;
-
         used.Add(this, GenericTypeParameters);
 
         if (!IsGenericMaked)
@@ -148,7 +145,12 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
             writer.WriteBool(false);
             writer.WriteString(Assembly.Name);
             writer.WriteString(FullName);
-            return IsGenericMaked;
+
+            writer.WriteBool(IsGenericMaked);
+            if (IsGenericMaked)
+                writer.WriteEnumerable(GenericMakedTypeParameters.Select(serializedAssembly.GetLocalTypeId));
+
+            return false;
         }
 
         writer.WriteBool(true);

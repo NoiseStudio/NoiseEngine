@@ -88,8 +88,21 @@ public abstract class NeslAssembly {
                 };
             } else {
                 string temp = reader.ReadString();
-                type = dependencies?.First(x => x.Name == temp).GetType(reader.ReadString())
-                    ?? throw new NullReferenceException();
+                NeslAssembly? dependency = finalDependencies.Find(x => x.Name == temp);
+                if (dependency is null)
+                    throw new InvalidOperationException($"Unable to find NESL dependency named `{temp}`.");
+
+                temp = reader.ReadString();
+                NeslType? tempType = dependency.GetType(temp);
+                if (tempType is null)
+                    throw new InvalidOperationException($"Unable to find NESL type named `{temp}`.");
+                type = tempType;
+
+                if (reader.ReadBool()) {
+                    type = type.MakeGeneric(
+                        reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray()
+                    );
+                }
             }
 
             assembly.typeToId[type] = id;
@@ -113,20 +126,14 @@ public abstract class NeslAssembly {
         l = reader.ReadInt32();
         for (int i = 0; i < l; i++) {
             ulong id = reader.ReadUInt64();
-            NeslType type = assembly.GetType(id);
-            if (type.IsGeneric) {
-                type = type.MakeGeneric(
-                    reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray()
-                );
-            } else {
-                SerializedNeslType serialized = (SerializedNeslType)type;
-                serialized.UnsafeInitializeTypeFromMakeGeneric(serialized.UnsafeTargetTypesFromMakeGeneric(
-                    serialized.GenericMakedFrom!.GenericTypeParameters,
-                    serialized.GenericMakedTypeParameters.ToArray(),
-                    out bool isFullyConstructed
-                ));
-                Debug.Assert(isFullyConstructed);
-            }
+
+            SerializedNeslType type = (SerializedNeslType)assembly.GetType(id);
+            type.UnsafeInitializeTypeFromMakeGeneric(type.UnsafeTargetTypesFromMakeGeneric(
+                type.GenericMakedFrom!.GenericTypeParameters,
+                type.GenericMakedTypeParameters.ToArray(),
+                out bool isFullyConstructed
+            ));
+            Debug.Assert(isFullyConstructed);
 
             assembly.typeToId[type] = id;
             assembly.idToType[id] = type;
@@ -179,6 +186,7 @@ public abstract class NeslAssembly {
         int methodStart = typeWriter.Count;
         typeWriter.WriteInt32(idToMethod.Count);
         foreach (NeslMethod method in idToMethod.Values) {
+            typeWriter.WriteUInt64(GetLocalTypeId(method.Type));
             typeWriter.WriteString(method.Name);
             typeWriter.WriteEnumerable(method.GenericTypeParameters.Select(GetLocalTypeId));
             typeWriter.WriteEnumerable(method.ParameterTypes.Select(GetLocalTypeId));
@@ -187,7 +195,7 @@ public abstract class NeslAssembly {
         foreach (NeslType type in idToType.Values)
             type.PrepareHeader(used, this);
 
-        List<(NeslType, bool)> genericMakedTypes = new List<(NeslType, bool)>();
+        List<NeslType> genericMakedTypes = new List<NeslType>();
 
         // Write type headers.
         int startCount = writer.Count;
@@ -197,7 +205,7 @@ public abstract class NeslAssembly {
         foreach (NeslType type in used.OrderedTypes.Concat(idToType.Values.Except(used.Types)).Distinct().ToArray()) {
             writer.WriteUInt64(GetLocalTypeId(type));
             if (type.SerializeHeader(this, writer))
-                genericMakedTypes.Add((type, type.Assembly == this));
+                genericMakedTypes.Add(type);
 
             if (typeWriters.TryGetValue(type, out (int, int) o))
                 writer.WriteBytes(typeWriter.AsSpan(o.Item1, o.Item2));
@@ -219,11 +227,8 @@ public abstract class NeslAssembly {
 
         // Write generic types.
         writer.WriteInt32(genericMakedTypes.Count);
-        foreach ((NeslType type, bool isLocal) in genericMakedTypes) {
+        foreach (NeslType type in genericMakedTypes)
             writer.WriteUInt64(GetLocalTypeId(type));
-            if (!isLocal)
-                writer.WriteEnumerable(type.GenericMakedTypeParameters.Select(GetLocalTypeId));
-        }
 
         writer.WriteBytes(typeWriter.AsSpan(methodStart));
 

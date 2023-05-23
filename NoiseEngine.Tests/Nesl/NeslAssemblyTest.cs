@@ -63,8 +63,8 @@ public class NeslAssemblyTest : ApplicationTestEnvironment {
         Assert.Equal(created.Name, loaded.Name);
         Assert.True(created.Dependencies.Select(x => x.Name).SequenceEqual(loaded.Dependencies.Select(x => x.Name)));
         Assert.True(
-            created.Types.Select(x => x.FullNameWithAssembly)
-            .SequenceEqual(loaded.Types.Select(x => x.FullNameWithAssembly))
+            created.Types.Select(x => x.FullNameWithAssembly).OrderBy(x => x)
+            .SequenceEqual(loaded.Types.Select(x => x.FullNameWithAssembly).OrderBy(x => x))
         );
 
         NeslCompilerTest.ExecuteVector3PositionVector3Color(GraphicsDevices, loaded, path);

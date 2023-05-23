@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Nesl.CompilerTools.Generics;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -17,14 +18,25 @@ internal class SerializationUsed {
     }
 
     public void Add(NeslType key, NeslType value) {
-        if (key != value && value is not NeslGenericTypeParameter)
-            GetContainer(key).Add(value);
+        if (key == value)
+            return;
+
+        GetContainer(key).Add(value);
+        if (value is NeslGenericTypeParameter)
+            return;
+
+        if (value.GenericMakedFrom is not null) {
+            Add(value, value.GenericMakedFrom);
+            Add(value, value.GenericMakedTypeParameters);
+        } else {
+            Add(value, value.GenericTypeParameters);
+        }
     }
 
     public void Add(NeslType key, IEnumerable<NeslType> values) {
-        HashSet<NeslType> set = GetContainer(key);
+        GetContainer(key);
         foreach (NeslType value in values)
-            set.Add(value);
+            Add(key, value);
     }
 
     private HashSet<NeslType> GetContainer(NeslType key) {
