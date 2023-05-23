@@ -86,6 +86,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedGetter,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedInitializerOrSetter,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]
     UsingAlreadyExists,

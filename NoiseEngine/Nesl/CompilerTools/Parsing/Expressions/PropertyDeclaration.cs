@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using System;
+using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 
@@ -20,18 +21,40 @@ internal class PropertyDeclaration : ParserExpressionContainer {
         TypeIdentifierToken typeIdentifier, NameToken name, CurlyBracketsToken curlyBrackets
     ) {
         TokenBuffer buffer = curlyBrackets.Buffer;
-        bool hasWord = buffer.TryReadNext(TokenType.Word, out Token word);
-        if (!hasWord || word.Value! != "get")
-            Parser.Throw(new CompilationError(word, CompilationErrorType.ExpectedGetter));
-        if (hasWord && !SemicolonToken.Parse(buffer, Parser.ErrorMode, out _, out CompilationError semicolonError))
-            Parser.Throw(semicolonError);
+        bool successful = buffer.TryReadNext(TokenType.Word, out Token word);
 
-        if (!hasWord)
+        if (!successful || word.Value! != "get") {
+            Parser.Throw(new CompilationError(word, CompilationErrorType.ExpectedGetter));
+            successful = false;
+        }
+        if (successful && !SemicolonToken.Parse(buffer, Parser.ErrorMode, out _, out CompilationError semicolonError)) {
+            Parser.Throw(semicolonError);
+            buffer.Index--;
+        }
+
+        bool hasSetter = false;
+        bool hasInitializer = false;
+        if (buffer.TryReadNext(TokenType.Word, out word)) {
+            hasSetter = word.Value! == "set";
+            hasInitializer = word.Value! == "init";
+
+            if (!hasSetter && !hasInitializer) {
+                Parser.Throw(new CompilationError(word, CompilationErrorType.ExpectedGetter));
+            } else if (!SemicolonToken.Parse(buffer, Parser.ErrorMode, out _, out semicolonError)) {
+                Parser.Throw(semicolonError);
+                buffer.Index--;
+            }
+        }
+
+        if (buffer.TryReadNext(out word))
+            Parser.Throw(new CompilationError(word, CompilationErrorType.UnexpectedExpression));
+
+        if (!successful)
             return;
 
+        IReadOnlyList<NeslAttribute> attributes = attribute.Compile(Parser, AttributeTargets.Method);
         if (!Parser.TryDefineProperty(new PropertyDefinitionData(
-            typeIdentifier, name, false, false, null, attribute.Compile(Parser, AttributeTargets.Method), null,
-            Array.Empty<NeslAttribute>()
+            typeIdentifier, name, hasSetter, hasInitializer, null, attributes, null, attributes
         ))) {
             Parser.Throw(new CompilationError(
                 name.Pointer, CompilationErrorType.FieldOrPropertyAlreadyExists, name.Name

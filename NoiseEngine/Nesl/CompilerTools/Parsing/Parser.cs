@@ -538,6 +538,18 @@ internal class Parser {
                 data.TypeIdentifier, data.Name with { Name = NeslOperators.PropertyGet + data.Name.Name },
                 TokenBuffer.Empty, TokenBuffer.Empty, data.GetterAttributes
             ));
+
+            if (!data.HasSetter && !data.HasInitializer)
+                continue;
+
+            string s = NeslOperators.PropertySet;
+            if (data.HasInitializer)
+                s = NeslOperators.PropertyInit;
+
+            DefineMethod(new MethodDefinitionData(
+                data.TypeIdentifier, data.Name with { Name = s + data.Name.Name }, TokenBuffer.Empty, TokenBuffer.Empty,
+                data.SecondAttributes
+            ));
         }
     }
 
