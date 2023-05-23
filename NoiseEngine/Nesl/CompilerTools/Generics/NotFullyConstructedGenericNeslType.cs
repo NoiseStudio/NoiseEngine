@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Nesl.Serialization;
 using NoiseEngine.Serialization;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -8,7 +7,7 @@ using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Generics;
 
-internal class NotFullyConstructedGenericNeslType : NeslType {
+internal sealed class NotFullyConstructedGenericNeslType : NeslType {
 
     public ImmutableArray<NeslType> TypeArguments { get; }
 
@@ -16,7 +15,7 @@ internal class NotFullyConstructedGenericNeslType : NeslType {
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters =>
         GenericMakedFrom!.GenericTypeParameters;
     public override IReadOnlyList<NeslField> Fields { get; }
-    public override IEnumerable<NeslMethod> Methods => GenericMakedFrom!.Methods;
+    public override IEnumerable<NeslMethod> Methods { get; }
     public override NeslType? GenericMakedFrom { get; }
 
     public NotFullyConstructedGenericNeslType(
@@ -30,6 +29,16 @@ internal class NotFullyConstructedGenericNeslType : NeslType {
 
         Fields = GenericMakedFrom.Fields.Select(field => new NotFullyConstructedGenericNeslField(
             this, field, GenericHelper.GetFinalType(GenericMakedFrom, this, field.FieldType, targetTypes)
+        )).ToArray();
+
+        Methods = GenericMakedFrom.Methods.Select(method => new NotFullyConstructedGenericNeslMethodForType(
+            this, method,
+            method.ReturnType is null ? null : GenericHelper.GetFinalType(
+                GenericMakedFrom, this, method.ReturnType, targetTypes
+            ),
+            method.ParameterTypes.Select(x => GenericHelper.GetFinalType(
+                GenericMakedFrom, this, x, targetTypes
+            )).ToArray()
         )).ToArray();
     }
 

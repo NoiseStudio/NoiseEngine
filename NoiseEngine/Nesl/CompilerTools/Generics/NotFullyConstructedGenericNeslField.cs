@@ -2,7 +2,7 @@
 
 namespace NoiseEngine.Nesl.CompilerTools.Generics;
 
-internal class NotFullyConstructedGenericNeslField : NeslField {
+internal sealed class NotFullyConstructedGenericNeslField : NeslField {
 
     private readonly NeslField genericMaked;
 
