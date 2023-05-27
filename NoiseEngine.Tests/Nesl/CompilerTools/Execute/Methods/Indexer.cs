@@ -15,15 +15,15 @@ public class Indexer : NeslTestEnvironment {
     }
 
     [Fact]
-    public void SetConst() {
-        NeslAssembly assembly = NeslCompiler.Compile(nameof(SetConst), "", new NeslFile[] { new NeslFile("H", @"
+    public void LoadAndSet() {
+        NeslAssembly assembly = NeslCompiler.Compile(nameof(LoadAndSet), "", new NeslFile[] { new NeslFile("H", @"
             using System;
 
             uniform RwBuffer<f32> buffer;
 
             [Kernel(1, 1, 1)]
             void Main() {
-                buffer[0] = 26.05;
+                buffer[0] = buffer[2];
             }
         ")});
 
@@ -33,11 +33,15 @@ public class Indexer : NeslTestEnvironment {
         NeslMethod? method = type.GetMethod("Main");
         Assert.NotNull(method);
 
-        Span<float> data = stackalloc float[1];
+        Span<float> data = stackalloc float[] {
+            -1, 0, 26.05f
+        };
+
         foreach (GraphicsDevice graphicsDevice in GraphicsDevices) {
             GraphicsHostBuffer<float> buffer = new GraphicsHostBuffer<float>(
                 graphicsDevice, GraphicsBufferUsage.TransferAll, (ulong)data.Length
             );
+            buffer.SetData(data);
 
             ComputeMaterial material = new ComputeMaterial(new ComputeShader(graphicsDevice, type));
             material.GetProperty(field!)!.SetBuffer(buffer);

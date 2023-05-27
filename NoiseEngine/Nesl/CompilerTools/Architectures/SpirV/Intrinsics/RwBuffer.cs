@@ -1,6 +1,8 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
+using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 
@@ -41,18 +43,20 @@ internal class RwBuffer : IntrinsicsContainer {
     }
 
     private void IndexerGet() {
-        SpirVVariable result = Function.OutputVariable!;
         SpirVVariable buffer = Parameters[0];
         SpirVVariable index = Parameters[1];
 
-        SpirVType elementType = Compiler.GetSpirVType(result.NeslType);
+        SpirVVariable result = new SpirVVariable(
+            Compiler, NeslMethod.ReturnType!, StorageClass.Function, Generator
+        );
+
+        SpirVType elementType = Compiler.GetSpirVType(NeslMethod.ReturnType);
         SpirVId accessChain = GetAccessChainFromIndex(elementType, buffer, index);
 
         SpirVId load = Compiler.GetNextId();
         Generator.Emit(SpirVOpCode.OpLoad, elementType.Id, load, accessChain);
 
-        LoadOperations.SpirVStore(Generator, result, load);
-        Generator.Emit(SpirVOpCode.OpReturn);
+        Generator.Emit(SpirVOpCode.OpReturnValue, load);
     }
 
     private SpirVId GetAccessChainFromIndex(SpirVType elementType, SpirVVariable buffer, SpirVVariable index) {

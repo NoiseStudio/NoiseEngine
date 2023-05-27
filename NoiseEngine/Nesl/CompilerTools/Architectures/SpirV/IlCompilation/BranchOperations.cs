@@ -1,18 +1,12 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
 internal class BranchOperations : IlCompilerOperation {
 
     public BranchOperations(IlCompiler ilCompiler) : base(ilCompiler) {
-    }
-
-    public static void ReturnValueStore(SpirVGenerator generator, SpirVFunction function, SpirVVariable result) {
-        LoadOperations.SpirVStore(
-            generator, function.OutputVariable!, LoadOperations.SpirVLoad(generator, result)
-        );
-        generator.Emit(SpirVOpCode.OpReturn);
     }
 
     public void Call(Instruction instruction) {
@@ -77,7 +71,10 @@ internal class BranchOperations : IlCompilerOperation {
     }
 
     private void ReturnValueStore(SpirVVariable result) {
-        ReturnValueStore(Generator, IlCompiler.Function, result);
+        IlCompiler.LoadOperations.SpirVStore(
+            IlCompiler.Function.OutputVariable!, IlCompiler.LoadOperations.SpirVLoad(result)
+        );
+        Generator.Emit(SpirVOpCode.OpReturn);
     }
 
 }
