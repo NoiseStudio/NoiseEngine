@@ -13,7 +13,7 @@ internal static class NewInitializer {
             }
 
             if (!buffer.TryReadNext(TokenType.Assigment, out Token token)) {
-                parser.Throw(new CompilationError(token, CompilationErrorType.ExpectedAssigmentOperator));
+                parser.Throw(new CompilationError(token, CompilationErrorType.ExpectedAssignmentOperator));
                 return;
             }
 

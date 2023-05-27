@@ -46,7 +46,7 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedExplicitCastNotExpression,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
-    ExpectedAssigmentOperator,
+    ExpectedAssignmentOperator,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedAttribute,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
@@ -88,6 +88,10 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedInitializerOrSetter,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedAssignmentExpression,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedIndexer,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]
     UsingAlreadyExists,
@@ -118,19 +122,29 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     VariableOrFieldOrPropertyNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    IndexerNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     ImplicitCastOperatorNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     UsingGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
-    AssigmentGenericNotAllowed,
+    AssignmentGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     InitializerForIndexerNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ThisNameForFieldOrPropertyNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    LeftOperatorNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    OperatorNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeTargetNotMatch,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     SubtractionOperatorNotMatchExpression,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AssignmentExpressionCannotBeNew,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AssignmentExpressionCannotBeMethod,
 }

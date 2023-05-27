@@ -23,7 +23,7 @@ internal record ValueToken(
         int index = buffer.Index;
         if (
             OperatorToken.Parse(buffer, errorMode, out OperatorToken tempOperator, out _) &&
-            !tempOperator.IsAssigment && (
+            !tempOperator.IsAssignment && (
                 tempOperator.Type == OperatorType.Increment ||
                 tempOperator.Type == OperatorType.Decrement ||
                 tempOperator.Type == OperatorType.Subtraction ||
@@ -78,22 +78,21 @@ internal record ValueToken(
                 }
 
                 List<ExpressionValueContent> expressions = new List<ExpressionValueContent> {
-                new ExpressionValueContent(isNew, identifier, roundBrackets, curlyBrackets, indexer)
-            };
+                    new ExpressionValueContent(isNew, identifier, roundBrackets, curlyBrackets, indexer)
+                };
 
                 // Get next expressions
                 while (buffer.TryReadNext(out token)) {
-                    if (token.Type == TokenType.Dot) {
-                        if (!TryGetIdentifierWithRoundBrackets(
-                            buffer, errorMode, out error, out identifier, out roundBrackets
-                        )) {
-                            result = null;
-                            return false;
-                        }
-                    } else if (token.Type != TokenType.SquareBracketOpening) {
-                        buffer.Index--;
-                        break;
+                    if (token.Type == TokenType.Dot && !TryGetIdentifierWithRoundBrackets(
+                        buffer, errorMode, out error, out identifier, out roundBrackets
+                    )) {
+                        result = null;
+                        return false;
                     }
+                    buffer.Index--;
+
+                    if (token.Type != TokenType.SquareBracketOpening)
+                        break;
 
                     if (!TryGetIndexer(buffer, errorMode, out error, out indexer)) {
                         result = null;
@@ -132,7 +131,7 @@ internal record ValueToken(
         index = buffer.Index;
         if (
             OperatorToken.Parse(buffer, errorMode, out tempOperator, out _) &&
-            !tempOperator.IsAssigment && (
+            !tempOperator.IsAssignment && (
                 tempOperator.Type == OperatorType.Increment ||
                 tempOperator.Type == OperatorType.Decrement
             )
@@ -144,7 +143,7 @@ internal record ValueToken(
 
         index = buffer.Index;
         bool hasOperator =
-            OperatorToken.Parse(buffer, errorMode, out tempOperator, out _) && !tempOperator.IsAssigment;
+            OperatorToken.Parse(buffer, errorMode, out tempOperator, out _) && !tempOperator.IsAssignment;
         if (!hasOperator)
             buffer.Index = index;
 
@@ -217,7 +216,7 @@ internal record ValueToken(
         indexer = null;
         int index = buffer.Index;
         if (buffer.TryReadNext(TokenType.SquareBracketOpening, out Token token)) {
-            if (!Parse(buffer, errorMode, out indexer, out error)) {
+            if (!Parse(buffer, errorMode, out indexer, out _)) {
                 error = default;
                 return false;
             }
@@ -226,6 +225,8 @@ internal record ValueToken(
                 error = new CompilationError(token, CompilationErrorType.ExpectedClosingSquareBracket);
                 return false;
             }
+
+            buffer.Index = index + token.Length;
         } else {
             buffer.Index = index;
         }

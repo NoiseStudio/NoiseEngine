@@ -9,6 +9,9 @@ internal readonly record struct TypeIdentifierToken(
     CodePointer Pointer, string Identifier, IReadOnlyList<TypeIdentifierToken> GenericTokens
 ) : IParserToken<TypeIdentifierToken> {
 
+    public static TypeIdentifierToken Void =>
+        new TypeIdentifierToken(default, "void", Array.Empty<TypeIdentifierToken>());
+
     public bool IsIgnored => false;
     public int Priority => 0;
 

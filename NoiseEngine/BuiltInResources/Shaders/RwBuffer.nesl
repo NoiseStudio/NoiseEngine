@@ -1,3 +1,7 @@
 [PlatformDependentTypeRepresentation("OpTypeArray`{&T}")]
 public class RwBuffer<T> {
+
+    [Intrinsic]
+    public T this[u32 index] { get; set; }
+
 }

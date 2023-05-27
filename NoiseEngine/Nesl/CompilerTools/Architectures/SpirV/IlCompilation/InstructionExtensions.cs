@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
@@ -34,8 +35,13 @@ internal static class InstructionExtensions {
         this ref Instruction instruction, IlCompiler ilCompiler, NeslMethod neslMethod
     ) {
         Span<SpirVVariable> span = new SpirVVariable[(int)instruction.ReadUInt32()];
-        for (int i = 0; i < span.Length; i++)
-            span[i] = ReadSpirVVariable(ref instruction, ilCompiler, neslMethod)!;
+        for (int i = 0; i < span.Length; i++) {
+            SpirVVariable? variable = ReadSpirVVariable(ref instruction, ilCompiler, neslMethod)!;
+            span[i] = variable;
+
+            if (variable is null)
+                throw new UnreachableException();
+        }
 
         return span;
     }

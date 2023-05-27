@@ -381,6 +381,8 @@ internal class Parser {
 
                 if (methodParser.CurrentMethodIsConstructor)
                     DefaultConstructorHelper.AppendFooter(methodParser.CurrentMethod);
+                else if (methodParser.CurrentMethod.ReturnType is null)
+                    methodParser.CurrentMethod.IlGenerator.Emit(OpCode.Return);
 
                 errors.AddRange(methodParser.Errors);
             }
@@ -567,7 +569,7 @@ internal class Parser {
             )).ToArray());
 
             DefineMethod(new MethodDefinitionData(
-                data.TypeIdentifier, data.Name with { Name = s + data.Name.Name }, parameters, TokenBuffer.Empty,
+                TypeIdentifierToken.Void, data.Name with { Name = s + data.Name.Name }, parameters, TokenBuffer.Empty,
                 data.SecondAttributes
             ));
         }
@@ -582,8 +584,12 @@ internal class Parser {
             if (data.Name.Name != "this")
                 name += data.Name.Name;
 
+            Token[] indexTokens = data.IndexType.ToTokens().Append(new Token(
+                null!, uint.MaxValue, uint.MaxValue, TokenType.Word, data.IndexName.Name.Length, data.IndexName.Name
+            )).ToArray();
+
             DefineMethod(new MethodDefinitionData(
-                data.TypeIdentifier, data.Name with { Name = name }, TokenBuffer.Empty, TokenBuffer.Empty,
+                data.TypeIdentifier, data.Name with { Name = name }, new TokenBuffer(indexTokens), TokenBuffer.Empty,
                 data.GetterAttributes
             ));
 
@@ -594,12 +600,15 @@ internal class Parser {
             if (data.Name.Name != "this")
                 name += data.Name.Name;
 
-            TokenBuffer parameters = new TokenBuffer(data.IndexType.ToTokens().Append(new Token(
-                null!, uint.MaxValue, uint.MaxValue, TokenType.Word, data.IndexName.Name.Length, data.IndexName.Name
-            )).ToArray());
+            const string ValueName = "value";
+            TokenBuffer parameters = new TokenBuffer(indexTokens
+                .Append(new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.Comma, 1, null))
+                .Concat(data.TypeIdentifier.ToTokens())
+                .Append(new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.Word, ValueName.Length, ValueName)
+            ).ToArray());
 
             DefineMethod(new MethodDefinitionData(
-                data.TypeIdentifier, data.Name with { Name = name }, parameters, TokenBuffer.Empty,
+                TypeIdentifierToken.Void, data.Name with { Name = name }, parameters, TokenBuffer.Empty,
                 data.SetterAttributes
             ));
         }

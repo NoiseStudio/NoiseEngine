@@ -8,12 +8,45 @@ internal class LoadOperations : IlCompilerOperation {
     public LoadOperations(IlCompiler ilCompiler) : base(ilCompiler) {
     }
 
-    public SpirVId SpirVLoad(SpirVVariable variable) {
-        SpirVId id = Compiler.GetNextId();
-        Generator.Emit(
-            SpirVOpCode.OpLoad, Compiler.GetSpirVType(variable.NeslType).Id, id, variable.GetAccess(Generator)
+    public static SpirVId SpirVLoad(SpirVGenerator generator, SpirVVariable variable) {
+        SpirVCompiler compiler = variable.Compiler;
+        SpirVId id = compiler.GetNextId();
+        generator.Emit(
+            SpirVOpCode.OpLoad, compiler.GetSpirVType(variable.NeslType).Id, id, variable.GetAccess(generator)
         );
         return id;
+    }
+
+    public static SpirVId GetAccessChainFromIndex(
+        SpirVGenerator generator, SpirVType destinationType, SpirVVariable sourceVariable, SpirVId index
+    ) {
+        SpirVCompiler compiler = sourceVariable.Compiler;
+        SpirVType pointer = compiler.BuiltInTypes.GetOpTypePointer(sourceVariable.StorageClass, destinationType);
+
+        bool isSurrounded = sourceVariable.StorageClass == StorageClass.Uniform;
+        Span<SpirVId> indexes = stackalloc SpirVId[isSurrounded ? 2 : 1];
+
+        if (isSurrounded) {
+            indexes[0] = compiler.GetConst(0);
+            indexes[1] = index;
+        } else {
+            indexes[0] = index;
+        }
+
+        SpirVId id = compiler.GetNextId();
+        generator.Emit(
+            SpirVOpCode.OpAccessChain, pointer.Id, id, sourceVariable.Id, indexes
+        );
+
+        return id;
+    }
+
+    public SpirVId SpirVLoad(SpirVVariable variable) {
+        return SpirVLoad(Generator, variable);
+    }
+
+    public SpirVId GetAccessChainFromIndex(SpirVType destinationType, SpirVVariable sourceVariable, SpirVId index) {
+        return GetAccessChainFromIndex(Generator, destinationType, sourceVariable, index);
     }
 
     public void SpirVStore(SpirVVariable variable, SpirVId constId) {
@@ -40,27 +73,6 @@ internal class LoadOperations : IlCompilerOperation {
         SpirVId id = Compiler.GetNextId();
         Generator.Emit(SpirVOpCode.OpLoad, Compiler.GetSpirVType(result.NeslType).Id, id, value.GetAccess(Generator));
         SpirVStore(result, id);
-    }
-
-    public SpirVId GetAccessChainFromIndex(SpirVType destinationType, SpirVVariable sourceVariable, SpirVId index) {
-        SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(sourceVariable.StorageClass, destinationType);
-
-        bool isSurrounded = sourceVariable.StorageClass == StorageClass.Uniform;
-        Span<SpirVId> indexes = stackalloc SpirVId[isSurrounded ? 2 : 1];
-
-        if (isSurrounded) {
-            indexes[0] = Compiler.GetConst(0);
-            indexes[1] = index;
-        } else {
-            indexes[0] = index;
-        }
-
-        SpirVId id = Compiler.GetNextId();
-        Generator.Emit(
-            SpirVOpCode.OpAccessChain, pointer.Id, id, sourceVariable.Id, indexes
-        );
-
-        return id;
     }
 
     public void LoadUInt32(Instruction instruction) {
