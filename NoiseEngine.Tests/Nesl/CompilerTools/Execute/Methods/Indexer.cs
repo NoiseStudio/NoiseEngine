@@ -5,6 +5,7 @@ using NoiseEngine.Rendering;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System.Linq;
+using System;
 
 namespace NoiseEngine.Tests.Nesl.CompilerTools.Execute.Methods;
 
@@ -22,7 +23,7 @@ public class Indexer : NeslTestEnvironment {
 
             [Kernel(1, 1, 1)]
             void Main() {
-                buffer[0] = 11.04;
+                buffer[0] = 26.05;
             }
         ")});
 
@@ -32,9 +33,10 @@ public class Indexer : NeslTestEnvironment {
         NeslMethod? method = type.GetMethod("Main");
         Assert.NotNull(method);
 
+        Span<float> data = stackalloc float[1];
         foreach (GraphicsDevice graphicsDevice in GraphicsDevices) {
             GraphicsHostBuffer<float> buffer = new GraphicsHostBuffer<float>(
-                graphicsDevice, GraphicsBufferUsage.TransferAll, 1
+                graphicsDevice, GraphicsBufferUsage.TransferAll, (ulong)data.Length
             );
 
             ComputeMaterial material = new ComputeMaterial(new ComputeShader(graphicsDevice, type));
@@ -42,6 +44,12 @@ public class Indexer : NeslTestEnvironment {
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(graphicsDevice, false);
             commandBuffer.Dispatch(material.GetKernel(method!)!, material, Vector3<uint>.One);
+            commandBuffer.Execute();
+            commandBuffer.Clear();
+
+            // Assert.
+            buffer.GetData(data);
+            Assert.Equal(26.05f, data[0]);
         }
     }
 

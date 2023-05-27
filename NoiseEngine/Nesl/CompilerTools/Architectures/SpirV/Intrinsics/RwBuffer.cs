@@ -1,10 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
-using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 
@@ -31,9 +27,9 @@ internal class RwBuffer : IntrinsicsContainer {
     private void IndexerSet() {
         Debug.Assert(NeslMethod.ReturnType is null);
 
-        SpirVVariable index = Parameters[0];
-        SpirVVariable value = Parameters[1];
-        SpirVVariable instance = Parameters[2];
+        SpirVVariable instance = Parameters[0];
+        SpirVVariable index = Parameters[1];
+        SpirVVariable value = Parameters[2];
 
         SpirVId load = LoadOperations.SpirVLoad(Generator, value);
 
@@ -46,8 +42,8 @@ internal class RwBuffer : IntrinsicsContainer {
 
     private void IndexerGet() {
         SpirVVariable result = Function.OutputVariable!;
-        SpirVVariable index = Parameters[0];
-        SpirVVariable buffer = Parameters[1];
+        SpirVVariable buffer = Parameters[0];
+        SpirVVariable index = Parameters[1];
 
         SpirVType elementType = Compiler.GetSpirVType(result.NeslType);
         SpirVId accessChain = GetAccessChainFromIndex(elementType, buffer, index);
