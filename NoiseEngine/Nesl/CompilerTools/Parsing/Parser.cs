@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
@@ -9,8 +10,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Xml.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -20,7 +19,7 @@ internal class Parser {
 
     private List<string>? usings;
     private List<(NeslTypeBuilder, TokenBuffer)>? definedTypes;
-    private List<(TypeIdentifierToken typeIdentifier, string name)>? definedFields;
+    private List<FieldDefinitionData>? definedFields;
     private List<PropertyDefinitionData>? definedProperties;
     private List<IndexerDefinitionData>? definedIndexers;
     private List<MethodDefinitionData>? definedMethods;
@@ -267,11 +266,13 @@ internal class Parser {
 
     public void AnalyzeFields() {
         if (definedFields is not null) {
-            foreach ((TypeIdentifierToken typeIdentifier, string name) in definedFields) {
-                if (!TryGetType(typeIdentifier, out NeslType? fieldType))
+            foreach (FieldDefinitionData data in definedFields) {
+                if (!TryGetType(data.TypeIdentifier, out NeslType? fieldType))
                     continue;
 
-                CurrentType.DefineField(name, fieldType);
+                NeslFieldBuilder field = CurrentType.DefineField(data.Name.Name, fieldType);
+                if (data.Modifiers.HasFlag(NeslModifier.Uniform))
+                    field.AddAttribute(UniformAttribute.Create());
             }
 
             definedFields = null;
@@ -412,12 +413,12 @@ internal class Parser {
         definedTypes.Add((typeBuilder, buffer));
     }
 
-    public bool TryDefineField(TypeIdentifierToken typeIdentifier, string name) {
-        if (CheckIfFieldOrPropertyOrIndexerExists(name))
+    public bool TryDefineField(FieldDefinitionData data) {
+        if (CheckIfFieldOrPropertyOrIndexerExists(data.Name.Name))
             return false;
 
-        definedFields ??= new List<(TypeIdentifierToken typeIdentifier, string name)>();
-        definedFields.Add((typeIdentifier, name));
+        definedFields ??= new List<FieldDefinitionData>();
+        definedFields.Add(data);
         return true;
     }
 
@@ -526,7 +527,7 @@ internal class Parser {
 
     private bool CheckIfFieldOrPropertyOrIndexerExists(string name) {
         if (definedFields is not null) {
-            foreach ((_, string n) in definedFields) {
+            foreach (string n in definedFields.Select(x => x.Name.Name)) {
                 if (name == n)
                     return true;
             }

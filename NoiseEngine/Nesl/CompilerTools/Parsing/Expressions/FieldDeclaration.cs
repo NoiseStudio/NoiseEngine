@@ -19,7 +19,7 @@ internal class FieldDeclaration : ParserExpressionContainer {
     ) {
         name.AssertNameForFieldOrProperty(Parser);
 
-        if (!Parser.TryDefineField(typeIdentifier, name.Name)) {
+        if (!Parser.TryDefineField(new FieldDefinitionData(typeIdentifier, name, modifiers.Modifiers))) {
             Parser.Throw(new CompilationError(
                 name.Pointer, CompilationErrorType.FieldOrPropertyOrIndexerAlreadyExists, name.Name
             ));

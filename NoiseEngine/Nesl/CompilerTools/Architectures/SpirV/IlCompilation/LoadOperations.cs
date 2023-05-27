@@ -17,6 +17,10 @@ internal class LoadOperations : IlCompilerOperation {
         return id;
     }
 
+    public static void SpirVStore(SpirVGenerator generator, SpirVVariable variable, SpirVId constId) {
+        generator.Emit(SpirVOpCode.OpStore, variable.GetAccess(generator), constId);
+    }
+
     public static SpirVId GetAccessChainFromIndex(
         SpirVGenerator generator, SpirVType destinationType, SpirVVariable sourceVariable, SpirVId index
     ) {
@@ -50,7 +54,7 @@ internal class LoadOperations : IlCompilerOperation {
     }
 
     public void SpirVStore(SpirVVariable variable, SpirVId constId) {
-        Generator.Emit(SpirVOpCode.OpStore, variable.GetAccess(Generator), constId);
+        SpirVStore(Generator, variable, constId);
     }
 
     public void Load(Instruction instruction) {
