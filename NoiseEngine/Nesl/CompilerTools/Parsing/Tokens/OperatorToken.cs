@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
 internal readonly record struct OperatorToken(
-    CodePointer Pointer, OperatorType Type, bool IsAssigment
+    CodePointer Pointer, OperatorType Type, bool IsAssignment
 ) : IParserToken<OperatorToken> {
 
     public bool IsIgnored => false;
@@ -21,20 +21,20 @@ internal readonly record struct OperatorToken(
         }
 
         OperatorType type;
-        bool isAssigment = false;
+        bool isAssignment = false;
 
         Token tokenRight;
         switch (token.Type) {
             case TokenType.Assigment:
                 type = OperatorType.None;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.Addition:
                 type = OperatorType.Addition;
                 break;
             case TokenType.AdditionAssigment:
                 type = OperatorType.Addition;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.Increment:
                 type = OperatorType.Increment;
@@ -44,7 +44,7 @@ internal readonly record struct OperatorToken(
                 break;
             case TokenType.SubtractionAssigment:
                 type = OperatorType.Subtraction;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.Decrement:
                 type = OperatorType.Decrement;
@@ -54,28 +54,28 @@ internal readonly record struct OperatorToken(
                 break;
             case TokenType.MultiplicationAssigment:
                 type = OperatorType.Multiplication;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.Exponentation:
                 type = OperatorType.Exponentation;
                 break;
             case TokenType.ExponentationAssigment:
                 type = OperatorType.Exponentation;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.Division:
                 type = OperatorType.Division;
                 break;
             case TokenType.DivisionAssigment:
                 type = OperatorType.Division;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.Remainder:
                 type = OperatorType.Remainder;
                 break;
             case TokenType.RemainderAssigment:
                 type = OperatorType.Remainder;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.Equality:
                 type = OperatorType.Equality;
@@ -95,7 +95,7 @@ internal readonly record struct OperatorToken(
                 if (tokenRight!.Type == TokenType.AngleBracketOpening) {
                     type = OperatorType.RightShift;
                     if (buffer.TryReadNext(TokenType.Assigment, out tokenRight) && IsNear(token, tokenRight))
-                        isAssigment = true;
+                        isAssignment = true;
                     else if (tokenRight.Type != TokenType.None)
                         buffer.Index--;
                 } else if (tokenRight.Type == TokenType.Assigment) {
@@ -117,7 +117,7 @@ internal readonly record struct OperatorToken(
                 if (tokenRight!.Type == TokenType.AngleBracketOpening) {
                     type = OperatorType.LeftShift;
                     if (buffer.TryReadNext(TokenType.Assigment, out tokenRight) && IsNear(token, tokenRight))
-                        isAssigment = true;
+                        isAssignment = true;
                     else if (tokenRight.Type != TokenType.None)
                         buffer.Index--;
                 } else if (tokenRight.Type == TokenType.Assigment) {
@@ -135,42 +135,42 @@ internal readonly record struct OperatorToken(
                 break;
             case TokenType.LogicalAndAssigment:
                 type = OperatorType.LogicalAnd;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.LogicalOr:
                 type = OperatorType.LogicalOr;
                 break;
             case TokenType.LogicalOrAssigment:
                 type = OperatorType.LogicalOr;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.LogicalXor:
                 type = OperatorType.LogicalXor;
                 break;
             case TokenType.LogicalXorAssigment:
                 type = OperatorType.LogicalXor;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.ConditionalAnd:
                 type = OperatorType.ConditionalAnd;
                 break;
             case TokenType.ConditionalAndAssigment:
                 type = OperatorType.ConditionalAnd;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.ConditionalOr:
                 type = OperatorType.ConditionalOr;
                 break;
             case TokenType.ConditionalOrAssigment:
                 type = OperatorType.ConditionalOr;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.NullCoalescing:
                 type = OperatorType.NullCoalescing;
                 break;
             case TokenType.NullCoalescingAssigment:
                 type = OperatorType.NullCoalescing;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             case TokenType.QuestionMark:
                 type = OperatorType.Ternary;
@@ -183,7 +183,7 @@ internal readonly record struct OperatorToken(
                 break;
             case TokenType.BitwiseAssigment:
                 type = OperatorType.Bitwise;
-                isAssigment = true;
+                isAssignment = true;
                 break;
             default:
                 result = default;
@@ -191,7 +191,7 @@ internal readonly record struct OperatorToken(
                 return false;
         }
 
-        result = new OperatorToken(token.Pointer, type, isAssigment);
+        result = new OperatorToken(token.Pointer, type, isAssignment);
         error = default;
         return true;
     }

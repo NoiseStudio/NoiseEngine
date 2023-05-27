@@ -2,9 +2,9 @@
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
-internal readonly record struct ModifiersToken(NeslModifier Modifier) : IParserToken<ModifiersToken> {
+internal readonly record struct ModifiersToken(NeslModifier Modifiers) : IParserToken<ModifiersToken> {
 
-    public bool IsIgnored => Modifier == NeslModifier.None;
+    public bool IsIgnored => Modifiers == NeslModifier.None;
     public int Priority => 0;
 
     public static bool Parse(

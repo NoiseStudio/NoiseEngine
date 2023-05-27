@@ -26,10 +26,10 @@ internal class VulkanVertexFragmentShaderDelegation : VulkanCommonShaderDelegati
         vertex = shader.ClassData.GetMethod("Vertex") ?? throw new NullReferenceException();
         fragment = shader.ClassData.GetMethod("Fragment") ?? throw new NullReferenceException();
 
-        System.IO.File.WriteAllBytes("tak.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
+        /*System.IO.File.WriteAllBytes("tak.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(vertex, ExecutionModel.Vertex),
             //new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
-        }, settings).GetCode());
+        }, settings).GetCode());*/
 
         result = SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(vertex, ExecutionModel.Vertex),

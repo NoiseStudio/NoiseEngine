@@ -24,6 +24,9 @@ internal static class IntrinsicsManager {
             case $"{DefaultAssembly}.{nameof(VertexUtils)}":
                 new VertexUtils(generator, function, parameters).Process();
                 break;
+            case $"{DefaultAssembly}.RwBuffer`1":
+                new RwBuffer(generator, function, parameters).Process();
+                break;
             default:
                 throw new InvalidOperationException($"Unable to find given {nameof(IntrinsicAttribute)} definition.");
         }

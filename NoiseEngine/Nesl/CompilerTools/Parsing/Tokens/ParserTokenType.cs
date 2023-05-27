@@ -28,6 +28,8 @@ internal enum ParserTokenType {
     RoundBrackets,
     [ParserToken(typeof(CurlyBracketsToken))]
     CurlyBrackets,
+    [ParserToken(typeof(SquareBracketsToken))]
+    SquareBrackets,
     [ParserToken(typeof(GenericDefineToken))]
     GenericDefine,
     [ParserToken(typeof(SemicolonToken))]

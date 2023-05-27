@@ -15,6 +15,8 @@ internal class VulkanComputeShaderDelegation : VulkanCommonShaderDelegation {
     public VulkanComputeShaderDelegation(ICommonShader shader, ShaderSettings settings) : base(Construct(
         shader, settings, out NeslMethod[] kernels, out SpirVCompilationResult result
     ), result) {
+        System.IO.File.WriteAllBytes("tak.spv", result.GetCode());
+
         foreach (NeslMethod kernel in kernels) {
             ComputePipeline pipeline = new ComputePipeline(PipelineLayout, new PipelineShaderStage(
                 ShaderStageFlags.Compute, Module, kernel.Guid.ToString()

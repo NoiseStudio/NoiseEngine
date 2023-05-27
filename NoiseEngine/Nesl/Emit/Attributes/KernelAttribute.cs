@@ -44,6 +44,17 @@ public class KernelAttribute : NeslAttribute {
     }
 
     /// <summary>
+    /// Creates new <see cref="KernelAttribute"/>.
+    /// </summary>
+    /// <param name="localSizeX">X local size of this kernel.</param>
+    /// <param name="localSizeY">Y local size of this kernel.</param>
+    /// <param name="localSizeZ">Z local size of this kernel.</param>
+    /// <returns><see cref="KernelAttribute"/> with given parameters.</returns>
+    public static KernelAttribute Create(uint localSizeX, uint localSizeY, uint localSizeZ) {
+        return Create(new Vector3<uint>(localSizeX, localSizeY, localSizeZ));
+    }
+
+    /// <summary>
     /// Checks if that properties have valid values.
     /// </summary>
     /// <returns>

@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
-using System;
+using NoiseEngine.Nesl.CompilerTools.Parsing.Utils;
+using System.Collections.Generic;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 
@@ -16,25 +17,22 @@ internal class PropertyDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
-        AttributesToken attribute, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
+        AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
         TypeIdentifierToken typeIdentifier, NameToken name, CurlyBracketsToken curlyBrackets
     ) {
-        TokenBuffer buffer = curlyBrackets.Buffer;
-        bool hasWord = buffer.TryReadNext(TokenType.Word, out Token word);
-        if (!hasWord || word.Value! != "get")
-            Parser.Throw(new CompilationError(word, CompilationErrorType.ExpectedGetter));
-        if (hasWord && !SemicolonToken.Parse(buffer, Parser.ErrorMode, out _, out CompilationError semicolonError))
-            Parser.Throw(semicolonError);
+        name.AssertNameForFieldOrProperty(Parser);
 
-        if (!hasWord)
+        GetterSetterUtilsResult? result = GetterSetterUtils.FromCurlyBrackets(Parser, curlyBrackets, attributes);
+        if (result is null)
             return;
+        GetterSetterUtilsResult r = result.Value;
 
         if (!Parser.TryDefineProperty(new PropertyDefinitionData(
-            typeIdentifier, name, false, false, null, attribute.Compile(Parser, AttributeTargets.Method), null,
-            Array.Empty<NeslAttribute>()
+            typeIdentifier, name, r.HasSetter, r.HasInitializer, r.Getter, r.GetterAttributes, r.Second,
+            r.SecondAttributes
         ))) {
             Parser.Throw(new CompilationError(
-                name.Pointer, CompilationErrorType.FieldOrPropertyAlreadyExists, name.Name
+                name.Pointer, CompilationErrorType.FieldOrPropertyOrIndexerAlreadyExists, name.Name
             ));
         }
     }

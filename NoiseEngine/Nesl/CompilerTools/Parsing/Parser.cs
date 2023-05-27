@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
@@ -18,8 +19,9 @@ internal class Parser {
 
     private List<string>? usings;
     private List<(NeslTypeBuilder, TokenBuffer)>? definedTypes;
-    private List<(TypeIdentifierToken typeIdentifier, string name)>? definedFields;
+    private List<FieldDefinitionData>? definedFields;
     private List<PropertyDefinitionData>? definedProperties;
+    private List<IndexerDefinitionData>? definedIndexers;
     private List<MethodDefinitionData>? definedMethods;
     private List<Parser>? types;
     private List<Parser>? methods;
@@ -264,17 +266,20 @@ internal class Parser {
 
     public void AnalyzeFields() {
         if (definedFields is not null) {
-            foreach ((TypeIdentifierToken typeIdentifier, string name) in definedFields) {
-                if (!TryGetType(typeIdentifier, out NeslType? fieldType))
+            foreach (FieldDefinitionData data in definedFields) {
+                if (!TryGetType(data.TypeIdentifier, out NeslType? fieldType))
                     continue;
 
-                CurrentType.DefineField(name, fieldType);
+                NeslFieldBuilder field = CurrentType.DefineField(data.Name.Name, fieldType);
+                if (data.Modifiers.HasFlag(NeslModifier.Uniform))
+                    field.AddAttribute(UniformAttribute.Create());
             }
 
             definedFields = null;
         }
 
         AnalyzeProperties();
+        AnalyzeIndexers();
 
         // Add default constructor to value type.
         if (currentType?.IsValueType == true) {
@@ -377,6 +382,8 @@ internal class Parser {
 
                 if (methodParser.CurrentMethodIsConstructor)
                     DefaultConstructorHelper.AppendFooter(methodParser.CurrentMethod);
+                else if (methodParser.CurrentMethod.ReturnType is null)
+                    methodParser.CurrentMethod.IlGenerator.Emit(OpCode.Return);
 
                 errors.AddRange(methodParser.Errors);
             }
@@ -406,41 +413,30 @@ internal class Parser {
         definedTypes.Add((typeBuilder, buffer));
     }
 
-    public bool TryDefineField(TypeIdentifierToken typeIdentifier, string name) {
-        if (definedFields is not null) {
-            foreach ((_, string n) in definedFields) {
-                if (name == n)
-                    return false;
-            }
-        }
-        if (definedProperties is not null) {
-            foreach (string n in definedProperties.Select(x => x.Name.Name)) {
-                if (name == n)
-                    return false;
-            }
-        }
+    public bool TryDefineField(FieldDefinitionData data) {
+        if (CheckIfFieldOrPropertyOrIndexerExists(data.Name.Name))
+            return false;
 
-        definedFields ??= new List<(TypeIdentifierToken typeIdentifier, string name)>();
-        definedFields.Add((typeIdentifier, name));
+        definedFields ??= new List<FieldDefinitionData>();
+        definedFields.Add(data);
         return true;
     }
 
     public bool TryDefineProperty(PropertyDefinitionData data) {
-        if (definedProperties is not null) {
-            foreach (string n in definedProperties.Select(x => x.Name.Name)) {
-                if (data.Name.Name == n)
-                    return false;
-            }
-        }
-        if (definedFields is not null) {
-            foreach ((_, string n) in definedFields) {
-                if (data.Name.Name == n)
-                    return false;
-            }
-        }
+        if (CheckIfFieldOrPropertyOrIndexerExists(data.Name.Name))
+            return false;
 
         definedProperties ??= new List<PropertyDefinitionData>();
         definedProperties.Add(data);
+        return true;
+    }
+
+    public bool TryDefineIndexer(IndexerDefinitionData data) {
+        if (CheckIfFieldOrPropertyOrIndexerExists(data.Name.Name))
+            return false;
+
+        definedIndexers ??= new List<IndexerDefinitionData>();
+        definedIndexers.Add(data);
         return true;
     }
 
@@ -529,6 +525,28 @@ internal class Parser {
         return null;
     }
 
+    private bool CheckIfFieldOrPropertyOrIndexerExists(string name) {
+        if (definedFields is not null) {
+            foreach (string n in definedFields.Select(x => x.Name.Name)) {
+                if (name == n)
+                    return true;
+            }
+        }
+        if (definedProperties is not null) {
+            foreach (string n in definedProperties.Select(x => x.Name.Name)) {
+                if (name == n)
+                    return true;
+            }
+        }
+        if (definedIndexers is not null) {
+            foreach (string n in definedIndexers.Select(x => x.Name.Name)) {
+                if (name == n)
+                    return true;
+            }
+        }
+        return false;
+    }
+
     private void AnalyzeProperties() {
         if (definedProperties is null)
             return;
@@ -537,6 +555,62 @@ internal class Parser {
             DefineMethod(new MethodDefinitionData(
                 data.TypeIdentifier, data.Name with { Name = NeslOperators.PropertyGet + data.Name.Name },
                 TokenBuffer.Empty, TokenBuffer.Empty, data.GetterAttributes
+            ));
+
+            if (!data.HasSetter && !data.HasInitializer)
+                continue;
+
+            string s = NeslOperators.PropertySet;
+            if (data.HasInitializer)
+                s = NeslOperators.PropertyInit;
+
+            const string ValueName = "value";
+            TokenBuffer parameters = new TokenBuffer(data.TypeIdentifier.ToTokens().Append(new Token(
+                null!, uint.MaxValue, uint.MaxValue, TokenType.Word, ValueName.Length, ValueName
+            )).ToArray());
+
+            DefineMethod(new MethodDefinitionData(
+                TypeIdentifierToken.Void, data.Name with { Name = s + data.Name.Name }, parameters, TokenBuffer.Empty,
+                data.SecondAttributes
+            ));
+        }
+    }
+
+    private void AnalyzeIndexers() {
+        if (definedIndexers is null)
+            return;
+
+        foreach (IndexerDefinitionData data in definedIndexers) {
+            string name = NeslOperators.IndexerGet;
+            if (data.Name.Name != "this")
+                name += data.Name.Name;
+
+            Token[] indexTokens = data.IndexType.ToTokens().Append(new Token(
+                null!, uint.MaxValue, uint.MaxValue, TokenType.Word, data.IndexName.Name.Length, data.IndexName.Name
+            )).ToArray();
+
+            DefineMethod(new MethodDefinitionData(
+                data.TypeIdentifier, data.Name with { Name = name }, new TokenBuffer(indexTokens), TokenBuffer.Empty,
+                data.GetterAttributes
+            ));
+
+            if (!data.HasSetter)
+                continue;
+
+            name = NeslOperators.IndexerSet;
+            if (data.Name.Name != "this")
+                name += data.Name.Name;
+
+            const string ValueName = "value";
+            TokenBuffer parameters = new TokenBuffer(indexTokens
+                .Append(new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.Comma, 1, null))
+                .Concat(data.TypeIdentifier.ToTokens())
+                .Append(new Token(null!, uint.MaxValue, uint.MaxValue, TokenType.Word, ValueName.Length, ValueName)
+            ).ToArray());
+
+            DefineMethod(new MethodDefinitionData(
+                TypeIdentifierToken.Void, data.Name with { Name = name }, parameters, TokenBuffer.Empty,
+                data.SetterAttributes
             ));
         }
     }
