@@ -20,9 +20,13 @@ internal static class ValueConstructor {
                 throw new UnreachableException();
 
             foreach (ExpressionValueContent expression in container.Expressions) {
-                if (expression.IsNew)
-                    return ConstructNew(parser, expression);
-                return ConstructValue(parser, expression);
+                ValueData data = expression.IsNew ?
+                    ConstructNew(parser, expression) : ConstructValue(parser, expression);
+
+                if (expression.Indexer is not null)
+                    CallIndexer(ref data, parser, expression.Indexer, NeslOperators.IndexerGet);
+
+                return data;
             }
         }
 
@@ -167,6 +171,28 @@ internal static class ValueConstructor {
         uint variableId = il.GetNextVariableId();
         il.Emit(OpCode.Call, variableId, method, parameters.Select(x => x.Id).ToArray());
         return new ValueData(method.ReturnType, variableId);
+    }
+
+    private static void CallIndexer(ref ValueData data, Parser parser, ValueToken indexer, string name) {
+        ValueData indexerData = Construct(indexer, parser);
+
+        NeslMethod? method = data.Type.GetMethod(name);
+        if (method is null) {
+            parser.Throw(new CompilationError(indexer.Pointer, CompilationErrorType.IndexerNotFound, name));
+            return;
+        }
+
+        indexerData = indexerData.LoadConst(parser, method.ParameterTypes[0]);
+        if (method.ReturnType is null)
+            throw new UnreachableException();
+
+        IlGenerator il = parser.CurrentMethod.IlGenerator;
+        il.Emit(OpCode.DefVariable, method.ReturnType);
+        uint variableId = il.GetNextVariableId();
+        il.Emit(OpCode.Call, variableId, method, stackalloc uint[] {
+            data.Id, indexerData.Id
+        });
+        data = new ValueData(method.ReturnType, variableId);
     }
 
     private static List<ValueData>? GetParameters(Parser parser, TokenBuffer buffer) {
