@@ -121,8 +121,8 @@ public static class NeslCompiler {
         Parallel.ForEach(p, (parser, _) => parser.ConstructType());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethodBodies());
 
-        errors = p.SelectMany(x => x.Errors).OrderBy(x => x.Path).ThenBy(x => x.Line)
-            .ThenBy(x => x.Column).ToArray();
+        errors = p.Concat(p.SelectMany(x => x.Methods)).SelectMany(x => x.Errors).OrderBy(x => x.Path)
+            .ThenBy(x => x.Line).ThenBy(x => x.Column).ToArray();
 
         if (errors.Any(x => x.Severity == CompilationErrorSeverity.Error)) {
             assembly = null;

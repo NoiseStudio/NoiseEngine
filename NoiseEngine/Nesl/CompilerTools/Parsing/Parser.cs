@@ -32,6 +32,7 @@ internal class Parser {
     private Dictionary<string, VariableData>? variables;
     private bool replacedDefaultConstructor;
     private TypeDefinitionData typeDefinitionData;
+    private bool analyzedMethodBody;
 
     public ParserStorage Storage { get; }
     public Parser? Parent { get; }
@@ -42,6 +43,7 @@ internal class Parser {
     public IReadOnlyList<CompilationError> Errors => errors;
     public CompilationErrorMode ErrorMode { get; } = new CompilationErrorMode();
     public IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
+    public IEnumerable<Parser> Methods => methods ?? Enumerable.Empty<Parser>();
     public uint InstanceVariableId => (uint)CurrentMethod.Type.Fields.Count + (uint)CurrentMethod.ParameterTypes.Count;
 
     public NeslMethodBuilder CurrentMethod {
@@ -437,11 +439,15 @@ internal class Parser {
 
                 if (data.CodeBlock is not null) {
                     methods ??= new List<Parser>();
-                    methods.Add(new Parser(Storage, this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock) {
+                    Parser parser = new Parser(
+                        Storage, this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock
+                    ) {
                         CurrentType = CurrentType,
                         CurrentMethod = method!,
                         variables = variables
-                    });
+                    };
+                    methods.Add(parser);
+                    Storage.AddMethodParser(method, parser);
                 } else {
                     Debug.Assert(method.IsAbstract);
                     Debug.Assert(CurrentType.IsInterface);
@@ -454,24 +460,33 @@ internal class Parser {
 
     public void AnalyzeMethodBodies() {
         if (methods is not null) {
-            foreach (Parser methodParser in methods) {
-                methodParser.Parse();
-
-                if (methodParser.CurrentMethodIsConstructor)
-                    DefaultConstructorHelper.AppendFooter(methodParser.CurrentMethod);
-                else if (methodParser.CurrentMethod.ReturnType is null)
-                    methodParser.CurrentMethod.IlGenerator.Emit(OpCode.Return);
-
-                errors.AddRange(methodParser.Errors);
-            }
-
-            methods = null;
+            foreach (Parser methodParser in methods)
+                AnalyzeMethodBody(methodParser.CurrentMethod);
         }
     }
 
     public void ConstructType() {
         if (currentType is not null)
             TypeConstructor.Construct(this, currentType);
+    }
+
+    public void AnalyzeMethodBody(NeslMethod method) {
+        Parser? parser = Storage.GetMethodParser(method);
+        if (parser is null || parser.analyzedMethodBody)
+            return;
+
+        lock (parser) {
+            if (parser.analyzedMethodBody)
+                return;
+            parser.Parse();
+
+            if (parser.CurrentMethodIsConstructor)
+                DefaultConstructorHelper.AppendFooter(parser.CurrentMethod);
+            else if (parser.CurrentMethod.ReturnType is null)
+                parser.CurrentMethod.IlGenerator.Emit(OpCode.Return);
+
+            parser.analyzedMethodBody = true;
+        }
     }
 
     public void Throw(CompilationError error) {
@@ -585,10 +600,12 @@ internal class Parser {
             if (!constraintsSatisfied)
                 return false;
 
-            if (Assembly == type.Assembly)
-                type = type.MakeGenericWithoutInitialize(genericTypes);
-            else
-                type = type.MakeGeneric(genericTypes);
+            if (Assembly == type.Assembly) {
+                foreach (NeslMethod method in type.Methods)
+                    AnalyzeMethodBody(method);
+            }
+
+            type = type.MakeGeneric(genericTypes);
             return true;
         }
 

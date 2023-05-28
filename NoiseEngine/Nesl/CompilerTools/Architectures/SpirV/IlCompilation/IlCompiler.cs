@@ -2,7 +2,6 @@
 using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 

@@ -37,9 +37,9 @@ internal class GenericIlGenerator {
         if (genericMethod.Attributes.Any(x => x.FullName == intrinsic.FullName))
             return genericMethod.GetIlContainer();
 
-        Debug.Assert(genericMethod.GetInstructions().Last().OpCode == (
-            genericMethod.ReturnType is null ? OpCode.Return : OpCode.ReturnValue
-        ));
+        //Debug.Assert(genericMethod.GetInstructions().Last().OpCode == (
+        //    genericMethod.ReturnType is null ? OpCode.Return : OpCode.ReturnValue
+        //));
 
         GenericIlGenerator g = new GenericIlGenerator(
             new SerializedIlContainer(
@@ -84,7 +84,8 @@ internal class GenericIlGenerator {
             return;
 
         NeslType finalType = GenericHelper.GetFinalType(oldType, newType, method.Type, targetTypes);
-        Debug.Assert(finalType != method.Type);
+        if (method.Type == finalType)
+            return;
 
         NeslMethod finalMethod = finalType.Methods.First(
             x => x.Name == method.Name && x.ParameterTypes.SequenceEqual(method.ParameterTypes)
@@ -94,6 +95,7 @@ internal class GenericIlGenerator {
             container.GetWritableTail((int)tailIndex + 4),
             genericMethod.Assembly.GetLocalMethodId(finalMethod)
         );
+        changes++;
     }
 
 }

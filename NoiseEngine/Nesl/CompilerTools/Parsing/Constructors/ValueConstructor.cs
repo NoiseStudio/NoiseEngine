@@ -234,13 +234,14 @@ internal static class ValueConstructor {
         il.Emit(OpCode.DefVariable, method.ReturnType);
         uint variableId = il.GetNextVariableId();
 
-        int start = instanceId is null ? 0 : 1;
+        int start = 0;
+        //instanceId is null ? 0 : 1;
         Span<uint> parametersIds = stackalloc uint[start + parametersList.Count];
         for (int i = start; i < parametersIds.Length; i++)
             parametersIds[i] = parametersList[i - start].Id;
 
-        if (instanceId is not null)
-            parametersIds[0] = instanceId.Value;
+        //if (instanceId is not null)
+        //    parametersIds[0] = instanceId.Value;
 
         il.Emit(OpCode.Call, variableId, method, parametersIds);
         return new ValueData(method.ReturnType, variableId);

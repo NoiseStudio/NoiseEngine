@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Nesl.Emit;
+using System;
 using System.Diagnostics;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
