@@ -9,9 +9,23 @@ public class NeslGenericTypeParameterBuilder : NeslGenericTypeParameter {
 
     private readonly ConcurrentBag<NeslAttribute> attributes = new ConcurrentBag<NeslAttribute>();
     private readonly ConcurrentHashSet<NeslType> constraints = new ConcurrentHashSet<NeslType>();
+    private NeslMethod[]? methods;
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
     public override IEnumerable<NeslType> Interfaces => constraints;
+
+    public override IEnumerable<NeslMethod> Methods {
+        get {
+            if (methods is not null)
+                return methods;
+
+            lock (constraints) {
+                if (methods is null)
+                    methods = CreateMethodsFromInterfaces();
+                return methods;
+            }
+        }
+    }
 
     internal NeslGenericTypeParameterBuilder(NeslAssembly assembly, string name) : base(assembly, name) {
     }

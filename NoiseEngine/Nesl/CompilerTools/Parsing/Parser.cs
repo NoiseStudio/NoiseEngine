@@ -11,7 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -34,6 +33,7 @@ internal class Parser {
     private bool replacedDefaultConstructor;
     private TypeDefinitionData typeDefinitionData;
 
+    public ParserStorage Storage { get; }
     public Parser? Parent { get; }
     public NeslAssemblyBuilder Assembly { get; }
     public string AssemblyPath { get; }
@@ -116,8 +116,10 @@ internal class Parser {
     }
 
     public Parser(
-        Parser? parent, NeslAssemblyBuilder assembly, string assemblyPath, ParserStep step, TokenBuffer buffer
+        ParserStorage storage, Parser? parent, NeslAssemblyBuilder assembly, string assemblyPath, ParserStep step,
+        TokenBuffer buffer
     ) {
+        Storage = storage;
         Parent = parent;
         Assembly = assembly;
         AssemblyPath = assemblyPath;
@@ -265,7 +267,7 @@ internal class Parser {
 
         types = new List<Parser>();
         foreach (TypeDefinitionData data in definedTypes) {
-            Parser parser = new Parser(this, Assembly, AssemblyPath, ParserStep.Type, data.Buffer) {
+            Parser parser = new Parser(Storage, this, Assembly, AssemblyPath, ParserStep.Type, data.Buffer) {
                 TypeDefinitionData = data,
                 CurrentType = data.TypeBuilder
             };
@@ -373,7 +375,7 @@ internal class Parser {
                 }
 
                 ParameterParser parameterParser = new ParameterParser(
-                    this, Assembly, AssemblyPath, ParserStep.Parameters, newParameters
+                    Storage, this, Assembly, AssemblyPath, ParserStep.Parameters, newParameters
                 ) {
                     CurrentType = CurrentType
                     // TODO: Add generic parameters from this method.
@@ -435,7 +437,7 @@ internal class Parser {
 
                 if (data.CodeBlock is not null) {
                     methods ??= new List<Parser>();
-                    methods.Add(new Parser(this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock) {
+                    methods.Add(new Parser(Storage, this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock) {
                         CurrentType = CurrentType,
                         CurrentMethod = method!,
                         variables = variables
@@ -583,7 +585,10 @@ internal class Parser {
             if (!constraintsSatisfied)
                 return false;
 
-            type = type.MakeGeneric(genericTypes);
+            if (Assembly == type.Assembly)
+                type = type.MakeGenericWithoutInitialize(genericTypes);
+            else
+                type = type.MakeGeneric(genericTypes);
             return true;
         }
 

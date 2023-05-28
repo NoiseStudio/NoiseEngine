@@ -2,6 +2,7 @@
 using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
@@ -45,7 +46,9 @@ internal class IlCompiler {
     }
 
     public void Compile() {
+        Instruction lastInstruction = default;
         foreach (Instruction instruction in instructions) {
+            lastInstruction = instruction;
             switch (instruction.OpCode) {
                 #region ArithmeticOperations
 
@@ -128,6 +131,13 @@ internal class IlCompiler {
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        if (NeslMethod.ReturnType is null) {
+            if (lastInstruction.OpCode != OpCode.Return)
+                throw new InvalidOperationException($"{NeslMethod} does not end with a return opcode.");
+        } else if (lastInstruction.OpCode != OpCode.ReturnValue) {
+            throw new InvalidOperationException($"{NeslMethod} does not end with a return value opcode.");
         }
     }
 

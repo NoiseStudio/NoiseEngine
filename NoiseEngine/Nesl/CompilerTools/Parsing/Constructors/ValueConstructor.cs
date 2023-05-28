@@ -19,15 +19,20 @@ internal static class ValueConstructor {
             if (token.Value is not ExpressionValueContentContainer container)
                 throw new UnreachableException();
 
+            ValueData data = ValueData.Invalid;
             foreach (ExpressionValueContent expression in container.Expressions) {
-                ValueData data = expression.IsNew ?
-                    ConstructNew(parser, expression) : ConstructValue(parser, expression);
+                if (expression.IsNew) {
+                    if (!data.IsInvalid)
+                        throw new UnreachableException();
+                    data = ConstructNew(parser, expression);
+                } else {
+                    ConstructValue(ref data, parser, expression);
+                }
 
                 if (expression.Indexer is not null)
                     CallIndexer(ref data, parser, expression.Indexer, NeslOperators.IndexerGet);
-
-                return data;
             }
+            return data;
         }
 
         return ValueData.Invalid;
@@ -71,50 +76,63 @@ internal static class ValueConstructor {
         return new ValueData(type, variableId);
     }
 
-    private static ValueData ConstructValue(Parser parser, ExpressionValueContent expression) {
+    private static void ConstructValue(ref ValueData data, Parser parser, ExpressionValueContent expression) {
         if (expression.Identifier is null)
             throw new UnreachableException();
         TypeIdentifierToken identifier = expression.Identifier.Value;
 
-        int index = identifier.Identifier.IndexOf('.');
-        string fragmentName = index != -1 ? identifier.Identifier[..index] : identifier.Identifier;
+        int index;
+        int sum;
+        if (data.IsInvalid) {
+            index = identifier.Identifier.IndexOf('.');
+            string fragmentName = index != -1 ? identifier.Identifier[..index] : identifier.Identifier;
 
-        VariableData? variable = parser.GetVariable(fragmentName);
-        if (variable is null) {
-            uint i = 0;
-            foreach (NeslField f in parser.CurrentMethod.Type.Fields) {
-                if (f.Name == fragmentName) {
-                    variable = new VariableData(f.FieldType, f.Name, i);
-                    break;
-                }
-                i++;
-            }
-
-            // TODO: Add properties.
-
+            VariableData? variable = parser.GetVariable(fragmentName);
             if (variable is null) {
-                if (expression.RoundBrackets is null) {
-                    parser.Throw(new CompilationError(
-                        identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
-                        identifier.Identifier
-                    ));
-                    return ValueData.Invalid;
+                uint i = 0;
+                foreach (NeslField f in parser.CurrentMethod.Type.Fields) {
+                    if (f.Name == fragmentName) {
+                        variable = new VariableData(f.FieldType, f.Name, i);
+                        break;
+                    }
+                    i++;
                 }
 
-                return CallLocalOrStaticMethod(
-                    parser, expression.Identifier.Value, expression.RoundBrackets.Value.Buffer
-                );
+                // TODO: Add properties.
+
+                if (variable is null) {
+                    if (expression.RoundBrackets is null) {
+                        parser.Throw(new CompilationError(
+                            identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
+                            identifier.Identifier
+                        ));
+                        data = ValueData.Invalid;
+                        return;
+                    }
+
+                    data = CallLocalOrStaticMethod(
+                        parser, expression.Identifier.Value, expression.RoundBrackets.Value.Buffer
+                    );
+                    return;
+                }
             }
+
+            if (index == -1) {
+                data = new ValueData(variable.Value.Type, variable.Value.Id);
+                return;
+            }
+
+            data = new ValueData(variable.Value.Type, variable.Value.Id);
+            sum = index + 1;
+        } else {
+            index = 0;
+            sum = 0;
         }
 
-        if (index == -1)
-            return new ValueData(variable.Value.Type, variable.Value.Id);
-
-        NeslType type = variable.Value.Type;
+        NeslType type = data.Type;
+        uint variableId = data.Id;
         IlGenerator il = parser.CurrentMethod.IlGenerator;
-        uint variableId = variable.Value.Id;
 
-        int sum = index + 1;
         while (true) {
             if (index == -1)
                 break;
@@ -143,7 +161,8 @@ internal static class ValueConstructor {
                 parser.Throw(new CompilationError(
                     identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound, str
                 ));
-                return ValueData.Invalid;
+                data = ValueData.Invalid;
+                return;
             }
 
             // Call method.
@@ -152,16 +171,18 @@ internal static class ValueConstructor {
                 parser.Throw(new CompilationError(
                     identifier.Pointer, CompilationErrorType.MethodNotFound, identifier.Identifier
                 ));
-                return ValueData.Invalid;
+                data = ValueData.Invalid;
+                return;
             }
 
-            return CallMethod(
+            data = CallMethod(
                 parser, expression.Identifier.Value with { Identifier = str }, expression.RoundBrackets.Value.Buffer,
                 variableId, methods
             );
+            return;
         }
 
-        return new ValueData(type, variableId);
+        data = new ValueData(type, variableId);
     }
 
     private static ValueData CallLocalOrStaticMethod(

@@ -49,6 +49,10 @@ internal sealed class NotFullyConstructedGenericNeslType : NeslType {
         return GenericMakedFrom!.MakeGeneric(typeArguments);
     }
 
+    internal override NeslType MakeGenericWithoutInitialize(params NeslType[] typeArguments) {
+        return GenericMakedFrom!.MakeGenericWithoutInitialize(typeArguments);
+    }
+
     internal override void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {
         used.Add(this, GenericMakedFrom!);
         used.Add(this, TypeArguments);

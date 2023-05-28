@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.Serialization;
+﻿using NoiseEngine.Nesl.CompilerTools.Generics;
+using NoiseEngine.Nesl.Serialization;
 using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,6 @@ public abstract class NeslGenericTypeParameter : NeslType {
 
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => throw NewStillGenericException();
     public override IReadOnlyList<NeslField> Fields => throw NewStillGenericException();
-    public override IEnumerable<NeslMethod> Methods => Interfaces.SelectMany(x => x.Methods);
     public override NeslTypeKind Kind => NeslTypeKind.GenericParameter;
 
     public override string Name => FullName;
@@ -26,15 +26,19 @@ public abstract class NeslGenericTypeParameter : NeslType {
         instanceId = Interlocked.Increment(ref nextInstanceId);
     }
 
-    public override string ToString() {
-        return $"{base.ToString()} {{ InstanceId = {instanceId} }}";
-    }
-
     private static Exception NewStillGenericException() {
         return new InvalidOperationException(
             $"This type is {nameof(NeslGenericTypeParameter)}. " +
             "Construct final type by invoking MakeGeneric method on owner and use the return type."
         );
+    }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString() {
+        return $"{base.ToString()} {{ InstanceId = {instanceId} }}";
     }
 
     internal void AssertConstraints(NeslType type) {
@@ -66,6 +70,17 @@ public abstract class NeslGenericTypeParameter : NeslType {
 
         Debug.Assert(!IsGenericMaked);
         return false;
+    }
+
+    private protected NeslMethod[] CreateMethodsFromInterfaces() {
+        List<NeslMethod> methods = new List<NeslMethod>();
+        foreach (NeslMethod method in Interfaces.SelectMany(type => type.Methods)) {
+            methods.Add(new NeslGenericTypeParameterImplementedMethod(
+                this, method
+            ));
+        }
+
+        return methods.Count == 0 ? Array.Empty<NeslMethod>() : methods.ToArray();
     }
 
 }

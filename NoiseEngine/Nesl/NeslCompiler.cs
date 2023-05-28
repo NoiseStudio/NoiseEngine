@@ -97,13 +97,14 @@ public static class NeslCompiler {
         Parser[] parsers = new Parser[filesArray.Length];
 
         int fileIndex = -1;
+        ParserStorage storage = new ParserStorage();
         Parallel.For(0, Math.Min(Environment.ProcessorCount, filesArray.Length), _ => {
             Lexer lexer = new Lexer();
             int i;
             while ((i = Interlocked.Increment(ref fileIndex)) < filesArray.Length) {
                 NeslFile file = filesArray[i];
                 TokenBuffer buffer = new TokenBuffer(lexer.Lex(file.Path, file.Code));
-                Parser parser = new Parser(null, assemblyBuilder, assemblyPath, ParserStep.TopLevel, buffer);
+                Parser parser = new Parser(storage, null, assemblyBuilder, assemblyPath, ParserStep.TopLevel, buffer);
                 if (!parser.TryDefineUsing(parser.GetNamespaceFromFilePath(file.Path)))
                     throw new UnreachableException();
 
