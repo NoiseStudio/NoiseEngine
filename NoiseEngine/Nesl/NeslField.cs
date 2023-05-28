@@ -18,6 +18,7 @@ public abstract class NeslField {
 
     public NeslAssembly Assembly => ParentType.Assembly;
     public bool IsStatic => Attributes.HasAnyAttribute(nameof(StaticAttribute));
+    public bool IsUniform => Attributes.HasAnyAttribute(nameof(UniformAttribute));
 
     internal uint Id {
         get {

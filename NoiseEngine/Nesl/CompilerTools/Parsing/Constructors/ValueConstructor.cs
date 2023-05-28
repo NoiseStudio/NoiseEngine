@@ -90,47 +90,83 @@ internal static class ValueConstructor {
                 i++;
             }
 
-            if (variable is null)
-                return CallMethod(parser, expression);
+            // TODO: Add properties.
+
+            if (variable is null) {
+                if (expression.RoundBrackets is null) {
+                    parser.Throw(new CompilationError(
+                        identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
+                        identifier.Identifier
+                    ));
+                    return ValueData.Invalid;
+                }
+
+                return CallLocalOrStaticMethod(
+                    parser, expression.Identifier.Value, expression.RoundBrackets.Value.Buffer
+                );
+            }
         }
 
         if (index == -1)
             return new ValueData(variable.Value.Type, variable.Value.Id);
 
         NeslType type = variable.Value.Type;
-        NeslField? field;
-
         IlGenerator il = parser.CurrentMethod.IlGenerator;
         uint variableId = variable.Value.Id;
 
         int sum = index + 1;
         while (true) {
-            index = identifier.Identifier.AsSpan(sum).IndexOf('.');
-            string str = index != -1 ? identifier.Identifier[sum..(sum + index)] : identifier.Identifier[sum..];
-
-            field = type.GetField(str);
-            if (field is null)
-                throw new NotImplementedException();
-
-            il.Emit(OpCode.DefVariable, field.FieldType);
-            uint newVariableId = il.GetNextVariableId();
-            il.Emit(OpCode.LoadField, newVariableId, variableId, field.Id);
-            variableId = newVariableId;
-
             if (index == -1)
                 break;
 
-            type = field.FieldType;
-            sum += index + 1;
+            index = identifier.Identifier.AsSpan(sum).IndexOf('.');
+            string str = index != -1 ? identifier.Identifier[sum..(sum + index)] : identifier.Identifier[sum..];
+
+            if (index != -1 || expression.RoundBrackets is null) {
+                // Get field.
+                if (type.Kind != NeslTypeKind.GenericParameter) {
+                    NeslField? field = type.GetField(str);
+                    if (field is not null) {
+                        il.Emit(OpCode.DefVariable, field.FieldType);
+                        uint newVariableId = il.GetNextVariableId();
+                        il.Emit(OpCode.LoadField, newVariableId, variableId, field.Id);
+                        variableId = newVariableId;
+
+                        type = field.FieldType;
+                        sum += index + 1;
+                        continue;
+                    }
+                }
+
+                // TODO: Add properties.
+
+                parser.Throw(new CompilationError(
+                    identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound, str
+                ));
+                return ValueData.Invalid;
+            }
+
+            // Call method.
+            IEnumerable<NeslMethod> methods = type.Methods.Where(x => x.Name == str);
+            if (!methods.Any()) {
+                parser.Throw(new CompilationError(
+                    identifier.Pointer, CompilationErrorType.MethodNotFound, identifier.Identifier
+                ));
+                return ValueData.Invalid;
+            }
+
+            return CallMethod(
+                parser, expression.Identifier.Value with { Identifier = str }, expression.RoundBrackets.Value.Buffer,
+                variableId, methods
+            );
         }
 
-        if (field is null)
-            throw new NotImplementedException();
-        return new ValueData(field.FieldType, variableId);
+        return new ValueData(type, variableId);
     }
 
-    private static ValueData CallMethod(Parser parser, ExpressionValueContent expression) {
-        TypeIdentifierToken identifier = expression.Identifier!.Value;
+    private static ValueData CallLocalOrStaticMethod(
+        Parser parser, TypeIdentifierToken identifier, TokenBuffer parameters
+    ) {
         if (!parser.TryGetMethods(identifier, out bool findedType, out IEnumerable<NeslMethod>? methods)) {
             if (findedType) {
                 parser.Throw(new CompilationError(
@@ -144,13 +180,20 @@ internal static class ValueConstructor {
             return ValueData.Invalid;
         }
 
-        List<ValueData>? parameters = GetParameters(parser, expression.RoundBrackets!.Value.Buffer);
-        if (parameters is null)
+        return CallMethod(parser, identifier, parameters, null, methods);
+    }
+
+    private static ValueData CallMethod(
+        Parser parser, TypeIdentifierToken identifier, TokenBuffer parameters, uint? instanceId,
+        IEnumerable<NeslMethod> methods
+    ) {
+        List<ValueData>? parametersList = GetParameters(parser, parameters);
+        if (parametersList is null)
             return ValueData.Invalid;
 
         NeslMethod? method = null;
         foreach (NeslMethod m in methods) {
-            if (m.ParameterTypes.SequenceEqual(parameters.Select(x => x.Type))) {
+            if (m.ParameterTypes.SequenceEqual(parametersList.Select(x => x.Type))) {
                 method = m;
                 break;
             }
@@ -169,7 +212,16 @@ internal static class ValueConstructor {
         IlGenerator il = parser.CurrentMethod.IlGenerator;
         il.Emit(OpCode.DefVariable, method.ReturnType);
         uint variableId = il.GetNextVariableId();
-        il.Emit(OpCode.Call, variableId, method, parameters.Select(x => x.Id).ToArray());
+
+        int start = instanceId is null ? 0 : 1;
+        Span<uint> parametersIds = stackalloc uint[start + parametersList.Count];
+        for (int i = start; i < parametersIds.Length; i++)
+            parametersIds[i] = parametersList[i - start].Id;
+
+        if (instanceId is not null)
+            parametersIds[0] = instanceId.Value;
+
+        il.Emit(OpCode.Call, variableId, method, parametersIds);
         return new ValueData(method.ReturnType, variableId);
     }
 
