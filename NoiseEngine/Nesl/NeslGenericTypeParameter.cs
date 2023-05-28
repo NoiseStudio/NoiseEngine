@@ -16,6 +16,7 @@ public abstract class NeslGenericTypeParameter : NeslType {
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => throw NewStillGenericException();
     public override IReadOnlyList<NeslField> Fields => throw NewStillGenericException();
     public override IEnumerable<NeslMethod> Methods => throw NewStillGenericException();
+    public override NeslTypeKind Kind => NeslTypeKind.GenericParameter;
 
     public override string Name => FullName;
     public override string Namespace => string.Empty;

@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Nesl.Emit.Attributes;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -17,10 +16,13 @@ public class NeslTypeBuilder : NeslType {
     private readonly ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder> methods =
         new ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder>();
 
+    private NeslTypeKind kind = NeslTypeKind.Struct;
+
     public override IEnumerable<NeslAttribute> Attributes => attributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => genericTypeParameters;
     public override IReadOnlyList<NeslField> Fields => fields;
     public override IEnumerable<NeslMethod> Methods => methods.Values;
+    public override NeslTypeKind Kind => kind;
 
     internal NeslTypeBuilder(NeslAssemblyBuilder assembly, string fullName) : base(assembly, fullName) {
     }
@@ -125,6 +127,14 @@ public class NeslTypeBuilder : NeslType {
         }
 
         attributes.Add(attribute);
+    }
+
+    /// <summary>
+    /// Sets <see cref="NeslTypeKind"/> of this <see cref="NeslTypeBuilder"/>.
+    /// </summary>
+    /// <param name="kind">New <see cref="NeslTypeKind"/> of this <see cref="NeslTypeBuilder"/>.</param>
+    public void SetKind(NeslTypeKind kind) {
+        this.kind = kind;
     }
 
     internal void ReplaceMethodIdentifier(NeslMethodIdentifier lastIdentifier, NeslMethodBuilder method) {

@@ -37,13 +37,12 @@ internal class TypeDeclaration : ParserExpressionContainer {
         if (typeBuilder is null)
             throw new UnreachableException();
 
+        typeBuilder.SetKind(typeKind.TypeKind);
+
         foreach (NeslAttribute attribute in attributes.Compile(Parser, AttributeTargets.Type))
             typeBuilder.AddAttribute(attribute);
         foreach (string genericParameterName in genericParameters.GenericParameters)
             typeBuilder.DefineGenericTypeParameter(genericParameterName);
-
-        if (typeKind.TypeKind == NeslTypeKind.Struct)
-            typeBuilder.AddAttribute(ValueTypeAttribute.Create());
 
         Parser.DefineType(typeBuilder!, codeBlock.Buffer);
     }

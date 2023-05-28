@@ -19,16 +19,19 @@ internal class SerializedNeslType : NeslType {
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => genericTypeParameters;
     public override IReadOnlyList<NeslField> Fields => fields;
     public override IEnumerable<NeslMethod> Methods => methods;
+    public override NeslTypeKind Kind { get; }
 
     public SerializedNeslType(NeslAssembly assembly, SerializationReader reader) : this(
-        assembly, reader.ReadString(), reader.ReadEnumerable<NeslAttribute>().ToArray(), null, Array.Empty<NeslType>()
+        assembly, (NeslTypeKind)reader.ReadUInt8(), reader.ReadString(),
+        reader.ReadEnumerable<NeslAttribute>().ToArray(), null, Array.Empty<NeslType>()
     ) {
     }
 
     public SerializedNeslType(
-        NeslAssembly assembly, string fullName, NeslAttribute[] attributes, NeslType? genericMakedFrom,
-        NeslType[] genericMakedTypeParameters
+        NeslAssembly assembly, NeslTypeKind kind, string fullName, NeslAttribute[] attributes,
+        NeslType? genericMakedFrom, NeslType[] genericMakedTypeParameters
     ) : base(assembly, fullName, genericMakedFrom) {
+        Kind = kind;
         this.attributes = attributes;
         this.genericMakedTypeParameters = genericMakedTypeParameters;
     }

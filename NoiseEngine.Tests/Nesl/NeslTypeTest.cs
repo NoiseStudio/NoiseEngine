@@ -2,7 +2,6 @@
 using NoiseEngine.Nesl.CompilerTools;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
-using NoiseEngine.Nesl.Emit.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,10 +17,11 @@ public class NeslTypeTest {
         const string FullName = $"{Namespace}.{TypeName}";
 
         NeslTypeBuilder type = TestEmitHelper.NewAssembly().DefineType(FullName);
-        type.AddAttribute(ValueTypeAttribute.Create());
+        type.SetKind(NeslTypeKind.Struct);
 
         Assert.False(type.IsClass);
         Assert.True(type.IsValueType);
+        Assert.False(type.IsInterface);
 
         Assert.Equal(FullName, type.FullName);
         Assert.Equal(Namespace, type.Namespace);
