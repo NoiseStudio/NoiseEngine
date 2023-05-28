@@ -37,9 +37,9 @@ internal class GenericIlGenerator {
         if (genericMethod.Attributes.Any(x => x.FullName == intrinsic.FullName))
             return genericMethod.GetIlContainer();
 
-        //Debug.Assert(genericMethod.GetInstructions().Last().OpCode == (
-        //    genericMethod.ReturnType is null ? OpCode.Return : OpCode.ReturnValue
-        //));
+        Debug.Assert(genericMethod.GetInstructions().Last().OpCode == (
+            genericMethod.ReturnType is null ? OpCode.Return : OpCode.ReturnValue
+        ));
 
         GenericIlGenerator g = new GenericIlGenerator(
             new SerializedIlContainer(

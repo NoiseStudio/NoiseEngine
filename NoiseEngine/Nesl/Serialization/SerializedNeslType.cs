@@ -2,14 +2,12 @@
 using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.Serialization;
 
 internal class SerializedNeslType : NeslType {
 
-    private IReadOnlyDictionary<NeslGenericTypeParameter, NeslType>? targetTypes;
     private NeslAttribute[] attributes = Array.Empty<NeslAttribute>();
     private NeslType[] genericMakedTypeParameters = Array.Empty<NeslType>();
     private NeslGenericTypeParameter[] genericTypeParameters = Array.Empty<NeslGenericTypeParameter>();
@@ -87,28 +85,11 @@ internal class SerializedNeslType : NeslType {
         this.methods = methods;
     }
 
-    internal void SetGenericTargetTypes(IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes) {
-        this.targetTypes = targetTypes;
-    }
-
-    internal void UnsafeInitializeTypeFromMakeGeneric() {
-        if (targetTypes is null)
-            return;
-
-        lock (attributes) {
-            if (targetTypes is null)
-                return;
-
-            UnsafeInitializeTypeFromMakeGenericWorker();
-            targetTypes = null;
-        }
-    }
-
-    internal void UnsafeInitializeTypeFromMakeGenericWorker() {
+    internal void UnsafeInitializeTypeFromMakeGeneric(
+        IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+    ) {
         if (GenericMakedFrom is null)
             throw new InvalidOperationException("This type is not generic maked.");
-        if (targetTypes is null)
-            throw new UnreachableException();
 
         SetInterfaces(GenericMakedFrom.Interfaces.Select(x => GenericHelper.GetFinalType(
             GenericMakedFrom, this, x, targetTypes!

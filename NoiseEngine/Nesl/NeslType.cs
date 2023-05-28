@@ -81,10 +81,30 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     /// the defined number of generic type parameters.
     /// </exception>
     public virtual NeslType MakeGeneric(params NeslType[] typeArguments) {
-        NeslType type = MakeGenericWithoutInitialize(typeArguments);
-        if (type is SerializedNeslType serialized)
-            serialized.UnsafeInitializeTypeFromMakeGeneric();
-        return type;
+        if (!IsGeneric)
+            throw new InvalidOperationException($"Type {Name} is not generic.");
+
+        if (GenericTypeParameters.Count() != typeArguments.Length) {
+            throw new ArgumentOutOfRangeException(
+                nameof(typeArguments),
+                $"The number of given {nameof(typeArguments)} does not match the " +
+                "defined number of generic type parameters."
+            );
+        }
+
+        return GenericMakedTypes.GetOrAdd(typeArguments, _ => new Lazy<NeslType>(() => {
+            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
+                UnsafeTargetTypesFromMakeGeneric(GenericTypeParameters, typeArguments, out bool isFullyConstructed);
+
+            // Create not fully generic maked type.
+            if (!isFullyConstructed)
+                return new NotFullyConstructedGenericNeslType(this, targetTypes, typeArguments.ToImmutableArray());
+
+            // Create fully generic maked type.
+            SerializedNeslType type = UnsafeCreateTypeFromMakeGeneric(typeArguments);
+            type.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
+            return type;
+        })).Value;
     }
 
     /// <summary>
@@ -111,33 +131,6 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     /// <returns>A string that represents the current object.</returns>
     public override string ToString() {
         return FullName;
-    }
-
-    internal virtual NeslType MakeGenericWithoutInitialize(params NeslType[] typeArguments) {
-        if (!IsGeneric)
-            throw new InvalidOperationException($"Type {Name} is not generic.");
-
-        if (GenericTypeParameters.Count() != typeArguments.Length) {
-            throw new ArgumentOutOfRangeException(
-                nameof(typeArguments),
-                $"The number of given {nameof(typeArguments)} does not match the " +
-                "defined number of generic type parameters."
-            );
-        }
-
-        return GenericMakedTypes.GetOrAdd(typeArguments, _ => new Lazy<NeslType>(() => {
-            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
-                UnsafeTargetTypesFromMakeGeneric(GenericTypeParameters, typeArguments, out bool isFullyConstructed);
-
-            // Create not fully generic maked type.
-            if (!isFullyConstructed)
-                return new NotFullyConstructedGenericNeslType(this, targetTypes, typeArguments.ToImmutableArray());
-
-            // Create fully generic maked type.
-            SerializedNeslType type = UnsafeCreateTypeFromMakeGeneric(typeArguments);
-            type.SetGenericTargetTypes(targetTypes);
-            return type;
-        })).Value;
     }
 
     internal virtual void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {

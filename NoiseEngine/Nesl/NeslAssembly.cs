@@ -129,13 +129,12 @@ public abstract class NeslAssembly {
             ulong id = reader.ReadUInt64();
 
             SerializedNeslType type = (SerializedNeslType)assembly.GetType(id);
-            type.SetGenericTargetTypes(type.UnsafeTargetTypesFromMakeGeneric(
+            type.UnsafeInitializeTypeFromMakeGeneric(type.UnsafeTargetTypesFromMakeGeneric(
                 type.GenericMakedFrom!.GenericTypeParameters,
                 type.GenericMakedTypeParameters.ToArray(),
                 out bool isFullyConstructed
             ));
             Debug.Assert(isFullyConstructed);
-            type.UnsafeInitializeTypeFromMakeGeneric();
 
             assembly.typeToId[type] = id;
             assembly.idToType[id] = type;
