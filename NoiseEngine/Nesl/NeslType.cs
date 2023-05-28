@@ -24,6 +24,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     public abstract IReadOnlyList<NeslField> Fields { get; }
     public abstract IEnumerable<NeslMethod> Methods { get; }
     public abstract NeslTypeKind Kind { get; }
+    public abstract IEnumerable<NeslType> Interfaces { get; }
 
     public virtual string Name => FullName.Substring(FullName.LastIndexOf(Delimiter) + 1);
     public virtual string Namespace {
@@ -177,6 +178,12 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         writer.WriteInt32(Fields.Count);
         foreach (NeslField field in Fields)
             field.Serialize(used, writer);
+
+        writer.WriteInt32(Interfaces.Count());
+        foreach (NeslType type in Interfaces) {
+            used.Add(this, type);
+            writer.WriteUInt64(Assembly.GetLocalTypeId(type));
+        }
     }
 
     internal void SerializeMethods(SerializationWriter writer) {

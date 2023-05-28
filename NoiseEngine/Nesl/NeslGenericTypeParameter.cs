@@ -3,6 +3,7 @@ using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace NoiseEngine.Nesl;
@@ -42,6 +43,7 @@ public abstract class NeslGenericTypeParameter : NeslType {
 
     internal override void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {
         used.Register(this);
+        used.Add(this, Interfaces);
     }
 
     internal override bool SerializeHeader(NeslAssembly serializedAssembly, SerializationWriter writer) {
@@ -51,6 +53,7 @@ public abstract class NeslGenericTypeParameter : NeslType {
         writer.WriteUInt8((byte)NeslTypeUsageKind.GenericTypeParameter);
         writer.WriteString(FullName);
         writer.WriteEnumerable(Attributes);
+        writer.WriteEnumerable(Interfaces.Select(Assembly.GetLocalTypeId));
 
         Debug.Assert(!IsGenericMaked);
         return false;

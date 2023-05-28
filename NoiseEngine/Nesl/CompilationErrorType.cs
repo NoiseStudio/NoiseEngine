@@ -144,7 +144,9 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ConstructorInInterfaceNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
-    AbstractMethodAllowedOnlyInInterfaces,
+    AbstractMethodMustBeInInterface,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    InheritanceTypeMustBeAInterface,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeTargetNotMatch,
     [CompilationErrorType(CompilationErrorSeverity.Error)]

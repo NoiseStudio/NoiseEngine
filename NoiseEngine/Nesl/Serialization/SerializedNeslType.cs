@@ -13,6 +13,7 @@ internal class SerializedNeslType : NeslType {
     private NeslGenericTypeParameter[] genericTypeParameters = Array.Empty<NeslGenericTypeParameter>();
     private NeslField[] fields = Array.Empty<NeslField>();
     private NeslMethod[] methods = Array.Empty<NeslMethod>();
+    private NeslType[] interfaces = Array.Empty<NeslType>();
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
     public override IEnumerable<NeslType> GenericMakedTypeParameters => genericMakedTypeParameters;
@@ -20,6 +21,7 @@ internal class SerializedNeslType : NeslType {
     public override IReadOnlyList<NeslField> Fields => fields;
     public override IEnumerable<NeslMethod> Methods => methods;
     public override NeslTypeKind Kind { get; }
+    public override IEnumerable<NeslType> Interfaces => interfaces;
 
     public SerializedNeslType(NeslAssembly assembly, SerializationReader reader) : this(
         assembly, (NeslTypeKind)reader.ReadUInt8(), reader.ReadString(),
@@ -45,6 +47,11 @@ internal class SerializedNeslType : NeslType {
         for (int i = 0; i < fields.Length; i++)
             fields[i] = NeslField.Deserialize(reader);
         SetFields(fields);
+
+        NeslType[] interfaces = new NeslType[reader.ReadInt32()];
+        for (int i = 0; i < interfaces.Length; i++)
+            interfaces[i] = Assembly.GetType(reader.ReadUInt64());
+        SetInterfaces(interfaces);
     }
 
     internal void DeserializeMethods(SerializationReader reader) {
@@ -68,6 +75,10 @@ internal class SerializedNeslType : NeslType {
 
     internal void SetFields(NeslField[] fields) {
         this.fields = fields;
+    }
+
+    internal void SetInterfaces(NeslType[] interfaces) {
+        this.interfaces = interfaces;
     }
 
     internal void SetMethods(NeslMethod[] methods) {

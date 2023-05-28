@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Collections.Concurrent;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -7,8 +8,10 @@ namespace NoiseEngine.Nesl.Emit;
 public class NeslGenericTypeParameterBuilder : NeslGenericTypeParameter {
 
     private readonly ConcurrentBag<NeslAttribute> attributes = new ConcurrentBag<NeslAttribute>();
+    private readonly ConcurrentHashSet<NeslType> constraints = new ConcurrentHashSet<NeslType>();
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
+    public override IEnumerable<NeslType> Interfaces => constraints;
 
     internal NeslGenericTypeParameterBuilder(NeslAssembly assembly, string name) : base(assembly, name) {
     }
@@ -27,6 +30,16 @@ public class NeslGenericTypeParameterBuilder : NeslGenericTypeParameter {
         }
 
         attributes.Add(attribute);
+    }
+
+    /// <summary>
+    /// Implements given <paramref name="constraint"/> in this <see cref="NeslGenericTypeParameterBuilder"/>.
+    /// </summary>
+    /// <param name="constraint">Constraint which this <see cref="NeslGenericTypeParameterBuilder"/> implements.</param>
+    public void AddConstraint(NeslType constraint) {
+        if (!constraint.IsInterface)
+            throw new ArgumentException("Given type is not an interface.", nameof(constraint));
+        constraints.Add(constraint);
     }
 
 }

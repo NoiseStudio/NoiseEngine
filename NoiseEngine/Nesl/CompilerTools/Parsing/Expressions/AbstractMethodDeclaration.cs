@@ -21,7 +21,7 @@ internal class AbstractMethodDeclaration : ParserExpressionContainer {
     ) {
         if (!Parser.CurrentType.IsInterface) {
             Parser.Throw(new CompilationError(
-                name.Pointer, CompilationErrorType.AbstractMethodAllowedOnlyInInterfaces, name.Name
+                name.Pointer, CompilationErrorType.AbstractMethodMustBeInInterface, name.Name
             ));
             return;
         }

@@ -15,7 +15,7 @@ public class Abstract : NeslParsingTestEnvironment {
 
     [Fact]
     public void MethodWithParameters() {
-        CompileSingleThrow(@"
+        CompileSingle(@"
             interface HelloWorld {
                 f32 Sum(f32 a, f32 b);
             }

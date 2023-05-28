@@ -18,7 +18,7 @@ internal class Parser {
     private readonly List<CompilationError> errors = new List<CompilationError>();
 
     private List<string>? usings;
-    private List<(NeslTypeBuilder, TokenBuffer)>? definedTypes;
+    private List<TypeDefinitionData>? definedTypes;
     private List<FieldDefinitionData>? definedFields;
     private List<PropertyDefinitionData>? definedProperties;
     private List<IndexerDefinitionData>? definedIndexers;
@@ -248,14 +248,24 @@ internal class Parser {
             return;
 
         types = new List<Parser>();
-        foreach ((NeslTypeBuilder typeBuilder, TokenBuffer buffer) in definedTypes) {
-            Parser parser = new Parser(this, Assembly, AssemblyPath, ParserStep.Type, buffer) {
-                CurrentType = typeBuilder
+        foreach (TypeDefinitionData data in definedTypes) {
+            foreach (TypeIdentifierToken inheritance in data.Inheritances) {
+                if (!TryGetType(inheritance, out NeslType? type))
+                    continue;
+                if (!type.IsInterface) {
+                    Throw(new CompilationError(
+                        inheritance.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, inheritance
+                    ));
+                }
+
+                data.TypeBuilder.AddInterface(type);
+            }
+
+            Parser parser = new Parser(this, Assembly, AssemblyPath, ParserStep.Type, data.Buffer) {
+                CurrentType = data.TypeBuilder
             };
             parser.Parse();
             parser.AnalyzeTypes();
-
-            errors.AddRange(parser.Errors);
 
             types.Add(parser);
         }
@@ -413,9 +423,9 @@ internal class Parser {
         return true;
     }
 
-    public void DefineType(NeslTypeBuilder typeBuilder, TokenBuffer buffer) {
-        definedTypes ??= new List<(NeslTypeBuilder, TokenBuffer)>();
-        definedTypes.Add((typeBuilder, buffer));
+    public void DefineType(TypeDefinitionData data) {
+        definedTypes ??= new List<TypeDefinitionData>();
+        definedTypes.Add(data);
     }
 
     public bool TryDefineField(FieldDefinitionData data) {
@@ -494,23 +504,23 @@ internal class Parser {
     }
 
     public bool TryGetMethods(
-        TypeIdentifierToken identifier, out bool findedType, [NotNullWhen(true)] out IEnumerable<NeslMethod>? methods
+        TypeIdentifierToken identifier, out bool typeFound, [NotNullWhen(true)] out IEnumerable<NeslMethod>? methods
     ) {
         int index = identifier.Identifier.LastIndexOf('.');
         if (index == -1) {
-            findedType = true;
+            typeFound = true;
             methods = CurrentType.Methods.Where(x => x.Name == identifier.Identifier);
             return methods.Any();
         }
 
         TypeIdentifierToken i = identifier with { Identifier = identifier.Identifier[..index] };
         if (!TryGetType(i, out NeslType? type)) {
-            findedType = false;
+            typeFound = false;
             methods = null;
             return false;
         }
 
-        findedType = true;
+        typeFound = true;
         string str = identifier.Identifier[(index + 1)..];
         methods = type.Methods.Where(x => x.Name == str);
         return methods.Any();

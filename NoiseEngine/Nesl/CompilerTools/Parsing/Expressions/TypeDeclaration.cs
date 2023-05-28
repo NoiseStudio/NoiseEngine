@@ -16,10 +16,12 @@ internal class TypeDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.TypeKind)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.GenericDefine)]
+    [ParserExpressionParameter(ParserTokenType.Inheritance)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
-        TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, CurlyBracketsToken codeBlock
+        TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, InheritanceToken inheritance,
+        CurlyBracketsToken codeBlock
     ) {
         string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
         if (genericParameters.GenericParameters.Count > 0)
@@ -43,7 +45,7 @@ internal class TypeDeclaration : ParserExpressionContainer {
         foreach (string genericParameterName in genericParameters.GenericParameters)
             typeBuilder.DefineGenericTypeParameter(genericParameterName);
 
-        Parser.DefineType(typeBuilder!, codeBlock.Buffer);
+        Parser.DefineType(new TypeDefinitionData(typeBuilder!, inheritance.Inheritances, codeBlock.Buffer));
     }
 
 }
