@@ -140,6 +140,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     OperatorNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    FieldInInterfaceNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeTargetNotMatch,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     SubtractionOperatorNotMatchExpression,
