@@ -17,9 +17,16 @@ internal class ConstructorDeclaration : ParserExpressionContainer {
         AttributesToken attributes, AccessModifiersToken accessModifiers, NameToken name, RoundBracketsToken parameters,
         CurlyBracketsToken codeBlock
     ) {
+        if (Parser.CurrentType.IsInterface) {
+            Parser.Throw(new CompilationError(
+                name.Pointer, CompilationErrorType.ConstructorInInterfaceNotAllowed, name.Name
+            ));
+            return;
+        }
+
         Parser.DefineMethod(new MethodDefinitionData(
-            null, name with { Name = NeslOperators.Constructor }, parameters.Buffer, codeBlock.Buffer,
-            attributes.Compile(Parser, AttributeTargets.Method)
+            NeslModifiers.Static, null, name with { Name = NeslOperators.Constructor }, parameters.Buffer,
+            codeBlock.Buffer, attributes.Compile(Parser, AttributeTargets.Method)
         ));
     }
 

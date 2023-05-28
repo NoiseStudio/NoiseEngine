@@ -119,6 +119,7 @@ internal class SerializedNeslType : NeslType {
 
             // Construct new method.
             methods.Add(new SerializedNeslMethod(
+                method.Modifiers,
                 this,
                 method.Name,
                 methodReturnType,

@@ -2,31 +2,31 @@
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
-internal readonly record struct ModifiersToken(NeslModifier Modifiers) : IParserToken<ModifiersToken> {
+internal readonly record struct ModifiersToken(NeslModifiers Modifiers) : IParserToken<ModifiersToken> {
 
-    public bool IsIgnored => Modifiers == NeslModifier.None;
+    public bool IsIgnored => Modifiers == NeslModifiers.None;
     public int Priority => 0;
 
     public static bool Parse(
         TokenBuffer buffer, CompilationErrorMode errorMode, [NotNullWhen(true)] out ModifiersToken result,
         out CompilationError error
     ) {
-        NeslModifier modifier;
+        NeslModifiers modifier;
         if (buffer.TryReadNext(TokenType.Word, out Token token)) {
             switch (token.Value) {
                 case "static":
-                    modifier = NeslModifier.Static;
+                    modifier = NeslModifiers.Static;
                     break;
                 case "uniform":
-                    modifier = NeslModifier.Uniform;
+                    modifier = NeslModifiers.Uniform;
                     break;
                 default:
-                    modifier = NeslModifier.None;
+                    modifier = NeslModifiers.None;
                     buffer.Index--;
                     break;
             }
         } else {
-            modifier = NeslModifier.None;
+            modifier = NeslModifiers.None;
             buffer.Index--;
         }
 

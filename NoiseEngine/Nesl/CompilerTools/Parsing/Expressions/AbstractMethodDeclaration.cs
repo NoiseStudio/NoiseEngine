@@ -2,25 +2,32 @@
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 
-internal class MethodDeclaration : ParserExpressionContainer {
+internal class AbstractMethodDeclaration : ParserExpressionContainer {
 
-    public MethodDeclaration(Parser parser) : base(parser) {
+    public AbstractMethodDeclaration(Parser parser) : base(parser) {
     }
 
-    [ParserExpression(ParserStep.TopLevel | ParserStep.Type)]
+    [ParserExpression(ParserStep.Type)]
     [ParserExpressionParameter(ParserTokenType.Attributes)]
     [ParserExpressionParameter(ParserTokenType.AccessModifiers)]
     [ParserExpressionParameter(ParserTokenType.Modifiers)]
     [ParserExpressionParameter(ParserTokenType.TypeIdentifier)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.RoundBrackets)]
-    [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
+    [ParserExpressionTokenType(ParserTokenType.Semicolon)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
-        TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters, CurlyBracketsToken codeBlock
+        TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters
     ) {
+        if (!Parser.CurrentType.IsInterface) {
+            Parser.Throw(new CompilationError(
+                name.Pointer, CompilationErrorType.AbstractMethodAllowedOnlyInInterfaces, name.Name
+            ));
+            return;
+        }
+
         Parser.DefineMethod(new MethodDefinitionData(
-            modifiers.Modifiers, typeIdentifier, name, parameters.Buffer, codeBlock.Buffer,
+            modifiers.Modifiers | NeslModifiers.Abstract, typeIdentifier, name, parameters.Buffer, null,
             attributes.Compile(Parser, AttributeTargets.Method)
         ));
     }

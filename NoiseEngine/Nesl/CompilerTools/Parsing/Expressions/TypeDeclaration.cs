@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
-using NoiseEngine.Nesl.Emit.Attributes;
 using System.Diagnostics;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;

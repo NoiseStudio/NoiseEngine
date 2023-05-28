@@ -56,7 +56,7 @@ internal class Parser {
         get => (currentMethod ?? throw new UnreachableException()).Name.StartsWith(NeslOperators.Constructor);
     }
 
-    private NeslTypeBuilder CurrentType {
+    public NeslTypeBuilder CurrentType {
         get {
             if (currentType is null) {
                 string name = Buffer.Tokens[0].Path;
@@ -255,8 +255,7 @@ internal class Parser {
             parser.Parse();
             parser.AnalyzeTypes();
 
-            foreach (CompilationError error in parser.Errors)
-                errors.Add(error);
+            errors.AddRange(parser.Errors);
 
             types.Add(parser);
         }
@@ -271,7 +270,7 @@ internal class Parser {
                     continue;
 
                 NeslFieldBuilder field = CurrentType.DefineField(data.Name.Name, fieldType);
-                if (data.Modifiers.HasFlag(NeslModifier.Uniform))
+                if (data.Modifiers.HasFlag(NeslModifiers.Uniform))
                     field.AddAttribute(UniformAttribute.Create());
             }
 
@@ -348,6 +347,7 @@ internal class Parser {
                     )) { }
                 }
 
+                method.SetModifiers(data.Modifiers);
                 foreach (NeslAttribute attribute in data.Attributes)
                     method.AddAttribute(attribute);
 
@@ -363,12 +363,17 @@ internal class Parser {
                 if (data.IsConstructor)
                     DefaultConstructorHelper.AppendHeader(method);
 
-                methods ??= new List<Parser>();
-                methods.Add(new Parser(this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock) {
-                    CurrentType = CurrentType,
-                    CurrentMethod = method!,
-                    variables = variables
-                });
+                if (data.CodeBlock is not null) {
+                    methods ??= new List<Parser>();
+                    methods.Add(new Parser(this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock) {
+                        CurrentType = CurrentType,
+                        CurrentMethod = method!,
+                        variables = variables
+                    });
+                } else {
+                    Debug.Assert(method.IsAbstract);
+                    Debug.Assert(CurrentType.IsInterface);
+                }
             }
 
             definedMethods = null;
@@ -553,8 +558,9 @@ internal class Parser {
 
         foreach (PropertyDefinitionData data in definedProperties) {
             DefineMethod(new MethodDefinitionData(
-                data.TypeIdentifier, data.Name with { Name = NeslOperators.PropertyGet + data.Name.Name },
-                TokenBuffer.Empty, TokenBuffer.Empty, data.GetterAttributes
+                data.Modifiers, data.TypeIdentifier,
+                data.Name with { Name = NeslOperators.PropertyGet + data.Name.Name }, TokenBuffer.Empty,
+                TokenBuffer.Empty, data.GetterAttributes
             ));
 
             if (!data.HasSetter && !data.HasInitializer)
@@ -570,8 +576,8 @@ internal class Parser {
             )).ToArray());
 
             DefineMethod(new MethodDefinitionData(
-                TypeIdentifierToken.Void, data.Name with { Name = s + data.Name.Name }, parameters, TokenBuffer.Empty,
-                data.SecondAttributes
+                data.Modifiers, TypeIdentifierToken.Void, data.Name with { Name = s + data.Name.Name }, parameters,
+                TokenBuffer.Empty, data.SecondAttributes
             ));
         }
     }
@@ -590,8 +596,8 @@ internal class Parser {
             )).ToArray();
 
             DefineMethod(new MethodDefinitionData(
-                data.TypeIdentifier, data.Name with { Name = name }, new TokenBuffer(indexTokens), TokenBuffer.Empty,
-                data.GetterAttributes
+                data.Modifiers, data.TypeIdentifier, data.Name with { Name = name }, new TokenBuffer(indexTokens),
+                TokenBuffer.Empty, data.GetterAttributes
             ));
 
             if (!data.HasSetter)
@@ -609,7 +615,7 @@ internal class Parser {
             ).ToArray());
 
             DefineMethod(new MethodDefinitionData(
-                TypeIdentifierToken.Void, data.Name with { Name = name }, parameters, TokenBuffer.Empty,
+                data.Modifiers, TypeIdentifierToken.Void, data.Name with { Name = name }, parameters, TokenBuffer.Empty,
                 data.SetterAttributes
             ));
         }

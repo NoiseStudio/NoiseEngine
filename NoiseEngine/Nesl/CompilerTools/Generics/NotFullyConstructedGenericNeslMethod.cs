@@ -13,6 +13,7 @@ internal sealed class NotFullyConstructedGenericNeslMethod : NeslMethod {
     public override IEnumerable<NeslAttribute> ReturnValueAttributes => ParentMethod.ReturnValueAttributes;
     public override IReadOnlyList<IEnumerable<NeslAttribute>> ParameterAttributes => ParentMethod.ParameterAttributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => ParentMethod.GenericTypeParameters;
+    public override NeslModifiers Modifiers => ParentMethod.Modifiers;
 
     protected override IlContainer IlContainer => ParentMethod.GetIlContainer();
 

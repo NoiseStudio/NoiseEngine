@@ -142,6 +142,10 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     FieldInInterfaceNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ConstructorInInterfaceNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AbstractMethodAllowedOnlyInInterfaces,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeTargetNotMatch,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     SubtractionOperatorNotMatchExpression,

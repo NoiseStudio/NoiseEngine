@@ -28,8 +28,8 @@ internal class PropertyDeclaration : ParserExpressionContainer {
         GetterSetterUtilsResult r = result.Value;
 
         if (!Parser.TryDefineProperty(new PropertyDefinitionData(
-            typeIdentifier, name, r.HasSetter, r.HasInitializer, r.Getter, r.GetterAttributes, r.Second,
-            r.SecondAttributes
+            modifiers.Modifiers, typeIdentifier, name, r.HasSetter, r.HasInitializer, r.Getter, r.GetterAttributes,
+            r.Second, r.SecondAttributes
         ))) {
             Parser.Throw(new CompilationError(
                 name.Pointer, CompilationErrorType.FieldOrPropertyOrIndexerAlreadyExists, name.Name

@@ -15,6 +15,8 @@ public class NeslMethodBuilder : NeslMethod {
         new List<NeslGenericTypeParameterBuilder>();
     private ConcurrentBag<NeslAttribute>[] parameterAttributes;
 
+    private NeslModifiers modifiers;
+
     public new NeslTypeBuilder Type => (NeslTypeBuilder)base.Type;
 
     public IlGenerator IlGenerator { get; }
@@ -23,6 +25,7 @@ public class NeslMethodBuilder : NeslMethod {
     public override IEnumerable<NeslAttribute> ReturnValueAttributes => returnValueAttributes;
     public override IReadOnlyList<IEnumerable<NeslAttribute>> ParameterAttributes => parameterAttributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => genericTypeParameters;
+    public override NeslModifiers Modifiers => modifiers;
 
     internal NeslMethodIdentifier Identifier =>
         new NeslMethodIdentifier(Name, new EquatableReadOnlyList<NeslType>(ParameterTypes));
@@ -148,6 +151,14 @@ public class NeslMethodBuilder : NeslMethod {
         }
 
         parameterAttributes[parameterIndex].Add(attribute);
+    }
+
+    /// <summary>
+    /// Sets <see cref="NeslModifiers"/> for this <see cref="NeslMethodBuilder"/>.
+    /// </summary>
+    /// <param name="modifiers">New <see cref="NeslModifiers"/> for this <see cref="NeslMethodBuilder"/>.</param>
+    public void SetModifiers(NeslModifiers modifiers) {
+        this.modifiers = modifiers;
     }
 
 }

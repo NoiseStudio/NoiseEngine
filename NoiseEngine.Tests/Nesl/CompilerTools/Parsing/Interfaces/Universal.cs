@@ -15,6 +15,15 @@ public class Universal : NeslParsingTestEnvironment {
     }
 
     [Fact]
+    public void NotAllowedDefineConstructor() {
+        CompileSingleThrow(@"
+            interface HelloWorld {
+                public HelloWorld() {}
+            }
+        ", CompilationErrorType.ConstructorInInterfaceNotAllowed);
+    }
+
+    [Fact]
     public void DefineMethod() {
         CompileSingle(@"
             public interface Foo {

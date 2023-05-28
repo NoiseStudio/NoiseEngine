@@ -10,5 +10,5 @@ internal abstract class ParserExpressionContainer {
     protected ParserExpressionContainer(Parser parser) {
         Parser = parser;
     }
-    
+
 }
