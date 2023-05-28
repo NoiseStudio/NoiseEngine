@@ -5,13 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace NoiseEngine.Nesl;
 
@@ -119,6 +116,7 @@ public static class NeslCompiler {
         IEnumerable<Parser> p = parsers.SelectMany(x => x.Types.Append(x));
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeFields());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethods());
+        Parallel.ForEach(p, (parser, _) => parser.ConstructType());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethodBodies());
 
         errors = p.SelectMany(x => x.Errors).OrderBy(x => x.Path).ThenBy(x => x.Line)

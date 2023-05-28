@@ -45,7 +45,9 @@ internal class TypeDeclaration : ParserExpressionContainer {
         foreach (string genericParameterName in genericParameters.GenericParameters)
             typeBuilder.DefineGenericTypeParameter(genericParameterName);
 
-        Parser.DefineType(new TypeDefinitionData(typeBuilder!, inheritance.Inheritances, codeBlock.Buffer));
+        Parser.DefineType(new TypeDefinitionData(
+            name.Pointer, typeBuilder!, inheritance.Inheritances, codeBlock.Buffer
+        ));
     }
 
 }

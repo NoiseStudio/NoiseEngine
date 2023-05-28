@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
+﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
+using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
@@ -40,6 +41,7 @@ internal class Parser {
     public CompilationErrorMode ErrorMode { get; } = new CompilationErrorMode();
     public IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
     public uint InstanceVariableId => (uint)CurrentMethod.Type.Fields.Count + (uint)CurrentMethod.ParameterTypes.Count;
+    public CodePointer TypePointer { get; set; }
 
     public NeslMethodBuilder CurrentMethod {
         get {
@@ -73,6 +75,8 @@ internal class Parser {
                     $"{Assembly.Name}.{currentType.Namespace}" : Assembly.Name;
                 if (u.Length > 0)
                     TryDefineUsing(u);
+
+                TypePointer = new CodePointer(Buffer.Tokens[0].Path, 1, 1);
             }
             return currentType;
         }
@@ -262,6 +266,7 @@ internal class Parser {
             }
 
             Parser parser = new Parser(this, Assembly, AssemblyPath, ParserStep.Type, data.Buffer) {
+                TypePointer = data.Pointer,
                 CurrentType = data.TypeBuilder
             };
             parser.Parse();
@@ -405,6 +410,11 @@ internal class Parser {
 
             methods = null;
         }
+    }
+
+    public void ConstructType() {
+        if (currentType is not null)
+            TypeConstructor.Construct(this, currentType);
     }
 
     public void Throw(CompilationError error) {

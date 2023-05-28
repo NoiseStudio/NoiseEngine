@@ -155,4 +155,6 @@ public enum CompilationErrorType {
     AssignmentExpressionCannotBeNew,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AssignmentExpressionCannotBeMethod,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AbstractMethodNotImplemented,
 }
