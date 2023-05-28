@@ -38,7 +38,16 @@ public abstract class NeslGenericTypeParameter : NeslType {
     }
 
     internal void AssertConstraints(NeslType type) {
-        // TODO: add constraints.
+        bool isSatisfied = true;
+        foreach (NeslType constraint in Interfaces) {
+            if (!type.Interfaces.Contains(constraint)) {
+                isSatisfied = false;
+                break;
+            }
+        }
+
+        if (!isSatisfied)
+            throw new ArgumentException("Type does not satisfy constraints.", nameof(type));
     }
 
     internal override void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {

@@ -27,7 +27,7 @@ internal static class TypeConstructor {
 
         if (implemented is null) {
             parser.Throw(new CompilationError(
-                parser.TypePointer, CompilationErrorType.AbstractMethodNotImplemented, method
+                parser.TypeDefinitionData.Pointer, CompilationErrorType.AbstractMethodNotImplemented, method
             ));
             return;
         }

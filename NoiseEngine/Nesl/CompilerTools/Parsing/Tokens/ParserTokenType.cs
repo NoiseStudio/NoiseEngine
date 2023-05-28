@@ -34,6 +34,8 @@ internal enum ParserTokenType {
     GenericDefine,
     [ParserToken(typeof(InheritanceToken))]
     Inheritance,
+    [ParserToken(typeof(ConstraintsToken))]
+    Constraints,
     [ParserToken(typeof(SemicolonToken))]
     Semicolon,
     [ParserToken(typeof(CommaToken))]

@@ -91,6 +91,9 @@ internal class SerializedNeslType : NeslType {
         if (GenericMakedFrom is null)
             throw new InvalidOperationException("This type is not generic maked.");
 
+        SetInterfaces(GenericMakedFrom.Interfaces.Select(x => GenericHelper.GetFinalType(
+            GenericMakedFrom, this, x, targetTypes
+        )).ToArray());
         SetAttributes(GenericHelper.RemoveGenericsFromAttributes(GenericMakedFrom.Attributes, targetTypes));
 
         // Create fields.

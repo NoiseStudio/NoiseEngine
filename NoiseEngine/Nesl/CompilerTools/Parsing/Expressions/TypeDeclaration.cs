@@ -17,11 +17,12 @@ internal class TypeDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.GenericDefine)]
     [ParserExpressionParameter(ParserTokenType.Inheritance)]
+    [ParserExpressionParameter(ParserTokenType.Constraints)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
         TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, InheritanceToken inheritance,
-        CurlyBracketsToken codeBlock
+        ConstraintsToken constraints, CurlyBracketsToken codeBlock
     ) {
         string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
         if (genericParameters.GenericParameters.Count > 0)
@@ -39,14 +40,13 @@ internal class TypeDeclaration : ParserExpressionContainer {
             throw new UnreachableException();
 
         typeBuilder.SetKind(typeKind.TypeKind);
-
         foreach (NeslAttribute attribute in attributes.Compile(Parser, AttributeTargets.Type))
             typeBuilder.AddAttribute(attribute);
         foreach (string genericParameterName in genericParameters.GenericParameters)
             typeBuilder.DefineGenericTypeParameter(genericParameterName);
 
         Parser.DefineType(new TypeDefinitionData(
-            name.Pointer, typeBuilder!, inheritance.Inheritances, codeBlock.Buffer
+            name.Pointer, typeBuilder!, inheritance.Inheritances, constraints.Constraints, codeBlock.Buffer
         ));
     }
 

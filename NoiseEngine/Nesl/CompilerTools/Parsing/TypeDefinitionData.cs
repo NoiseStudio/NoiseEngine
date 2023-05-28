@@ -8,5 +8,6 @@ internal readonly record struct TypeDefinitionData(
     CodePointer Pointer,
     NeslTypeBuilder TypeBuilder,
     IReadOnlyList<TypeIdentifierToken> Inheritances,
+    IReadOnlyList<ConstraintToken> Constraints,
     TokenBuffer Buffer
 );

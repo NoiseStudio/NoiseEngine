@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
@@ -31,6 +32,7 @@ internal class Parser {
     private NeslMethodBuilder? currentMethod;
     private Dictionary<string, VariableData>? variables;
     private bool replacedDefaultConstructor;
+    private TypeDefinitionData typeDefinitionData;
 
     public Parser? Parent { get; }
     public NeslAssemblyBuilder Assembly { get; }
@@ -41,7 +43,6 @@ internal class Parser {
     public CompilationErrorMode ErrorMode { get; } = new CompilationErrorMode();
     public IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
     public uint InstanceVariableId => (uint)CurrentMethod.Type.Fields.Count + (uint)CurrentMethod.ParameterTypes.Count;
-    public CodePointer TypePointer { get; set; }
 
     public NeslMethodBuilder CurrentMethod {
         get {
@@ -76,7 +77,10 @@ internal class Parser {
                 if (u.Length > 0)
                     TryDefineUsing(u);
 
-                TypePointer = new CodePointer(Buffer.Tokens[0].Path, 1, 1);
+                typeDefinitionData = new TypeDefinitionData(
+                    new CodePointer(Buffer.Tokens[0].Path, 1, 1), currentType, Array.Empty<TypeIdentifierToken>(),
+                    Array.Empty<ConstraintToken>(), Buffer
+                );
             }
             return currentType;
         }
@@ -85,6 +89,14 @@ internal class Parser {
                 TryDefineUsing(value.Namespace);
             currentType = value;
         }
+    }
+
+    public TypeDefinitionData TypeDefinitionData {
+        get {
+            _ = CurrentType;
+            return typeDefinitionData;
+        }
+        init => typeDefinitionData = value;
     }
 
     private IEnumerable<string> Usings {
@@ -253,20 +265,8 @@ internal class Parser {
 
         types = new List<Parser>();
         foreach (TypeDefinitionData data in definedTypes) {
-            foreach (TypeIdentifierToken inheritance in data.Inheritances) {
-                if (!TryGetType(inheritance, out NeslType? type))
-                    continue;
-                if (!type.IsInterface) {
-                    Throw(new CompilationError(
-                        inheritance.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, inheritance
-                    ));
-                }
-
-                data.TypeBuilder.AddInterface(type);
-            }
-
             Parser parser = new Parser(this, Assembly, AssemblyPath, ParserStep.Type, data.Buffer) {
-                TypePointer = data.Pointer,
+                TypeDefinitionData = data,
                 CurrentType = data.TypeBuilder
             };
             parser.Parse();
@@ -276,6 +276,61 @@ internal class Parser {
         }
 
         definedTypes = null;
+    }
+
+    public void AnalyzeTypeDependencies() {
+        if (currentType is null)
+            return;
+
+        // Inheritances.
+        foreach (TypeIdentifierToken inheritance in typeDefinitionData.Inheritances) {
+            if (!TryGetType(inheritance, out NeslType? type))
+                continue;
+            if (!type.IsInterface) {
+                Throw(new CompilationError(
+                    inheritance.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, inheritance
+                ));
+            }
+
+            currentType.AddInterface(type);
+        }
+
+        // Constraints.
+        foreach (ConstraintToken constraint in TypeDefinitionData.Constraints) {
+            if (constraint.GenericParameter.GenericTokens.Count != 0) {
+                Throw(new CompilationError(
+                    constraint.GenericParameter.GenericTokens[0].Pointer,
+                    CompilationErrorType.ConstraintGenericParameterNotAllowed,
+                    constraint.GenericParameter.GenericTokens[0]
+                ));
+            }
+
+            NeslGenericTypeParameter? parameter = currentType.GenericTypeParameters.FirstOrDefault(
+                x => x.Name == constraint.GenericParameter.Identifier
+            );
+            if (parameter is null) {
+                Throw(new CompilationError(
+                    constraint.GenericParameter.Pointer, CompilationErrorType.GenericParameterNotFound,
+                    constraint.GenericParameter
+                ));
+                continue;
+            }
+
+            if (parameter is not NeslGenericTypeParameterBuilder builder)
+                throw new UnreachableException();
+
+            foreach (TypeIdentifierToken typeIdentifier in constraint.Constraints) {
+                if (!TryGetType(typeIdentifier, out NeslType? type))
+                    continue;
+                if (!type.IsInterface) {
+                    Throw(new CompilationError(
+                        typeIdentifier.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, typeIdentifier
+                    ));
+                }
+
+                builder.AddConstraint(type);
+            }
+        }
     }
 
     public void AnalyzeFields() {
@@ -501,6 +556,32 @@ internal class Parser {
                     return false;
                 genericTypes[i] = genericType;
             }
+
+            // Check constraints.
+            bool constraintsSatisfied = true;
+            for (int i = 0; i < genericTypes.Length; i++) {
+                NeslType genericType = genericTypes[i];
+                NeslGenericTypeParameter genericTypeParameter = type.GenericTypeParameters.ElementAt(i);
+
+                bool isSatisfied = true;
+                foreach (NeslType constraint in genericTypeParameter.Interfaces) {
+                    if (!genericType.Interfaces.Contains(constraint)) {
+                        isSatisfied = false;
+                        break;
+                    }
+                }
+
+                if (!isSatisfied) {
+                    constraintsSatisfied = false;
+                    Throw(new CompilationError(
+                        genericTokens[i].Pointer, CompilationErrorType.TypeNotSatisfiedGenericConstraint,
+                        genericType.Name
+                    ));
+                }
+            }
+
+            if (!constraintsSatisfied)
+                return false;
 
             type = type.MakeGeneric(genericTypes);
             return true;

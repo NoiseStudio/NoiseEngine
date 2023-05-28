@@ -114,6 +114,7 @@ public static class NeslCompiler {
 
         Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeTypes());
         IEnumerable<Parser> p = parsers.SelectMany(x => x.Types.Append(x));
+        Parallel.ForEach(p, (parser, _) => parser.AnalyzeTypeDependencies());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeFields());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethods());
         Parallel.ForEach(p, (parser, _) => parser.ConstructType());
