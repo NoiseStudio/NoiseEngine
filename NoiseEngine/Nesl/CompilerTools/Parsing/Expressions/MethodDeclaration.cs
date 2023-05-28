@@ -20,7 +20,7 @@ internal class MethodDeclaration : ParserExpressionContainer {
         TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters, CurlyBracketsToken codeBlock
     ) {
         Parser.DefineMethod(new MethodDefinitionData(
-            typeIdentifier, name, parameters.Buffer, codeBlock.Buffer,
+            modifiers.Modifiers, typeIdentifier, name, parameters.Buffer, codeBlock.Buffer,
             attributes.Compile(Parser, AttributeTargets.Method)
         ));
     }

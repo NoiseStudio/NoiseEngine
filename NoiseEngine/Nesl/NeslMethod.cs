@@ -1,7 +1,6 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Nesl.CompilerTools;
 using NoiseEngine.Nesl.CompilerTools.Generics;
-using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Nesl.Serialization;
 using NoiseEngine.Serialization;
 using System;
@@ -21,6 +20,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
     public abstract IEnumerable<NeslAttribute> ReturnValueAttributes { get; }
     public abstract IReadOnlyList<IEnumerable<NeslAttribute>> ParameterAttributes { get; }
     public abstract IEnumerable<NeslGenericTypeParameter> GenericTypeParameters { get; }
+    public abstract NeslModifiers Modifiers { get; }
 
     protected abstract IlContainer IlContainer { get; }
 
@@ -34,7 +34,8 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
     public string FullName => $"{Type.FullName}::{Name}";
 
     public bool IsGeneric => GenericTypeParameters.Any();
-    public bool IsStatic => Attributes.HasAnyAttribute(nameof(StaticAttribute));
+    public bool IsStatic => Modifiers.HasFlag(NeslModifiers.Static);
+    public bool IsAbstract => Modifiers.HasFlag(NeslModifiers.Abstract);
 
     private ConcurrentDictionary<NeslType[], Lazy<NeslMethod>> GenericMakedMethods {
         get {
@@ -69,6 +70,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
     internal static NeslMethod Deserialize(SerializationReader reader) {
         NeslAssembly assembly = reader.GetFromStorage<NeslAssembly>();
         return new SerializedNeslMethod(
+            (NeslModifiers)reader.ReadUInt32(),
             assembly.GetType(reader.ReadUInt64()),
             reader.ReadString(),
             reader.ReadBool() ? assembly.GetType(reader.ReadUInt64()) : null,
@@ -88,6 +90,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
     }
 
     internal void Serialize(SerializationWriter writer) {
+        writer.WriteUInt32((uint)Modifiers);
         writer.WriteUInt64(Assembly.GetLocalTypeId(Type));
         writer.WriteString(Name);
 
@@ -204,6 +207,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
 
             // Construct new method.
             return new SerializedNeslMethod(
+                Modifiers,
                 Type,
                 Name,
                 methodReturnType,

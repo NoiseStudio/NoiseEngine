@@ -23,6 +23,8 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     public abstract IEnumerable<NeslGenericTypeParameter> GenericTypeParameters { get; }
     public abstract IReadOnlyList<NeslField> Fields { get; }
     public abstract IEnumerable<NeslMethod> Methods { get; }
+    public abstract NeslTypeKind Kind { get; }
+    public abstract IEnumerable<NeslType> Interfaces { get; }
 
     public virtual string Name => FullName.Substring(FullName.LastIndexOf(Delimiter) + 1);
     public virtual string Namespace {
@@ -40,8 +42,9 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
     public bool IsGeneric => GenericTypeParameters.Any();
     public bool IsGenericMaked => GenericMakedFrom is not null;
-    public bool IsClass => !IsValueType;
-    public bool IsValueType => Attributes.HasAnyAttribute(nameof(ValueTypeAttribute));
+    public bool IsClass => Kind == NeslTypeKind.Class;
+    public bool IsValueType => Kind == NeslTypeKind.Struct;
+    public bool IsInterface => Kind == NeslTypeKind.Interface;
 
     public virtual IEnumerable<NeslType> GenericMakedTypeParameters => Enumerable.Empty<NeslType>();
     public virtual NeslType? GenericMakedFrom { get; }
@@ -162,6 +165,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         }
 
         writer.WriteUInt8((byte)NeslTypeUsageKind.Normal);
+        writer.WriteUInt8((byte)Kind);
         writer.WriteString(FullName);
         writer.WriteEnumerable(Attributes);
         return false;
@@ -174,6 +178,12 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         writer.WriteInt32(Fields.Count);
         foreach (NeslField field in Fields)
             field.Serialize(used, writer);
+
+        writer.WriteInt32(Interfaces.Count());
+        foreach (NeslType type in Interfaces) {
+            used.Add(this, type);
+            writer.WriteUInt64(Assembly.GetLocalTypeId(type));
+        }
     }
 
     internal void SerializeMethods(SerializationWriter writer) {
@@ -202,7 +212,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
 
     internal SerializedNeslType UnsafeCreateTypeFromMakeGeneric(NeslType[] typeArguments) {
         return new SerializedNeslType(
-            Assembly, FullName, Array.Empty<NeslAttribute>(), this, typeArguments
+            Assembly, Kind, FullName, Array.Empty<NeslAttribute>(), this, typeArguments
         );
     }
 

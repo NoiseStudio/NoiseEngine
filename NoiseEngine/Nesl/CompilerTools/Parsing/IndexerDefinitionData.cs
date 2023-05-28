@@ -4,6 +4,7 @@ using System.Collections.Generic;
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
 internal readonly record struct IndexerDefinitionData(
+    NeslModifiers Modifiers,
     TypeIdentifierToken TypeIdentifier,
     NameToken Name,
     TypeIdentifierToken IndexType,

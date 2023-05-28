@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
@@ -49,6 +50,7 @@ public class ReturnValueTest : NeslTestEnvironment {
 
         // Get method.
         NeslMethodBuilder get = helper.DefineMethod(BuiltInTypes.Float32);
+        get.SetModifiers(NeslModifiers.Static);
         get.AddAttribute(StaticAttribute.Create());
         IlGenerator il = get.IlGenerator;
 

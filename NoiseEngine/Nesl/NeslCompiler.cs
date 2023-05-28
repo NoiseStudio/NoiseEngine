@@ -5,13 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace NoiseEngine.Nesl;
 
@@ -100,13 +97,14 @@ public static class NeslCompiler {
         Parser[] parsers = new Parser[filesArray.Length];
 
         int fileIndex = -1;
+        ParserStorage storage = new ParserStorage();
         Parallel.For(0, Math.Min(Environment.ProcessorCount, filesArray.Length), _ => {
             Lexer lexer = new Lexer();
             int i;
             while ((i = Interlocked.Increment(ref fileIndex)) < filesArray.Length) {
                 NeslFile file = filesArray[i];
                 TokenBuffer buffer = new TokenBuffer(lexer.Lex(file.Path, file.Code));
-                Parser parser = new Parser(null, assemblyBuilder, assemblyPath, ParserStep.TopLevel, buffer);
+                Parser parser = new Parser(storage, null, assemblyBuilder, assemblyPath, ParserStep.TopLevel, buffer);
                 if (!parser.TryDefineUsing(parser.GetNamespaceFromFilePath(file.Path)))
                     throw new UnreachableException();
 
@@ -117,12 +115,14 @@ public static class NeslCompiler {
 
         Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeTypes());
         IEnumerable<Parser> p = parsers.SelectMany(x => x.Types.Append(x));
+        Parallel.ForEach(p, (parser, _) => parser.AnalyzeTypeDependencies());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeFields());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethods());
+        Parallel.ForEach(p, (parser, _) => parser.ConstructType());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethodBodies());
 
-        errors = p.SelectMany(x => x.Errors).OrderBy(x => x.Path).ThenBy(x => x.Line)
-            .ThenBy(x => x.Column).ToArray();
+        errors = p.Concat(p.SelectMany(x => x.Methods)).SelectMany(x => x.Errors).OrderBy(x => x.Path)
+            .ThenBy(x => x.Line).ThenBy(x => x.Column).ToArray();
 
         if (errors.Any(x => x.Severity == CompilationErrorSeverity.Error)) {
             assembly = null;

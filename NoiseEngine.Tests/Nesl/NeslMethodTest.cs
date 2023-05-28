@@ -22,7 +22,7 @@ public class NeslMethodTest {
 
         IlGenerator il = genericMethod.IlGenerator;
         il.Emit(OpCode.Load, 0u, 0u);
-        il.Emit(OpCode.Return);
+        il.Emit(OpCode.ReturnValue, 0u);
 
         // Construct final type.
         NeslType genericParameterType = BuiltInTypes.Float32;
@@ -55,7 +55,7 @@ public class NeslMethodTest {
 
         IlGenerator il = genericMethod.IlGenerator;
         il.Emit(OpCode.Load, 0u, 0u);
-        il.Emit(OpCode.Return);
+        il.Emit(OpCode.ReturnValue, 0u);
 
         // Construct final type.
         NeslType genericParameterType1 = BuiltInTypes.Float64;

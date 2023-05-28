@@ -79,7 +79,8 @@ public abstract class NeslAssembly {
                 type = usage switch {
                     NeslTypeUsageKind.Normal => new SerializedNeslType(assembly, reader),
                     NeslTypeUsageKind.GenericTypeParameter => new SerializedNeslGenericTypeParameter(
-                        assembly, reader.ReadString(), reader.ReadEnumerable<NeslAttribute>().ToArray()
+                        assembly, reader.ReadString(), reader.ReadEnumerable<NeslAttribute>().ToArray(),
+                        reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray()
                     ),
                     NeslTypeUsageKind.GenericMaked => assembly.DeserializeGenericMaked(reader),
                     NeslTypeUsageKind.GenericNotFullyConstructed =>

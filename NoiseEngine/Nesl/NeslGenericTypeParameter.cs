@@ -1,8 +1,10 @@
-﻿using NoiseEngine.Nesl.Serialization;
+﻿using NoiseEngine.Nesl.CompilerTools.Generics;
+using NoiseEngine.Nesl.Serialization;
 using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace NoiseEngine.Nesl;
@@ -15,17 +17,13 @@ public abstract class NeslGenericTypeParameter : NeslType {
 
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => throw NewStillGenericException();
     public override IReadOnlyList<NeslField> Fields => throw NewStillGenericException();
-    public override IEnumerable<NeslMethod> Methods => throw NewStillGenericException();
+    public override NeslTypeKind Kind => NeslTypeKind.GenericParameter;
 
     public override string Name => FullName;
     public override string Namespace => string.Empty;
 
     protected NeslGenericTypeParameter(NeslAssembly assembly, string name) : base(assembly, name) {
         instanceId = Interlocked.Increment(ref nextInstanceId);
-    }
-
-    public override string ToString() {
-        return $"{base.ToString()} {{ InstanceId = {instanceId} }}";
     }
 
     private static Exception NewStillGenericException() {
@@ -35,12 +33,30 @@ public abstract class NeslGenericTypeParameter : NeslType {
         );
     }
 
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString() {
+        return $"{base.ToString()} {{ InstanceId = {instanceId} }}";
+    }
+
     internal void AssertConstraints(NeslType type) {
-        // TODO: add constraints.
+        bool isSatisfied = true;
+        foreach (NeslType constraint in Interfaces) {
+            if (!type.Interfaces.Contains(constraint)) {
+                isSatisfied = false;
+                break;
+            }
+        }
+
+        if (!isSatisfied)
+            throw new ArgumentException("Type does not satisfy constraints.", nameof(type));
     }
 
     internal override void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {
         used.Register(this);
+        used.Add(this, Interfaces);
     }
 
     internal override bool SerializeHeader(NeslAssembly serializedAssembly, SerializationWriter writer) {
@@ -50,9 +66,21 @@ public abstract class NeslGenericTypeParameter : NeslType {
         writer.WriteUInt8((byte)NeslTypeUsageKind.GenericTypeParameter);
         writer.WriteString(FullName);
         writer.WriteEnumerable(Attributes);
+        writer.WriteEnumerable(Interfaces.Select(Assembly.GetLocalTypeId));
 
         Debug.Assert(!IsGenericMaked);
         return false;
+    }
+
+    private protected NeslMethod[] CreateMethodsFromInterfaces() {
+        List<NeslMethod> methods = new List<NeslMethod>();
+        foreach (NeslMethod method in Interfaces.SelectMany(type => type.Methods)) {
+            methods.Add(new NeslGenericTypeParameterImplementedMethod(
+                this, method
+            ));
+        }
+
+        return methods.Count == 0 ? Array.Empty<NeslMethod>() : methods.ToArray();
     }
 
 }

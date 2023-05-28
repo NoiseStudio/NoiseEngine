@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.Serialization;
 using NoiseEngine.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -17,6 +18,8 @@ internal sealed class NotFullyConstructedGenericNeslType : NeslType {
     public override IReadOnlyList<NeslField> Fields { get; }
     public override IEnumerable<NeslMethod> Methods { get; }
     public override NeslType? GenericMakedFrom { get; }
+    public override NeslTypeKind Kind => GenericMakedFrom!.Kind;
+    public override IEnumerable<NeslType> Interfaces => GenericMakedFrom!.Interfaces;
 
     public NotFullyConstructedGenericNeslType(
         NeslType parentType, Dictionary<NeslGenericTypeParameter, NeslType> targetTypes,

@@ -82,25 +82,35 @@ internal record ValueToken(
                 };
 
                 // Get next expressions
-                while (buffer.TryReadNext(out token)) {
-                    if (token.Type == TokenType.Dot && !TryGetIdentifierWithRoundBrackets(
-                        buffer, errorMode, out error, out identifier, out roundBrackets
-                    )) {
-                        result = null;
-                        return false;
-                    }
-                    buffer.Index--;
+                TypeIdentifierToken? identifierN;
+                while (
+                    buffer.TryReadNext(out token) &&
+                    (token.Type == TokenType.Dot || token.Type == TokenType.RoundBracketOpening)
+                ) {
+                    if (token.Type == TokenType.Dot) {
+                        if (!TryGetIdentifierWithRoundBrackets(
+                            buffer, errorMode, out error, out identifier, out roundBrackets
+                        )) {
+                            result = null;
+                            return false;
+                        }
 
-                    if (token.Type != TokenType.SquareBracketOpening)
-                        break;
+                        identifierN = identifier;
+                    } else {
+                        identifierN = null;
+                        roundBrackets = null;
+                    }
 
                     if (!TryGetIndexer(buffer, errorMode, out error, out indexer)) {
                         result = null;
                         return false;
                     }
 
-                    expressions.Add(new ExpressionValueContent(false, identifier, roundBrackets, null, indexer));
+                    expressions.Add(new ExpressionValueContent(false, identifierN, roundBrackets, null, indexer));
                 }
+
+                if (token.Type != TokenType.None)
+                    buffer.Index--;
 
                 // Create value
                 value = new ExpressionValueContentContainer(expressions);

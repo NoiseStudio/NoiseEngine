@@ -54,8 +54,8 @@ internal class IndexerDeclaration : ParserExpressionContainer {
 
         // Define.
         if (!Parser.TryDefineIndexer(new IndexerDefinitionData(
-            typeIdentifier, name, indexType, indexName, r.Getter, r.GetterAttributes, r.HasSetter, r.Second,
-            r.SecondAttributes
+            modifiers.Modifiers, typeIdentifier, name, indexType, indexName, r.Getter, r.GetterAttributes, r.HasSetter,
+            r.Second, r.SecondAttributes
         ))) {
             Parser.Throw(new CompilationError(
                 name.Pointer, CompilationErrorType.FieldOrPropertyOrIndexerAlreadyExists, name.Name

@@ -1,4 +1,4 @@
-﻿using NoiseEngine.Nesl.Emit.Attributes;
+﻿using NoiseEngine.Collections.Concurrent;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,11 +16,17 @@ public class NeslTypeBuilder : NeslType {
         new List<NeslFieldBuilder>();
     private readonly ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder> methods =
         new ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder>();
+    private readonly ConcurrentHashSet<NeslType> interfaces = new ConcurrentHashSet<NeslType>();
+
+    private NeslTypeKind kind = NeslTypeKind.Struct;
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => genericTypeParameters;
     public override IReadOnlyList<NeslField> Fields => fields;
     public override IEnumerable<NeslMethod> Methods => methods.Values;
+    public override NeslTypeKind Kind => kind;
+    public override IEnumerable<NeslType> Interfaces =>
+        interfaces.Concat(interfaces.SelectMany(x => x.Interfaces)).Distinct();
 
     internal NeslTypeBuilder(NeslAssemblyBuilder assembly, string fullName) : base(assembly, fullName) {
     }
@@ -125,6 +131,25 @@ public class NeslTypeBuilder : NeslType {
         }
 
         attributes.Add(attribute);
+    }
+
+    /// <summary>
+    /// Sets <see cref="NeslTypeKind"/> of this <see cref="NeslTypeBuilder"/>.
+    /// </summary>
+    /// <param name="kind">New <see cref="NeslTypeKind"/> of this <see cref="NeslTypeBuilder"/>.</param>
+    public void SetKind(NeslTypeKind kind) {
+        this.kind = kind;
+    }
+
+    /// <summary>
+    /// Implements given <paramref name="interfaceType"/> in this <see cref="NeslTypeBuilder"/>.
+    /// </summary>
+    /// <param name="interfaceType">Interface which this <see cref="NeslTypeBuilder"/> implements.</param>
+    /// <exception cref="ArgumentException">Given <paramref name="interfaceType"/> is not an interface.</exception>
+    public void AddInterface(NeslType interfaceType) {
+        if (!interfaceType.IsInterface)
+            throw new ArgumentException("Given type is not an interface.", nameof(interfaceType));
+        interfaces.Add(interfaceType);
     }
 
     internal void ReplaceMethodIdentifier(NeslMethodIdentifier lastIdentifier, NeslMethodBuilder method) {

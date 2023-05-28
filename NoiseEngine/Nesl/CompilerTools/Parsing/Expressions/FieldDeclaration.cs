@@ -19,6 +19,13 @@ internal class FieldDeclaration : ParserExpressionContainer {
     ) {
         name.AssertNameForFieldOrProperty(Parser);
 
+        if (Parser.CurrentType.IsInterface) {
+            Parser.Throw(new CompilationError(
+                name.Pointer, CompilationErrorType.FieldInInterfaceNotAllowed, name.Name
+            ));
+            return;
+        }
+
         if (!Parser.TryDefineField(new FieldDefinitionData(typeIdentifier, name, modifiers.Modifiers))) {
             Parser.Throw(new CompilationError(
                 name.Pointer, CompilationErrorType.FieldOrPropertyOrIndexerAlreadyExists, name.Name

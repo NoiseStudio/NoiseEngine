@@ -92,6 +92,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedIndexer,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedWhereKeyword,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]
     UsingAlreadyExists,
@@ -126,11 +128,15 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ImplicitCastOperatorNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    GenericParameterNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     UsingGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AssignmentGenericNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ConstraintGenericParameterNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     InitializerForIndexerNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
@@ -140,6 +146,16 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     OperatorNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    FieldInInterfaceNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ConstructorInInterfaceNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AbstractMethodMustBeInInterface,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    InheritanceTypeMustBeAInterface,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ConstraintTypeMustBeAInterface,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeTargetNotMatch,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     SubtractionOperatorNotMatchExpression,
@@ -147,4 +163,8 @@ public enum CompilationErrorType {
     AssignmentExpressionCannotBeNew,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AssignmentExpressionCannotBeMethod,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AbstractMethodNotImplemented,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    TypeNotSatisfiedGenericConstraint
 }

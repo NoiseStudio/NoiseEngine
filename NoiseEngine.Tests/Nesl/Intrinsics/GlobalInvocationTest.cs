@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
@@ -20,6 +21,7 @@ public class GlobalInvocationTest : NeslTestEnvironment {
         BufferOutputTestHelper<uint> helper = CreateBufferOutputTestHelper<uint>();
 
         NeslMethodBuilder main = helper.DefineMethod();
+        main.SetModifiers(NeslModifiers.Static);
         main.AddAttribute(KernelAttribute.Create(new Vector3<uint>(Length, 1, 1)));
         IlGenerator il = main.IlGenerator;
 

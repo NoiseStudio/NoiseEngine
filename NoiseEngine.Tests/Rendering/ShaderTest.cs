@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Rendering;
@@ -50,6 +51,7 @@ public class ShaderTest : ApplicationTestEnvironment {
         NeslMethodBuilder vertex = shaderClassData.DefineMethod(
             "Vertex", vertexData, Vectors.GetVector4(BuiltInTypes.Float32)
         );
+        vertex.SetModifiers(NeslModifiers.Static);
         IlGenerator il = vertex.IlGenerator;
 
         il.Emit(OpCode.DefVariable, vertexData);
@@ -61,6 +63,7 @@ public class ShaderTest : ApplicationTestEnvironment {
         il.Emit(OpCode.ReturnValue, 2u);
 
         NeslMethodBuilder fragment = shaderClassData.DefineMethod("Fragment", Vectors.GetVector4(BuiltInTypes.Float32));
+        fragment.SetModifiers(NeslModifiers.Static);
         il = fragment.IlGenerator;
 
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));

@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
-using NoiseEngine.Nesl.Emit.Attributes;
 using System.Diagnostics;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
@@ -17,10 +16,13 @@ internal class TypeDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.TypeKind)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.GenericDefine)]
+    [ParserExpressionParameter(ParserTokenType.Inheritance)]
+    [ParserExpressionParameter(ParserTokenType.Constraints)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
-        TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, CurlyBracketsToken codeBlock
+        TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, InheritanceToken inheritance,
+        ConstraintsToken constraints, CurlyBracketsToken codeBlock
     ) {
         string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
         if (genericParameters.GenericParameters.Count > 0)
@@ -37,15 +39,15 @@ internal class TypeDeclaration : ParserExpressionContainer {
         if (typeBuilder is null)
             throw new UnreachableException();
 
+        typeBuilder.SetKind(typeKind.TypeKind);
         foreach (NeslAttribute attribute in attributes.Compile(Parser, AttributeTargets.Type))
             typeBuilder.AddAttribute(attribute);
         foreach (string genericParameterName in genericParameters.GenericParameters)
             typeBuilder.DefineGenericTypeParameter(genericParameterName);
 
-        if (typeKind.TypeKind == NeslTypeKind.Struct)
-            typeBuilder.AddAttribute(ValueTypeAttribute.Create());
-
-        Parser.DefineType(typeBuilder!, codeBlock.Buffer);
+        Parser.DefineType(new TypeDefinitionData(
+            name.Pointer, typeBuilder!, inheritance.Inheritances, constraints.Constraints, codeBlock.Buffer
+        ));
     }
 
 }

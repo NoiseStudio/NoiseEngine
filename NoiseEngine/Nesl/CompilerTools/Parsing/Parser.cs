@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
+﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
+using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
@@ -18,7 +19,7 @@ internal class Parser {
     private readonly List<CompilationError> errors = new List<CompilationError>();
 
     private List<string>? usings;
-    private List<(NeslTypeBuilder, TokenBuffer)>? definedTypes;
+    private List<TypeDefinitionData>? definedTypes;
     private List<FieldDefinitionData>? definedFields;
     private List<PropertyDefinitionData>? definedProperties;
     private List<IndexerDefinitionData>? definedIndexers;
@@ -30,7 +31,10 @@ internal class Parser {
     private NeslMethodBuilder? currentMethod;
     private Dictionary<string, VariableData>? variables;
     private bool replacedDefaultConstructor;
+    private TypeDefinitionData typeDefinitionData;
+    private bool analyzedMethodBody;
 
+    public ParserStorage Storage { get; }
     public Parser? Parent { get; }
     public NeslAssemblyBuilder Assembly { get; }
     public string AssemblyPath { get; }
@@ -39,7 +43,8 @@ internal class Parser {
     public IReadOnlyList<CompilationError> Errors => errors;
     public CompilationErrorMode ErrorMode { get; } = new CompilationErrorMode();
     public IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
-    public uint InstanceVariableId => (uint)CurrentMethod.Type.Fields.Count + (uint)CurrentMethod.ParameterTypes.Count;
+    public IEnumerable<Parser> Methods => methods ?? Enumerable.Empty<Parser>();
+    public uint InstanceVariableId => (uint)CurrentMethod.Type.Fields.Count;
 
     public NeslMethodBuilder CurrentMethod {
         get {
@@ -56,7 +61,7 @@ internal class Parser {
         get => (currentMethod ?? throw new UnreachableException()).Name.StartsWith(NeslOperators.Constructor);
     }
 
-    private NeslTypeBuilder CurrentType {
+    public NeslTypeBuilder CurrentType {
         get {
             if (currentType is null) {
                 string name = Buffer.Tokens[0].Path;
@@ -73,6 +78,11 @@ internal class Parser {
                     $"{Assembly.Name}.{currentType.Namespace}" : Assembly.Name;
                 if (u.Length > 0)
                     TryDefineUsing(u);
+
+                typeDefinitionData = new TypeDefinitionData(
+                    new CodePointer(Buffer.Tokens[0].Path, 1, 1), currentType, Array.Empty<TypeIdentifierToken>(),
+                    Array.Empty<ConstraintToken>(), Buffer
+                );
             }
             return currentType;
         }
@@ -81,6 +91,14 @@ internal class Parser {
                 TryDefineUsing(value.Namespace);
             currentType = value;
         }
+    }
+
+    public TypeDefinitionData TypeDefinitionData {
+        get {
+            _ = CurrentType;
+            return typeDefinitionData;
+        }
+        init => typeDefinitionData = value;
     }
 
     private IEnumerable<string> Usings {
@@ -100,8 +118,10 @@ internal class Parser {
     }
 
     public Parser(
-        Parser? parent, NeslAssemblyBuilder assembly, string assemblyPath, ParserStep step, TokenBuffer buffer
+        ParserStorage storage, Parser? parent, NeslAssemblyBuilder assembly, string assemblyPath, ParserStep step,
+        TokenBuffer buffer
     ) {
+        Storage = storage;
         Parent = parent;
         Assembly = assembly;
         AssemblyPath = assemblyPath;
@@ -248,20 +268,73 @@ internal class Parser {
             return;
 
         types = new List<Parser>();
-        foreach ((NeslTypeBuilder typeBuilder, TokenBuffer buffer) in definedTypes) {
-            Parser parser = new Parser(this, Assembly, AssemblyPath, ParserStep.Type, buffer) {
-                CurrentType = typeBuilder
+        foreach (TypeDefinitionData data in definedTypes) {
+            Parser parser = new Parser(Storage, this, Assembly, AssemblyPath, ParserStep.Type, data.Buffer) {
+                TypeDefinitionData = data,
+                CurrentType = data.TypeBuilder
             };
             parser.Parse();
             parser.AnalyzeTypes();
-
-            foreach (CompilationError error in parser.Errors)
-                errors.Add(error);
 
             types.Add(parser);
         }
 
         definedTypes = null;
+    }
+
+    public void AnalyzeTypeDependencies() {
+        if (currentType is null)
+            return;
+
+        // Inheritances.
+        foreach (TypeIdentifierToken inheritance in typeDefinitionData.Inheritances) {
+            if (!TryGetType(inheritance, out NeslType? type))
+                continue;
+            if (!type.IsInterface) {
+                Throw(new CompilationError(
+                    inheritance.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, inheritance
+                ));
+            }
+
+            currentType.AddInterface(type);
+        }
+
+        // Constraints.
+        foreach (ConstraintToken constraint in TypeDefinitionData.Constraints) {
+            if (constraint.GenericParameter.GenericTokens.Count != 0) {
+                Throw(new CompilationError(
+                    constraint.GenericParameter.GenericTokens[0].Pointer,
+                    CompilationErrorType.ConstraintGenericParameterNotAllowed,
+                    constraint.GenericParameter.GenericTokens[0]
+                ));
+            }
+
+            NeslGenericTypeParameter? parameter = currentType.GenericTypeParameters.FirstOrDefault(
+                x => x.Name == constraint.GenericParameter.Identifier
+            );
+            if (parameter is null) {
+                Throw(new CompilationError(
+                    constraint.GenericParameter.Pointer, CompilationErrorType.GenericParameterNotFound,
+                    constraint.GenericParameter
+                ));
+                continue;
+            }
+
+            if (parameter is not NeslGenericTypeParameterBuilder builder)
+                throw new UnreachableException();
+
+            foreach (TypeIdentifierToken typeIdentifier in constraint.Constraints) {
+                if (!TryGetType(typeIdentifier, out NeslType? type))
+                    continue;
+                if (!type.IsInterface) {
+                    Throw(new CompilationError(
+                        typeIdentifier.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, typeIdentifier
+                    ));
+                }
+
+                builder.AddConstraint(type);
+            }
+        }
     }
 
     public void AnalyzeFields() {
@@ -271,7 +344,7 @@ internal class Parser {
                     continue;
 
                 NeslFieldBuilder field = CurrentType.DefineField(data.Name.Name, fieldType);
-                if (data.Modifiers.HasFlag(NeslModifier.Uniform))
+                if (data.Modifiers.HasFlag(NeslModifiers.Uniform))
                     field.AddAttribute(UniformAttribute.Create());
             }
 
@@ -283,7 +356,10 @@ internal class Parser {
 
         // Add default constructor to value type.
         if (currentType?.IsValueType == true) {
-            IlGenerator il = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType).IlGenerator;
+            NeslMethodBuilder builder = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType);
+            builder.SetModifiers(NeslModifiers.Static);
+
+            IlGenerator il = builder.IlGenerator;
             il.Emit(OpCode.DefVariable, CurrentType);
             il.Emit(OpCode.ReturnValue, il.GetNextVariableId());
         }
@@ -304,7 +380,7 @@ internal class Parser {
                 }
 
                 ParameterParser parameterParser = new ParameterParser(
-                    this, Assembly, AssemblyPath, ParserStep.Parameters, newParameters
+                    Storage, this, Assembly, AssemblyPath, ParserStep.Parameters, newParameters
                 ) {
                     CurrentType = CurrentType
                     // TODO: Add generic parameters from this method.
@@ -348,6 +424,7 @@ internal class Parser {
                     )) { }
                 }
 
+                method.SetModifiers(data.Modifiers);
                 foreach (NeslAttribute attribute in data.Attributes)
                     method.AddAttribute(attribute);
 
@@ -357,18 +434,32 @@ internal class Parser {
 
                 Dictionary<string, VariableData> variables = new Dictionary<string, VariableData>();
                 uint index = (uint)method.Type.Fields.Count;
+                if (!method.IsStatic)
+                    variables.Add("this", new VariableData(CurrentType, "this", index++));
+
                 foreach ((NeslType type, string vname) in parameterParser.DefinedParameters)
                     variables.Add(vname, new VariableData(type, vname, index++));
 
+                if (!method.IsStatic)
+                    method.IlGenerator.GetNextVariableId();
                 if (data.IsConstructor)
                     DefaultConstructorHelper.AppendHeader(method);
 
-                methods ??= new List<Parser>();
-                methods.Add(new Parser(this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock) {
-                    CurrentType = CurrentType,
-                    CurrentMethod = method!,
-                    variables = variables
-                });
+                if (data.CodeBlock is not null) {
+                    methods ??= new List<Parser>();
+                    Parser parser = new Parser(
+                        Storage, this, Assembly, AssemblyPath, ParserStep.Method, data.CodeBlock
+                    ) {
+                        CurrentType = CurrentType,
+                        CurrentMethod = method!,
+                        variables = variables
+                    };
+                    methods.Add(parser);
+                    Storage.AddMethodParser(method, parser);
+                } else {
+                    Debug.Assert(method.IsAbstract);
+                    Debug.Assert(CurrentType.IsInterface);
+                }
             }
 
             definedMethods = null;
@@ -377,18 +468,32 @@ internal class Parser {
 
     public void AnalyzeMethodBodies() {
         if (methods is not null) {
-            foreach (Parser methodParser in methods) {
-                methodParser.Parse();
+            foreach (Parser methodParser in methods)
+                AnalyzeMethodBody(methodParser.CurrentMethod);
+        }
+    }
 
-                if (methodParser.CurrentMethodIsConstructor)
-                    DefaultConstructorHelper.AppendFooter(methodParser.CurrentMethod);
-                else if (methodParser.CurrentMethod.ReturnType is null)
-                    methodParser.CurrentMethod.IlGenerator.Emit(OpCode.Return);
+    public void ConstructType() {
+        if (currentType is not null)
+            TypeConstructor.Construct(this, currentType);
+    }
 
-                errors.AddRange(methodParser.Errors);
-            }
+    public void AnalyzeMethodBody(NeslMethod method) {
+        Parser? parser = Storage.GetMethodParser(method);
+        if (parser is null || parser.analyzedMethodBody)
+            return;
 
-            methods = null;
+        lock (parser) {
+            if (parser.analyzedMethodBody)
+                return;
+            parser.Parse();
+
+            if (parser.CurrentMethodIsConstructor)
+                DefaultConstructorHelper.AppendFooter(parser.CurrentMethod);
+            else if (parser.CurrentMethod.ReturnType is null)
+                parser.CurrentMethod.IlGenerator.Emit(OpCode.Return);
+
+            parser.analyzedMethodBody = true;
         }
     }
 
@@ -408,9 +513,9 @@ internal class Parser {
         return true;
     }
 
-    public void DefineType(NeslTypeBuilder typeBuilder, TokenBuffer buffer) {
-        definedTypes ??= new List<(NeslTypeBuilder, TokenBuffer)>();
-        definedTypes.Add((typeBuilder, buffer));
+    public void DefineType(TypeDefinitionData data) {
+        definedTypes ??= new List<TypeDefinitionData>();
+        definedTypes.Add(data);
     }
 
     public bool TryDefineField(FieldDefinitionData data) {
@@ -477,6 +582,37 @@ internal class Parser {
                 genericTypes[i] = genericType;
             }
 
+            // Check constraints.
+            bool constraintsSatisfied = true;
+            for (int i = 0; i < genericTypes.Length; i++) {
+                NeslType genericType = genericTypes[i];
+                NeslGenericTypeParameter genericTypeParameter = type.GenericTypeParameters.ElementAt(i);
+
+                bool isSatisfied = true;
+                foreach (NeslType constraint in genericTypeParameter.Interfaces) {
+                    if (!genericType.Interfaces.Contains(constraint)) {
+                        isSatisfied = false;
+                        break;
+                    }
+                }
+
+                if (!isSatisfied) {
+                    constraintsSatisfied = false;
+                    Throw(new CompilationError(
+                        genericTokens[i].Pointer, CompilationErrorType.TypeNotSatisfiedGenericConstraint,
+                        genericType.Name
+                    ));
+                }
+            }
+
+            if (!constraintsSatisfied)
+                return false;
+
+            if (Assembly == type.Assembly) {
+                foreach (NeslMethod method in type.Methods)
+                    AnalyzeMethodBody(method);
+            }
+
             type = type.MakeGeneric(genericTypes);
             return true;
         }
@@ -489,23 +625,23 @@ internal class Parser {
     }
 
     public bool TryGetMethods(
-        TypeIdentifierToken identifier, out bool findedType, [NotNullWhen(true)] out IEnumerable<NeslMethod>? methods
+        TypeIdentifierToken identifier, out bool typeFound, [NotNullWhen(true)] out IEnumerable<NeslMethod>? methods
     ) {
         int index = identifier.Identifier.LastIndexOf('.');
         if (index == -1) {
-            findedType = true;
+            typeFound = true;
             methods = CurrentType.Methods.Where(x => x.Name == identifier.Identifier);
             return methods.Any();
         }
 
         TypeIdentifierToken i = identifier with { Identifier = identifier.Identifier[..index] };
         if (!TryGetType(i, out NeslType? type)) {
-            findedType = false;
+            typeFound = false;
             methods = null;
             return false;
         }
 
-        findedType = true;
+        typeFound = true;
         string str = identifier.Identifier[(index + 1)..];
         methods = type.Methods.Where(x => x.Name == str);
         return methods.Any();
@@ -553,8 +689,9 @@ internal class Parser {
 
         foreach (PropertyDefinitionData data in definedProperties) {
             DefineMethod(new MethodDefinitionData(
-                data.TypeIdentifier, data.Name with { Name = NeslOperators.PropertyGet + data.Name.Name },
-                TokenBuffer.Empty, TokenBuffer.Empty, data.GetterAttributes
+                data.Modifiers, data.TypeIdentifier,
+                data.Name with { Name = NeslOperators.PropertyGet + data.Name.Name }, TokenBuffer.Empty,
+                TokenBuffer.Empty, data.GetterAttributes
             ));
 
             if (!data.HasSetter && !data.HasInitializer)
@@ -570,8 +707,8 @@ internal class Parser {
             )).ToArray());
 
             DefineMethod(new MethodDefinitionData(
-                TypeIdentifierToken.Void, data.Name with { Name = s + data.Name.Name }, parameters, TokenBuffer.Empty,
-                data.SecondAttributes
+                data.Modifiers, TypeIdentifierToken.Void, data.Name with { Name = s + data.Name.Name }, parameters,
+                TokenBuffer.Empty, data.SecondAttributes
             ));
         }
     }
@@ -590,8 +727,8 @@ internal class Parser {
             )).ToArray();
 
             DefineMethod(new MethodDefinitionData(
-                data.TypeIdentifier, data.Name with { Name = name }, new TokenBuffer(indexTokens), TokenBuffer.Empty,
-                data.GetterAttributes
+                data.Modifiers, data.TypeIdentifier, data.Name with { Name = name }, new TokenBuffer(indexTokens),
+                TokenBuffer.Empty, data.GetterAttributes
             ));
 
             if (!data.HasSetter)
@@ -609,7 +746,7 @@ internal class Parser {
             ).ToArray());
 
             DefineMethod(new MethodDefinitionData(
-                TypeIdentifierToken.Void, data.Name with { Name = name }, parameters, TokenBuffer.Empty,
+                data.Modifiers, TypeIdentifierToken.Void, data.Name with { Name = name }, parameters, TokenBuffer.Empty,
                 data.SetterAttributes
             ));
         }

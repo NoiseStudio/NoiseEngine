@@ -1,6 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Diagnostics;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
@@ -41,7 +41,9 @@ internal class BranchOperations : IlCompilerOperation {
     }
 
     public void ReturnValue(Instruction instruction) {
-        SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+        SpirVVariable? result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod);
+        if (result is null)
+            throw new UnreachableException("Return variable cannot be uint.MaxValue.");
 
         if (IlCompiler.ExecutionModel.HasValue) {
             switch (IlCompiler.ExecutionModel.Value) {

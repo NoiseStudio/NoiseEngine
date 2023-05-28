@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.Mathematics;
+using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Rendering;
@@ -28,6 +29,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
         NeslMethodBuilder vertex = shaderClassData.DefineMethod(
             "Vertex", vertexData, vertexData
         );
+        vertex.SetModifiers(NeslModifiers.Static);
         IlGenerator il = vertex.IlGenerator;
 
         il.Emit(OpCode.DefVariable, vertexData);
@@ -37,6 +39,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
         NeslMethodBuilder fragment = shaderClassData.DefineMethod(
             "Fragment", Vectors.GetVector4(BuiltInTypes.Float32), vertexData
         );
+        fragment.SetModifiers(NeslModifiers.Static);
         il = fragment.IlGenerator;
 
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
@@ -112,6 +115,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
         NeslMethodBuilder vertex = shaderClassData.DefineMethod(
             "Vertex", fragmentData, vertexData
         );
+        vertex.SetModifiers(NeslModifiers.Static);
         IlGenerator il = vertex.IlGenerator;
 
         il.Emit(OpCode.DefVariable, fragmentData);
@@ -141,6 +145,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
         NeslMethodBuilder fragment = shaderClassData.DefineMethod(
             "Fragment", Vectors.GetVector4(BuiltInTypes.Float32), fragmentData
         );
+        fragment.SetModifiers(NeslModifiers.Static);
         il = fragment.IlGenerator;
 
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));
