@@ -44,7 +44,7 @@ internal class Parser {
     public CompilationErrorMode ErrorMode { get; } = new CompilationErrorMode();
     public IEnumerable<Parser> Types => types ?? Enumerable.Empty<Parser>();
     public IEnumerable<Parser> Methods => methods ?? Enumerable.Empty<Parser>();
-    public uint InstanceVariableId => (uint)CurrentMethod.Type.Fields.Count + (uint)CurrentMethod.ParameterTypes.Count;
+    public uint InstanceVariableId => (uint)CurrentMethod.Type.Fields.Count;
 
     public NeslMethodBuilder CurrentMethod {
         get {
@@ -356,7 +356,10 @@ internal class Parser {
 
         // Add default constructor to value type.
         if (currentType?.IsValueType == true) {
-            IlGenerator il = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType).IlGenerator;
+            NeslMethodBuilder builder = CurrentType.DefineMethod(NeslOperators.Constructor, CurrentType);
+            builder.SetModifiers(NeslModifiers.Static);
+
+            IlGenerator il = builder.IlGenerator;
             il.Emit(OpCode.DefVariable, CurrentType);
             il.Emit(OpCode.ReturnValue, il.GetNextVariableId());
         }
@@ -431,9 +434,14 @@ internal class Parser {
 
                 Dictionary<string, VariableData> variables = new Dictionary<string, VariableData>();
                 uint index = (uint)method.Type.Fields.Count;
+                if (!method.IsStatic)
+                    variables.Add("this", new VariableData(CurrentType, "this", index++));
+
                 foreach ((NeslType type, string vname) in parameterParser.DefinedParameters)
                     variables.Add(vname, new VariableData(type, vname, index++));
 
+                if (!method.IsStatic)
+                    method.IlGenerator.GetNextVariableId();
                 if (data.IsConstructor)
                     DefaultConstructorHelper.AppendHeader(method);
 

@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
@@ -22,6 +23,7 @@ public class CallTest : NeslTestEnvironment {
 
         // Set method.
         NeslMethodBuilder set = helper.DefineMethod(null, BuiltInTypes.Float32);
+        set.SetModifiers(NeslModifiers.Static);
         set.AddAttribute(StaticAttribute.Create());
         IlGenerator il = set.IlGenerator;
 
@@ -30,6 +32,7 @@ public class CallTest : NeslTestEnvironment {
 
         // Main method.
         NeslMethodBuilder main = helper.DefineMethod();
+        main.SetModifiers(NeslModifiers.Static);
         main.AddAttribute(KernelAttribute.Create(Vector3<uint>.One));
         il = main.IlGenerator;
 
@@ -50,6 +53,7 @@ public class CallTest : NeslTestEnvironment {
 
         // Set method.
         NeslMethodBuilder set = helper.DefineMethod();
+        set.SetModifiers(NeslModifiers.Static);
         set.AddAttribute(StaticAttribute.Create());
         IlGenerator il = set.IlGenerator;
 
@@ -60,6 +64,7 @@ public class CallTest : NeslTestEnvironment {
 
         // Main method.
         NeslMethodBuilder main = helper.DefineMethod();
+        main.SetModifiers(NeslModifiers.Static);
         main.AddAttribute(KernelAttribute.Create(Vector3<uint>.One));
         il = main.IlGenerator;
 

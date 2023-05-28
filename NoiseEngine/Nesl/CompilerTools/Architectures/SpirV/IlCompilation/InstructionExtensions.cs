@@ -20,6 +20,9 @@ internal static class InstructionExtensions {
         }
 
         index -= (uint)neslMethod.Type.Fields.Count;
+        if (!neslMethod.IsStatic && neslMethod.ParameterTypes.Count == ilCompiler.Parameters.Count)
+            index--;
+
         if (index < ilCompiler.Parameters.Count) {
             variable = ilCompiler.Parameters[(int)index];
             ilCompiler.UsedVariables.Add(variable);

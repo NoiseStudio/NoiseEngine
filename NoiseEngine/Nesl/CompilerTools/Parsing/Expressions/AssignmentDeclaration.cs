@@ -66,10 +66,19 @@ internal class AssignmentDeclaration : ParserExpressionContainer {
         }
 
         valueData = valueData.LoadConst(Parser, v.Value.type);
-        if (!v.Value.isField)
+        if (!v.Value.isField) {
             il.Emit(OpCode.Load, v.Value.id, valueData.Id);
-        else
+        } else if (!Parser.CurrentMethod.IsStatic) {
             il.Emit(OpCode.SetField, Parser.InstanceVariableId, v.Value.id, valueData.Id);
+        } else if (Parser.CurrentMethodIsConstructor) {
+            il.Emit(
+                OpCode.SetField,
+                (uint)Parser.CurrentMethod.Type.Fields.Count + (uint)Parser.CurrentMethod.ParameterTypes.Count,
+                v.Value.id, valueData.Id
+            );
+        } else {
+            throw new NotImplementedException();
+        }
     }
 
     private (

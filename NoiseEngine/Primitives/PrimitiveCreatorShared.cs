@@ -40,6 +40,7 @@ internal class PrimitiveCreatorShared {
         NeslMethodBuilder vertex = defaultShaderClassData.DefineMethod(
             "Vertex", fragmentData, vertexData
         );
+        vertex.SetModifiers(NeslModifiers.Static);
         IlGenerator il = vertex.IlGenerator;
 
         il.Emit(OpCode.DefVariable, fragmentData);
@@ -69,6 +70,7 @@ internal class PrimitiveCreatorShared {
         NeslMethodBuilder fragment = defaultShaderClassData.DefineMethod(
             "Fragment", Vectors.GetVector4(BuiltInTypes.Float32), fragmentData
         );
+        fragment.SetModifiers(NeslModifiers.Static);
         il = fragment.IlGenerator;
 
         il.Emit(OpCode.DefVariable, Vectors.GetVector4(BuiltInTypes.Float32));

@@ -39,6 +39,7 @@ internal class BufferOutputTestHelper<T> where T : unmanaged {
 
     public void ExecuteAndAssert(T[]? initialValues, params T[] expectedValues) {
         NeslMethod shaderMethod = shaderType.Methods.Single(x => x.Attributes.HasAnyAttribute(nameof(KernelAttribute)));
+        ((NeslMethodBuilder)shaderMethod).SetModifiers(NeslModifiers.Static);
 
         T[] read = new T[expectedValues.Length];
 
