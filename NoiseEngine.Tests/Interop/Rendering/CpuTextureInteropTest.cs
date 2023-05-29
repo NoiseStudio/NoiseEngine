@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NoiseEngine.Interop;
@@ -36,6 +37,14 @@ public class CpuTextureInteropTest {
         byte[] expected = GetColorDataRgb(textureColors, new Vector2<uint>(data.ExtentX, data.ExtentY));
 
         Assert.Equal(expected, data.Data.ToArray());
+    }
+
+    [Fact]
+    public void NotDecodePng() {
+        byte[] fileData = new byte[256];
+        Random.Shared.NextBytes(fileData);
+        InteropResult<CpuTextureData> result = CpuTextureInterop.DecodePng(fileData);
+        Assert.False(result.IsOk);
     }
 
     private static byte[] GetColorDataRgb(IDictionary<Vector2<uint>, Color32> colors, Vector2<uint> size) {
