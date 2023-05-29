@@ -31,7 +31,7 @@ public class CpuTextureInteropTest {
         Assert.Equal<uint>(3, data.ExtentX);
         Assert.Equal<uint>(2, data.ExtentY);
         Assert.Equal<uint>(1, data.ExtentZ);
-        Assert.Equal(CpuTextureFormat.R8G8B8, data.Format);
+        Assert.Equal(TextureFormat.R8G8B8_UINT, data.Format);
 
         byte[] expected = GetColorDataRgb(textureColors, new Vector2<uint>(data.ExtentX, data.ExtentY));
 

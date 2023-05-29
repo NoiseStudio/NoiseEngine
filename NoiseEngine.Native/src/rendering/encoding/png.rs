@@ -1,9 +1,10 @@
 use crate::{
     interop::interop_array::InteropArray,
-    rendering::cpu::{CpuTextureFormat, CpuTextureData},
+    rendering::cpu::CpuTextureData,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
+use ash::vk;
 
 pub fn decode(
     file_data: &[u8],
@@ -29,25 +30,28 @@ pub fn decode(
 
     let format = match (color_type, bit_depth) {
         (png::ColorType::Grayscale, png::BitDepth::Eight) => {
-            CpuTextureFormat::R8
+            vk::Format::R8_UINT
         },
         (png::ColorType::Grayscale, png::BitDepth::Sixteen) => {
-            CpuTextureFormat::R16
+            vk::Format::R16_UINT
         },
-        (png::ColorType::GrayscaleAlpha, _) => {
-            return Err(anyhow!("GrayscaleAlpha is not supported"));
+        (png::ColorType::GrayscaleAlpha, png::BitDepth::Eight) => {
+            vk::Format::R8G8_UINT
+        },
+        (png::ColorType::GrayscaleAlpha, png::BitDepth::Sixteen) => {
+            vk::Format::R16G16_UINT
         },
         (png::ColorType::Rgb, png::BitDepth::Eight) => {
-            CpuTextureFormat::R8G8B8
+            vk::Format::R8G8B8_UINT
         },
         (png::ColorType::Rgb, png::BitDepth::Sixteen) => {
-            CpuTextureFormat::R16G16B16
+            vk::Format::R16G16B16_UINT
         },
         (png::ColorType::Rgba, png::BitDepth::Eight) => {
-            CpuTextureFormat::R8G8B8A8
+            vk::Format::R8G8B8A8_UINT
         },
         (png::ColorType::Rgba, png::BitDepth::Sixteen) => {
-            CpuTextureFormat::R16G16B16A16
+            vk::Format::R16G16B16A16_UINT
         },
         _ => unreachable!("set_transformations should disallow other state"),
     };

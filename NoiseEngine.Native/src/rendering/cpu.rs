@@ -1,34 +1,13 @@
+use ash::vk;
+
 use crate::interop::prelude::InteropArray;
-
-#[repr(C)]
-pub enum CpuTextureFormat {
-    R8G8B8A8,
-    R8G8B8,
-    R8,
-    R16G16B16A16,
-    R16G16B16,
-    R16,
-}
-
-impl CpuTextureFormat {
-    pub fn pixel_size(&self) -> usize {
-        match self {
-            CpuTextureFormat::R8G8B8A8 => 4,
-            CpuTextureFormat::R8G8B8 => 3,
-            CpuTextureFormat::R8 => 1,
-            CpuTextureFormat::R16G16B16A16 => 8,
-            CpuTextureFormat::R16G16B16 => 6,
-            CpuTextureFormat::R16 => 2,
-        }
-    }
-}
 
 #[repr(C)]
 pub struct CpuTextureData {
     extent_x: u32,
     extent_y: u32,
     extent_z: u32,
-    format: CpuTextureFormat,
+    format: vk::Format,
     data: InteropArray<u8>,
 }
 
@@ -37,13 +16,14 @@ impl CpuTextureData {
         extent_x: u32,
         extent_y: u32,
         extent_z: u32,
-        format: CpuTextureFormat,
+        format: vk::Format,
         data: InteropArray<u8>,
     ) -> Self {
         assert_ne!(extent_x, 0);
         assert_ne!(extent_y, 0);
         assert_ne!(extent_z, 0);
-        let size = extent_x * extent_y * extent_z * format.pixel_size() as u32;
+        let size =
+            extent_x * extent_y * extent_z * Self::pixel_size(format) as u32;
         assert_eq!(size, data.as_slice().len() as u32);
 
         Self {
@@ -67,11 +47,25 @@ impl CpuTextureData {
         self.extent_z
     }
 
-    pub fn format(&self) -> &CpuTextureFormat {
+    pub fn format(&self) -> &vk::Format {
         &self.format
     }
 
     pub fn data(&self) -> &InteropArray<u8> {
         &self.data
+    }
+
+    fn pixel_size(format: vk::Format) -> usize {
+        match format {
+            vk::Format::R8_UINT => 1,
+            vk::Format::R8G8_UINT => 2,
+            vk::Format::R8G8B8_UINT => 3,
+            vk::Format::R8G8B8A8_UINT => 4,
+            vk::Format::R16_UINT => 2,
+            vk::Format::R16G16_UINT => 4,
+            vk::Format::R16G16B16_UINT => 6,
+            vk::Format::R16G16B16A16_UINT => 8,
+            _ => unimplemented!("unsupported format: {:?}", format),
+        }
     }
 }
