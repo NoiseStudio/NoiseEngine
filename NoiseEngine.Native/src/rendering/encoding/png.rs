@@ -54,7 +54,6 @@ pub fn decode(
 
     let mut data = InteropArray::new(info.output_buffer_size() as i32);
 
-    // I think this just works? Probably?
     let frame = info.next_frame(data.as_mut_slice())?;
 
     Ok(CpuTextureData::new(
