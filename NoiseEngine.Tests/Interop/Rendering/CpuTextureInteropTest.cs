@@ -21,10 +21,13 @@ public class CpuTextureInteropTest {
         { new Vector2<uint>(2, 1), new Color32(255, 0, 255) }
     };
 
-    [Fact]
-    public void DecodePng() {
-        byte[] fileData = File.ReadAllBytes("./Resources/Textures/colors.png");
-        InteropResult<CpuTextureData> result = CpuTextureInterop.DecodePng(fileData);
+    [Theory]
+    [InlineData(TextureFileFormat.Png, "colors.png", TextureFormat.R8G8B8_UINT)]
+    [InlineData(TextureFileFormat.Jpeg, "colors.jpeg", TextureFormat.R8G8B8_UINT)]
+    [InlineData(TextureFileFormat.Webp, "colors.webp", TextureFormat.R8G8B8A8_UINT)]
+    public void Decode(TextureFileFormat fileFormat, string path, TextureFormat format) {
+        byte[] fileData = File.ReadAllBytes($"./Resources/Textures/{path}");
+        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, fileFormat);
 
         Assert.True(result.IsOk);
         CpuTextureData data = result.Value;
@@ -32,23 +35,38 @@ public class CpuTextureInteropTest {
         Assert.Equal<uint>(3, data.ExtentX);
         Assert.Equal<uint>(2, data.ExtentY);
         Assert.Equal<uint>(1, data.ExtentZ);
-        Assert.Equal(TextureFormat.R8G8B8_UINT, data.Format);
+        Assert.Equal(format, data.Format);
 
-        byte[] expected = GetColorDataRgb(textureColors, new Vector2<uint>(data.ExtentX, data.ExtentY));
+        if (fileFormat == TextureFileFormat.Jpeg) {
+            // Compression moment
+            return;
+        }
 
+        byte[] expected = GetColorData(textureColors, new Vector2<uint>(data.ExtentX, data.ExtentY), format);
         Assert.Equal(expected, data.Data.ToArray());
     }
 
-    [Fact]
-    public void NotDecodePng() {
+    [Theory]
+    [InlineData(TextureFileFormat.Png)]
+    [InlineData(TextureFileFormat.Jpeg)]
+    [InlineData(TextureFileFormat.Webp)]
+    public void NotDecode(TextureFileFormat format) {
         byte[] fileData = new byte[256];
         Random.Shared.NextBytes(fileData);
-        InteropResult<CpuTextureData> result = CpuTextureInterop.DecodePng(fileData);
+        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format);
         Assert.False(result.IsOk);
     }
 
-    private static byte[] GetColorDataRgb(IDictionary<Vector2<uint>, Color32> colors, Vector2<uint> size) {
-        byte[] result = new byte[size.X * size.Y * 3];
+    private static byte[] GetColorData(
+        IDictionary<Vector2<uint>, Color32> colors,
+        Vector2<uint> size,
+        TextureFormat format
+    ) {
+        if (format != TextureFormat.R8G8B8_UINT && format != TextureFormat.R8G8B8A8_UINT) {
+            throw new ArgumentException("Invalid texture format.");
+        }
+
+        byte[] result = new byte[size.X * size.Y * (format == TextureFormat.R8G8B8_UINT ? 3 : 4)];
 
         int i = 0;
 
@@ -57,7 +75,11 @@ public class CpuTextureInteropTest {
                 result[i + 0] = colors[new Vector2<uint>(x, y)].R;
                 result[i + 1] = colors[new Vector2<uint>(x, y)].G;
                 result[i + 2] = colors[new Vector2<uint>(x, y)].B;
-                i += 3;
+                if (format == TextureFormat.R8G8B8A8_UINT) {
+                    result[i + 3] = colors[new Vector2<uint>(x, y)].A;
+                }
+
+                i += format == TextureFormat.R8G8B8_UINT ? 3 : 4;
             }
         }
 

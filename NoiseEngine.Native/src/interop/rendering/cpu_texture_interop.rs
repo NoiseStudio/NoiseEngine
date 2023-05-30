@@ -5,14 +5,15 @@ use crate::{
         ResultError,
         ResultErrorKind,
     },
-    rendering::{cpu::CpuTextureData, encoding}
+    rendering::{cpu::{CpuTextureData, TextureFileFormat}, encoding}
 };
 
 #[no_mangle]
-extern "C" fn rendering_cpu_texture_interop_decode_png(
+extern "C" fn rendering_cpu_texture_interop_decode(
     file_data: InteropReadOnlySpan<u8>,
+    format: TextureFileFormat,
 ) -> InteropResult<CpuTextureData> {
-    let result = encoding::png::decode(file_data.into());
+    let result = encoding::decode(file_data.into(), format);
 
     match result {
         Ok(data) => {
