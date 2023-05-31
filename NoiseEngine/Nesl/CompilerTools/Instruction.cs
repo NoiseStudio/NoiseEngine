@@ -53,6 +53,7 @@ internal struct Instruction {
 
     public override string ToString() {
         string? result = OpCode switch {
+            OpCode.Add => $"{ReadUInt32()}u {ReadUInt32()}u {ReadUInt32()}u",
             OpCode.DefVariable => StringReadType(),
             OpCode.Call => $"{ReadUInt32()}u {StringReadMethod()}",
             OpCode.ReturnValue => $"{ReadUInt32()}u",

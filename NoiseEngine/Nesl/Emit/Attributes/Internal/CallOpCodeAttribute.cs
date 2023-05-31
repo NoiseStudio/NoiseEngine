@@ -36,7 +36,7 @@ internal class CallOpCodeAttribute : NeslAttribute {
     public override bool CheckIsValid() {
         return CheckIfValidFullName(ExpectedFullName) &&
             CheckIfValidTargets(ExpectedTargets) &&
-            CheckIfValidBytesLength(-1);
+            CheckIfValidBytesLength(sizeof(ushort));
     }
 
 }

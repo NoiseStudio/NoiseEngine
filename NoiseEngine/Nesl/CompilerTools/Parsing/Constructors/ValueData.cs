@@ -12,6 +12,19 @@ internal readonly record struct ValueData(NeslType Type, uint Id, object? Additi
     public ValueData(NeslType type, uint id) : this(type, id, null) {
     }
 
+    public bool CheckLoadConst(NeslType expected) {
+        const string Start = "System::System.";
+
+        if (AdditionalData is not ConstValueToken constValue)
+            return true;
+
+        return expected.FullNameWithAssembly switch {
+            Start + "Float32" => constValue.ToFloat32(out _, out _),
+            Start + "UInt32" => constValue.ToUInt32(out _, out _),
+            _ => false
+        };
+    }
+
     public ValueData LoadConst(Parser parser, NeslType expected) {
         const string Start = "System::System.";
 

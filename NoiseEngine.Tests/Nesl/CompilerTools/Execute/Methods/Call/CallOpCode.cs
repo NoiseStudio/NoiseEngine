@@ -9,7 +9,7 @@ public class CallOpCode : NeslExecuteTestEnvironment {
     }
 
     [Fact]
-    public void Addition() {
+    public void Add() {
         RunKernelWithSingleBuffer(@"
             using System;
 

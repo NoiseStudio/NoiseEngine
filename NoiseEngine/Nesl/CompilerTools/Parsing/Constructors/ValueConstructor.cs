@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -214,7 +215,12 @@ internal static class ValueConstructor {
 
         NeslMethod? method = null;
         foreach (NeslMethod m in methods) {
-            if (m.ParameterTypes.SequenceEqual(parametersList.Select(x => x.Type))) {
+            if (parametersList.Count != m.ParameterTypes.Count)
+                continue;
+
+            if (m.ParameterTypes.Select(
+                (x, i) => parametersList[i].CheckLoadConst(x)
+            ).All(x => x)) {
                 method = m;
                 break;
             }
@@ -235,14 +241,27 @@ internal static class ValueConstructor {
         uint variableId = il.GetNextVariableId();
 
         int start = method.IsStatic || instanceId is null ? 0 : 1;
-        Span<uint> parametersIds = stackalloc uint[start + parametersList.Count];
-        for (int i = start; i < parametersIds.Length; i++)
-            parametersIds[i] = parametersList[i - start].Id;
+        uint[] parametersIds = new uint[start + parametersList.Count];
+        for (int i = start; i < parametersIds.Length; i++) {
+            int j = i - start;
+            parametersIds[i] = parametersList[i - start].LoadConst(parser, method.ParameterTypes[j]).Id;
+        }
 
         if (!method.IsStatic && instanceId is not null)
             parametersIds[0] = instanceId.Value;
 
-        il.Emit(OpCode.Call, variableId, method, parametersIds);
+        CallOpCodeAttribute callOpCode = CallOpCodeAttribute.Create(0);
+        NeslAttribute? attribute = method.Attributes.FirstOrDefault(x => x.FullName == callOpCode.FullName);
+        if (attribute is not null) {
+            callOpCode = attribute.Cast<CallOpCodeAttribute>();
+            il.UnsafeEmit(callOpCode.OpCode, tail => {
+                tail.WriteUInt32(variableId);
+                foreach (uint element in parametersIds)
+                    tail.WriteUInt32(element);
+            });
+        } else {
+            il.Emit(OpCode.Call, variableId, method, parametersIds);
+        }
         return new ValueData(method.ReturnType, variableId);
     }
 
