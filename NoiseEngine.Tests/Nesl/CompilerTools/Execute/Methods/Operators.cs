@@ -30,17 +30,25 @@ public class Operators : NeslExecuteTestEnvironment {
     }
 
     private void Invoker(object values, string op) {
-        if (values is uint[] uintValues)
-            InvokerImpl(uintValues, "u32");
-        else if (values is int[] intValues)
-            InvokerImpl(intValues, "i32");
-        else if (values is float[] floatValues)
-            InvokerImpl(floatValues, "f32");
+        // Use typeof instead of is keyword to avoid implicit conversion.
+        Type type = values.GetType();
+        if (type == typeof(uint[]))
+            InvokerImpl((uint[])values, "u32", op);
+        else if (type == typeof(ulong[]))
+            InvokerImpl((ulong[])values, "u64", op);
+        else if (type == typeof(int[]))
+            InvokerImpl((int[])values, "i32", op);
+        else if (type == typeof(long[]))
+            InvokerImpl((long[])values, "i64", op);
+        else if (type == typeof(float[]))
+            InvokerImpl((float[])values, "f32", op);
+        else if (type == typeof(double[]))
+            InvokerImpl((double[])values, "f64", op);
         else
             throw new ArgumentException("Invalid type", nameof(values));
     }
 
-    private void InvokerImpl<T>(T[] values, string type) where T : unmanaged {
+    private void InvokerImpl<T>(T[] values, string type, string op) where T : unmanaged {
         for (int i = 1; i <= 1; i++) {
             int block = values.Length / 3;
             int initialLength = block * 2;
@@ -55,7 +63,8 @@ public class Operators : NeslExecuteTestEnvironment {
                 [Kernel({block}, 1, 1)]
                 void Main() {{
                     buffer[ComputeUtils.GlobalInvocation3.X] = {type}.Add(
-                        buffer[ComputeUtils.GlobalInvocation3.X], buffer[ComputeUtils.GlobalInvocation3.X]
+                        buffer[ComputeUtils.GlobalInvocation3.X],
+                        buffer[u32.Add(ComputeUtils.GlobalInvocation3.X, {block})]
                     );
                 }}
             ", initialValues, expectedValues);

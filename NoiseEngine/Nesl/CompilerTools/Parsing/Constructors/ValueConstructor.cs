@@ -90,6 +90,13 @@ internal static class ValueConstructor {
 
             VariableData? variable = parser.GetVariable(fragmentName);
             if (variable is null) {
+                if (expression.RoundBrackets is not null) {
+                    data = CallLocalOrStaticMethod(
+                        parser, expression.Identifier.Value, expression.RoundBrackets.Value.Buffer
+                    );
+                    return;
+                }
+
                 uint i = 0;
                 foreach (NeslField f in parser.CurrentMethod.Type.Fields) {
                     if (f.Name == fragmentName) {
@@ -99,22 +106,10 @@ internal static class ValueConstructor {
                     i++;
                 }
 
-                // TODO: Add properties.
-
                 if (variable is null) {
-                    if (expression.RoundBrackets is null) {
-                        parser.Throw(new CompilationError(
-                            identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
-                            identifier.Identifier
-                        ));
-                        data = ValueData.Invalid;
+                    data = CallProperty(ref variable, ref index, parser, expression.Identifier.Value);
+                    if (variable is null)
                         return;
-                    }
-
-                    data = CallLocalOrStaticMethod(
-                        parser, expression.Identifier.Value, expression.RoundBrackets.Value.Buffer
-                    );
-                    return;
                 }
             }
 
@@ -184,6 +179,61 @@ internal static class ValueConstructor {
         }
 
         data = new ValueData(type, variableId);
+    }
+
+    private static ValueData CallProperty(
+        ref VariableData? variable, ref int index, Parser parser, TypeIdentifierToken identifier
+    ) {
+        string[] split = identifier.Identifier.Split('.');
+        NeslType? type = parser.CurrentType;
+
+        string name = NeslOperators.PropertyGet + split[0];
+        NeslMethod? method = type.Methods.FirstOrDefault(x => x.Name == name && x.ParameterTypes.Count == 0);
+        ValueData data;
+        if (method is not null) {
+            index += split[0].Length;
+            data = CallMethod(parser, identifier, TokenBuffer.Empty, null, new NeslMethod[] { method });
+            variable = new VariableData(data.Type, split[0], data.Id);
+            return data;
+        }
+
+        int i = 0;
+        TypeIdentifierToken newIdentifier = identifier with { Identifier = split[i++] };
+        while (!parser.TryGetType(newIdentifier, out type)) {
+            if (i == split.Length) {
+                parser.Throw(new CompilationError(
+                    identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
+                    identifier.Identifier
+                ));
+                return ValueData.Invalid;
+            }
+
+            index += split[i].Length + 1;
+            newIdentifier = newIdentifier with { Identifier = newIdentifier.Identifier + '.' + split[i++] };
+        }
+
+        if (i < split.Length)
+            name = NeslOperators.PropertyGet + split[i];
+
+        if (
+            i == split.Length || (
+                method = type.Methods.FirstOrDefault(x => x.Name == name && x.ParameterTypes.Count == 0)
+            ) is null
+        ) {
+            parser.Throw(new CompilationError(
+                identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
+                identifier.Identifier
+            ));
+            return ValueData.Invalid;
+        }
+
+        index += split[i].Length + 1;
+        data = CallMethod(parser, identifier, TokenBuffer.Empty, null, new NeslMethod[] { method });
+        if (i + 1 == split.Length)
+            return data;
+
+        variable = new VariableData(data.Type, split[i], data.Id);
+        return data;
     }
 
     private static ValueData CallLocalOrStaticMethod(

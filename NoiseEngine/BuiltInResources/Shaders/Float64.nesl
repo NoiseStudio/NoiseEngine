@@ -1,4 +1,10 @@
+using System.Operators;
+
 [Size(64)]
 [PlatformDependentTypeRepresentation("OpTypeFloat`64")]
-public struct Float64 {
+public struct Float64 : IAdd<Float64, Float64, Float64> {
+
+	[CallOpCode(1)]
+	public static Float64 Add(Float64 lhs, Float64 rhs) {}
+
 }
