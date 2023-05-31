@@ -140,7 +140,6 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
             return;
 
         used.Add(this, GenericMakedFrom!);
-        used.Add(this, GenericMakedTypeParameters);
     }
 
     internal virtual bool SerializeHeader(NeslAssembly serializedAssembly, SerializationWriter writer) {
@@ -160,7 +159,6 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         if (IsGenericMaked) {
             writer.WriteUInt8((byte)NeslTypeUsageKind.GenericMaked);
             writer.WriteUInt64(Assembly.GetLocalTypeId(GenericMakedFrom!));
-            writer.WriteEnumerable(GenericMakedTypeParameters.Select(Assembly.GetLocalTypeId));
             return true;
         }
 
@@ -179,11 +177,8 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         foreach (NeslField field in Fields)
             field.Serialize(used, writer);
 
-        writer.WriteInt32(Interfaces.Count());
-        foreach (NeslType type in Interfaces) {
-            used.Add(this, type);
-            writer.WriteUInt64(Assembly.GetLocalTypeId(type));
-        }
+        used.Add(this, Interfaces);
+        writer.WriteEnumerable(Interfaces.Select(Assembly.GetLocalTypeId));
     }
 
     internal void SerializeMethods(SerializationWriter writer) {

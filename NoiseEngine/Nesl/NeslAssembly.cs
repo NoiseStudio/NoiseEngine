@@ -6,6 +6,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 
 namespace NoiseEngine.Nesl;
 
@@ -129,6 +130,9 @@ public abstract class NeslAssembly {
             ulong id = reader.ReadUInt64();
 
             SerializedNeslType type = (SerializedNeslType)assembly.GetType(id);
+            type.SetGenericMakedTypeParameters(reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray());
+            type.GenericMakedFrom!.UnsafeAddToGenericMaked(type);
+
             type.UnsafeInitializeTypeFromMakeGeneric(type.UnsafeTargetTypesFromMakeGeneric(
                 type.GenericMakedFrom!.GenericTypeParameters,
                 type.GenericMakedTypeParameters.ToArray(),
@@ -228,8 +232,10 @@ public abstract class NeslAssembly {
 
         // Write generic types.
         writer.WriteInt32(genericMakedTypes.Count);
-        foreach (NeslType type in genericMakedTypes)
+        foreach (NeslType type in genericMakedTypes) {
             writer.WriteUInt64(GetLocalTypeId(type));
+            writer.WriteEnumerable(type.GenericMakedTypeParameters.Select(GetLocalTypeId));
+        }
 
         writer.WriteBytes(typeWriter.AsSpan(methodStart));
 
@@ -318,11 +324,7 @@ public abstract class NeslAssembly {
 
     private NeslType DeserializeGenericMaked(SerializationReader reader) {
         NeslType parent = GetType(reader.ReadUInt64());
-        SerializedNeslType result = parent.UnsafeCreateTypeFromMakeGeneric(
-            reader.ReadEnumerableUInt64().Select(GetType).ToArray()
-        );
-        parent.UnsafeAddToGenericMaked(result);
-        return result;
+        return parent.UnsafeCreateTypeFromMakeGeneric(Array.Empty<NeslType>());
     }
 
     private NeslType DeserializeGenericNotFullyConstructed(SerializationReader reader) {

@@ -1,7 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Generics;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.Serialization;
@@ -25,12 +23,10 @@ internal class SerializationUsed {
         if (value is NeslGenericTypeParameter)
             return;
 
-        if (value.GenericMakedFrom is not null) {
+        if (value.GenericMakedFrom is not null)
             Add(value, value.GenericMakedFrom);
-            Add(value, value.GenericMakedTypeParameters);
-        } else {
+        else
             Add(value, value.GenericTypeParameters);
-        }
     }
 
     public void Add(NeslType key, IEnumerable<NeslType> values) {
