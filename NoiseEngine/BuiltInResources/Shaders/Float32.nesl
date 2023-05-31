@@ -1,4 +1,9 @@
+using System.Operators;
+
 [Size(32)]
 [PlatformDependentTypeRepresentation("OpTypeFloat`32")]
-public struct Float32 {
+public struct Float32 : IAdd<Float32, Float32, Float32> {
+
+	public static Float32 Add(Float32 lhs, Float32 rhs) {}
+
 }
