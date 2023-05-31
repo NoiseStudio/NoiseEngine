@@ -14,6 +14,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedUsing,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedOperatorKeyword,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedReturn,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedSemicolon,
@@ -150,11 +152,17 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ConstructorInInterfaceNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    UniformMethodNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    AssignmentOperatorDeclarationNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     AbstractMethodMustBeInInterface,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     InheritanceTypeMustBeAInterface,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ConstraintTypeMustBeAInterface,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    OperatorDeclarationMustBeStatic,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeTargetNotMatch,
     [CompilationErrorType(CompilationErrorSeverity.Error)]

@@ -1,0 +1,5 @@
+//public interface INumber<T> where T : INumber<T> {
+
+    //static T operator +(T a, T b);
+
+//}

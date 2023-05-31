@@ -11,4 +11,6 @@ public static class NeslOperators {
 
     public const string Constructor = "'c";
 
+    public const string Operator = "'o";
+
 }
