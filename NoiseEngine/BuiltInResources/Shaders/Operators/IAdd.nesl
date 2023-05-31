@@ -1,5 +1,5 @@
-public interface IAdd<TLhs, TRhs, TResult> {
+//public interface IAdd<TLhs, TRhs, TResult> {
 
-    static TResult Add(TLhs lhs, TRhs rhs);
+//    static TResult Add(TLhs lhs, TRhs rhs);
 
-}
+//}

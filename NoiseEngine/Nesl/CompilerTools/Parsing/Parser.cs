@@ -428,9 +428,13 @@ internal class Parser {
                 foreach (NeslAttribute attribute in data.Attributes)
                     method.AddAttribute(attribute);
 
-                // Ignore body when has intrinsic attribute.
-                if (method.Attributes.HasAnyAttribute(IntrinsicAttribute.Create().FullName))
+                // Ignore body when has intrinsic or call op code attribute.
+                if (
+                    method.Attributes.HasAnyAttribute(IntrinsicAttribute.Create().FullName) ||
+                    method.Attributes.HasAnyAttribute(CallOpCodeAttribute.Create(0).FullName)
+                ) {
                     continue;
+                }
 
                 Dictionary<string, VariableData> variables = new Dictionary<string, VariableData>();
                 uint index = (uint)method.Type.Fields.Count;
@@ -501,7 +505,7 @@ internal class Parser {
         if (usings is null)
             return;
 
-        foreach (TypeIdentifierToken u in usings) {
+        foreach (TypeIdentifierToken u in usings.Skip(1)) {
             if (
                 !Assembly.Types.Concat(Assembly.Dependencies.SelectMany(x => x.Types))
                     .Any(x => x.Namespace == u.Identifier)

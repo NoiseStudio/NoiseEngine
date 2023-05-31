@@ -41,7 +41,7 @@ public enum OpCode : ushort {
     /// All arguments must be the same arithmetic operation type. And type must not be unsigned.
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint))]
-    Negate,
+    Negate = 0,
 
     /// <summary>
     /// Adds the third argument to second argument and loads the result into the first argument.
@@ -54,7 +54,7 @@ public enum OpCode : ushort {
     /// All arguments must be the same arithmetic operation type.
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    Add,
+    Add = 1,
 
     /// <summary>
     /// Subtracts the third argument from second argument and loads the result into the first argument.
@@ -67,7 +67,7 @@ public enum OpCode : ushort {
     /// All arguments must be the same arithmetic operation type.
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    Subtract,
+    Subtract = 2,
 
     /// <summary>
     /// Multiplies the second argument by third argument and loads the result into the first argument.
@@ -80,7 +80,7 @@ public enum OpCode : ushort {
     /// All arguments must be the same arithmetic operation type.
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    Multiple,
+    Multiple = 3,
 
     /// <summary>
     /// Divides the second argument by third argument and loads the result into the first argument.
@@ -93,7 +93,7 @@ public enum OpCode : ushort {
     /// All arguments must be the same arithmetic operation type.
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    Divide,
+    Divide = 4,
 
     /// <summary>
     /// Loads into first argument the modulo of second argument divided by third argument.
@@ -106,7 +106,7 @@ public enum OpCode : ushort {
     /// All arguments must be the same arithmetic operation type.
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    Modulo,
+    Modulo = 5,
 
     /// <summary>
     /// Loads into first argument the remainder of second argument divided by third argument.
@@ -119,7 +119,7 @@ public enum OpCode : ushort {
     /// All arguments must be the same arithmetic operation type.
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    Remainder,
+    Remainder = 6,
 
     #endregion
     #region BranchOperations
@@ -136,13 +136,13 @@ public enum OpCode : ushort {
     /// second argument's method. Number of indexes must be same as number of parameters.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(NeslMethod), typeof(uint[]))]
-    Call,
+    Call = 7,
 
     /// <summary>
     /// Returns and ends current method. Current method must do not have a return type.
     /// </summary>
     [OpCodeValidation]
-    Return,
+    Return = 8,
 
     /// <summary>
     /// Returns and ends current method with returning a value from first argument.
@@ -151,7 +151,7 @@ public enum OpCode : ushort {
     /// First argument - a valid index of a field/variable with the type of return type from method.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint))]
-    ReturnValue,
+    ReturnValue = 9,
 
     #endregion
     #region DefOperations
@@ -163,7 +163,7 @@ public enum OpCode : ushort {
     /// First argument - a valid assembly type reference.<br />
     /// </remarks>
     [OpCodeValidation(typeof(NeslType))]
-    DefVariable,
+    DefVariable = 10,
 
     #endregion
     #region LoadOperations
@@ -176,7 +176,7 @@ public enum OpCode : ushort {
     /// Second argument - a valid index of a field/variable with the type of first argument.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint))]
-    Load,
+    Load = 11,
 
     /// <summary>
     /// Loads to first argument, constant 32 bit unsigned integer from second argument.
@@ -186,7 +186,7 @@ public enum OpCode : ushort {
     /// Second argument - constant 32 bit unsigned integer value.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint))]
-    LoadUInt32,
+    LoadUInt32 = 12,
 
     /// <summary>
     /// Loads to first argument, constant 32 bit float from second argument.
@@ -196,7 +196,7 @@ public enum OpCode : ushort {
     /// Second argument - constant 32 bit float value.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(float))]
-    LoadFloat32,
+    LoadFloat32 = 13,
 
     #endregion
     #region LoadElementOperations
@@ -210,7 +210,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field/variable with the supported index type.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    LoadElement,
+    LoadElement = 14,
 
     /// <summary>
     /// Sets a specified in second argument index in buffer given as first argument to the value of the third argument.
@@ -221,7 +221,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field/variable with the element type.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    SetElement,
+    SetElement = 15,
 
     #endregion
     #region LoadFieldOperations
@@ -236,7 +236,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field with type of second argument.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    LoadField,
+    LoadField = 16,
 
     /// <summary>
     /// Sets a specified in second argument object's field index in object given as first argument to the value of the
@@ -248,7 +248,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field/variable with type of second argument's field.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    SetField,
+    SetField = 17,
 
     #endregion
 }
