@@ -16,7 +16,7 @@ internal readonly record struct ValueData(NeslType Type, uint Id, object? Additi
         const string Start = "System::System.";
 
         if (AdditionalData is not ConstValueToken constValue)
-            return true;
+            return Type == expected;
 
         return expected.FullNameWithAssembly switch {
             Start + "Float32" => constValue.ToFloat32(out _, out _),
