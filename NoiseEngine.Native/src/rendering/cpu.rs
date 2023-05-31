@@ -75,14 +75,16 @@ impl CpuTextureData {
 
     fn pixel_size(format: vk::Format) -> usize {
         match format {
-            vk::Format::R8_UINT => 1,
-            vk::Format::R8G8_UINT => 2,
-            vk::Format::R8G8B8_UINT => 3,
-            vk::Format::R8G8B8A8_UINT => 4,
-            vk::Format::R16_UINT => 2,
-            vk::Format::R16G16_UINT => 4,
-            vk::Format::R16G16B16_UINT => 6,
-            vk::Format::R16G16B16A16_UINT => 8,
+            vk::Format::R8_SRGB => 1,
+            vk::Format::R8G8_SRGB => 2,
+            vk::Format::R8G8B8_SRGB => 3,
+            vk::Format::R8G8B8A8_SRGB => 4,
+            vk::Format::R16_UNORM => 2,
+            vk::Format::R16G16_UNORM => 4,
+            vk::Format::R16G16B16_UNORM => 6,
+            vk::Format::R16G16B16A16_UNORM => 8,
+            vk::Format::R32G32B32_SFLOAT => 12,
+            vk::Format::R32G32B32A32_SFLOAT => 16,
             _ => unimplemented!("unsupported format: {:?}", format),
         }
     }

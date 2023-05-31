@@ -13,32 +13,32 @@ pub fn decode(
 
     let (data, format) = match img.color() {
         image::ColorType::L8 => {
-            (img.into_luma8().into_raw(), vk::Format::R8_UINT)
+            (img.into_luma8().into_raw(), vk::Format::R8_SRGB)
         },
         image::ColorType::La8 => {
-            (img.into_luma_alpha8().into_raw(), vk::Format::R8G8_UINT)
+            (img.into_luma_alpha8().into_raw(), vk::Format::R8G8_SRGB)
         },
         image::ColorType::Rgb8 => {
-            (img.into_rgb8().into_raw(), vk::Format::R8G8B8_UINT)
+            (img.into_rgb8().into_raw(), vk::Format::R8G8B8_SRGB)
         },
         image::ColorType::Rgba8 => {
-            (img.into_rgba8().into_raw(), vk::Format::R8G8B8A8_UINT)
+            (img.into_rgba8().into_raw(), vk::Format::R8G8B8A8_SRGB)
         },
         image::ColorType::L16 => {
             let raw = img.into_luma16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16_UINT)
+            (reinterpret_vec(raw), vk::Format::R16_UNORM)
         },
         image::ColorType::La16 => {
             let raw = img.into_luma_alpha16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16G16_UINT)
+            (reinterpret_vec(raw), vk::Format::R16G16_UNORM)
         },
         image::ColorType::Rgb16 => {
             let raw = img.into_rgb16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16G16B16_UINT)
+            (reinterpret_vec(raw), vk::Format::R16G16B16_UNORM)
         },
         image::ColorType::Rgba16 => {
             let raw = img.into_rgba16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16G16B16A16_UINT)
+            (reinterpret_vec(raw), vk::Format::R16G16B16A16_UNORM)
         },
         image::ColorType::Rgb32F => {
             let raw = img.into_rgb32f().into_raw();

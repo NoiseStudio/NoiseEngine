@@ -1,17 +1,20 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using NoiseEngine.Interop;
-using NoiseEngine.Interop.Rendering;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Cpu;
+using NoiseEngine.Tests.Environments;
+using NoiseEngine.Tests.Fixtures;
 
-namespace NoiseEngine.Tests.Interop.Rendering;
+namespace NoiseEngine.Tests.Rendering; 
 
-public class CpuTextureInteropTest {
-
+[Collection(nameof(ApplicationCollection))]
+public class CpuTexture2DTest : GraphicsTestEnvironment {
+    
+    public CpuTexture2DTest(ApplicationFixture fixture) : base(fixture) {
+    }
+    
     private readonly Dictionary<Vector2<uint>, Color32> textureColors = new Dictionary<Vector2<uint>, Color32> {
         { new Vector2<uint>(0, 0), new Color32(255, 0, 0) },
         { new Vector2<uint>(1, 0), new Color32(0, 255, 0) },
@@ -25,38 +28,44 @@ public class CpuTextureInteropTest {
     [InlineData(TextureFileFormat.Png, "colors.png", TextureFormat.R8G8B8_SRGB)]
     [InlineData(TextureFileFormat.Jpeg, "colors.jpeg", TextureFormat.R8G8B8_SRGB)]
     [InlineData(TextureFileFormat.Webp, "colors.webp", TextureFormat.R8G8B8A8_SRGB)]
-    public void Decode(TextureFileFormat fileFormat, string path, TextureFormat format) {
+    public void FromFile(TextureFileFormat fileFormat, string path, TextureFormat format) {
         byte[] fileData = File.ReadAllBytes($"./Resources/Textures/{path}");
-        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, fileFormat);
-
-        Assert.True(result.IsOk);
-        CpuTextureData data = result.Value;
-
-        Assert.Equal<uint>(3, data.ExtentX);
-        Assert.Equal<uint>(2, data.ExtentY);
-        Assert.Equal<uint>(1, data.ExtentZ);
-        Assert.Equal(format, data.Format);
+        CpuTexture2D texture = CpuTexture2D.FromFile(fileData, fileFormat);
+        
+        Assert.Equal<uint>(3, texture.Width);
+        Assert.Equal<uint>(2, texture.Height);
+        Assert.Equal(format, texture.Format);
 
         if (fileFormat == TextureFileFormat.Jpeg) {
             // Compression moment
             return;
         }
 
-        byte[] expected = GetColorData(textureColors, new Vector2<uint>(data.ExtentX, data.ExtentY), format);
-        Assert.Equal(expected, data.Data.ToArray());
+        byte[] expected = GetColorData(textureColors, new Vector2<uint>(texture.Width, texture.Height), format);
+        Assert.Equal(expected, texture.Data.ToArray());
     }
-
+    
     [Theory]
-    [InlineData(TextureFileFormat.Png)]
-    [InlineData(TextureFileFormat.Jpeg)]
-    [InlineData(TextureFileFormat.Webp)]
-    public void NotDecode(TextureFileFormat format) {
-        byte[] fileData = new byte[256];
-        Random.Shared.NextBytes(fileData);
-        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format);
-        Assert.False(result.IsOk);
-    }
+    [InlineData(TextureFileFormat.Png, "colors.png", TextureFormat.R8G8B8_SRGB)]
+    [InlineData(TextureFileFormat.Jpeg, "colors.jpeg", TextureFormat.R8G8B8_SRGB)]
+    [InlineData(TextureFileFormat.Webp, "colors.webp", TextureFormat.R8G8B8A8_SRGB)]
+    public void ToTexture2D(TextureFileFormat fileFormat, string path, TextureFormat format) {
+        byte[] fileData = File.ReadAllBytes($"./Resources/Textures/{path}");
+        CpuTexture2D texture = CpuTexture2D.FromFile(fileData, fileFormat);
 
+        byte[] expected = GetColorData(textureColors, new Vector2<uint>(texture.Width, texture.Height), format);
+        
+        foreach (GraphicsDevice device in GraphicsDevices) {
+            Texture2D texture2D = texture.ToTexture2D(device, TextureUsage.TransferAll);
+            Assert.Equal(format, texture2D.Format);
+            Assert.Equal<uint>(3, texture2D.Width);
+            Assert.Equal<uint>(2, texture2D.Height);
+            byte[] actual = new byte[expected.Length];
+            texture2D.GetPixels(actual.AsSpan());
+            Assert.Equal(expected, actual);
+        }
+    }
+    
     private static byte[] GetColorData(
         IDictionary<Vector2<uint>, Color32> colors,
         Vector2<uint> size,
@@ -85,5 +94,5 @@ public class CpuTextureInteropTest {
 
         return result;
     }
-
+    
 }
