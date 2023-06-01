@@ -17,7 +17,7 @@ public class CallOpCode : NeslExecuteTestEnvironment {
 
             [Kernel(1, 1, 1)]
             void Main() {
-                buffer[0] = f32.Add(1.0, 2.0);
+                buffer[0] = 1.0 + 2.0;
             }
         ", null, 3f);
     }

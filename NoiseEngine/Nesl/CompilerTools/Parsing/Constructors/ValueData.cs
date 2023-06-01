@@ -1,11 +1,15 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
+using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
+using System;
+using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
 
-internal readonly record struct ValueData(NeslType Type, uint Id, object? AdditionalData) {
+internal readonly record struct ValueData(NeslType? Type, uint Id, object? AdditionalData) {
 
-    public static ValueData Invalid => new ValueData(null!, uint.MaxValue, null);
+    public static ValueData Invalid => new ValueData(null, uint.MaxValue, null);
 
     public bool IsInvalid => this == Invalid;
 
@@ -60,6 +64,18 @@ internal readonly record struct ValueData(NeslType Type, uint Id, object? Additi
         if (id == uint.MaxValue)
             parser.Throw(error);
         return new ValueData(expected, id);
+    }
+
+    public NeslType GetBestMatchConstType() {
+        if (AdditionalData is not ConstValueToken constValue)
+            return Type ?? throw new UnreachableException();
+
+        // TODO: Change to 64 bit types.
+        return constValue.Type switch {
+            ConstValueType.UnsignedInteger => BuiltInTypes.UInt32,
+            ConstValueType.Float => BuiltInTypes.Float32,
+            _ => throw new NotImplementedException()
+        };
     }
 
 }

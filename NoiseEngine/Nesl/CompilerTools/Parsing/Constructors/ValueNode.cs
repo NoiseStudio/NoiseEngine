@@ -2,4 +2,4 @@
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
 
-internal record ValueNode(IValueNodeElement Left, OperatorType Operator, IValueNodeElement Right) : IValueNodeElement;
+internal record ValueNode(IValueNodeElement Left, OperatorToken Operator, IValueNodeElement Right) : IValueNodeElement;

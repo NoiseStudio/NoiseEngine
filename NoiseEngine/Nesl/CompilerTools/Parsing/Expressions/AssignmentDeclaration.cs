@@ -96,13 +96,13 @@ internal class AssignmentDeclaration : ParserExpressionContainer {
             ));
         }
 
-        if (assignment.LeftOperator != OperatorType.None) {
+        if (assignment.LeftOperator.HasValue) {
             successful = false;
             Parser.Throw(new CompilationError(
                 assignment.Value.Pointer, CompilationErrorType.LeftOperatorNotAllowed, assignment.Value
             ));
         }
-        if (assignment.RightOperator != OperatorType.None) {
+        if (assignment.RightOperator.HasValue) {
             successful = false;
             Parser.Throw(new CompilationError(
                 assignment.Value.Pointer, CompilationErrorType.OperatorNotAllowed, assignment.Value
@@ -115,7 +115,7 @@ internal class AssignmentDeclaration : ParserExpressionContainer {
         ValueData? value = null;
         if (container.Expressions.Count != 1) {
             value = ValueConstructor.Construct(new ValueToken(
-                OperatorType.None, new ExpressionValueContentContainer(container.Expressions.SkipLast(1).ToArray()),
+                null, new ExpressionValueContentContainer(container.Expressions.SkipLast(1).ToArray()),
                 null, null
             ), Parser);
         }

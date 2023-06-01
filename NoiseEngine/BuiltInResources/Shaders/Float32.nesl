@@ -4,7 +4,7 @@ using System.Operators;
 [PlatformDependentTypeRepresentation("OpTypeFloat`32")]
 public struct Float32 : IAdd<Float32, Float32, Float32> {
 
-	[CallOpCode(1)]
-	public static Float32 Add(Float32 lhs, Float32 rhs) {}
+    [CallOpCode(1)]
+    public static Float32 Add(Float32 lhs, Float32 rhs) {}
 
 }

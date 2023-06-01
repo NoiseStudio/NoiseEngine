@@ -62,10 +62,8 @@ public class Operators : NeslExecuteTestEnvironment {
 
                 [Kernel({block}, 1, 1)]
                 void Main() {{
-                    buffer[ComputeUtils.GlobalInvocation3.X] = {type}.Add(
-                        buffer[ComputeUtils.GlobalInvocation3.X],
-                        buffer[u32.Add(ComputeUtils.GlobalInvocation3.X, {block})]
-                    );
+                    buffer[ComputeUtils.GlobalInvocation3.X] = buffer[ComputeUtils.GlobalInvocation3.X] {op}
+                        buffer[ComputeUtils.GlobalInvocation3.X + {block}];
                 }}
             ", initialValues, expectedValues);
         }
