@@ -33,6 +33,9 @@ internal class GenericIlGenerator {
         NeslType oldType, NeslType newType, NeslMethod genericMethod,
         IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
+        if (genericMethod.IsAbstract)
+            return genericMethod.GetIlContainer();
+
         IntrinsicAttribute intrinsic = IntrinsicAttribute.Create();
         if (genericMethod.Attributes.Any(x => x.FullName == intrinsic.FullName))
             return genericMethod.GetIlContainer();

@@ -19,6 +19,11 @@ internal class AbstractMethodDeclaration : ParserExpressionContainer {
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
         TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters
     ) {
+        if (modifiers.Modifiers.HasFlag(NeslModifiers.Uniform)) {
+            Parser.Throw(new CompilationError(
+                name.Pointer, CompilationErrorType.UniformMethodNotAllowed, modifiers.Modifiers
+            ));
+        }
         if (!Parser.CurrentType.IsInterface) {
             Parser.Throw(new CompilationError(
                 name.Pointer, CompilationErrorType.AbstractMethodMustBeInInterface, name.Name

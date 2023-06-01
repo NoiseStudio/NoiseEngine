@@ -19,20 +19,7 @@ internal class UsingDeclaration : ParserExpressionContainer {
             ));
         }
 
-        if (
-            !Parser.Assembly.Types.Concat(Parser.Assembly.Dependencies.SelectMany(x => x.Types))
-                .Any(x => x.Namespace == typeIdentifier.Identifier)
-        ) {
-            string ns = Parser.GetNamespaceFromFilePath(typeIdentifier.Pointer.Path);
-            if (!NamespaceUtils.IsPartOf(typeIdentifier.Identifier, ns)) {
-                Parser.Throw(new CompilationError(
-                    typeIdentifier.Pointer, CompilationErrorType.UsingNotFound, typeIdentifier.Identifier
-                ));
-                return;
-            }
-        }
-
-        if (!Parser.TryDefineUsing(typeIdentifier.Identifier)) {
+        if (!Parser.TryDefineUsing(typeIdentifier)) {
             Parser.Throw(new CompilationError(
                 typeIdentifier.Pointer, CompilationErrorType.UsingAlreadyExists, typeIdentifier.Identifier
             ));

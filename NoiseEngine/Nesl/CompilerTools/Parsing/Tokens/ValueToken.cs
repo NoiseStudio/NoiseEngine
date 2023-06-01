@@ -5,10 +5,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
 internal record ValueToken(
-    OperatorType LeftOperator, IValueContent Value, OperatorType? RightOperator, ValueToken? NextValue
+    OperatorToken? LeftOperator, IValueContent Value, OperatorToken? RightOperator, ValueToken? NextValue
 ) : IParserToken<ValueToken>, IValueContent, IValueNodeElement {
 
-    public OperatorType Operator { get; private set; }
+    public OperatorToken Operator { get; private set; }
 
     public bool IsIgnored => false;
     public int Priority => 0;
@@ -160,7 +160,7 @@ internal record ValueToken(
         index = buffer.Index;
         if (Parse(buffer, errorMode, out ValueToken? nextValue, out error)) {
             if (hasOperator)
-                nextValue.Operator = tempOperator.Type;
+                nextValue.Operator = tempOperator;
         } else if (hasOperator) {
             result = null;
             return false;
@@ -169,9 +169,7 @@ internal record ValueToken(
         }
 
         if (hasOperator || nextValue is null) {
-            result = new ValueToken(
-                leftOperator?.Type ?? OperatorType.None, value, rightOperator?.Type ?? OperatorType.None, nextValue
-            );
+            result = new ValueToken(leftOperator, value, rightOperator, nextValue);
             error = default;
             return true;
         } else {
@@ -186,9 +184,9 @@ internal record ValueToken(
             if (cast.Value is ExpressionValueContentContainer container && container.Expressions.Count == 1) {
                 ExpressionValueContent c = container.Expressions[0];
                 if (!c.IsNew && !c.RoundBrackets.HasValue && c.Indexer is null && !c.CurlyBrackets.HasValue) {
-                    nextValue.Operator = OperatorType.ExplicitCast;
+                    nextValue.Operator = new OperatorToken(default, OperatorType.ExplicitCast, false);
                     result = new ValueToken(
-                        OperatorType.None, new CastValue(c.Identifier!.Value), OperatorType.None, nextValue
+                        null, new CastValue(c.Identifier!.Value), null, nextValue
                     );
                     error = default;
                     return true;

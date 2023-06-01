@@ -18,7 +18,7 @@ internal class Parser {
 
     private readonly List<CompilationError> errors = new List<CompilationError>();
 
-    private List<string>? usings;
+    private List<TypeIdentifierToken>? usings;
     private List<TypeDefinitionData>? definedTypes;
     private List<FieldDefinitionData>? definedFields;
     private List<PropertyDefinitionData>? definedProperties;
@@ -77,7 +77,7 @@ internal class Parser {
                 string u = currentType.Namespace.Length > 0 ?
                     $"{Assembly.Name}.{currentType.Namespace}" : Assembly.Name;
                 if (u.Length > 0)
-                    TryDefineUsing(u);
+                    TryDefineUsing(new TypeIdentifierToken(default, u, Array.Empty<TypeIdentifierToken>()));
 
                 typeDefinitionData = new TypeDefinitionData(
                     new CodePointer(Buffer.Tokens[0].Path, 1, 1), currentType, Array.Empty<TypeIdentifierToken>(),
@@ -88,7 +88,7 @@ internal class Parser {
         }
         init {
             if (value.Namespace.Length > 0)
-                TryDefineUsing(value.Namespace);
+                TryDefineUsing(new TypeIdentifierToken(default, value.Namespace, Array.Empty<TypeIdentifierToken>()));
             currentType = value;
         }
     }
@@ -105,8 +105,8 @@ internal class Parser {
         get {
             if (usings is not null) {
                 lock (usings) {
-                    foreach (string u in usings)
-                        yield return u;
+                    foreach (TypeIdentifierToken u in usings)
+                        yield return u.Identifier;
                 }
             }
 
@@ -428,9 +428,13 @@ internal class Parser {
                 foreach (NeslAttribute attribute in data.Attributes)
                     method.AddAttribute(attribute);
 
-                // Ignore body when has intrinsic attribute.
-                if (method.Attributes.HasAnyAttribute(IntrinsicAttribute.Create().FullName))
+                // Ignore body when has intrinsic or call op code attribute.
+                if (
+                    method.Attributes.HasAnyAttribute(IntrinsicAttribute.Create().FullName) ||
+                    method.Attributes.HasAnyAttribute(CallOpCodeAttribute.Create(0).FullName)
+                ) {
                     continue;
+                }
 
                 Dictionary<string, VariableData> variables = new Dictionary<string, VariableData>();
                 uint index = (uint)method.Type.Fields.Count;
@@ -497,15 +501,32 @@ internal class Parser {
         }
     }
 
+    public void AnalyzeUsings() {
+        if (usings is null)
+            return;
+
+        foreach (TypeIdentifierToken u in usings.Skip(1)) {
+            if (
+                !Assembly.Types.Concat(Assembly.Dependencies.SelectMany(x => x.Types))
+                    .Any(x => x.Namespace == u.Identifier)
+                && !NamespaceUtils.IsPartOf(u.Identifier, GetNamespaceFromFilePath(u.Pointer.Path))
+            ) {
+                Throw(new CompilationError(
+                    u.Pointer, CompilationErrorType.UsingNotFound, u.Identifier
+                ));
+            }
+        }
+    }
+
     public void Throw(CompilationError error) {
         errors.Add(error);
     }
 
-    public bool TryDefineUsing(string u) {
-        usings ??= new List<string>();
+    public bool TryDefineUsing(TypeIdentifierToken u) {
+        usings ??= new List<TypeIdentifierToken>();
         lock (usings) {
             foreach (string u2 in Usings) {
-                if (u == u2)
+                if (u.Identifier == u2)
                     return false;
             }
             usings.Add(u);

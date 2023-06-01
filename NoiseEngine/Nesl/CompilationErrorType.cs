@@ -14,6 +14,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedUsing,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedOperatorKeyword,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedReturn,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedSemicolon,
@@ -130,6 +132,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     GenericParameterNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    OperatorNotFound,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     UsingGenericNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AttributeGenericNotAllowed,
@@ -149,6 +153,8 @@ public enum CompilationErrorType {
     FieldInInterfaceNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ConstructorInInterfaceNotAllowed,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
+    UniformMethodNotAllowed,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     AbstractMethodMustBeInInterface,
     [CompilationErrorType(CompilationErrorSeverity.Error)]

@@ -1,4 +1,10 @@
+using System.Operators;
+
 [Size(32)]
 [PlatformDependentTypeRepresentation("OpTypeInt`32`1")]
-public struct Int32 {
+public struct Int32 : IAdd<Int32, Int32, Int32> {
+
+    [CallOpCode(1)]
+    public static Int32 Add(Int32 lhs, Int32 rhs) {}
+
 }

@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,7 +11,10 @@ namespace NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
 internal static class ValueConstructor {
 
     public static ValueData Construct(ValueToken value, Parser parser) {
-        IValueNodeElement element = GetNodeElement(value);
+        return Construct(GetNodeElement(value), parser);
+    }
+
+    public static ValueData Construct(IValueNodeElement element, Parser parser) {
         if (element is ValueToken token) {
             if (token.Value is ValueToken innerToken)
                 return Construct(innerToken, parser);
@@ -35,7 +39,44 @@ internal static class ValueConstructor {
             return data;
         }
 
-        return ValueData.Invalid;
+        if (element is not ValueNode node)
+            throw new NotImplementedException();
+        return ValueConstructorOperator.Construct(node, parser);
+    }
+
+    public static ValueData CallMethod(
+        Parser parser, NeslMethod method, uint? instanceId, IReadOnlyList<ValueData> parameters
+    ) {
+        if (method.ReturnType is null)
+            throw new NotImplementedException();
+
+        IlGenerator il = parser.CurrentMethod.IlGenerator;
+        il.Emit(OpCode.DefVariable, method.ReturnType);
+        uint variableId = il.GetNextVariableId();
+
+        int start = method.IsStatic || instanceId is null ? 0 : 1;
+        uint[] parametersIds = new uint[start + parameters.Count];
+        for (int i = start; i < parametersIds.Length; i++) {
+            int j = i - start;
+            parametersIds[i] = parameters[i - start].LoadConst(parser, method.ParameterTypes[j]).Id;
+        }
+
+        if (!method.IsStatic && instanceId is not null)
+            parametersIds[0] = instanceId.Value;
+
+        CallOpCodeAttribute callOpCode = CallOpCodeAttribute.Create(0);
+        NeslAttribute? attribute = method.Attributes.FirstOrDefault(x => x.FullName == callOpCode.FullName);
+        if (attribute is not null) {
+            callOpCode = attribute.Cast<CallOpCodeAttribute>();
+            il.UnsafeEmit(callOpCode.OpCode, tail => {
+                tail.WriteUInt32(variableId);
+                foreach (uint element in parametersIds)
+                    tail.WriteUInt32(element);
+            });
+        } else {
+            il.Emit(OpCode.Call, variableId, method, parametersIds);
+        }
+        return new ValueData(method.ReturnType, variableId);
     }
 
     private static ValueData ConstructNew(Parser parser, ExpressionValueContent expression) {
@@ -89,6 +130,13 @@ internal static class ValueConstructor {
 
             VariableData? variable = parser.GetVariable(fragmentName);
             if (variable is null) {
+                if (expression.RoundBrackets is not null) {
+                    data = CallLocalOrStaticMethod(
+                        parser, expression.Identifier.Value, expression.RoundBrackets.Value.Buffer
+                    );
+                    return;
+                }
+
                 uint i = 0;
                 foreach (NeslField f in parser.CurrentMethod.Type.Fields) {
                     if (f.Name == fragmentName) {
@@ -98,22 +146,10 @@ internal static class ValueConstructor {
                     i++;
                 }
 
-                // TODO: Add properties.
-
                 if (variable is null) {
-                    if (expression.RoundBrackets is null) {
-                        parser.Throw(new CompilationError(
-                            identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
-                            identifier.Identifier
-                        ));
-                        data = ValueData.Invalid;
+                    data = CallProperty(ref variable, ref index, parser, expression.Identifier.Value);
+                    if (variable is null)
                         return;
-                    }
-
-                    data = CallLocalOrStaticMethod(
-                        parser, expression.Identifier.Value, expression.RoundBrackets.Value.Buffer
-                    );
-                    return;
                 }
             }
 
@@ -129,7 +165,7 @@ internal static class ValueConstructor {
             sum = 0;
         }
 
-        NeslType type = data.Type;
+        NeslType type = data.Type!;
         uint variableId = data.Id;
         IlGenerator il = parser.CurrentMethod.IlGenerator;
 
@@ -185,6 +221,61 @@ internal static class ValueConstructor {
         data = new ValueData(type, variableId);
     }
 
+    private static ValueData CallProperty(
+        ref VariableData? variable, ref int index, Parser parser, TypeIdentifierToken identifier
+    ) {
+        string[] split = identifier.Identifier.Split('.');
+        NeslType? type = parser.CurrentType;
+
+        string name = NeslOperators.PropertyGet + split[0];
+        NeslMethod? method = type.Methods.FirstOrDefault(x => x.Name == name && x.ParameterTypes.Count == 0);
+        ValueData data;
+        if (method is not null) {
+            index += split[0].Length;
+            data = CallMethod(parser, identifier, TokenBuffer.Empty, null, new NeslMethod[] { method });
+            variable = new VariableData(data.Type!, split[0], data.Id);
+            return data;
+        }
+
+        int i = 0;
+        TypeIdentifierToken newIdentifier = identifier with { Identifier = split[i++] };
+        while (!parser.TryGetType(newIdentifier, out type)) {
+            if (i == split.Length) {
+                parser.Throw(new CompilationError(
+                    identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
+                    identifier.Identifier
+                ));
+                return ValueData.Invalid;
+            }
+
+            index += split[i].Length + 1;
+            newIdentifier = newIdentifier with { Identifier = newIdentifier.Identifier + '.' + split[i++] };
+        }
+
+        if (i < split.Length)
+            name = NeslOperators.PropertyGet + split[i];
+
+        if (
+            i == split.Length || (
+                method = type.Methods.FirstOrDefault(x => x.Name == name && x.ParameterTypes.Count == 0)
+            ) is null
+        ) {
+            parser.Throw(new CompilationError(
+                identifier.Pointer, CompilationErrorType.VariableOrFieldOrPropertyNotFound,
+                identifier.Identifier
+            ));
+            return ValueData.Invalid;
+        }
+
+        index += split[i].Length + 1;
+        data = CallMethod(parser, method, null, Array.Empty<ValueData>());
+        if (i + 1 == split.Length)
+            return data;
+
+        variable = new VariableData(data.Type!, split[i], data.Id);
+        return data;
+    }
+
     private static ValueData CallLocalOrStaticMethod(
         Parser parser, TypeIdentifierToken identifier, TokenBuffer parameters
     ) {
@@ -214,7 +305,12 @@ internal static class ValueConstructor {
 
         NeslMethod? method = null;
         foreach (NeslMethod m in methods) {
-            if (m.ParameterTypes.SequenceEqual(parametersList.Select(x => x.Type))) {
+            if (parametersList.Count != m.ParameterTypes.Count)
+                continue;
+
+            if (m.ParameterTypes.Select(
+                (x, i) => parametersList[i].CheckLoadConst(x)
+            ).All(x => x)) {
                 method = m;
                 break;
             }
@@ -227,29 +323,13 @@ internal static class ValueConstructor {
             return ValueData.Invalid;
         }
 
-        if (method.ReturnType is null)
-            throw new NotImplementedException();
-
-        IlGenerator il = parser.CurrentMethod.IlGenerator;
-        il.Emit(OpCode.DefVariable, method.ReturnType);
-        uint variableId = il.GetNextVariableId();
-
-        int start = method.IsStatic || instanceId is null ? 0 : 1;
-        Span<uint> parametersIds = stackalloc uint[start + parametersList.Count];
-        for (int i = start; i < parametersIds.Length; i++)
-            parametersIds[i] = parametersList[i - start].Id;
-
-        if (!method.IsStatic && instanceId is not null)
-            parametersIds[0] = instanceId.Value;
-
-        il.Emit(OpCode.Call, variableId, method, parametersIds);
-        return new ValueData(method.ReturnType, variableId);
+        return CallMethod(parser, method, instanceId, parametersList);
     }
 
     private static void CallIndexer(ref ValueData data, Parser parser, ValueToken indexer, string name) {
         ValueData indexerData = Construct(indexer, parser);
 
-        NeslMethod? method = data.Type.GetMethod(name);
+        NeslMethod? method = data.Type!.GetMethod(name);
         if (method is null) {
             parser.Throw(new CompilationError(indexer.Pointer, CompilationErrorType.IndexerNotFound, name));
             return;
@@ -296,36 +376,36 @@ internal static class ValueConstructor {
         if (value.NextValue is null)
             return value;
 
-        List<(IValueNodeElement, OperatorType)> values = new List<(IValueNodeElement, OperatorType)>() {
-            (value, OperatorType.None)
+        List<(IValueNodeElement, OperatorToken)> values = new List<(IValueNodeElement, OperatorToken)>() {
+            (value, default)
         };
         while (value.NextValue is not null) {
             value = value.NextValue;
             values[^1] = (values[^1].Item1, value.Operator);
-            values.Add((value, OperatorType.None));
+            values.Add((value, default));
         }
 
         while (values.Count > 1) {
             int priority = -1;
             int index = -1;
             for (int i = 0; i < values.Count; i++) {
-                (_, OperatorType o) = values[i];
-                int p = (int)o / 100;
+                (_, OperatorToken o) = values[i];
+                int p = (int)o.Type / 100;
                 if (p > priority) {
                     priority = p;
                     index = i;
                 }
             }
 
-            (IValueNodeElement v1, OperatorType op1) = values[index];
-            (IValueNodeElement v2, OperatorType op2) = values[index + 1];
+            (IValueNodeElement v1, OperatorToken op1) = values[index];
+            (IValueNodeElement v2, OperatorToken op2) = values[index + 1];
 
             ValueNode node = new ValueNode(v1, op1, v2);
             values[index] = (node, op2);
             values.RemoveAt(index + 1);
         }
 
-        Debug.Assert(values[0].Item2 == OperatorType.None);
+        Debug.Assert(values[0].Item2 == default);
         return values[0].Item1;
     }
 

@@ -103,8 +103,17 @@ public class IlGenerator : IlContainer {
         tail.WriteUInt64(assembly.GetLocalTypeId(argument1));
     }
 
+    internal void UnsafeEmit(OpCode opCode, Action<SerializationWriter> constructor) {
+        Emit(opCode);
+        constructor(tail);
+    }
+
     internal uint GetNextVariableId() {
         return nextVariableId++;
+    }
+
+    internal void SetNextVariableId(uint nextVariableId) {
+        this.nextVariableId = nextVariableId;
     }
 
     internal override ReadOnlySpan<byte> GetTail(int start) {

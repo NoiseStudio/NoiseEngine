@@ -1,0 +1,5 @@
+public interface IAdd<TLhs, TRhs, TResult> {
+
+    static TResult Add(TLhs lhs, TRhs rhs);
+
+}
