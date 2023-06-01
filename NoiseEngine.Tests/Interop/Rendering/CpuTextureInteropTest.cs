@@ -7,6 +7,7 @@ using NoiseEngine.Interop.Rendering;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Cpu;
+using NoiseEngine.Tests.Rendering;
 
 namespace NoiseEngine.Tests.Interop.Rendering;
 
@@ -22,12 +23,12 @@ public class CpuTextureInteropTest {
     };
 
     [Theory]
-    [InlineData(TextureFileFormat.Png, "colors.png", TextureFormat.R8G8B8A8_SRGB)]
-    [InlineData(TextureFileFormat.Jpeg, "colors.jpeg", TextureFormat.R8G8B8A8_SRGB)]
-    [InlineData(TextureFileFormat.Webp, "colors.webp", TextureFormat.R8G8B8A8_SRGB)]
-    public void Decode(TextureFileFormat fileFormat, string path, TextureFormat format) {
+    [InlineData("colors.png", TextureFormat.R8G8B8A8_SRGB)]
+    [InlineData("colors.webp", TextureFormat.R8G8B8A8_SRGB)]
+    [InlineData("colors.jpeg", TextureFormat.R8G8B8A8_SRGB)]
+    public void Decode(string path, TextureFormat format) {
         byte[] fileData = File.ReadAllBytes($"./Resources/Textures/{path}");
-        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, fileFormat, format);
+        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format);
 
         Assert.True(result.IsOk);
         CpuTextureData data = result.Value;
@@ -37,53 +38,43 @@ public class CpuTextureInteropTest {
         Assert.Equal<uint>(1, data.ExtentZ);
         Assert.Equal(format, data.Format);
 
-        if (fileFormat == TextureFileFormat.Jpeg) {
-            // Compression moment
+        byte[] expected = TextureTestUtils.GetColorData(
+            textureColors,
+            new Vector2<uint>(data.ExtentX, data.ExtentY),
+            format);
+
+        if (!path.EndsWith(".jpg") && !path.EndsWith(".jpeg")) {
+            Assert.Equal(expected, data.Data.ToArray());
             return;
         }
 
-        byte[] expected = GetColorData(textureColors, new Vector2<uint>(data.ExtentX, data.ExtentY), format);
-        Assert.Equal(expected, data.Data.ToArray());
-    }
+        for (int y = 0; y < data.ExtentY; y++) {
+            for (int x = 0; x < data.ExtentX; x++) {
+                Color32 expectedColor = textureColors[new Vector2<uint>((uint)x, (uint)y)];
+                Color32 actualColor = new Color32(
+                    data.Data[(y * (int)data.ExtentX + x) * 4 + 0],
+                    data.Data[(y * (int)data.ExtentX + x) * 4 + 1],
+                    data.Data[(y * (int)data.ExtentX + x) * 4 + 2],
+                    data.Data[(y * (int)data.ExtentX + x) * 4 + 3]
+                );
 
-    [Theory]
-    [InlineData(TextureFileFormat.Png)]
-    [InlineData(TextureFileFormat.Jpeg)]
-    [InlineData(TextureFileFormat.Webp)]
-    public void NotDecode(TextureFileFormat format) {
-        byte[] fileData = new byte[256];
-        Random.Shared.NextBytes(fileData);
-        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format, TextureFormat.R8G8B8A8_SRGB);
-        Assert.False(result.IsOk);
-    }
+                int difference =
+                    Math.Abs(expectedColor.R - actualColor.R) +
+                    Math.Abs(expectedColor.G - actualColor.G) +
+                    Math.Abs(expectedColor.B - actualColor.B) +
+                    Math.Abs(expectedColor.A - actualColor.A);
 
-    private static byte[] GetColorData(
-        IDictionary<Vector2<uint>, Color32> colors,
-        Vector2<uint> size,
-        TextureFormat format
-    ) {
-        if (format != TextureFormat.R8G8B8_SRGB && format != TextureFormat.R8G8B8A8_SRGB) {
-            throw new ArgumentException("Invalid texture format.");
-        }
-
-        byte[] result = new byte[size.X * size.Y * (format == TextureFormat.R8G8B8_SRGB ? 3 : 4)];
-
-        int i = 0;
-
-        for (uint y = 0; y < size.Y; y++) {
-            for (uint x = 0; x < size.X; x++) {
-                result[i + 0] = colors[new Vector2<uint>(x, y)].R;
-                result[i + 1] = colors[new Vector2<uint>(x, y)].G;
-                result[i + 2] = colors[new Vector2<uint>(x, y)].B;
-                if (format == TextureFormat.R8G8B8A8_SRGB) {
-                    result[i + 3] = colors[new Vector2<uint>(x, y)].A;
-                }
-
-                i += format == TextureFormat.R8G8B8_SRGB ? 3 : 4;
+                Assert.True(difference < 10);
             }
         }
+    }
 
-        return result;
+    [Fact]
+    public void NotDecode() {
+        byte[] fileData = new byte[256];
+        Random.Shared.NextBytes(fileData);
+        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, TextureFormat.R8G8B8A8_SRGB);
+        Assert.False(result.IsOk);
     }
 
 }

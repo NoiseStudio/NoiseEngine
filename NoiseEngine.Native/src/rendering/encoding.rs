@@ -1,15 +1,14 @@
-use crate::rendering::cpu::{CpuTextureData, TextureFileFormat};
+use crate::rendering::cpu::CpuTextureData;
 
 use anyhow::Result;
 use ash::vk;
 
 pub fn decode(
     file_data: &[u8],
-    file_format: TextureFileFormat,
     format: Option<vk::Format>,
 ) -> Result<CpuTextureData> {
     let img =
-        image::load_from_memory_with_format(file_data, file_format.into())?;
+        image::load_from_memory(file_data)?;
 
     if let Some(format) = format {
         return decode_with_format(img, format);

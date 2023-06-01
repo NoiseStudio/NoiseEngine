@@ -29,19 +29,18 @@ public class CpuTexture2D : CpuTexture {
 
     /// <summary>
     /// Tries to decode given <paramref name="fileData"/> to <see cref="CpuTexture2D"/>.
+    /// Makes an educated guess about file format.
     /// </summary>
     /// <param name="fileData">File data.</param>
-    /// <param name="fileFormat">File format.</param>
     /// <param name="texture">Result texture.</param>
     /// <param name="format">Target format for the texture. Null tries to use the format of the file.</param>
     /// <returns>True if decoding was successful; otherwise false.</returns>
     public static bool TryFromFile(
         ReadOnlySpan<byte> fileData,
-        TextureFileFormat fileFormat,
         [NotNullWhen(true)] out CpuTexture2D? texture,
         TextureFormat? format = null
     ) {
-        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, fileFormat, format);
+        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format);
 
         if (!result.TryGetValue(out CpuTextureData data, out _)) {
             texture = null;
@@ -54,19 +53,18 @@ public class CpuTexture2D : CpuTexture {
     }
 
     /// <summary>
-    ///  Decodes given <paramref name="fileData"/> to <see cref="CpuTexture2D"/>.
+    /// Decodes given <paramref name="fileData"/> to <see cref="CpuTexture2D"/>.
+    /// Makes an educated guess about file format.
     /// </summary>
     /// <param name="fileData">File data.</param>
-    /// <param name="fileFormat">File format.</param>
     /// <param name="format">Target format for the texture. Null tries to use the format of the file.</param>
     /// <returns>Result texture.</returns>
     /// <exception cref="ArgumentException">Throws if decoding file data fails.</exception>
     public static CpuTexture2D FromFile(
         ReadOnlySpan<byte> fileData,
-        TextureFileFormat fileFormat,
         TextureFormat? format = null
     ) {
-        if (!TryFromFile(fileData, fileFormat, out CpuTexture2D? texture, format))
+        if (!TryFromFile(fileData, out CpuTexture2D? texture, format))
             throw new ArgumentException("Cannot decode texture from given file data.", nameof(fileData));
 
         return texture;

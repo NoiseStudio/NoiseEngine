@@ -3,24 +3,6 @@ use ash::vk;
 use crate::interop::prelude::InteropArray;
 
 #[repr(C)]
-pub enum TextureFileFormat {
-    Png,
-    Jpeg,
-    Webp,
-}
-
-impl From<TextureFileFormat> for image::ImageFormat {
-    fn from(format: TextureFileFormat) -> Self {
-        match format {
-            TextureFileFormat::Png => image::ImageFormat::Png,
-            TextureFileFormat::Jpeg => image::ImageFormat::Jpeg,
-            TextureFileFormat::Webp => image::ImageFormat::WebP,
-        }
-    }
-}
-
-
-#[repr(C)]
 pub struct CpuTextureData {
     extent_x: u32,
     extent_y: u32,

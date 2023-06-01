@@ -7,18 +7,17 @@ use crate::{
         ResultError,
         ResultErrorKind, InteropOption,
     },
-    rendering::{cpu::{CpuTextureData, TextureFileFormat}, encoding}
+    rendering::{cpu::CpuTextureData, encoding}
 };
 
 #[no_mangle]
 extern "C" fn rendering_cpu_texture_interop_decode(
     file_data: InteropReadOnlySpan<u8>,
-    file_format: TextureFileFormat,
     format: InteropOption<vk::Format>,
 
 ) -> InteropResult<CpuTextureData> {
     let result =
-        encoding::decode(file_data.into(), file_format, format.into());
+        encoding::decode(file_data.into(), format.into());
 
     match result {
         Ok(data) => {
