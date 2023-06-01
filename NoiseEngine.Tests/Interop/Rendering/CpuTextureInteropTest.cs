@@ -22,12 +22,12 @@ public class CpuTextureInteropTest {
     };
 
     [Theory]
-    [InlineData(TextureFileFormat.Png, "colors.png", TextureFormat.R8G8B8_SRGB)]
-    [InlineData(TextureFileFormat.Jpeg, "colors.jpeg", TextureFormat.R8G8B8_SRGB)]
+    [InlineData(TextureFileFormat.Png, "colors.png", TextureFormat.R8G8B8A8_SRGB)]
+    [InlineData(TextureFileFormat.Jpeg, "colors.jpeg", TextureFormat.R8G8B8A8_SRGB)]
     [InlineData(TextureFileFormat.Webp, "colors.webp", TextureFormat.R8G8B8A8_SRGB)]
     public void Decode(TextureFileFormat fileFormat, string path, TextureFormat format) {
         byte[] fileData = File.ReadAllBytes($"./Resources/Textures/{path}");
-        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, fileFormat);
+        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, fileFormat, format);
 
         Assert.True(result.IsOk);
         CpuTextureData data = result.Value;
@@ -53,7 +53,7 @@ public class CpuTextureInteropTest {
     public void NotDecode(TextureFileFormat format) {
         byte[] fileData = new byte[256];
         Random.Shared.NextBytes(fileData);
-        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format);
+        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format, TextureFormat.R8G8B8A8_SRGB);
         Assert.False(result.IsOk);
     }
 

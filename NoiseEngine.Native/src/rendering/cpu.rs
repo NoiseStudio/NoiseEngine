@@ -73,7 +73,7 @@ impl CpuTextureData {
         &self.data
     }
 
-    fn pixel_size(format: vk::Format) -> usize {
+    pub fn pixel_size(format: vk::Format) -> usize {
         match format {
             vk::Format::R8_SRGB => 1,
             vk::Format::R8G8_SRGB => 2,
