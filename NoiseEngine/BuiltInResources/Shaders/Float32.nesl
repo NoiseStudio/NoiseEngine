@@ -30,4 +30,7 @@ public struct Float32 :
     [CallOpCode(6)]
     public static Float32 Remainder(Float32 lhs, Float32 rhs) {}
 
+    [Intrinsic]
+    public static Float32 Exponent(Float32 lhs, Float32 rhs) {}
+
 }

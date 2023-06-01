@@ -8,8 +8,7 @@ public struct UInt32 :
     IMultiply<UInt32, UInt32, UInt32>,
     IDivide<UInt32, UInt32, UInt32>,
     IModulo<UInt32, UInt32, UInt32>,
-    IRemainder<UInt32, UInt32, UInt32>,
-    IExponent<UInt32, UInt32, UInt32>
+    IRemainder<UInt32, UInt32, UInt32>
 {
 
     [CallOpCode(1)]

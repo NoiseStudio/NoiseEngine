@@ -8,8 +8,7 @@ public struct Float64 :
     IMultiply<Float64, Float64, Float64>,
     IDivide<Float64, Float64, Float64>,
     IModulo<Float64, Float64, Float64>,
-    IRemainder<Float64, Float64, Float64>,
-    IExponent<Float64, Float64, Float64>
+    IRemainder<Float64, Float64, Float64>
 {
 
     [CallOpCode(1)]

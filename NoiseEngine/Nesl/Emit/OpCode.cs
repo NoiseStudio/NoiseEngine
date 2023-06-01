@@ -136,13 +136,13 @@ public enum OpCode : ushort {
     /// second argument's method. Number of indexes must be same as number of parameters.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(NeslMethod), typeof(uint[]))]
-    Call = 7,
+    Call = 100,
 
     /// <summary>
     /// Returns and ends current method. Current method must do not have a return type.
     /// </summary>
     [OpCodeValidation]
-    Return = 8,
+    Return = 101,
 
     /// <summary>
     /// Returns and ends current method with returning a value from first argument.
@@ -151,7 +151,7 @@ public enum OpCode : ushort {
     /// First argument - a valid index of a field/variable with the type of return type from method.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint))]
-    ReturnValue = 9,
+    ReturnValue = 102,
 
     #endregion
     #region DefOperations
@@ -163,7 +163,7 @@ public enum OpCode : ushort {
     /// First argument - a valid assembly type reference.<br />
     /// </remarks>
     [OpCodeValidation(typeof(NeslType))]
-    DefVariable = 10,
+    DefVariable = 200,
 
     #endregion
     #region LoadOperations
@@ -176,7 +176,7 @@ public enum OpCode : ushort {
     /// Second argument - a valid index of a field/variable with the type of first argument.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint))]
-    Load = 11,
+    Load = 300,
 
     /// <summary>
     /// Loads to first argument, constant 32 bit unsigned integer from second argument.
@@ -186,7 +186,7 @@ public enum OpCode : ushort {
     /// Second argument - constant 32 bit unsigned integer value.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint))]
-    LoadUInt32 = 12,
+    LoadUInt32 = 301,
 
     /// <summary>
     /// Loads to first argument, constant 32 bit float from second argument.
@@ -196,7 +196,7 @@ public enum OpCode : ushort {
     /// Second argument - constant 32 bit float value.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(float))]
-    LoadFloat32 = 13,
+    LoadFloat32 = 302,
 
     #endregion
     #region LoadElementOperations
@@ -210,7 +210,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field/variable with the supported index type.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    LoadElement = 14,
+    LoadElement,
 
     /// <summary>
     /// Sets a specified in second argument index in buffer given as first argument to the value of the third argument.
@@ -221,7 +221,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field/variable with the element type.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    SetElement = 15,
+    SetElement,
 
     #endregion
     #region LoadFieldOperations
@@ -236,7 +236,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field with type of second argument.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    LoadField = 16,
+    LoadField = 400,
 
     /// <summary>
     /// Sets a specified in second argument object's field index in object given as first argument to the value of the
@@ -248,7 +248,7 @@ public enum OpCode : ushort {
     /// Third argument - a valid index of a field/variable with type of second argument's field.<br />
     /// </remarks>
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
-    SetField = 17,
+    SetField = 401,
 
     #endregion
 }

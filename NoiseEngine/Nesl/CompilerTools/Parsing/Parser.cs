@@ -282,61 +282,6 @@ internal class Parser {
         definedTypes = null;
     }
 
-    public void AnalyzeTypeDependencies() {
-        if (currentType is null)
-            return;
-
-        // Inheritances.
-        foreach (TypeIdentifierToken inheritance in typeDefinitionData.Inheritances) {
-            if (!TryGetType(inheritance, out NeslType? type))
-                continue;
-            if (!type.IsInterface) {
-                Throw(new CompilationError(
-                    inheritance.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, inheritance
-                ));
-            }
-
-            currentType.AddInterface(type);
-        }
-
-        // Constraints.
-        foreach (ConstraintToken constraint in TypeDefinitionData.Constraints) {
-            if (constraint.GenericParameter.GenericTokens.Count != 0) {
-                Throw(new CompilationError(
-                    constraint.GenericParameter.GenericTokens[0].Pointer,
-                    CompilationErrorType.ConstraintGenericParameterNotAllowed,
-                    constraint.GenericParameter.GenericTokens[0]
-                ));
-            }
-
-            NeslGenericTypeParameter? parameter = currentType.GenericTypeParameters.FirstOrDefault(
-                x => x.Name == constraint.GenericParameter.Identifier
-            );
-            if (parameter is null) {
-                Throw(new CompilationError(
-                    constraint.GenericParameter.Pointer, CompilationErrorType.GenericParameterNotFound,
-                    constraint.GenericParameter
-                ));
-                continue;
-            }
-
-            if (parameter is not NeslGenericTypeParameterBuilder builder)
-                throw new UnreachableException();
-
-            foreach (TypeIdentifierToken typeIdentifier in constraint.Constraints) {
-                if (!TryGetType(typeIdentifier, out NeslType? type))
-                    continue;
-                if (!type.IsInterface) {
-                    Throw(new CompilationError(
-                        typeIdentifier.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, typeIdentifier
-                    ));
-                }
-
-                builder.AddConstraint(type);
-            }
-        }
-    }
-
     public void AnalyzeFields() {
         if (definedFields is not null) {
             foreach (FieldDefinitionData data in definedFields) {
@@ -467,6 +412,63 @@ internal class Parser {
             }
 
             definedMethods = null;
+        }
+    }
+
+    public void AnalyzeTypeDependencies() {
+        if (currentType is null)
+            return;
+
+        // Inheritances.
+        foreach (TypeIdentifierToken inheritance in typeDefinitionData.Inheritances) {
+            if (!TryGetType(inheritance, out NeslType? type))
+                continue;
+            if (!type.IsInterface) {
+                Throw(new CompilationError(
+                    inheritance.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, inheritance
+                ));
+                continue;
+            }
+
+            currentType.AddInterface(type);
+        }
+
+        // Constraints.
+        foreach (ConstraintToken constraint in TypeDefinitionData.Constraints) {
+            if (constraint.GenericParameter.GenericTokens.Count != 0) {
+                Throw(new CompilationError(
+                    constraint.GenericParameter.GenericTokens[0].Pointer,
+                    CompilationErrorType.ConstraintGenericParameterNotAllowed,
+                    constraint.GenericParameter.GenericTokens[0]
+                ));
+                continue;
+            }
+
+            NeslGenericTypeParameter? parameter = currentType.GenericTypeParameters.FirstOrDefault(
+                x => x.Name == constraint.GenericParameter.Identifier
+            );
+            if (parameter is null) {
+                Throw(new CompilationError(
+                    constraint.GenericParameter.Pointer, CompilationErrorType.GenericParameterNotFound,
+                    constraint.GenericParameter
+                ));
+                continue;
+            }
+
+            if (parameter is not NeslGenericTypeParameterBuilder builder)
+                throw new UnreachableException();
+
+            foreach (TypeIdentifierToken typeIdentifier in constraint.Constraints) {
+                if (!TryGetType(typeIdentifier, out NeslType? type))
+                    continue;
+                if (!type.IsInterface) {
+                    Throw(new CompilationError(
+                        typeIdentifier.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, typeIdentifier
+                    ));
+                }
+
+                builder.AddConstraint(type);
+            }
         }
     }
 
@@ -635,6 +637,8 @@ internal class Parser {
             }
 
             type = type.MakeGeneric(genericTypes);
+            if (Assembly == type.Assembly)
+                Storage.AddGenericMakedType(type, genericTokens.Select(x => x.Pointer).ToArray());
             return true;
         }
 
