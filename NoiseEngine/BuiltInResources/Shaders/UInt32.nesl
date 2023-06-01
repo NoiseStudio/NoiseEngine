@@ -2,9 +2,32 @@ using System.Operators;
 
 [Size(32)]
 [PlatformDependentTypeRepresentation("OpTypeInt`32`0")]
-public struct UInt32 : IAdd<UInt32, UInt32, UInt32> {
+public struct UInt32 :
+    IAdd<UInt32, UInt32, UInt32>,
+    ISubtract<UInt32, UInt32, UInt32>,
+    IMultiply<UInt32, UInt32, UInt32>,
+    IDivide<UInt32, UInt32, UInt32>,
+    IModulo<UInt32, UInt32, UInt32>,
+    IRemainder<UInt32, UInt32, UInt32>,
+    IExponent<UInt32, UInt32, UInt32>
+{
 
     [CallOpCode(1)]
     public static UInt32 Add(UInt32 lhs, UInt32 rhs) {}
+
+    [CallOpCode(2)]
+    public static UInt32 Subtract(UInt32 lhs, UInt32 rhs) {}
+
+    [CallOpCode(3)]
+    public static UInt32 Multiply(UInt32 lhs, UInt32 rhs) {}
+
+    [CallOpCode(4)]
+    public static UInt32 Divide(UInt32 lhs, UInt32 rhs) {}
+
+    [CallOpCode(5)]
+    public static UInt32 Modulo(UInt32 lhs, UInt32 rhs) {}
+
+    [CallOpCode(6)]
+    public static UInt32 Remainder(UInt32 lhs, UInt32 rhs) {}
 
 }

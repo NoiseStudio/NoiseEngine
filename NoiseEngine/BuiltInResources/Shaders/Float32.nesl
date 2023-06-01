@@ -2,9 +2,32 @@ using System.Operators;
 
 [Size(32)]
 [PlatformDependentTypeRepresentation("OpTypeFloat`32")]
-public struct Float32 : IAdd<Float32, Float32, Float32> {
+public struct Float32 :
+    IAdd<Float32, Float32, Float32>,
+    ISubtract<Float32, Float32, Float32>,
+    IMultiply<Float32, Float32, Float32>,
+    IDivide<Float32, Float32, Float32>,
+    IModulo<Float32, Float32, Float32>,
+    IRemainder<Float32, Float32, Float32>,
+    IExponent<Float32, Float32, Float32>
+{
 
     [CallOpCode(1)]
     public static Float32 Add(Float32 lhs, Float32 rhs) {}
+
+    [CallOpCode(2)]
+    public static Float32 Subtract(Float32 lhs, Float32 rhs) {}
+
+    [CallOpCode(3)]
+    public static Float32 Multiply(Float32 lhs, Float32 rhs) {}
+
+    [CallOpCode(4)]
+    public static Float32 Divide(Float32 lhs, Float32 rhs) {}
+
+    [CallOpCode(5)]
+    public static Float32 Modulo(Float32 lhs, Float32 rhs) {}
+
+    [CallOpCode(6)]
+    public static Float32 Remainder(Float32 lhs, Float32 rhs) {}
 
 }

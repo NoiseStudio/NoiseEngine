@@ -67,7 +67,7 @@ public class ArithmeticOperationsTest : NeslTestEnvironment {
         1.30167f, 50.03454f, -7.74374f, 9.32226f,
         -4.82001f, 14.044495f, 13.00658f, -4.94945f
     })]
-    public void Substract(object values) {
+    public void Subtract(object values) {
         ArithmeticHelper(il => il.Emit(OpCode.Subtract, 1u, 1u, 2u), values);
     }
 

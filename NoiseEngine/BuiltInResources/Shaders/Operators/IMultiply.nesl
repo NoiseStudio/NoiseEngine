@@ -1,0 +1,5 @@
+public interface IMultiply<TLhs, TRhs, TResult> {
+
+    static TResult Multiply(TLhs lhs, TRhs rhs);
+
+}

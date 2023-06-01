@@ -2,9 +2,32 @@ using System.Operators;
 
 [Size(32)]
 [PlatformDependentTypeRepresentation("OpTypeInt`32`1")]
-public struct Int32 : IAdd<Int32, Int32, Int32> {
+public struct Int32 :
+    IAdd<Int32, Int32, Int32>,
+    ISubtract<Int32, Int32, Int32>,
+    IMultiply<Int32, Int32, Int32>,
+    IDivide<Int32, Int32, Int32>,
+    IModulo<Int32, Int32, Int32>,
+    IRemainder<Int32, Int32, Int32>,
+    IExponent<Int32, Int32, Int32>
+{
 
     [CallOpCode(1)]
     public static Int32 Add(Int32 lhs, Int32 rhs) {}
+
+    [CallOpCode(2)]
+    public static Int32 Subtract(Int32 lhs, Int32 rhs) {}
+
+    [CallOpCode(3)]
+    public static Int32 Multiply(Int32 lhs, Int32 rhs) {}
+
+    [CallOpCode(4)]
+    public static Int32 Divide(Int32 lhs, Int32 rhs) {}
+
+    [CallOpCode(5)]
+    public static Int32 Modulo(Int32 lhs, Int32 rhs) {}
+
+    [CallOpCode(6)]
+    public static Int32 Remainder(Int32 lhs, Int32 rhs) {}
 
 }

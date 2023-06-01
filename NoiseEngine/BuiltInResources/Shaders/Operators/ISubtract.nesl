@@ -1,0 +1,5 @@
+public interface ISubtract<TLhs, TRhs, TResult> {
+
+    static TResult Subtract(TLhs lhs, TRhs rhs);
+
+}
