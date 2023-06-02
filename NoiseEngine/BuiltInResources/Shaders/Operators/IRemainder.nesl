@@ -1,0 +1,5 @@
+public interface IRemainder<TLhs, TRhs, TResult> {
+
+    static TResult Remainder(TLhs lhs, TRhs rhs);
+
+}

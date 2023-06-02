@@ -3,6 +3,11 @@
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
 internal enum SpirVOpCode : ushort {
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVLiteral))]
+    OpExtInstImport = 11,
+    [OpCodeValidation(typeof(SpirVId), typeof(SpirVId), typeof(SpirVId), typeof(SpirVLiteral), typeof(SpirVId[]))]
+    OpExtInst = 12,
+
     [OpCodeValidation(typeof(uint), typeof(uint))]
     OpMemoryModel = 14,
     [OpCodeValidation(typeof(uint), typeof(SpirVId), typeof(SpirVLiteral))]

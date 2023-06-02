@@ -72,6 +72,9 @@ internal class IlCompiler {
                 case OpCode.Remainder:
                     ArithmeticOperations.Remainder(instruction);
                     break;
+                case OpCode.Power:
+                    ArithmeticOperations.Power(instruction);
+                    break;
 
                 #endregion
                 #region BranchOperations

@@ -1,0 +1,5 @@
+public interface IModulo<TLhs, TRhs, TResult> {
+
+    static TResult Modulo(TLhs lhs, TRhs rhs);
+
+}

@@ -1,0 +1,5 @@
+public interface IDivide<TLhs, TRhs, TResult> {
+
+    static TResult Divide(TLhs lhs, TRhs rhs);
+
+}

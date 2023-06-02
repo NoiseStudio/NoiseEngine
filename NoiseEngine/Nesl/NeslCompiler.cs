@@ -120,12 +120,15 @@ public static class NeslCompiler {
 
         Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeTypes());
         IEnumerable<Parser> p = parsers.SelectMany(x => x.Types.Append(x));
-        Parallel.ForEach(p, (parser, _) => parser.AnalyzeTypeDependencies());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeFields());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethods());
+        Parallel.ForEach(p, (parser, _) => parser.AnalyzeTypeDependencies());
         Parallel.ForEach(p, (parser, _) => parser.ConstructType());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethodBodies());
         Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeUsings());
+
+        if (parsers.Length > 0)
+            storage.CheckGenericConstraintSatisfying(parsers[0]);
 
         errors = p.Concat(p.SelectMany(x => x.Methods)).SelectMany(x => x.Errors).OrderBy(x => x.Path)
             .ThenBy(x => x.Line).ThenBy(x => x.Column).ToArray();

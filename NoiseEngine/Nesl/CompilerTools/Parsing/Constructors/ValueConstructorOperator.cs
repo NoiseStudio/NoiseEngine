@@ -9,7 +9,12 @@ internal static class ValueConstructorOperator {
 
     private static readonly Dictionary<OperatorType, ValueConstructorOperatorData> data =
         new Dictionary<OperatorType, ValueConstructorOperatorData>() {
-        { OperatorType.Addition, new ValueConstructorOperatorData("IAdd`3", "Add") }
+        { OperatorType.Addition, new ValueConstructorOperatorData("IAdd`3", "Add") },
+        { OperatorType.Subtraction, new ValueConstructorOperatorData("ISubtract`3", "Subtract") },
+        { OperatorType.Multiplication, new ValueConstructorOperatorData("IMultiply`3", "Multiply") },
+        { OperatorType.Division, new ValueConstructorOperatorData("IDivide`3", "Divide") },
+        { OperatorType.Remainder, new ValueConstructorOperatorData("IRemainder`3", "Remainder") },
+        { OperatorType.Exponentation, new ValueConstructorOperatorData("IPower`3", "Power") }
     };
 
     public static ValueData Construct(ValueNode node, Parser parser) {

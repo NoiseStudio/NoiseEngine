@@ -6,6 +6,7 @@ using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Fixtures;
 using System;
 using System.Linq;
+using System.Numerics;
 
 namespace NoiseEngine.Tests.Environments;
 

@@ -3,7 +3,6 @@ using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Vulkan;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -11,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -26,6 +26,8 @@ internal class SpirVCompiler {
         new ConcurrentDictionary<object, Lazy<SpirVId>>();
     private readonly ConcurrentDictionary<uint, Lazy<SpirVDescriptorSet>> descriptorSets =
         new ConcurrentDictionary<uint, Lazy<SpirVDescriptorSet>>();
+    private readonly Dictionary<SpirVExtensions, SpirVId> extInstImportsDictionary =
+        new Dictionary<SpirVExtensions, SpirVId>();
 
     private readonly ConcurrentBag<SpirVVariable> allVariables = new ConcurrentBag<SpirVVariable>();
 
@@ -45,6 +47,8 @@ internal class SpirVCompiler {
     internal SpirVGenerator Annotations { get; }
     internal SpirVGenerator TypesAndVariables { get; }
 
+    private SpirVGenerator ExtInstImports { get; }
+
     private SpirVCompiler(IEnumerable<NeslEntryPoint> entryPoints, ShaderSettings settings) {
         EntryPoints = entryPoints;
         Settings = settings;
@@ -56,6 +60,7 @@ internal class SpirVCompiler {
         EntryPointHelper = new EntryPointHelper(this);
         PushConstantsHelper = new PushConstantsHelper(this);
 
+        ExtInstImports = new SpirVGenerator(this);
         Header = new SpirVGenerator(this);
         Annotations = new SpirVGenerator(this);
         TypesAndVariables = new SpirVGenerator(this);
@@ -65,6 +70,26 @@ internal class SpirVCompiler {
         SpirVCompiler compiler = new SpirVCompiler(entryPoints, settings);
         compiler.CompileWorker();
         return compiler.ResultBuilder.Build();
+    }
+
+    public SpirVId GetOrAddExtension(SpirVExtensions extension) {
+        if (extInstImportsDictionary.TryGetValue(extension, out SpirVId id))
+            return id;
+
+        lock (extInstImportsDictionary) {
+            if (extInstImportsDictionary.TryGetValue(extension, out id))
+                return id;
+
+            id = GetNextId();
+            extInstImportsDictionary.Add(extension, id);
+
+            ExtInstImports.Emit(SpirVOpCode.OpExtInstImport, id, (extension switch {
+                SpirVExtensions.Glsl => "GLSL.std.450",
+                _ => throw new NotImplementedException()
+            }).ToSpirVLiteral());
+        }
+
+        return id;
     }
 
     internal SpirVId GetNextId() {
@@ -171,9 +196,6 @@ internal class SpirVCompiler {
     }
 
     private void CompileWorker() {
-        Header.Emit(SpirVOpCode.OpCapability, (uint)Capability.Shader);
-        Header.Emit(SpirVOpCode.OpMemoryModel, (uint)AddressingModel.Logical, (uint)MemoryModel.Glsl450);
-
         // Generate entry points.
         //Parallel.ForEach(EntryPoints, x => GetSpirVFunction(new SpirVFunctionIdentifier(
         //    x.Method, Array.Empty<SpirVVariable>()
@@ -247,6 +269,10 @@ internal class SpirVCompiler {
         // Construct result.
         SpirVGenerator generator = new SpirVGenerator(this);
         FirstWords(generator);
+
+        generator.Emit(SpirVOpCode.OpCapability, (uint)Capability.Shader);
+        generator.Writer.WriteBytes(ExtInstImports.Writer.AsSpan());
+        generator.Emit(SpirVOpCode.OpMemoryModel, (uint)AddressingModel.Logical, (uint)MemoryModel.Glsl450);
 
         generator.Writer.WriteBytes(Header.Writer.AsSpan());
         generator.Writer.WriteBytes(Annotations.Writer.AsSpan());
