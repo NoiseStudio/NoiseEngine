@@ -1,5 +1,0 @@
-public interface IExponent<TLhs, TRhs, TResult> {
-
-    static TResult Exponent(TLhs lhs, TRhs rhs);
-
-}

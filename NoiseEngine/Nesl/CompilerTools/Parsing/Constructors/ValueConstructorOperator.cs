@@ -14,7 +14,7 @@ internal static class ValueConstructorOperator {
         { OperatorType.Multiplication, new ValueConstructorOperatorData("IMultiply`3", "Multiply") },
         { OperatorType.Division, new ValueConstructorOperatorData("IDivide`3", "Divide") },
         { OperatorType.Remainder, new ValueConstructorOperatorData("IRemainder`3", "Remainder") },
-        { OperatorType.Exponentation, new ValueConstructorOperatorData("IExponent`3", "Exponent") }
+        { OperatorType.Exponentation, new ValueConstructorOperatorData("IPower`3", "Power") }
     };
 
     public static ValueData Construct(ValueNode node, Parser parser) {

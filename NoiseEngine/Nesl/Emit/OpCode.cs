@@ -121,6 +121,19 @@ public enum OpCode : ushort {
     [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
     Remainder = 6,
 
+    /// <summary>
+    /// Exponentiates the second argument by the third argument and loads the result into the first argument.
+    /// </summary>
+    /// <remarks>
+    /// First argument - a valid index of a field/variable.<br />
+    /// Second argument - a valid index of a field/variable.<br />
+    /// Third argument - a valid index of a field/variable.<br />
+    /// <br />
+    /// All arguments must be the same arithmetic operation type.
+    /// </remarks>
+    [OpCodeValidation(typeof(uint), typeof(uint), typeof(uint))]
+    Power = 7,
+
     #endregion
     #region BranchOperations
 

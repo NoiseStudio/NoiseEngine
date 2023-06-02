@@ -110,6 +110,16 @@ public class Operators : NeslExecuteTestEnvironment {
         Invoker(values, "%");
     }
 
+    [Theory]
+    [InlineData(new float[] {
+        2f, 16f, 7.499995f, 4.2f,
+        3f, 0.5f, 4.12f, 2f,
+        8f, 4f, 4029.5f, 17.64f
+    })]
+    public void Power(object values) {
+        Invoker(values, "**");
+    }
+
     private void Invoker(object values, string op) {
         // Use typeof instead of is keyword to avoid implicit conversion.
         Type type = values.GetType();

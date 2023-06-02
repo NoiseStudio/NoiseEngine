@@ -9,7 +9,7 @@ public struct Float32 :
     IDivide<Float32, Float32, Float32>,
     IModulo<Float32, Float32, Float32>,
     IRemainder<Float32, Float32, Float32>,
-    IExponent<Float32, Float32, Float32>
+    IPower<Float32, Float32, Float32>
 {
 
     [CallOpCode(1)]
@@ -30,7 +30,7 @@ public struct Float32 :
     [CallOpCode(6)]
     public static Float32 Remainder(Float32 lhs, Float32 rhs) {}
 
-    [Intrinsic]
-    public static Float32 Exponent(Float32 lhs, Float32 rhs) {}
+    [CallOpCode(7)]
+    public static Float32 Power(Float32 lhs, Float32 rhs) {}
 
 }

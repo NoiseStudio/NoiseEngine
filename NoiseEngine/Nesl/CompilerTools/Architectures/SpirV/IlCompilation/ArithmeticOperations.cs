@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection.Metadata;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.IlCompilation;
 
@@ -46,6 +47,27 @@ internal class ArithmeticOperations : IlCompilerOperation {
 
     public void Remainder(Instruction instruction) {
         TwoOperandHelper(instruction, SpirVOpCode.OpUMod, SpirVOpCode.OpSRem, SpirVOpCode.OpFRem);
+    }
+
+    public void Power(Instruction instruction) {
+        SpirVVariable result = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+        SpirVVariable operand1 = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+        SpirVVariable operand2 = instruction.ReadSpirVVariable(IlCompiler, NeslMethod)!;
+
+        SpirVId resultId = Compiler.GetNextId();
+        Generator.Emit(
+            SpirVOpCode.OpExtInst,
+            Compiler.GetSpirVType(result.NeslType).Id,
+            resultId,
+            Compiler.GetOrAddExtension(SpirVExtensions.Glsl),
+            26u.ToSpirVLiteral(),
+            stackalloc SpirVId[] {
+                IlCompiler.LoadOperations.SpirVLoad(operand1),
+                IlCompiler.LoadOperations.SpirVLoad(operand2)
+            }
+        );
+
+        IlCompiler.LoadOperations.SpirVStore(result, resultId);
     }
 
     private void TwoOperandHelper(

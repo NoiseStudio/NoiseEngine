@@ -8,7 +8,8 @@ public struct Float64 :
     IMultiply<Float64, Float64, Float64>,
     IDivide<Float64, Float64, Float64>,
     IModulo<Float64, Float64, Float64>,
-    IRemainder<Float64, Float64, Float64>
+    IRemainder<Float64, Float64, Float64>,
+    IPower<Float32, Float32, Float32>
 {
 
     [CallOpCode(1)]
@@ -28,5 +29,8 @@ public struct Float64 :
 
     [CallOpCode(6)]
     public static Float64 Remainder(Float64 lhs, Float64 rhs) {}
+
+    [CallOpCode(7)]
+    public static Float32 Power(Float32 lhs, Float32 rhs) {}
 
 }
