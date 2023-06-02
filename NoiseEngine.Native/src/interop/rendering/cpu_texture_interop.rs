@@ -5,9 +5,9 @@ use crate::{
         InteropReadOnlySpan,
         InteropResult,
         ResultError,
-        ResultErrorKind, InteropOption,
+        ResultErrorKind, InteropOption, InteropArray,
     },
-    rendering::{cpu::CpuTextureData, encoding}
+    rendering::{cpu::{CpuTextureData, self}, encoding}
 };
 
 #[no_mangle]
@@ -22,6 +22,28 @@ extern "C" fn rendering_cpu_texture_interop_decode(
     match result {
         Ok(data) => {
             InteropResult::with_ok(data)
+        },
+        Err(error) => {
+            InteropResult::with_err(ResultError::with_kind(
+                &*Box::<dyn std::error::Error>::from(error),
+                ResultErrorKind::Argument,
+            ))
+        },
+    }
+}
+
+#[no_mangle]
+extern "C" fn rendering_cpu_texture_interop_encode(
+    data: &CpuTextureData,
+    file_format: cpu::TextureFileFormat,
+    quality: InteropOption<u8>,
+) -> InteropResult<InteropArray<u8>> {
+    let result =
+        encoding::encode(data, file_format, quality.into());
+
+    match result {
+        Ok(data) => {
+            InteropResult::with_ok(data.into())
         },
         Err(error) => {
             InteropResult::with_err(ResultError::with_kind(

@@ -3,6 +3,46 @@ use ash::vk;
 use crate::interop::prelude::InteropArray;
 
 #[repr(C)]
+pub enum TextureFileFormat {
+    Png,
+    Jpeg,
+    Webp
+}
+
+pub fn vk_format_to_color_type(
+    vk_format: vk::Format,
+) -> Option<image::ColorType> {
+    type F = vk::Format;
+    match vk_format {
+        F::R8_UNORM | F::R8_SNORM | F::R8_USCALED | F::R8_SSCALED | F::R8_UINT | F::R8_SINT | F::R8_SRGB => {
+            Some(image::ColorType::L8)
+        },
+        F::R8G8_UNORM | F::R8G8_SNORM | F::R8G8_USCALED | F::R8G8_SSCALED | F::R8G8_UINT | F::R8G8_SINT | F::R8G8_SRGB => {
+            Some(image::ColorType::La8)
+        },
+        F::R8G8B8_UNORM | F::R8G8B8_SNORM | F::R8G8B8_USCALED | F::R8G8B8_SSCALED | F::R8G8B8_UINT | F::R8G8B8_SINT | F::R8G8B8_SRGB => {
+            Some(image::ColorType::Rgb8)
+        },
+        F::R8G8B8A8_UNORM | F::R8G8B8A8_SNORM | F::R8G8B8A8_USCALED | F::R8G8B8A8_SSCALED | F::R8G8B8A8_UINT | F::R8G8B8A8_SINT | F::R8G8B8A8_SRGB => {
+            Some(image::ColorType::Rgba8)
+        },
+        F::R16_UNORM | F::R16_SNORM | F::R16_USCALED | F::R16_SSCALED | F::R16_UINT | F::R16_SINT | F::R16_SFLOAT => {
+            Some(image::ColorType::L16)
+        },
+        F::R16G16_UNORM | F::R16G16_SNORM | F::R16G16_USCALED | F::R16G16_SSCALED | F::R16G16_UINT | F::R16G16_SINT | F::R16G16_SFLOAT => {
+            Some(image::ColorType::La16)
+        },
+        F::R16G16B16_UNORM | F::R16G16B16_SNORM | F::R16G16B16_USCALED | F::R16G16B16_SSCALED | F::R16G16B16_UINT | F::R16G16B16_SINT | F::R16G16B16_SFLOAT => {
+            Some(image::ColorType::Rgb16)
+        },
+        F::R16G16B16A16_UNORM | F::R16G16B16A16_SNORM | F::R16G16B16A16_USCALED | F::R16G16B16A16_SSCALED | F::R16G16B16A16_UINT | F::R16G16B16A16_SINT | F::R16G16B16A16_SFLOAT => {
+            Some(image::ColorType::Rgba16)
+        },
+        _ => None,
+    }
+}
+
+#[repr(C)]
 pub struct CpuTextureData {
     extent_x: u32,
     extent_y: u32,

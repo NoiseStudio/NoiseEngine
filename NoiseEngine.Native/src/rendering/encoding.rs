@@ -1,7 +1,11 @@
+use std::io::Cursor;
+
 use crate::rendering::cpu::CpuTextureData;
 
-use anyhow::Result;
+use anyhow::{Result, Context};
 use ash::vk;
+
+use super::cpu::{self, TextureFileFormat};
 
 pub fn decode(
     file_data: &[u8],
@@ -10,53 +14,88 @@ pub fn decode(
     let img =
         image::load_from_memory(file_data)?;
 
+    let mut img_color = img.color();
+
     if let Some(format) = format {
-        return decode_with_format(img, format);
+        img_color = match cpu::vk_format_to_color_type(format) {
+            Some(color_type) => color_type,
+            None => anyhow::bail!("Unsupported format: {:?}", format),
+        };
     }
 
     let width = img.width();
     let height = img.height();
 
-    let (data, format) = match img.color() {
+    let (data, format) = match img_color {
         image::ColorType::L8 => {
-            (img.into_luma8().into_raw(), vk::Format::R8_SRGB)
+            (
+                img.into_luma8().into_raw(),
+                format.unwrap_or(vk::Format::R8_SRGB),
+            )
         },
         image::ColorType::La8 => {
-            (img.into_luma_alpha8().into_raw(), vk::Format::R8G8_SRGB)
+            (
+                img.into_luma_alpha8().into_raw(),
+                format.unwrap_or(vk::Format::R8G8_SRGB),
+            )
         },
         image::ColorType::Rgb8 => {
-            (img.into_rgb8().into_raw(), vk::Format::R8G8B8_SRGB)
+            (
+                img.into_rgb8().into_raw(),
+                format.unwrap_or(vk::Format::R8G8B8_SRGB),
+            )
         },
         image::ColorType::Rgba8 => {
-            (img.into_rgba8().into_raw(), vk::Format::R8G8B8A8_SRGB)
+            (
+                img.into_rgba8().into_raw(),
+                format.unwrap_or(vk::Format::R8G8B8A8_SRGB),
+            )
         },
         image::ColorType::L16 => {
             let raw = img.into_luma16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16_UNORM)
+            (
+                reinterpret_vec(raw),
+                format.unwrap_or(vk::Format::R16_UNORM),
+            )
         },
         image::ColorType::La16 => {
             let raw = img.into_luma_alpha16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16G16_UNORM)
+            (
+                reinterpret_vec(raw),
+                format.unwrap_or(vk::Format::R16G16_UNORM),
+            )
         },
         image::ColorType::Rgb16 => {
             let raw = img.into_rgb16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16G16B16_UNORM)
+            (
+                reinterpret_vec(raw),
+                format.unwrap_or(vk::Format::R16G16B16_UNORM),
+            )
         },
         image::ColorType::Rgba16 => {
             let raw = img.into_rgba16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16G16B16A16_UNORM)
+            (
+                reinterpret_vec(raw),
+                format.unwrap_or(vk::Format::R16G16B16A16_UNORM),
+            )
         },
         // Note that the following formats are not supported by Vulkan
         // so we downgrade them to the closest supported format
         image::ColorType::Rgb32F => {
             let raw = img.into_rgb16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16G16B16_UNORM)
+            (
+                reinterpret_vec(raw),
+                format.unwrap_or(vk::Format::R16G16B16_UNORM),
+            )
         },
         image::ColorType::Rgba32F => {
             let raw = img.into_rgba16().into_raw();
-            (reinterpret_vec(raw), vk::Format::R16G16B16A16_UNORM)
+            (
+                reinterpret_vec(raw),
+                format.unwrap_or(vk::Format::R16G16B16A16_UNORM),
+            )
         },
-        _ => anyhow::bail!("Unknown color type: {:?}", img.color()),
+        _ => anyhow::bail!("Unknown color type: {:?}", img_color),
     };
 
     Ok(CpuTextureData::new(
@@ -68,61 +107,44 @@ pub fn decode(
     ))
 }
 
-fn decode_with_format(
-    img: image::DynamicImage,
-    format: vk::Format,
-) -> Result<CpuTextureData> {
-    type F = vk::Format;
+pub fn encode(
+    texture: &CpuTextureData,
+    file_format: TextureFileFormat,
+    quality: Option<u8>,
+) -> Result<Vec<u8>> {
+    anyhow::ensure!(
+        texture.extent_z() == 1,
+        "3D textures are not supported"
+    );
 
-    let width = img.width();
-    let height = img.height();
+    let color_type = cpu::vk_format_to_color_type(*texture.format())
+        .context("Invalid format")?;
 
-    #[rustfmt::skip]
-    let data = match format {
-        F::R8_UNORM | F::R8_SNORM | F::R8_USCALED | F::R8_SSCALED | F::R8_UINT | F::R8_SINT | F::R8_SRGB => {
-            img.into_luma8().into_raw()
-        },
-        F::R8G8_UNORM | F::R8G8_SNORM | F::R8G8_USCALED | F::R8G8_SSCALED | F::R8G8_UINT | F::R8G8_SINT | F::R8G8_SRGB => {
-            img.into_luma_alpha8().into_raw()
-        },
-        F::R8G8B8_UNORM | F::R8G8B8_SNORM | F::R8G8B8_USCALED | F::R8G8B8_SSCALED | F::R8G8B8_UINT | F::R8G8B8_SINT | F::R8G8B8_SRGB => {
-            img.into_rgb8().into_raw()
-        },
-        F::R8G8B8A8_UNORM | F::R8G8B8A8_SNORM | F::R8G8B8A8_USCALED | F::R8G8B8A8_SSCALED | F::R8G8B8A8_UINT | F::R8G8B8A8_SINT | F::R8G8B8A8_SRGB => {
-            img.into_rgba8().into_raw()
-        },
-        F::R16_UNORM | F::R16_SNORM | F::R16_USCALED | F::R16_SSCALED | F::R16_UINT | F::R16_SINT | F::R16_SFLOAT => {
-            let raw = img.into_luma16().into_raw();
-            reinterpret_vec(raw)
-        },
-        F::R16G16_UNORM | F::R16G16_SNORM | F::R16G16_USCALED | F::R16G16_SSCALED | F::R16G16_UINT | F::R16G16_SINT | F::R16G16_SFLOAT => {
-            let raw = img.into_luma_alpha16().into_raw();
-            reinterpret_vec(raw)
-        },
-        F::R16G16B16_UNORM | F::R16G16B16_SNORM | F::R16G16B16_USCALED | F::R16G16B16_SSCALED | F::R16G16B16_UINT | F::R16G16B16_SINT | F::R16G16B16_SFLOAT => {
-            let raw = img.into_rgb16().into_raw();
-            reinterpret_vec(raw)
-        },
-        F::R16G16B16A16_UNORM | F::R16G16B16A16_SNORM | F::R16G16B16A16_USCALED | F::R16G16B16A16_SSCALED | F::R16G16B16A16_UINT | F::R16G16B16A16_SINT | F::R16G16B16A16_SFLOAT => {
-            let raw = img.into_rgba16().into_raw();
-            reinterpret_vec(raw)
-        },
-        _ => anyhow::bail!("Unsupported format: {:?}", format)
-    };
+    let data = texture.data().into();
+    let mut result = Cursor::new(Vec::new());
 
-    Ok(CpuTextureData::new(
-        width,
-        height,
-        1,
-        format,
-        data.into()
-    ))
+    image::write_buffer_with_format(
+        &mut result,
+        data,
+        texture.extent_x(),
+        texture.extent_y(),
+        color_type,
+        match file_format {
+            TextureFileFormat::Png => image::ImageOutputFormat::Png,
+            TextureFileFormat::Jpeg => image::ImageOutputFormat::Jpeg(
+                quality.unwrap_or(75),
+            ),
+            TextureFileFormat::Webp => todo!(),
+        },
+    )?;
+
+    Ok(result.into_inner())
 }
 
 fn reinterpret_vec<T>(vec: Vec<T>) -> Vec<u8> {
     let len = vec.len() * std::mem::size_of::<T>();
     let cap = vec.capacity() * std::mem::size_of::<T>();
-    let ptr = vec.as_ptr() as *const u8;
+    let ptr = vec.as_ptr() as *mut u8;
     std::mem::forget(vec);
-    unsafe { Vec::from_raw_parts(ptr as *mut u8, len, cap) }
+    unsafe { Vec::from_raw_parts(ptr, len, cap) }
 }

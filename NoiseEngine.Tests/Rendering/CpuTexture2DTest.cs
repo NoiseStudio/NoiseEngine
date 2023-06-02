@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using NoiseEngine.Interop;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.Cpu;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 
@@ -89,6 +92,32 @@ public class CpuTexture2DTest : GraphicsTestEnvironment {
             } else {
                 Assert.Equal(expected, actual);
             }
+        }
+    }
+
+    [Theory]
+    [InlineData("colors.png", TextureFileFormat.Png, null)]
+    [InlineData("colors.jpeg", TextureFileFormat.Jpeg, (byte)100)]
+    [InlineData("colors.webp", TextureFileFormat.Webp, null)]
+    public void ToFile(string path, TextureFileFormat fileFormat, byte? quality) {
+        byte[] fileData = File.ReadAllBytes($"./Resources/Textures/{path}");
+        CpuTexture2D expected = CpuTexture2D.FromFile(fileData, TextureFormat.R8G8B8A8_SRGB);
+        CpuTexture2D actual = CpuTexture2D.FromFile(expected.ToFile(fileFormat, quality), TextureFormat.R8G8B8A8_SRGB);
+        
+        Assert.Equal(expected.Width, actual.Width);
+        Assert.Equal(expected.Height, actual.Height);
+        
+        if (path.EndsWith(".jpg") || path.EndsWith(".jpeg")) {
+            Assert.True(
+                TextureTestUtils.CompareLossy(
+                    actual.Data.ToArray(),
+                    new Vector2<uint>(actual.Width, actual.Height),
+                    textureColors,
+                    TextureFormat.R8G8B8A8_SRGB
+                )
+            );
+        } else {
+            Assert.Equal(expected.Data.ToArray(), actual.Data.ToArray());
         }
     }
 

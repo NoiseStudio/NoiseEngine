@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering;
 using NoiseEngine.Mathematics;
@@ -98,6 +99,46 @@ public class CpuTexture2D : CpuTexture {
         Texture2D texture = new Texture2D(device, usage, Extent.X, Extent.Y, Format, mipLevels, linear, sampleCount);
         texture.SetPixels<byte>(Data);
         return texture;
+    }
+    /// <summary>
+    /// Converts this <see cref="CpuTexture2D"/> to a file format.
+    /// </summary>
+    /// <param name="format">Format of the file.</param>
+    /// <param name="quality">
+    /// Quality of the encoding, if lossy format is chosen.
+    /// Null uses default quality for the format.
+    /// Values higher than 100 are clamped to 100.
+    /// </param>
+    /// <returns>
+    /// File data.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Conversion was not possible with the given arguments.
+    /// </exception>
+    public byte[] ToFile(TextureFileFormat format, byte? quality = null) {
+        if (format == TextureFileFormat.Png && quality != null) {
+            throw new ArgumentException("PNG does not support quality settings.", nameof(quality));
+        }
+        
+        if (quality is > 100) {
+            quality = 100;
+        }
+        
+        CpuTextureData data = new CpuTextureData {
+            Data = this.data,
+            Format = Format,
+            ExtentX = Extent.X,
+            ExtentY = Extent.Y,
+            ExtentZ = 1
+        };
+        
+        InteropResult<InteropArray<byte>> result = CpuTextureInterop.Encode(in data, format, quality);
+
+        if (result.TryGetValue(out InteropArray<byte> encoded, out ResultError error)) {
+            return encoded.AsSpan().ToArray();
+        }
+
+        throw error.ToException();
     }
 
 }
