@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering;
 using NoiseEngine.Mathematics;
@@ -100,30 +99,45 @@ public class CpuTexture2D : CpuTexture {
         texture.SetPixels<byte>(Data);
         return texture;
     }
+
     /// <summary>
-    /// Converts this <see cref="CpuTexture2D"/> to a file format.
+    /// Creates a PNG file from this <see cref="CpuTexture2D"/>.
     /// </summary>
-    /// <param name="format">Format of the file.</param>
+    /// <returns>File data.</returns>
+    public byte[] ToPng() {
+        return ToFile(TextureFileFormat.Png);
+    }
+
+    /// <summary>
+    /// Creates a JPEG file from this <see cref="CpuTexture2D"/>.
+    /// </summary>
+    /// <param name="quality">Quality of the compression between 0 and 100.</param>
+    /// <returns>File data.</returns>
+    public byte[] ToJpeg(byte quality = 75) {
+        return ToFile(TextureFileFormat.Jpeg, quality);
+    }
+
+    /// <summary>
+    /// Creates a WebP file from this <see cref="CpuTexture2D"/>.
+    /// </summary>
     /// <param name="quality">
-    /// Quality of the encoding, if lossy format is chosen.
-    /// Null uses default quality for the format.
-    /// Values higher than 100 are clamped to 100.
+    /// Quality of the compression between 0 and 100.
+    /// Value of 100 is lossless compression.
     /// </param>
-    /// <returns>
-    /// File data.
-    /// </returns>
-    /// <exception cref="ArgumentException">
-    /// Conversion was not possible with the given arguments.
-    /// </exception>
-    public byte[] ToFile(TextureFileFormat format, byte? quality = null) {
+    /// <returns>File data.</returns>
+    public byte[] ToWebp(byte quality = 100) {
+        return ToFile(TextureFileFormat.Webp, quality);
+    }
+
+    private byte[] ToFile(TextureFileFormat format, byte? quality = null) {
         if (format == TextureFileFormat.Png && quality != null) {
             throw new ArgumentException("PNG does not support quality settings.", nameof(quality));
         }
-        
+
         if (quality is > 100) {
             quality = 100;
         }
-        
+
         CpuTextureData data = new CpuTextureData {
             Data = this.data,
             Format = Format,
@@ -131,7 +145,7 @@ public class CpuTexture2D : CpuTexture {
             ExtentY = Extent.Y,
             ExtentZ = 1
         };
-        
+
         InteropResult<InteropArray<byte>> result = CpuTextureInterop.Encode(in data, format, quality);
 
         if (result.TryGetValue(out InteropArray<byte> encoded, out ResultError error)) {

@@ -5,7 +5,6 @@ using System.Linq;
 using NoiseEngine.Interop;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering;
-using NoiseEngine.Rendering.Cpu;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 
@@ -95,30 +94,41 @@ public class CpuTexture2DTest : GraphicsTestEnvironment {
         }
     }
 
-    [Theory]
-    [InlineData("colors.png", TextureFileFormat.Png, null)]
-    [InlineData("colors.jpeg", TextureFileFormat.Jpeg, (byte)100)]
-    [InlineData("colors.webp", TextureFileFormat.Webp, null)]
-    public void ToFile(string path, TextureFileFormat fileFormat, byte? quality) {
-        byte[] fileData = File.ReadAllBytes($"./Resources/Textures/{path}");
-        CpuTexture2D expected = CpuTexture2D.FromFile(fileData, TextureFormat.R8G8B8A8_SRGB);
-        CpuTexture2D actual = CpuTexture2D.FromFile(expected.ToFile(fileFormat, quality), TextureFormat.R8G8B8A8_SRGB);
-        
-        Assert.Equal(expected.Width, actual.Width);
-        Assert.Equal(expected.Height, actual.Height);
-        
-        if (path.EndsWith(".jpg") || path.EndsWith(".jpeg")) {
-            Assert.True(
-                TextureTestUtils.CompareLossy(
-                    actual.Data.ToArray(),
-                    new Vector2<uint>(actual.Width, actual.Height),
-                    textureColors,
-                    TextureFormat.R8G8B8A8_SRGB
-                )
-            );
-        } else {
-            Assert.Equal(expected.Data.ToArray(), actual.Data.ToArray());
-        }
+    [Fact]
+    public void ToPng() {
+        byte[] fileData = File.ReadAllBytes("./Resources/Textures/colors.png");
+        CpuTexture2D texture = CpuTexture2D.FromFile(fileData, TextureFormat.R8G8B8A8_SRGB);
+
+        byte[] expected = texture.Data.ToArray();
+        byte[] actual = CpuTexture2D.FromFile(texture.ToPng()).Data.ToArray();
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void ToJpeg() {
+        byte[] fileData = File.ReadAllBytes("./Resources/Textures/colors.jpeg");
+        CpuTexture2D texture = CpuTexture2D.FromFile(fileData, TextureFormat.R8G8B8A8_SRGB);
+
+        Span<byte> actual = CpuTexture2D.FromFile(texture.ToJpeg()).Data;
+
+        TextureTestUtils.CompareLossy(
+            actual,
+            new Vector2<uint>(texture.Width, texture.Height),
+            textureColors,
+            texture.Format
+        );
+    }
+
+    [Fact]
+    public void ToWebp() {
+        byte[] fileData = File.ReadAllBytes("./Resources/Textures/colors.webp");
+        CpuTexture2D texture = CpuTexture2D.FromFile(fileData, TextureFormat.R8G8B8A8_SRGB);
+
+        byte[] expected = texture.Data.ToArray();
+        byte[] actual = CpuTexture2D.FromFile(texture.ToWebp()).Data.ToArray();
+
+        Assert.Equal(expected, actual);
     }
 
 }
