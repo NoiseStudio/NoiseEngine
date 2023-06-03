@@ -1,7 +1,6 @@
 ﻿namespace NoiseEngine.Rendering;
 
 public enum TextureFormat : uint {
-
     R8_UNORM = 9,
     R8_SRGB = 15,
     R8G8_UNORM = 16,
@@ -14,6 +13,7 @@ public enum TextureFormat : uint {
     R16G16_UNORM = 77,
     R16G16B16_UNORM = 84,
     R16G16B16A16_UNORM = 91,
-
+    R32G32B32_SFLOAT = 106,
+    R32G32B32A32_SFLOAT = 109,
     D32_SFloat = 126
 }

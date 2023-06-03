@@ -137,7 +137,7 @@ public class CpuTexture2DTest : GraphicsTestEnvironment {
         CpuTexture2D texture = CpuTexture2D.FromFile(fileData, TextureFormat.R8G8B8A8_SRGB);
 
         byte[] expected = texture.Data.ToArray();
-        byte[] actual = CpuTexture2D.FromFile(texture.ToWebp(), TextureFormat.R8G8B8A8_SRGB).Data.ToArray();
+        byte[] actual = CpuTexture2D.FromFile(texture.ToWebP(), TextureFormat.R8G8B8A8_SRGB).Data.ToArray();
 
         Assert.Equal(expected, actual);
     }

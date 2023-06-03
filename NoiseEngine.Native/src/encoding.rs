@@ -1,12 +1,12 @@
 use std::io::Cursor;
 
-use crate::rendering::cpu::CpuTextureData;
+use crate::rendering::cpu_texture_2d::CpuTextureData;
 
 use anyhow::{Result, Context};
 use ash::vk;
 use image::{ImageBuffer, ColorType, DynamicImage};
 
-use super::cpu::{self, TextureFileFormat};
+use super::cpu_texture_2d::{self, TextureFileFormat};
 
 pub fn decode(
     file_data: &[u8],
@@ -18,7 +18,7 @@ pub fn decode(
     let mut img_color = img.color();
 
     if let Some(format) = format {
-        img_color = match cpu::vk_format_to_color_type(format) {
+        img_color = match cpu_texture_2d::vk_format_to_color_type(format) {
             Some(color_type) => color_type,
             None => anyhow::bail!("Unsupported format: {:?}", format),
         };
@@ -116,7 +116,7 @@ pub fn encode(
         "3D textures are not supported"
     );
 
-    let color_type = cpu::vk_format_to_color_type(*texture.format())
+    let color_type = cpu_texture_2d::vk_format_to_color_type(*texture.format())
         .context("Invalid format")?;
 
     let data = texture.data().into();

@@ -30,8 +30,11 @@ public class CpuTextureInteropTest {
         byte[] fileData = File.ReadAllBytes($"./Resources/Textures/{path}");
         InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format);
 
-        Assert.True(result.IsOk);
-        CpuTextureData data = result.Value;
+        if (!result.IsOk) {
+            result.Error.ThrowAndDispose();
+        }
+
+        using CpuTextureData data = result.Value;
 
         Assert.Equal<uint>(3, data.ExtentX);
         Assert.Equal<uint>(2, data.ExtentY);
@@ -74,6 +77,13 @@ public class CpuTextureInteropTest {
         byte[] fileData = new byte[256];
         Random.Shared.NextBytes(fileData);
         InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, TextureFormat.R8G8B8A8_SRGB);
+
+        if (result.IsOk) {
+            result.Value.Dispose();
+        } else {
+            result.Error.Dispose();
+        }
+
         Assert.False(result.IsOk);
     }
 

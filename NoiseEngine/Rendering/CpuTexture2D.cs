@@ -11,7 +11,7 @@ namespace NoiseEngine.Rendering;
 
 public class CpuTexture2D : CpuTexture {
 
-    private readonly InteropArray<byte> data;
+    private readonly byte[] data;
 
     public uint Width => Extent.X;
     public uint Height => Extent.Y;
@@ -19,11 +19,11 @@ public class CpuTexture2D : CpuTexture {
     /// <summary>
     /// Data of the image in row-major order (index = x + Size.X * y).
     /// </summary>
-    public override Span<byte> Data => data.AsSpan();
+    public override Span<byte> Data => data;
 
     internal override Vector3<uint> Extent { get; }
 
-    private CpuTexture2D(InteropArray<byte> data, TextureFormat format, Vector2<uint> size) : base(format) {
+    private CpuTexture2D(byte[] data, TextureFormat format, Vector2<uint> size) : base(format) {
         this.data = data;
         Extent = new Vector3<uint>(size.X, size.Y, 1);
     }
@@ -43,13 +43,18 @@ public class CpuTexture2D : CpuTexture {
     ) {
         InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format);
 
-        if (!result.TryGetValue(out CpuTextureData data, out _)) {
+        if (!result.TryGetValue(out CpuTextureData data, out ResultError error)) {
+            error.Dispose();
             texture = null;
             return false;
         }
 
         Debug.Assert(data.ExtentZ == 1);
-        texture = new CpuTexture2D(data.Data, data.Format, new Vector2<uint>(data.ExtentX, data.ExtentY));
+        texture = new CpuTexture2D(
+            data.Data.AsSpan().ToArray(),
+            data.Format,
+            new Vector2<uint>(data.ExtentX, data.ExtentY));
+        data.Dispose();
         return true;
     }
 
@@ -65,9 +70,18 @@ public class CpuTexture2D : CpuTexture {
         ReadOnlySpan<byte> fileData,
         TextureFormat? format = null
     ) {
-        if (!TryFromFile(fileData, out CpuTexture2D? texture, format))
-            throw new ArgumentException("Cannot decode texture from given file data.", nameof(fileData));
+        InteropResult<CpuTextureData> result = CpuTextureInterop.Decode(fileData, format);
 
+        if (!result.TryGetValue(out CpuTextureData data, out ResultError error)) {
+            error.ThrowAndDispose();
+        }
+
+        Debug.Assert(data.ExtentZ == 1);
+        CpuTexture2D texture = new CpuTexture2D(
+            data.Data.AsSpan().ToArray(),
+            data.Format,
+            new Vector2<uint>(data.ExtentX, data.ExtentY));
+        data.Dispose();
         return texture;
     }
 
@@ -77,8 +91,8 @@ public class CpuTexture2D : CpuTexture {
     /// <param name="texture">Texture to use data from.</param>
     /// <returns>New <see cref="CpuTexture2D"/>.</returns>
     public static CpuTexture2D FromTexture2D(Texture2D texture) {
-        InteropArray<byte> buffer = new InteropArray<byte>(
-            (int)texture.Width * (int)texture.Height * TextureFormatUtils.TexelSize(texture.Format));
+        byte[] buffer =
+            new byte[(int)texture.Width * (int)texture.Height * TextureFormatUtils.TexelSize(texture.Format)];
 
         texture.GetPixels(buffer.AsSpan());
         return new CpuTexture2D(buffer, texture.Format, new Vector2<uint>(texture.Width, texture.Height));
@@ -115,35 +129,35 @@ public class CpuTexture2D : CpuTexture {
     }
 
     /// <summary>
-    /// Creates a PNG file from this <see cref="CpuTexture2D"/>.
+    /// Creates a PNG file data from this <see cref="CpuTexture2D"/>.
     /// </summary>
     /// <returns>File data.</returns>
     public byte[] ToPng() {
-        return ToFile(TextureFileFormat.Png);
+        return ToFileData(TextureFileFormat.Png);
     }
 
     /// <summary>
-    /// Creates a JPEG file from this <see cref="CpuTexture2D"/>.
+    /// Creates a JPEG file data from this <see cref="CpuTexture2D"/>.
     /// </summary>
     /// <param name="quality">Quality of the compression between 0 and 100.</param>
     /// <returns>File data.</returns>
     public byte[] ToJpeg(byte quality = 75) {
-        return ToFile(TextureFileFormat.Jpeg, quality);
+        return ToFileData(TextureFileFormat.Jpeg, quality);
     }
 
     /// <summary>
-    /// Creates a WebP file from this <see cref="CpuTexture2D"/>.
+    /// Creates a WebP file data from this <see cref="CpuTexture2D"/>.
     /// </summary>
     /// <param name="quality">
     /// Quality of the compression between 0 and 100.
     /// Value of null is lossless compression.
     /// </param>
     /// <returns>File data.</returns>
-    public byte[] ToWebp(byte? quality = null) {
-        return ToFile(TextureFileFormat.Webp, quality);
+    public byte[] ToWebP(byte? quality = null) {
+        return ToFileData(TextureFileFormat.WebP, quality);
     }
 
-    private byte[] ToFile(TextureFileFormat format, byte? quality = null) {
+    private byte[] ToFileData(TextureFileFormat format, byte? quality = null) {
         if (format == TextureFileFormat.Png && quality != null) {
             throw new ArgumentException("PNG does not support quality settings.", nameof(quality));
         }
@@ -153,7 +167,7 @@ public class CpuTexture2D : CpuTexture {
         }
 
         CpuTextureData data = new CpuTextureData {
-            Data = this.data,
+            Data = new InteropArray<byte>(this.data),
             Format = Format,
             ExtentX = Extent.X,
             ExtentY = Extent.Y,
@@ -162,11 +176,13 @@ public class CpuTexture2D : CpuTexture {
 
         InteropResult<InteropArray<byte>> result = CpuTextureInterop.Encode(in data, format, quality);
 
-        if (result.TryGetValue(out InteropArray<byte> encoded, out ResultError error)) {
-            return encoded.AsSpan().ToArray();
+        if (!result.TryGetValue(out InteropArray<byte> encoded, out ResultError error)) {
+            error.ThrowAndDispose();
         }
 
-        throw error.ToException();
+        byte[] resultArray = encoded.AsSpan().ToArray();
+        encoded.Dispose();
+        return resultArray;
     }
 
 }

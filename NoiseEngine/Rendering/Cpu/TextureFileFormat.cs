@@ -1,7 +1,7 @@
-namespace NoiseEngine.Rendering.Cpu; 
+namespace NoiseEngine.Rendering.Cpu;
 
 public enum TextureFileFormat {
     Png,
     Jpeg,
-    Webp
+    WebP
 }

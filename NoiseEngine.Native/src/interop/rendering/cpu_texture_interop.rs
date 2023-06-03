@@ -7,17 +7,16 @@ use crate::{
         ResultError,
         ResultErrorKind, InteropOption, InteropArray,
     },
-    rendering::{cpu::{CpuTextureData, self}, encoding}
+    rendering::{cpu_texture_2d::{CpuTextureData, self}, cpu_texture_2d_encoding}
 };
 
 #[no_mangle]
 extern "C" fn rendering_cpu_texture_interop_decode(
     file_data: InteropReadOnlySpan<u8>,
     format: InteropOption<vk::Format>,
-
 ) -> InteropResult<CpuTextureData> {
     let result =
-        encoding::decode(file_data.into(), format.into());
+        cpu_texture_2d_encoding::decode(file_data.into(), format.into());
 
     match result {
         Ok(data) => {
@@ -35,11 +34,11 @@ extern "C" fn rendering_cpu_texture_interop_decode(
 #[no_mangle]
 extern "C" fn rendering_cpu_texture_interop_encode(
     data: &CpuTextureData,
-    file_format: cpu::TextureFileFormat,
+    file_format: cpu_texture_2d::TextureFileFormat,
     quality: InteropOption<u8>,
 ) -> InteropResult<InteropArray<u8>> {
     let result =
-        encoding::encode(data, file_format, quality.into());
+        cpu_texture_2d_encoding::encode(data, file_format, quality.into());
 
     match result {
         Ok(data) => {
