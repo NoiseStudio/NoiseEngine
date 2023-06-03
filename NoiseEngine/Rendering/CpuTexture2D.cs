@@ -5,6 +5,7 @@ using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Cpu;
+using NoiseEngine.Rendering.Utils;
 
 namespace NoiseEngine.Rendering;
 
@@ -68,6 +69,19 @@ public class CpuTexture2D : CpuTexture {
             throw new ArgumentException("Cannot decode texture from given file data.", nameof(fileData));
 
         return texture;
+    }
+
+    /// <summary>
+    /// Creates a <see cref="CpuTexture2D"/> from given <paramref name="texture"/>.
+    /// </summary>
+    /// <param name="texture">Texture to use data from.</param>
+    /// <returns>New <see cref="CpuTexture2D"/>.</returns>
+    public static CpuTexture2D FromTexture2D(Texture2D texture) {
+        InteropArray<byte> buffer = new InteropArray<byte>(
+            (int)texture.Width * (int)texture.Height * TextureFormatUtils.TexelSize(texture.Format));
+
+        texture.GetPixels(buffer.AsSpan());
+        return new CpuTexture2D(buffer, texture.Format, new Vector2<uint>(texture.Width, texture.Height));
     }
 
     /// <summary>

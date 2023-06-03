@@ -51,8 +51,22 @@ public class CpuTexture2DTest : GraphicsTestEnvironment {
         } else {
             Assert.Equal(expected, texture.Data.ToArray());
         }
+    }
 
+    [Fact]
+    public void FromTexture2D() {
+        byte[] fileData = File.ReadAllBytes("./Resources/Textures/colors.png");
+        CpuTexture2D expected = CpuTexture2D.FromFile(fileData, TextureFormat.R8G8B8A8_SRGB);
 
+        foreach (GraphicsDevice device in GraphicsDevices) {
+            Texture2D texture2D = expected.ToTexture2D(device, TextureUsage.TransferAll);
+            CpuTexture2D actual = CpuTexture2D.FromTexture2D(texture2D);
+
+            Assert.Equal(expected.Width, actual.Width);
+            Assert.Equal(expected.Height, actual.Height);
+            Assert.Equal(expected.Format, actual.Format);
+            Assert.Equal(expected.Data.ToArray(), actual.Data.ToArray());
+        }
     }
 
     [Theory]
