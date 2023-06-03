@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Nesl.Serialization;
 using NoiseEngine.Serialization;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -10,8 +9,6 @@ namespace NoiseEngine.Nesl.CompilerTools.Generics;
 
 internal sealed class NotFullyConstructedGenericNeslType : NeslType {
 
-    public ImmutableArray<NeslType> TypeArguments { get; }
-
     public override IEnumerable<NeslAttribute> Attributes => GenericMakedFrom!.Attributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters =>
         GenericMakedFrom!.GenericTypeParameters;
@@ -20,15 +17,16 @@ internal sealed class NotFullyConstructedGenericNeslType : NeslType {
     public override NeslType? GenericMakedFrom { get; }
     public override NeslTypeKind Kind => GenericMakedFrom!.Kind;
     public override IEnumerable<NeslType> Interfaces => GenericMakedFrom!.Interfaces;
+    public override IEnumerable<NeslType> GenericMakedTypeParameters { get; }
 
     public NotFullyConstructedGenericNeslType(
         NeslType parentType, Dictionary<NeslGenericTypeParameter, NeslType> targetTypes,
-        ImmutableArray<NeslType> typeArguments
+        ImmutableArray<NeslType> genericMakedTypeParameters
     ) : base(
         parentType.Assembly, parentType.FullName
     ) {
         GenericMakedFrom = parentType;
-        TypeArguments = typeArguments;
+        GenericMakedTypeParameters = genericMakedTypeParameters;
 
         Fields = GenericMakedFrom.Fields.Select(field => new NotFullyConstructedGenericNeslField(
             this, field, GenericHelper.GetFinalType(GenericMakedFrom, this, field.FieldType, targetTypes)
@@ -51,7 +49,7 @@ internal sealed class NotFullyConstructedGenericNeslType : NeslType {
 
     internal override void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {
         used.Add(this, GenericMakedFrom!);
-        used.Add(this, TypeArguments);
+        used.Add(this, GenericMakedTypeParameters);
     }
 
     internal override bool SerializeHeader(NeslAssembly serializedAssembly, SerializationWriter writer) {
@@ -60,7 +58,7 @@ internal sealed class NotFullyConstructedGenericNeslType : NeslType {
         writer.WriteBool(true);
         writer.WriteUInt8((byte)NeslTypeUsageKind.GenericNotFullyConstructed);
         writer.WriteUInt64(Assembly.GetLocalTypeId(GenericMakedFrom!));
-        writer.WriteEnumerable(TypeArguments.Select(Assembly.GetLocalTypeId));
+        writer.WriteEnumerable(GenericMakedTypeParameters.Select(Assembly.GetLocalTypeId));
         return false;
     }
 

@@ -1,5 +1,4 @@
 ﻿using NoiseEngine.Collections;
-using NoiseEngine.Inputs;
 using NoiseEngine.Nesl.CompilerTools;
 using NoiseEngine.Nesl.CompilerTools.Generics;
 using NoiseEngine.Nesl.Serialization;

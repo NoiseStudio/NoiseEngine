@@ -1,7 +1,16 @@
+using System.Operators;
+
 [PlatformDependentTypeRepresentation("OpTypeVector`{&T}`2")]
 public struct Vector2<T> {
 
     public T X;
     public T Y;
+
+    //public static Vector2<T> Add(Vector2<T> lhs, Vector2<T> rhs) where T : IAdd<T, T, T> {
+	//	return new Vector2<T>();// {
+			//X = lhs.X + rhs.X,
+			//Y = lhs.Y + rhs.Y
+		//};
+	//}
 
 }

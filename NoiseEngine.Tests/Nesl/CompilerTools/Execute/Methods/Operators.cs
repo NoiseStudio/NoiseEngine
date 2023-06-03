@@ -1,6 +1,8 @@
-﻿using NoiseEngine.Tests.Environments;
+﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System;
+using System.Numerics;
 
 namespace NoiseEngine.Tests.Nesl.CompilerTools.Execute.Methods;
 
@@ -139,25 +141,65 @@ public class Operators : NeslExecuteTestEnvironment {
             throw new ArgumentException("Invalid type", nameof(values));
     }
 
-    private void InvokerImpl<T>(T[] values, string type, string op) where T : unmanaged {
-        for (int i = 1; i <= 1; i++) {
-            int block = values.Length / 3;
-            int initialLength = block * 2;
-            T[] initialValues = values.AsSpan(0, initialLength).ToArray();
-            T[] expectedValues = values.AsSpan(initialLength).ToArray();
+    private void InvokerImpl<T>(T[] values, string type, string op) where T : unmanaged, INumber<T> {
+        // 1.
+        int initialLength = values.Length / 3 * 2;
+        T[] initialValues = values.AsSpan(0, initialLength).ToArray();
+        T[] expectedValues = values.AsSpan(initialLength).ToArray();
+        InvokerImplRun(initialValues, expectedValues, type, op);
 
-            RunKernelWithSingleBuffer($@"
-                using System;
+        // 2.
+        Vector2<T>[] initialValues2 = new Vector2<T>[initialValues.Length / 2];
+        for (int i = 0; i < initialValues2.Length; i++)
+            initialValues2[i] = new Vector2<T>(initialValues[i * 2], initialValues[i * 2 + 1]);
+        Vector2<T>[] expectedValues2 = new Vector2<T>[expectedValues.Length / 2];
+        for (int i = 0; i < expectedValues2.Length; i++)
+            expectedValues2[i] = new Vector2<T>(expectedValues[i * 2], expectedValues[i * 2 + 1]);
+        InvokerImplRun(initialValues2, expectedValues2, $"Vector2<{type}>", op);
 
-                uniform RwBuffer<{type}> buffer;
-
-                [Kernel({block}, 1, 1)]
-                void Main() {{
-                    buffer[ComputeUtils.GlobalInvocation3.X] = buffer[ComputeUtils.GlobalInvocation3.X] {op}
-                        buffer[ComputeUtils.GlobalInvocation3.X + {block}];
-                }}
-            ", initialValues, expectedValues);
+        // 3.
+        Vector3<T>[] initialValues3 = new Vector3<T>[initialValues.Length / 3];
+        for (int i = 0; i < initialValues3.Length; i++) {
+            initialValues3[i] = new Vector3<T>(
+                initialValues[i * 3], initialValues[i * 3 + 1], initialValues[i * 3 + 2]
+            );
         }
+        Vector3<T>[] expectedValues3 = new Vector3<T>[expectedValues.Length / 3];
+        for (int i = 0; i < expectedValues3.Length; i++) {
+            expectedValues3[i] = new Vector3<T>(
+                expectedValues[i * 3], expectedValues[i * 3 + 1], expectedValues[i * 3 + 2]
+            );
+        }
+        InvokerImplRun(initialValues3, expectedValues3, $"Vector3<{type}>", op);
+
+        // 4.
+        Vector4<T>[] initialValues4 = new Vector4<T>[initialValues.Length / 4];
+        for (int i = 0; i < initialValues4.Length; i++) {
+            initialValues4[i] = new Vector4<T>(
+                initialValues[i * 4], initialValues[i * 4 + 1], initialValues[i * 4 + 2], initialValues[i * 4 + 3]
+            );
+        }
+        Vector4<T>[] expectedValues4 = new Vector4<T>[expectedValues.Length / 4];
+        for (int i = 0; i < expectedValues4.Length; i++) {
+            expectedValues4[i] = new Vector4<T>(
+                expectedValues[i * 4], expectedValues[i * 4 + 1], expectedValues[i * 4 + 2], expectedValues[i * 4 + 3]
+            );
+        }
+        InvokerImplRun(initialValues4, expectedValues4, $"Vector4<{type}>", op);
+    }
+
+    private void InvokerImplRun<T>(T[] initialValues, T[] expectedValues, string type, string op) where T : unmanaged {
+        RunKernelWithSingleBuffer($@"
+            using System;
+
+            uniform RwBuffer<{type}> buffer;
+
+            [Kernel({expectedValues.Length}, 1, 1)]
+            void Main() {{
+                buffer[ComputeUtils.GlobalInvocation3.X] = {type}.Add(buffer[ComputeUtils.GlobalInvocation3.X],
+                    buffer[ComputeUtils.GlobalInvocation3.X + {expectedValues.Length}]);
+            }}
+        ", initialValues, expectedValues);
     }
 
 }

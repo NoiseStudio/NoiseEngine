@@ -12,7 +12,7 @@ internal static class GenericHelper {
         if (currentType is NeslGenericTypeParameter genericTypeParameter)
             return targetTypes[genericTypeParameter];
         if (currentType is NotFullyConstructedGenericNeslType notFullyGenericMakedType) {
-            return notFullyGenericMakedType.MakeGeneric(notFullyGenericMakedType.TypeArguments
+            return notFullyGenericMakedType.MakeGeneric(notFullyGenericMakedType.GenericMakedTypeParameters
                 .Select(x => x is NeslGenericTypeParameter genericTypeParameter ?
                     targetTypes[genericTypeParameter] : x)
                 .ToArray()

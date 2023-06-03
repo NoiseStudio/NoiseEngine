@@ -29,10 +29,8 @@ internal static class ValueConstructorOperator {
 
         // Find interface.
         IEnumerable<(bool, NeslType)> interfaces = Enumerable.Empty<(bool, NeslType)>();
-        interfaces = interfaces.Concat((lhs.Type is null ? lhs.GetBestMatchConstType() : lhs.Type)
-            .Interfaces.Select(x => (true, x)));
-        interfaces = interfaces.Concat((rhs.Type is null ? lhs.GetBestMatchConstType() : rhs.Type)
-            .Interfaces.Select(x => (false, x)));
+        interfaces = interfaces.Concat((lhs.Type ?? lhs.GetBestMatchConstType()).Interfaces.Select(x => (true, x)));
+        interfaces = interfaces.Concat((rhs.Type ?? lhs.GetBestMatchConstType()).Interfaces.Select(x => (false, x)));
 
         interfaces = interfaces.Where(x =>
             x.Item2.FullNameWithAssembly == data.InterfaceFullNameWithAssembly &&
@@ -62,6 +60,10 @@ internal static class ValueConstructorOperator {
         return ValueConstructor.CallMethod(parser, method, null, new ValueData[] {
             lhs, rhs
         });
+    }
+
+    private static bool CompareInterfaceParameters(NeslType? type, int skip) {
+        return false;
     }
 
 }
