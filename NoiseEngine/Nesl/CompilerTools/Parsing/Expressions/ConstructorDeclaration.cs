@@ -12,10 +12,11 @@ internal class ConstructorDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.AccessModifiers)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.RoundBrackets)]
+    [ParserExpressionParameter(ParserTokenType.Constraints)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, NameToken name, RoundBracketsToken parameters,
-        CurlyBracketsToken codeBlock
+        ConstraintsToken constraints, CurlyBracketsToken codeBlock
     ) {
         if (Parser.CurrentType.IsInterface) {
             Parser.Throw(new CompilationError(
@@ -26,7 +27,7 @@ internal class ConstructorDeclaration : ParserExpressionContainer {
 
         Parser.DefineMethod(new MethodDefinitionData(
             NeslModifiers.Static, null, name with { Name = NeslOperators.Constructor }, parameters.Buffer,
-            codeBlock.Buffer, attributes.Compile(Parser, AttributeTargets.Method)
+            constraints.Constraints, codeBlock.Buffer, attributes.Compile(Parser, AttributeTargets.Method)
         ));
     }
 

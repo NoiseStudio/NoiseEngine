@@ -2,7 +2,6 @@
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Intrinsics;
 

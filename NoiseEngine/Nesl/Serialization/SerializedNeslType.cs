@@ -2,6 +2,7 @@
 using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.Serialization;
@@ -117,6 +118,27 @@ internal class SerializedNeslType : NeslType {
                 continue;
             }
 
+            // Check type constraints.
+            bool constraintsSatisfied = true;
+            foreach (
+                (NeslGenericTypeParameter parameter, IReadOnlyList<NeslType> constraints) in
+                method.TypeGenericConstraints
+            ) {
+                NeslType type = GenericHelper.GetFinalType(GenericMakedFrom, this, parameter, targetTypes);
+                foreach (NeslType constraint in constraints) {
+                    if (!type.Interfaces.Contains(constraint)) {
+                        constraintsSatisfied = false;
+                        break;
+                    }
+                }
+
+                if (!constraintsSatisfied)
+                    break;
+            }
+
+            if (!constraintsSatisfied)
+                continue;
+
             // Return and parameter types.
             NeslType? methodReturnType = method.ReturnType;
             if (methodReturnType is not null)
@@ -142,6 +164,7 @@ internal class SerializedNeslType : NeslType {
                 GenericHelper.RemoveGenericsFromAttributes(method.ReturnValueAttributes, targetTypes),
                 method.ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
                 method.GenericTypeParameters.ToArray(),
+                ImmutableDictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>>.Empty,
                 GenericIlGenerator.RemoveGenerics(GenericMakedFrom, this, method, targetTypes)
             ));
         }

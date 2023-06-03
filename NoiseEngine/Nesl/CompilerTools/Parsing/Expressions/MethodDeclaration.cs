@@ -14,10 +14,12 @@ internal class MethodDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.TypeIdentifier)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.RoundBrackets)]
+    [ParserExpressionParameter(ParserTokenType.Constraints)]
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
-        TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters, CurlyBracketsToken codeBlock
+        TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters, ConstraintsToken constraints,
+        CurlyBracketsToken codeBlock
     ) {
         if (modifiers.Modifiers.HasFlag(NeslModifiers.Uniform)) {
             Parser.Throw(new CompilationError(
@@ -26,7 +28,7 @@ internal class MethodDeclaration : ParserExpressionContainer {
         }
 
         Parser.DefineMethod(new MethodDefinitionData(
-            modifiers.Modifiers, typeIdentifier, name, parameters.Buffer, codeBlock.Buffer,
+            modifiers.Modifiers, typeIdentifier, name, parameters.Buffer, constraints.Constraints, codeBlock.Buffer,
             attributes.Compile(Parser, AttributeTargets.Method)
         ));
     }

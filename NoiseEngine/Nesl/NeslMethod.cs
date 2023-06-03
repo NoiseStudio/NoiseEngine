@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Collections;
+using NoiseEngine.Inputs;
 using NoiseEngine.Nesl.CompilerTools;
 using NoiseEngine.Nesl.CompilerTools.Generics;
 using NoiseEngine.Nesl.Serialization;
@@ -21,6 +22,9 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
     public abstract IReadOnlyList<IEnumerable<NeslAttribute>> ParameterAttributes { get; }
     public abstract IEnumerable<NeslGenericTypeParameter> GenericTypeParameters { get; }
     public abstract NeslModifiers Modifiers { get; }
+    public abstract IReadOnlyDictionary<
+        NeslGenericTypeParameter, IReadOnlyList<NeslType>
+    > TypeGenericConstraints { get; }
 
     protected abstract IlContainer IlContainer { get; }
 
@@ -79,6 +83,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
             reader.ReadEnumerable<NeslAttribute>().ToArray(),
             DeserializeParameterAttributes(reader).ToArray(),
             reader.ReadEnumerableUInt64().Select(assembly.GetType).Cast<NeslGenericTypeParameter>().ToArray(),
+            DeserializeTypeGenericConstraints(reader),
             reader.ReadObject<IlContainer>()
         );
     }
@@ -87,6 +92,21 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
         int length = reader.ReadInt32();
         for (int i = 0; i < length; i++)
             yield return reader.ReadEnumerable<NeslAttribute>().ToArray();
+    }
+
+    private static IReadOnlyDictionary<
+        NeslGenericTypeParameter, IReadOnlyList<NeslType>
+    > DeserializeTypeGenericConstraints(SerializationReader reader) {
+        int length = reader.ReadInt32();
+        NeslAssembly assembly = reader.GetFromStorage<NeslAssembly>();
+        Dictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>> constraints =
+            new Dictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>>(length);
+
+        for (int i = 0; i < length; i++) {
+            NeslGenericTypeParameter parameter = (NeslGenericTypeParameter)assembly.GetType(reader.ReadUInt64());
+            constraints.Add(parameter, reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray());
+        }
+        return constraints;
     }
 
     internal void Serialize(SerializationWriter writer) {
@@ -111,6 +131,12 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
             writer.WriteEnumerable(parameterAttribute);
 
         writer.WriteEnumerable(GenericTypeParameters.Select(Assembly.GetLocalTypeId));
+
+        writer.WriteInt32(TypeGenericConstraints.Count);
+        foreach ((NeslGenericTypeParameter parameter, IReadOnlyList<NeslType> constraints) in TypeGenericConstraints) {
+            writer.WriteUInt64(Assembly.GetLocalTypeId(parameter));
+            writer.WriteEnumerable(constraints.Select(Assembly.GetLocalTypeId));
+        }
 
         writer.WriteObject(IlContainer);
     }
@@ -216,6 +242,7 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
                 GenericHelper.RemoveGenericsFromAttributes(ReturnValueAttributes, targetTypes),
                 ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
                 Array.Empty<NeslGenericTypeParameter>(),
+                ImmutableDictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>>.Empty,
                 GenericIlGenerator.RemoveGenerics(Type, Type, this, targetTypes)
             );
         })).Value;

@@ -372,6 +372,7 @@ internal class Parser {
                 method.SetModifiers(data.Modifiers);
                 foreach (NeslAttribute attribute in data.Attributes)
                     method.AddAttribute(attribute);
+                MethodConstructor.SetMethodGenericConstrains(this, method, data.Constraints);
 
                 // Ignore body when has intrinsic or call op code attribute.
                 if (
@@ -463,7 +464,7 @@ internal class Parser {
                     continue;
                 if (!type.IsInterface) {
                     Throw(new CompilationError(
-                        typeIdentifier.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, typeIdentifier
+                        typeIdentifier.Pointer, CompilationErrorType.ConstraintTypeMustBeAInterface, typeIdentifier
                     ));
                 }
 
@@ -716,7 +717,7 @@ internal class Parser {
             DefineMethod(new MethodDefinitionData(
                 data.Modifiers, data.TypeIdentifier,
                 data.Name with { Name = NeslOperators.PropertyGet + data.Name.Name }, TokenBuffer.Empty,
-                TokenBuffer.Empty, data.GetterAttributes
+                Array.Empty<ConstraintToken>(), TokenBuffer.Empty, data.GetterAttributes
             ));
 
             if (!data.HasSetter && !data.HasInitializer)
@@ -733,7 +734,7 @@ internal class Parser {
 
             DefineMethod(new MethodDefinitionData(
                 data.Modifiers, TypeIdentifierToken.Void, data.Name with { Name = s + data.Name.Name }, parameters,
-                TokenBuffer.Empty, data.SecondAttributes
+                Array.Empty<ConstraintToken>(), TokenBuffer.Empty, data.SecondAttributes
             ));
         }
     }
@@ -753,7 +754,7 @@ internal class Parser {
 
             DefineMethod(new MethodDefinitionData(
                 data.Modifiers, data.TypeIdentifier, data.Name with { Name = name }, new TokenBuffer(indexTokens),
-                TokenBuffer.Empty, data.GetterAttributes
+                Array.Empty<ConstraintToken>(), TokenBuffer.Empty, data.GetterAttributes
             ));
 
             if (!data.HasSetter)
@@ -771,8 +772,8 @@ internal class Parser {
             ).ToArray());
 
             DefineMethod(new MethodDefinitionData(
-                data.Modifiers, TypeIdentifierToken.Void, data.Name with { Name = name }, parameters, TokenBuffer.Empty,
-                data.SetterAttributes
+                data.Modifiers, TypeIdentifierToken.Void, data.Name with { Name = name }, parameters,
+                Array.Empty<ConstraintToken>(), TokenBuffer.Empty, data.SetterAttributes
             ));
         }
     }

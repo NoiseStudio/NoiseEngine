@@ -13,6 +13,8 @@ public class NeslMethodBuilder : NeslMethod {
     private readonly ConcurrentBag<NeslAttribute> returnValueAttributes = new ConcurrentBag<NeslAttribute>();
     private readonly List<NeslGenericTypeParameterBuilder> genericTypeParameters =
         new List<NeslGenericTypeParameterBuilder>();
+    private readonly ConcurrentDictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>> typeGenericConstraints =
+        new ConcurrentDictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>>();
     private ConcurrentBag<NeslAttribute>[] parameterAttributes;
 
     private NeslModifiers modifiers;
@@ -26,6 +28,8 @@ public class NeslMethodBuilder : NeslMethod {
     public override IReadOnlyList<IEnumerable<NeslAttribute>> ParameterAttributes => parameterAttributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters => genericTypeParameters;
     public override NeslModifiers Modifiers => modifiers;
+    public override IReadOnlyDictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>> TypeGenericConstraints =>
+        typeGenericConstraints;
 
     internal NeslMethodIdentifier Identifier =>
         new NeslMethodIdentifier(Name, new EquatableReadOnlyList<NeslType>(ParameterTypes));
@@ -159,6 +163,43 @@ public class NeslMethodBuilder : NeslMethod {
     /// <param name="modifiers">New <see cref="NeslModifiers"/> for this <see cref="NeslMethodBuilder"/>.</param>
     public void SetModifiers(NeslModifiers modifiers) {
         this.modifiers = modifiers;
+    }
+
+    /// <summary>
+    /// Sets type generic constraints for given <paramref name="typeGenericParameter"/> as
+    /// <paramref name="constraints"/>.
+    /// </summary>
+    /// <param name="typeGenericParameter">
+    /// <see cref="NeslGenericTypeParameter"/> belonging to <see cref="Type"/>.
+    /// </param>
+    /// <param name="constraints">
+    /// Constraints of this <see cref="NeslMethod"/> on <paramref name="typeGenericParameter"/>.
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// Given <paramref name="typeGenericParameter"/> is not belonging to <see cref="Type"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// One or more of given <paramref name="constraints"/> is not an interface.
+    /// </exception>
+    public void SetTypeGenericConstraints(
+        NeslGenericTypeParameter typeGenericParameter, IReadOnlyList<NeslType> constraints
+    ) {
+        if (!Type.GenericTypeParameters.Contains(typeGenericParameter)) {
+            throw new ArgumentException(
+                "Given type generic parameter is not defined in NESL type of this NESL method.",
+                nameof(typeGenericParameter)
+            );
+        }
+
+        foreach (NeslType constraint in constraints) {
+            if (!constraint.IsInterface) {
+                throw new ArgumentException(
+                    $"Given type `{constraint}` is not an interface.", nameof(constraints)
+                );
+            }
+        }
+
+        typeGenericConstraints[typeGenericParameter] = constraints;
     }
 
 }
