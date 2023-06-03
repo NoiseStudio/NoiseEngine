@@ -55,42 +55,42 @@ pub fn decode(
         ColorType::L16 => {
             let raw = img.into_luma16().into_raw();
             (
-                reinterpret_vec(raw),
+                uninterpret_vec(raw),
                 format.unwrap_or(vk::Format::R16_UNORM),
             )
         },
         ColorType::La16 => {
             let raw = img.into_luma_alpha16().into_raw();
             (
-                reinterpret_vec(raw),
+                uninterpret_vec(raw),
                 format.unwrap_or(vk::Format::R16G16_UNORM),
             )
         },
         ColorType::Rgb16 => {
             let raw = img.into_rgb16().into_raw();
             (
-                reinterpret_vec(raw),
+                uninterpret_vec(raw),
                 format.unwrap_or(vk::Format::R16G16B16_UNORM),
             )
         },
         ColorType::Rgba16 => {
             let raw = img.into_rgba16().into_raw();
             (
-                reinterpret_vec(raw),
+                uninterpret_vec(raw),
                 format.unwrap_or(vk::Format::R16G16B16A16_UNORM),
             )
         },
         ColorType::Rgb32F => {
             let raw = img.into_rgb16().into_raw();
             (
-                reinterpret_vec(raw),
+                uninterpret_vec(raw),
                 format.unwrap_or(vk::Format::R32G32B32_SFLOAT),
             )
         },
         ColorType::Rgba32F => {
             let raw = img.into_rgba16().into_raw();
             (
-                reinterpret_vec(raw),
+                uninterpret_vec(raw),
                 format.unwrap_or(vk::Format::R32G32B32A32_SFLOAT),
             )
         },
@@ -151,7 +151,7 @@ pub fn encode(
     Ok(result.into_inner())
 }
 
-fn reinterpret_vec<T>(vec: Vec<T>) -> Vec<u8> {
+fn uninterpret_vec<T>(vec: Vec<T>) -> Vec<u8> {
     let len = vec.len() * std::mem::size_of::<T>();
     let cap = vec.capacity() * std::mem::size_of::<T>();
     let ptr = vec.as_ptr() as *mut u8;

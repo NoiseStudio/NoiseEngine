@@ -13,6 +13,7 @@ pub fn vk_format_to_color_type(
     vk_format: vk::Format,
 ) -> Option<image::ColorType> {
     type F = vk::Format;
+
     match vk_format {
         F::R8_UNORM | F::R8_SNORM | F::R8_USCALED | F::R8_SSCALED | F::R8_UINT | F::R8_SINT | F::R8_SRGB => {
             Some(image::ColorType::L8)
@@ -102,17 +103,39 @@ impl CpuTextureData {
     }
 
     pub fn pixel_size(format: vk::Format) -> usize {
+        type F = vk::Format;
+
         match format {
-            vk::Format::R8_SRGB => 1,
-            vk::Format::R8G8_SRGB => 2,
-            vk::Format::R8G8B8_SRGB => 3,
-            vk::Format::R8G8B8A8_SRGB => 4,
-            vk::Format::R16_UNORM => 2,
-            vk::Format::R16G16_UNORM => 4,
-            vk::Format::R16G16B16_UNORM => 6,
-            vk::Format::R16G16B16A16_UNORM => 8,
-            vk::Format::R32G32B32_SFLOAT => 12,
-            vk::Format::R32G32B32A32_SFLOAT => 16,
+            F::R8_UNORM | F::R8_SNORM | F::R8_USCALED | F::R8_SSCALED | F::R8_UINT | F::R8_SINT | F::R8_SRGB => {
+                1
+            },
+            F::R8G8_UNORM | F::R8G8_SNORM | F::R8G8_USCALED | F::R8G8_SSCALED | F::R8G8_UINT | F::R8G8_SINT | F::R8G8_SRGB => {
+                2
+            },
+            F::R8G8B8_UNORM | F::R8G8B8_SNORM | F::R8G8B8_USCALED | F::R8G8B8_SSCALED | F::R8G8B8_UINT | F::R8G8B8_SINT | F::R8G8B8_SRGB => {
+                3
+            },
+            F::R8G8B8A8_UNORM | F::R8G8B8A8_SNORM | F::R8G8B8A8_USCALED | F::R8G8B8A8_SSCALED | F::R8G8B8A8_UINT | F::R8G8B8A8_SINT | F::R8G8B8A8_SRGB => {
+                4
+            },
+            F::R16_UNORM | F::R16_SNORM | F::R16_USCALED | F::R16_SSCALED | F::R16_UINT | F::R16_SINT => {
+                2
+            },
+            F::R16G16_UNORM | F::R16G16_SNORM | F::R16G16_USCALED | F::R16G16_SSCALED | F::R16G16_UINT | F::R16G16_SINT => {
+                4
+            },
+            F::R16G16B16_UNORM | F::R16G16B16_SNORM | F::R16G16B16_USCALED | F::R16G16B16_SSCALED | F::R16G16B16_UINT | F::R16G16B16_SINT => {
+                6
+            },
+            F::R16G16B16A16_UNORM | F::R16G16B16A16_SNORM | F::R16G16B16A16_USCALED | F::R16G16B16A16_SSCALED | F::R16G16B16A16_UINT | F::R16G16B16A16_SINT => {
+                8
+            },
+            F::R32G32B32_SFLOAT => {
+                12
+            },
+            F::R32G32B32A32_SFLOAT => {
+                16
+            },
             _ => unimplemented!("unsupported format: {:?}", format),
         }
     }
