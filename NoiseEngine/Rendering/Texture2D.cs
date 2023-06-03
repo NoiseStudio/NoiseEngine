@@ -30,4 +30,33 @@ public class Texture2D : Texture {
         SampleCount = sampleCount;
     }
 
+    /// <summary>
+    /// Creates a PNG file data from this <see cref="Texture2D"/>.
+    /// </summary>
+    /// <returns>File data.</returns>
+    public byte[] ToPng() {
+        return CpuTexture2D.FromTexture2D(this).ToPng();
+    }
+
+    /// <summary>
+    /// Creates a JPEG file data from this <see cref="Texture2D"/>.
+    /// </summary>
+    /// <param name="quality">Quality of the compression between 0 and 100.</param>
+    /// <returns>File data.</returns>
+    public byte[] ToJpeg(byte quality = 75) {
+        return CpuTexture2D.FromTexture2D(this).ToJpeg(quality);
+    }
+
+    /// <summary>
+    /// Creates a WebP file data from this <see cref="Texture2D"/>.
+    /// </summary>
+    /// <param name="quality">
+    /// Quality of the compression between 0 and 100.
+    /// Value of null is lossless compression.
+    /// </param>
+    /// <returns>File data.</returns>
+    public byte[] ToWebP(byte? quality = null) {
+        return CpuTexture2D.FromTexture2D(this).ToWebP(quality);
+    }
+
 }

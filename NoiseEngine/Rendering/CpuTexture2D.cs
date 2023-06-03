@@ -157,8 +157,8 @@ public class CpuTexture2D : CpuTexture {
         return ToFileData(TextureFileFormat.WebP, quality);
     }
 
-    private byte[] ToFileData(TextureFileFormat format, byte? quality = null) {
-        if (format == TextureFileFormat.Png && quality != null) {
+    private byte[] ToFileData(TextureFileFormat fileFormat, byte? quality = null) {
+        if (fileFormat == TextureFileFormat.Png && quality != null) {
             throw new ArgumentException("PNG does not support quality settings.", nameof(quality));
         }
 
@@ -166,15 +166,8 @@ public class CpuTexture2D : CpuTexture {
             quality = 100;
         }
 
-        CpuTextureData data = new CpuTextureData {
-            Data = new InteropArray<byte>(this.data),
-            Format = Format,
-            ExtentX = Extent.X,
-            ExtentY = Extent.Y,
-            ExtentZ = 1
-        };
-
-        InteropResult<InteropArray<byte>> result = CpuTextureInterop.Encode(in data, format, quality);
+        InteropResult<InteropArray<byte>> result =
+            CpuTextureInterop.Encode(data, Width, Height, Format, fileFormat, quality);
 
         if (!result.TryGetValue(out InteropArray<byte> encoded, out ResultError error)) {
             error.ThrowAndDispose();

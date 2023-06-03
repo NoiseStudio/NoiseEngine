@@ -11,11 +11,14 @@ internal static partial class CpuTextureInterop {
         ReadOnlySpan<byte> fileData,
         InteropOption<TextureFormat> format
     );
-    
+
     [InteropImport("rendering_cpu_texture_interop_encode")]
     public static partial InteropResult<InteropArray<byte>> Encode(
-        in CpuTextureData data,
-        TextureFileFormat format,
+        ReadOnlySpan<byte> data,
+        uint width,
+        uint height,
+        TextureFormat format,
+        TextureFileFormat fileFormat,
         InteropOption<byte> quality
     );
 

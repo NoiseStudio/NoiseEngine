@@ -107,25 +107,21 @@ pub fn decode(
 }
 
 pub fn encode(
-    texture: &CpuTextureData,
+    data: &[u8],
+    width: u32,
+    height: u32,
+    format: vk::Format,
     file_format: TextureFileFormat,
     quality: Option<u8>,
 ) -> Result<Vec<u8>> {
-    anyhow::ensure!(
-        texture.extent_z() == 1,
-        "3D textures are not supported"
-    );
-
-    let color_type = cpu_texture_2d::vk_format_to_color_type(*texture.format())
+    let color_type = cpu_texture_2d::vk_format_to_color_type(format)
         .context("Invalid format")?;
-
-    let data = texture.data().into();
 
     if let TextureFileFormat::Webp = file_format {
         return encode_webp(
             data,
-            texture.extent_x(),
-            texture.extent_y(),
+            width,
+            height,
             color_type,
             quality,
         );
@@ -136,8 +132,8 @@ pub fn encode(
     image::write_buffer_with_format(
         &mut result,
         data,
-        texture.extent_x(),
-        texture.extent_y(),
+        width,
+        height,
         color_type,
         match file_format {
             TextureFileFormat::Png => image::ImageOutputFormat::Png,

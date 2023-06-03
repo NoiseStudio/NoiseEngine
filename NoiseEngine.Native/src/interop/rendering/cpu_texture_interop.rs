@@ -33,12 +33,21 @@ extern "C" fn rendering_cpu_texture_interop_decode(
 
 #[no_mangle]
 extern "C" fn rendering_cpu_texture_interop_encode(
-    data: &CpuTextureData,
+    data: InteropReadOnlySpan<u8>,
+    width: u32,
+    height: u32,
+    format: vk::Format,
     file_format: cpu_texture_2d::TextureFileFormat,
     quality: InteropOption<u8>,
 ) -> InteropResult<InteropArray<u8>> {
-    let result =
-        cpu_texture_2d_encoding::encode(data, file_format, quality.into());
+    let result = cpu_texture_2d_encoding::encode(
+        data.into(),
+        width,
+        height,
+        format,
+        file_format,
+        quality.into(),
+    );
 
     match result {
         Ok(data) => {
