@@ -6,7 +6,7 @@ use crate::interop::prelude::InteropArray;
 pub enum TextureFileFormat {
     Png,
     Jpeg,
-    Webp
+    WebP
 }
 
 pub fn vk_format_to_color_type(

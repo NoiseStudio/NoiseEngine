@@ -117,7 +117,7 @@ pub fn encode(
     let color_type = cpu_texture_2d::vk_format_to_color_type(format)
         .context("Invalid format")?;
 
-    if let TextureFileFormat::Webp = file_format {
+    if let TextureFileFormat::WebP = file_format {
         return encode_webp(
             data,
             width,
@@ -140,7 +140,7 @@ pub fn encode(
             TextureFileFormat::Jpeg => image::ImageOutputFormat::Jpeg(
                 quality.unwrap_or(75),
             ),
-            TextureFileFormat::Webp => unreachable!(),
+            TextureFileFormat::WebP => unreachable!(),
         },
     )?;
 
