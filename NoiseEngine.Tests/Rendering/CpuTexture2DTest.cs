@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using NoiseEngine.Interop;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering;
 using NoiseEngine.Tests.Environments;
@@ -10,7 +8,6 @@ using NoiseEngine.Tests.Fixtures;
 
 namespace NoiseEngine.Tests.Rendering;
 
-[Collection(nameof(ApplicationCollection))]
 public class CpuTexture2DTest : GraphicsTestEnvironment {
 
     private readonly Dictionary<Vector2<uint>, Color32> textureColors = new Dictionary<Vector2<uint>, Color32> {
@@ -126,7 +123,7 @@ public class CpuTexture2DTest : GraphicsTestEnvironment {
         CpuTexture2D texture = CpuTexture2D.FromFile(fileData, TextureFormat.R8G8B8A8_SRGB);
 
         byte[] expected = texture.Data.ToArray();
-        byte[] actual = CpuTexture2D.FromFile(texture.ToWebp()).Data.ToArray();
+        byte[] actual = CpuTexture2D.FromFile(texture.ToWebp(), TextureFormat.R8G8B8A8_SRGB).Data.ToArray();
 
         Assert.Equal(expected, actual);
     }

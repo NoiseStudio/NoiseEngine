@@ -122,10 +122,10 @@ public class CpuTexture2D : CpuTexture {
     /// </summary>
     /// <param name="quality">
     /// Quality of the compression between 0 and 100.
-    /// Value of 100 is lossless compression.
+    /// Value of null is lossless compression.
     /// </param>
     /// <returns>File data.</returns>
-    public byte[] ToWebp(byte quality = 100) {
+    public byte[] ToWebp(byte? quality = null) {
         return ToFile(TextureFileFormat.Webp, quality);
     }
 

@@ -26,17 +26,23 @@ pub fn vk_format_to_color_type(
         F::R8G8B8A8_UNORM | F::R8G8B8A8_SNORM | F::R8G8B8A8_USCALED | F::R8G8B8A8_SSCALED | F::R8G8B8A8_UINT | F::R8G8B8A8_SINT | F::R8G8B8A8_SRGB => {
             Some(image::ColorType::Rgba8)
         },
-        F::R16_UNORM | F::R16_SNORM | F::R16_USCALED | F::R16_SSCALED | F::R16_UINT | F::R16_SINT | F::R16_SFLOAT => {
+        F::R16_UNORM | F::R16_SNORM | F::R16_USCALED | F::R16_SSCALED | F::R16_UINT | F::R16_SINT => {
             Some(image::ColorType::L16)
         },
-        F::R16G16_UNORM | F::R16G16_SNORM | F::R16G16_USCALED | F::R16G16_SSCALED | F::R16G16_UINT | F::R16G16_SINT | F::R16G16_SFLOAT => {
+        F::R16G16_UNORM | F::R16G16_SNORM | F::R16G16_USCALED | F::R16G16_SSCALED | F::R16G16_UINT | F::R16G16_SINT => {
             Some(image::ColorType::La16)
         },
-        F::R16G16B16_UNORM | F::R16G16B16_SNORM | F::R16G16B16_USCALED | F::R16G16B16_SSCALED | F::R16G16B16_UINT | F::R16G16B16_SINT | F::R16G16B16_SFLOAT => {
+        F::R16G16B16_UNORM | F::R16G16B16_SNORM | F::R16G16B16_USCALED | F::R16G16B16_SSCALED | F::R16G16B16_UINT | F::R16G16B16_SINT => {
             Some(image::ColorType::Rgb16)
         },
-        F::R16G16B16A16_UNORM | F::R16G16B16A16_SNORM | F::R16G16B16A16_USCALED | F::R16G16B16A16_SSCALED | F::R16G16B16A16_UINT | F::R16G16B16A16_SINT | F::R16G16B16A16_SFLOAT => {
+        F::R16G16B16A16_UNORM | F::R16G16B16A16_SNORM | F::R16G16B16A16_USCALED | F::R16G16B16A16_SSCALED | F::R16G16B16A16_UINT | F::R16G16B16A16_SINT => {
             Some(image::ColorType::Rgba16)
+        },
+        F::R32G32B32_SFLOAT => {
+            Some(image::ColorType::Rgb32F)
+        },
+        F::R32G32B32A32_SFLOAT => {
+            Some(image::ColorType::Rgba32F)
         },
         _ => None,
     }

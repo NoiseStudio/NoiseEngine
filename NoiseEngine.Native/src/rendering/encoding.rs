@@ -80,20 +80,18 @@ pub fn decode(
                 format.unwrap_or(vk::Format::R16G16B16A16_UNORM),
             )
         },
-        // Note that the following formats are not supported by Vulkan
-        // so we downgrade them to the closest supported format
         ColorType::Rgb32F => {
             let raw = img.into_rgb16().into_raw();
             (
                 reinterpret_vec(raw),
-                format.unwrap_or(vk::Format::R16G16B16_UNORM),
+                format.unwrap_or(vk::Format::R32G32B32_SFLOAT),
             )
         },
         ColorType::Rgba32F => {
             let raw = img.into_rgba16().into_raw();
             (
                 reinterpret_vec(raw),
-                format.unwrap_or(vk::Format::R16G16B16A16_UNORM),
+                format.unwrap_or(vk::Format::R32G32B32A32_SFLOAT),
             )
         },
         _ => anyhow::bail!("Unknown color type: {:?}", img_color),
@@ -123,17 +121,14 @@ pub fn encode(
 
     let data = texture.data().into();
 
-    match file_format {
-        TextureFileFormat::Webp => {
-            return encode_webp(
-                data,
-                texture.extent_x(),
-                texture.extent_y(),
-                color_type,
-                quality,
-            );
-        },
-        _ => {},
+    if let TextureFileFormat::Webp = file_format {
+        return encode_webp(
+            data,
+            texture.extent_x(),
+            texture.extent_y(),
+            color_type,
+            quality,
+        );
     };
 
     let mut result = Cursor::new(Vec::new());
@@ -183,48 +178,53 @@ fn encode_webp(
     color_type: ColorType,
     quality: Option<u8>,
 ) -> Result<Vec<u8>> {
-    use webp::Encoder;
-
-
     let data = data.to_vec();
 
     match color_type {
         ColorType::L8 => {
-            let img = ImageBuffer::<image::Luma<u8>, _>::from_vec(
-                width,
-                height,
-                data,
-            ).context(FAIL_MSG)?;
-
-            let img = img.into();
-            let encoder = Encoder::from_image(&img);
-
-            let encoder = match encoder {
-                Ok(encoder) => encoder,
-                Err(_) => anyhow::bail!(FAIL_MSG)
-            };
-
-            let result = match quality {
-                Some(quality) => encoder.encode(quality as f32),
-                None => encoder.encode_lossless(),
-            };
-
-            return Ok(result.to_vec());
+            encode_webp_helper::<image::Luma<u8>, _>(data, width, height, quality)
+        },
+        ColorType::La8 => {
+            encode_webp_helper::<image::LumaA<u8>, _>(data, width, height, quality)
+        },
+        ColorType::Rgb8 => {
+            encode_webp_helper::<image::Rgb<u8>, _>(data, width, height, quality)
+        },
+        ColorType::Rgba8 => {
+            encode_webp_helper::<image::Rgba<u8>, _>(data, width, height, quality)
+        },
+        ColorType::L16 => {
+            encode_webp_helper::<image::Luma<u16>, _>(data, width, height, quality)
+        },
+        ColorType::La16 => {
+            encode_webp_helper::<image::LumaA<u16>, _>(data, width, height, quality)
+        },
+        ColorType::Rgb16 => {
+            encode_webp_helper::<image::Rgb<u16>, _>(data, width, height, quality)
+        },
+        ColorType::Rgba16 => {
+            encode_webp_helper::<image::Rgba<u16>, _>(data, width, height, quality)
+        },
+        ColorType::Rgb32F => {
+            encode_webp_helper::<image::Rgb<f32>, _>(data, width, height, quality)
+        },
+        ColorType::Rgba32F => {
+            encode_webp_helper::<image::Rgba<f32>, _>(data, width, height, quality)
         },
         _ => anyhow::bail!("Unsupported color type {:?}", color_type),
-    };
+    }
 }
 
-fn encode_webp_helper<T, P: image::Pixel<Subpixel = T>>(
+fn encode_webp_helper<P: image::Pixel<Subpixel = S>, S>(
     data: Vec<u8>,
     width: u32,
     height: u32,
     quality: Option<u8>,
-) -> Result<Vec<u8>> where DynamicImage: From<ImageBuffer<P, Vec<T>>> {
-    let img = ImageBuffer::<P, T>::from_vec(
+) -> Result<Vec<u8>> where DynamicImage: From<ImageBuffer<P, Vec<S>>> {
+    let img = ImageBuffer::<P, Vec<<P as image::Pixel>::Subpixel>>::from_vec(
         width,
         height,
-        interpret_vec::<T>(data),
+        interpret_vec::<S>(data),
     ).context("Failed to encode image")?;
 
     let img = img.into();
