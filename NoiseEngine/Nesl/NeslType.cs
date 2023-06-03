@@ -96,6 +96,10 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
             Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
                 UnsafeTargetTypesFromMakeGeneric(GenericTypeParameters, typeArguments, out bool isFullyConstructed);
 
+            int i = 0;
+            foreach (NeslGenericTypeParameter parameter in GenericTypeParameters)
+                parameter.AssertConstraints(targetTypes, typeArguments[i++]);
+
             // Create not fully generic maked type.
             if (!isFullyConstructed)
                 return new NotFullyConstructedGenericNeslType(this, targetTypes, typeArguments.ToImmutableArray());
@@ -222,8 +226,6 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         int i = 0;
         foreach (NeslGenericTypeParameter genericTypeParameter in genericTypeParameters) {
             NeslType typeArgument = typeArguments[i++];
-
-            genericTypeParameter.AssertConstraints(typeArgument);
             targetTypes.Add(genericTypeParameter, typeArgument);
 
             if (isFullyConstructed && typeArgument is NeslGenericTypeParameter)

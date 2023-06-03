@@ -41,10 +41,19 @@ public abstract class NeslGenericTypeParameter : NeslType {
         return $"{base.ToString()} {{ InstanceId = {instanceId} }}";
     }
 
-    internal void AssertConstraints(NeslType type) {
+    internal void AssertConstraints(Dictionary<NeslGenericTypeParameter, NeslType> targetTypes, NeslType type) {
         bool isSatisfied = true;
         foreach (NeslType constraint in Interfaces) {
-            if (!type.Interfaces.Contains(constraint)) {
+            NeslType c = constraint;
+            if (c is NotFullyConstructedGenericNeslType notFully) {
+                c = c.MakeGeneric(notFully.GenericMakedTypeParameters.Select(x => {
+                    if (x is NeslGenericTypeParameter p)
+                        return targetTypes[p];
+                    return x;
+                }).ToArray());
+            }
+
+            if (!type.Interfaces.Contains(c)) {
                 isSatisfied = false;
                 break;
             }

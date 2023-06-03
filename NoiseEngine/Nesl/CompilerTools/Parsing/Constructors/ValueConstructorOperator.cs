@@ -32,6 +32,19 @@ internal static class ValueConstructorOperator {
         interfaces = interfaces.Concat((lhs.Type ?? lhs.GetBestMatchConstType()).Interfaces.Select(x => (true, x)));
         interfaces = interfaces.Concat((rhs.Type ?? lhs.GetBestMatchConstType()).Interfaces.Select(x => (false, x)));
 
+        if (
+            lhs.Type is NeslGenericTypeParameter lhsGeneric &&
+            parser.CurrentMethod.TypeGenericConstraints.TryGetValue(lhsGeneric, out IReadOnlyList<NeslType>? ti)
+        ) {
+            interfaces = interfaces.Concat(ti.Select(x => (true, x)));
+        }
+        if (
+            rhs.Type is NeslGenericTypeParameter rhsGeneric &&
+            parser.CurrentMethod.TypeGenericConstraints.TryGetValue(rhsGeneric, out ti)
+        ) {
+            interfaces = interfaces.Concat(ti.Select(x => (false, x)));
+        }
+
         interfaces = interfaces.Where(x =>
             x.Item2.FullNameWithAssembly == data.InterfaceFullNameWithAssembly &&
             lhs.Type is null ? lhs.CheckLoadConst(x.Item2.GenericMakedTypeParameters.First()) :

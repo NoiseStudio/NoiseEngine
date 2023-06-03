@@ -201,12 +201,13 @@ public abstract class NeslMethod : INeslGenericTypeParameterOwner {
             int i = 0;
             foreach (NeslGenericTypeParameter genericTypeParameter in GenericTypeParameters) {
                 NeslType typeArgument = typeArguments[i++];
-
-                genericTypeParameter.AssertConstraints(typeArgument);
                 targetTypes.Add(genericTypeParameter, typeArgument);
-
                 hasGenericTypeArguments |= typeArgument is NeslGenericTypeParameter;
             }
+
+            i = 0;
+            foreach (NeslGenericTypeParameter parameter in GenericTypeParameters)
+                parameter.AssertConstraints(targetTypes, typeArguments[i++]);
 
             // Create not fully generic constructed type.
             if (hasGenericTypeArguments)

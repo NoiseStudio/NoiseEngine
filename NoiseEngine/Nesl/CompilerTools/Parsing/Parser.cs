@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
+﻿using NoiseEngine.Nesl.CompilerTools.Generics;
+using NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
 using NoiseEngine.Nesl.CompilerTools.Parsing.Expressions;
 using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
@@ -589,6 +590,14 @@ internal class Parser {
             type = currentType.GenericTypeParameters.FirstOrDefault(x => x.Name == name);
             if (type is not null)
                 return true;
+
+            if (currentType.Name == name && currentType.GenericTypeParameters.Select(x => x.Name)
+                .SequenceEqual(typeIdentifier.GenericTokens.Where(x => x.GenericTokens.Count == 0)
+                .Select(x => x.Identifier))
+            ) {
+                type = currentType;
+                return true;
+            }
         }
 
         type = typeIdentifier.GetTypeFromAssembly(
@@ -608,13 +617,30 @@ internal class Parser {
 
             // Check constraints.
             bool constraintsSatisfied = true;
+            Dictionary<NeslGenericTypeParameter, NeslType>? targetTypes = null;
+
             for (int i = 0; i < genericTypes.Length; i++) {
                 NeslType genericType = genericTypes[i];
                 NeslGenericTypeParameter genericTypeParameter = type.GenericTypeParameters.ElementAt(i);
 
                 bool isSatisfied = true;
                 foreach (NeslType constraint in genericTypeParameter.Interfaces) {
-                    if (!genericType.Interfaces.Contains(constraint)) {
+                    NeslType c = constraint;
+                    if (c is NotFullyConstructedGenericNeslType notFully) {
+                        if (targetTypes is null) {
+                            targetTypes = new Dictionary<NeslGenericTypeParameter, NeslType>();
+                            for (int j = 0; j < genericTypes.Length; j++)
+                                targetTypes.Add(type.GenericTypeParameters.ElementAt(j), genericTypes[j]);
+                        }
+
+                        c = c.MakeGeneric(notFully.GenericMakedTypeParameters.Select(x => {
+                            if (x is NeslGenericTypeParameter p)
+                                return targetTypes[p];
+                            return x;
+                        }).ToArray());
+                    }
+
+                    if (!genericType.Interfaces.Contains(c)) {
                         isSatisfied = false;
                         break;
                     }
