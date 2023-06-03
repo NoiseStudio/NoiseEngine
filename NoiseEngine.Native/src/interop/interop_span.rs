@@ -1,4 +1,4 @@
-use std::{slice, marker::PhantomData};
+use std::{marker::PhantomData, slice};
 
 #[repr(C)]
 pub struct InteropSpan<'a, T> {
@@ -9,17 +9,13 @@ pub struct InteropSpan<'a, T> {
 
 impl<'a, T> From<InteropSpan<'a, T>> for &'a mut [T] {
     fn from(span: InteropSpan<'a, T>) -> Self {
-        unsafe {
-            slice::from_raw_parts_mut(span.reference, span.length as usize)
-        }
+        unsafe { slice::from_raw_parts_mut(span.reference, span.length as usize) }
     }
 }
 
 impl<'a, T> From<InteropSpan<'a, T>> for &'a [T] {
     fn from(span: InteropSpan<'a, T>) -> Self {
-        unsafe {
-            slice::from_raw_parts(span.reference, span.length as usize)
-        }
+        unsafe { slice::from_raw_parts(span.reference, span.length as usize) }
     }
 }
 

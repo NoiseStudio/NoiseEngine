@@ -1,2 +1,1 @@
-pub trait Texture {
-}
+pub trait Texture {}

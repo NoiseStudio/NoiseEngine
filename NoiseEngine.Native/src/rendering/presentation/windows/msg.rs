@@ -10,7 +10,7 @@ pub struct Msg {
     l_param: isize,
     time: u32,
     pt: Point,
-    l_private: u32
+    l_private: u32,
 }
 
 impl Default for Msg {
@@ -22,5 +22,5 @@ impl Default for Msg {
 #[repr(C)]
 pub struct Point {
     x: i32,
-    y: i32
+    y: i32,
 }

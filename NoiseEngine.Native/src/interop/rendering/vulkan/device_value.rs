@@ -16,5 +16,5 @@ pub(crate) struct VulkanDeviceValue<'init> {
     pub supports_graphics: bool,
     pub supports_computing: bool,
     pub supports_presentation: bool,
-    pub handle: Box<Arc<VulkanDevice<'init>>>
+    pub handle: Box<Arc<VulkanDevice<'init>>>,
 }

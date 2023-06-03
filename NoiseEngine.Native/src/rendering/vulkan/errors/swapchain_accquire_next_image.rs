@@ -2,7 +2,10 @@ use std::{error::Error, fmt::Display};
 
 use ash::vk;
 
-use crate::{interop::prelude::{ResultError, ResultErrorKind}, errors::invalid_operation::InvalidOperationError};
+use crate::{
+    errors::invalid_operation::InvalidOperationError,
+    interop::prelude::{ResultError, ResultErrorKind},
+};
 
 #[derive(Debug)]
 pub enum SwapchainAccquireNextImageError {
@@ -10,7 +13,7 @@ pub enum SwapchainAccquireNextImageError {
     OutOfDate,
     Recreated,
     InvalidOperation(InvalidOperationError),
-    Vulkan(vk::Result)
+    Vulkan(vk::Result),
 }
 
 impl Error for SwapchainAccquireNextImageError {
@@ -18,20 +21,24 @@ impl Error for SwapchainAccquireNextImageError {
         match self {
             Self::InvalidOperation(err) => err.source(),
             Self::Vulkan(err) => err.source(),
-            _ => None
+            _ => None,
         }
     }
 }
 
 impl Display for SwapchainAccquireNextImageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Self::Suboptimal(_) => "Suboptimal".to_string(),
-            Self::OutOfDate => "Out of date".to_string(),
-            Self::Recreated => "Recreated".to_string(),
-            Self::InvalidOperation(err) => err.to_string(),
-            Self::Vulkan(err) => err.to_string(),
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Suboptimal(_) => "Suboptimal".to_string(),
+                Self::OutOfDate => "Out of date".to_string(),
+                Self::Recreated => "Recreated".to_string(),
+                Self::InvalidOperation(err) => err.to_string(),
+                Self::Vulkan(err) => err.to_string(),
+            }
+        )
     }
 }
 

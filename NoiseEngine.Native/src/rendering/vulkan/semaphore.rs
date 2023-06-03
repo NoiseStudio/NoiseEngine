@@ -6,12 +6,15 @@ use super::device::VulkanDevice;
 
 pub struct VulkanSemaphore<'init> {
     inner: vk::Semaphore,
-    device: Arc<VulkanDevice<'init>>
+    device: Arc<VulkanDevice<'init>>,
 }
 
-impl<'init> VulkanSemaphore<'init>{
+impl<'init> VulkanSemaphore<'init> {
     pub fn new(device: &Arc<VulkanDevice<'init>>, inner: vk::Semaphore) -> Self {
-        Self { inner, device: device.clone() }
+        Self {
+            inner,
+            device: device.clone(),
+        }
     }
 
     pub fn inner(&self) -> vk::Semaphore {
@@ -22,9 +25,11 @@ impl<'init> VulkanSemaphore<'init>{
 impl Drop for VulkanSemaphore<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.initialized().unwrap().vulkan_device().destroy_semaphore(
-                self.inner, None
-            );
+            self.device
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_semaphore(self.inner, None);
         }
     }
 }

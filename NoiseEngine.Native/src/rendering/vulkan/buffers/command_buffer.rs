@@ -1,21 +1,33 @@
-use std::{ptr, sync::{Arc, Weak}};
+use std::{
+    ptr,
+    sync::{Arc, Weak},
+};
 
 use ash::vk;
 
 use crate::{
+    common::pool::PoolItem,
+    interop::prelude::InteropResult,
     rendering::{
-        vulkan::{
-            device::{VulkanDevice, VulkanQueueFamily, VulkanDeviceInitialized}, device_support::VulkanDeviceSupport,
-            errors::universal::VulkanUniversalError, fence::VulkanFence, pool_wrappers::VulkanCommandPool
+        buffers::{
+            command_buffer::GraphicsCommandBuffer,
+            command_buffers::command::GraphicsCommandBufferCommand,
         },
-        buffers::{command_buffers::command::GraphicsCommandBufferCommand, command_buffer::GraphicsCommandBuffer},
-        fence::GraphicsFence
+        fence::GraphicsFence,
+        vulkan::{
+            device::{VulkanDevice, VulkanDeviceInitialized, VulkanQueueFamily},
+            device_support::VulkanDeviceSupport,
+            errors::universal::VulkanUniversalError,
+            fence::VulkanFence,
+            pool_wrappers::VulkanCommandPool,
+        },
     },
-    serialization::reader::SerializationReader, interop::prelude::InteropResult, common::pool::PoolItem
+    serialization::reader::SerializationReader,
 };
 
 use super::command_buffers::{
-    memory_commands, misc_commands, compute_commands, camera_commands::{self, AttachCameraWindowOutput}, draw_commands
+    camera_commands::{self, AttachCameraWindowOutput},
+    compute_commands, draw_commands, memory_commands, misc_commands,
 };
 
 pub struct VulkanCommandBuffer<'init: 'fam, 'fam> {
@@ -50,9 +62,7 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             command_buffer_count: 1,
         };
 
-        let command_buffer = unsafe {
-            vulkan_device.allocate_command_buffers(&allocate_info)
-        }?[0];
+        let command_buffer = unsafe { vulkan_device.allocate_command_buffers(&allocate_info) }?[0];
 
         let mut result = VulkanCommandBuffer {
             initialized,
@@ -87,9 +97,19 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
         let mut signal_semaphores = Vec::new();
 
         for output in &self.attached_camera_windows {
-            wait_semaphores.push(output.pass.get_image_available_semaphore(output.frame_index).inner());
+            wait_semaphores.push(
+                output
+                    .pass
+                    .get_image_available_semaphore(output.frame_index)
+                    .inner(),
+            );
             wait_stages.push(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
-            signal_semaphores.push(output.pass.get_render_finished_semaphore(output.frame_index).inner());
+            signal_semaphores.push(
+                output
+                    .pass
+                    .get_render_finished_semaphore(output.frame_index)
+                    .inner(),
+            );
         }
 
         let submit_info = vk::SubmitInfo {
@@ -106,12 +126,14 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
 
         let fence = match &self.used_fence {
             Some(fence) => fence.clone(),
-            None => Arc::new(initialized.pool().get_fence(&self.device)?)
+            None => Arc::new(initialized.pool().get_fence(&self.device)?),
         };
 
         unsafe {
             vulkan_device.queue_submit(
-                self.queue_family.get_queue().queue, &[submit_info], fence.inner()
+                self.queue_family.get_queue().queue,
+                &[submit_info],
+                fence.inner(),
             )
         }?;
 
@@ -145,7 +167,8 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                 let _swapchain_lock = pass.lock_ash_swapchain()?;
 
                 _ = unsafe {
-                    pass.ash_swapchain().queue_present(present_queue.queue, &present_info)
+                    pass.ash_swapchain()
+                        .queue_present(present_queue.queue, &present_info)
                 };
             }
 
@@ -160,11 +183,12 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
                     continue;
                 }
 
-                if result != vk::Result::ERROR_OUT_OF_DATE_KHR || result != vk::Result::SUBOPTIMAL_KHR {
-                    if
-                        let Some(swapchain) =
-                        Weak::upgrade(self.attached_camera_windows[i].pass.swapchain()
-                    ) {
+                if result != vk::Result::ERROR_OUT_OF_DATE_KHR
+                    || result != vk::Result::SUBOPTIMAL_KHR
+                {
+                    if let Some(swapchain) =
+                        Weak::upgrade(self.attached_camera_windows[i].pass.swapchain())
+                    {
                         swapchain.recreate(None)?;
                     }
                 } else {
@@ -179,7 +203,9 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
         Ok(fence)
     }
 
-    pub fn get_or_create_used_fence(&mut self) -> Result<Arc<VulkanFence<'init>>, VulkanUniversalError> {
+    pub fn get_or_create_used_fence(
+        &mut self,
+    ) -> Result<Arc<VulkanFence<'init>>, VulkanUniversalError> {
         match &self.used_fence {
             Some(fence) => Ok(fence.clone()),
             None => {
@@ -191,7 +217,9 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
     }
 
     fn record(
-        &mut self, mut data: SerializationReader, simultaneous_execute: bool
+        &mut self,
+        mut data: SerializationReader,
+        simultaneous_execute: bool,
     ) -> Result<(), VulkanUniversalError> {
         let initialized = self.initialized;
         let vulkan_device = initialized.vulkan_device();
@@ -208,42 +236,52 @@ impl<'dev: 'init, 'init: 'fam, 'fam> VulkanCommandBuffer<'init, 'fam> {
             p_inheritance_info: ptr::null(),
         };
 
-        unsafe {
-            vulkan_device.begin_command_buffer(self.inner, &begin_info)
-        }?;
+        unsafe { vulkan_device.begin_command_buffer(self.inner, &begin_info) }?;
 
         while let Some(command) = data.read::<GraphicsCommandBufferCommand>() {
             match command {
-                GraphicsCommandBufferCommand::CopyBuffer =>
-                    memory_commands::copy_buffer(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::CopyBufferToTexture =>
-                    memory_commands::copy_buffer_to_texture(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::CopyTextureToBuffer =>
-                    memory_commands::copy_texture_to_buffer(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::Dispatch =>
-                    compute_commands::dispatch(&mut data, self, vulkan_device),
+                GraphicsCommandBufferCommand::CopyBuffer => {
+                    memory_commands::copy_buffer(&mut data, self, vulkan_device)
+                }
+                GraphicsCommandBufferCommand::CopyBufferToTexture => {
+                    memory_commands::copy_buffer_to_texture(&mut data, self, vulkan_device)
+                }
+                GraphicsCommandBufferCommand::CopyTextureToBuffer => {
+                    memory_commands::copy_texture_to_buffer(&mut data, self, vulkan_device)
+                }
+                GraphicsCommandBufferCommand::Dispatch => {
+                    compute_commands::dispatch(&mut data, self, vulkan_device)
+                }
                 GraphicsCommandBufferCommand::AttachCameraWindow => {
                     let used_fence = self.get_or_create_used_fence()?;
-                    self.attached_camera_windows.push(
-                        camera_commands::attach_camera_window(&mut data, self, vulkan_device, &used_fence)?
-                    )
-                },
-                GraphicsCommandBufferCommand::AttachCameraTexture =>
-                    camera_commands::attach_camera_texture(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::DetachCamera =>
-                    camera_commands::detach_camera(self, vulkan_device),
-                GraphicsCommandBufferCommand::DrawMesh =>
-                    draw_commands::draw_mesh(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::AttachPipeline => self.attached_pipeline_layout =
-                    misc_commands::attach_shader(&mut data, self, vulkan_device),
-                GraphicsCommandBufferCommand::AttachMaterial =>
+                    self.attached_camera_windows
+                        .push(camera_commands::attach_camera_window(
+                            &mut data,
+                            self,
+                            vulkan_device,
+                            &used_fence,
+                        )?)
+                }
+                GraphicsCommandBufferCommand::AttachCameraTexture => {
+                    camera_commands::attach_camera_texture(&mut data, self, vulkan_device)
+                }
+                GraphicsCommandBufferCommand::DetachCamera => {
+                    camera_commands::detach_camera(self, vulkan_device)
+                }
+                GraphicsCommandBufferCommand::DrawMesh => {
+                    draw_commands::draw_mesh(&mut data, self, vulkan_device)
+                }
+                GraphicsCommandBufferCommand::AttachPipeline => {
+                    self.attached_pipeline_layout =
+                        misc_commands::attach_shader(&mut data, self, vulkan_device)
+                }
+                GraphicsCommandBufferCommand::AttachMaterial => {
                     misc_commands::attach_material(&mut data, self, vulkan_device)
+                }
             };
-        };
+        }
 
-        unsafe {
-            vulkan_device.end_command_buffer(self.inner)
-        }?;
+        unsafe { vulkan_device.end_command_buffer(self.inner) }?;
 
         Ok(())
     }
@@ -261,9 +299,9 @@ impl Drop for VulkanCommandBuffer<'_, '_> {
         }.unwrap();*/
 
         unsafe {
-            initialized.vulkan_device().free_command_buffers(
-                self.command_pool.inner(), &[self.inner]
-            )
+            initialized
+                .vulkan_device()
+                .free_command_buffers(self.command_pool.inner(), &[self.inner])
         }
     }
 }
@@ -272,7 +310,7 @@ impl<'init> GraphicsCommandBuffer<'init> for VulkanCommandBuffer<'init, '_> {
     fn execute(&self) -> InteropResult<Box<Arc<dyn GraphicsFence + 'init>>> {
         match self.execute() {
             Ok(fence) => InteropResult::with_ok(Box::new(fence)),
-            Err(err) => InteropResult::with_err(err.into())
+            Err(err) => InteropResult::with_err(err.into()),
         }
     }
 }

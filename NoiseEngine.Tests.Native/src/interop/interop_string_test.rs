@@ -14,8 +14,7 @@ extern "C" fn interop_interop_string_test_unmanaged_create_from_string() -> Inte
 }
 
 #[no_mangle]
-extern "C" fn interop_interop_string_test_unmanaged_destroy(_string: InteropString) {
-}
+extern "C" fn interop_interop_string_test_unmanaged_destroy(_string: InteropString) {}
 
 #[no_mangle]
 extern "C" fn interop_interop_string_test_unmanaged_compare(string: InteropString) -> bool {
@@ -28,6 +27,8 @@ extern "C" fn interop_interop_string_test_unmanaged_create_non_ascii() -> Intero
 }
 
 #[no_mangle]
-extern "C" fn interop_interop_string_test_unmanaged_compare_non_ascii(string: InteropString) -> bool {
+extern "C" fn interop_interop_string_test_unmanaged_compare_non_ascii(
+    string: InteropString,
+) -> bool {
     String::from(string) == TEST_STRING_NON_ASCII
 }

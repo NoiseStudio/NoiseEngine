@@ -1,25 +1,28 @@
-use std::{ptr, ffi::CString, sync::Arc};
+use std::{ffi::CString, ptr, sync::Arc};
 
 use ash::vk;
 
 use crate::errors::invalid_operation::InvalidOperationError;
 
 use super::{
-    errors::universal::VulkanUniversalError, pipeline_layout::PipelineLayout,
-    pipeline_shader_stage::PipelineShaderStage, graphics_pipeline_create_info::GraphicsPipelineCreateInfo,
-    render_pass::RenderPass
+    errors::universal::VulkanUniversalError,
+    graphics_pipeline_create_info::GraphicsPipelineCreateInfo, pipeline_layout::PipelineLayout,
+    pipeline_shader_stage::PipelineShaderStage, render_pass::RenderPass,
 };
 
 pub struct Pipeline<'init> {
     inner: vk::Pipeline,
     _render_pass: Option<Arc<RenderPass<'init>>>,
-    layout: Arc<PipelineLayout<'init>>
+    layout: Arc<PipelineLayout<'init>>,
 }
 
 impl<'init> Pipeline<'init> {
     pub fn with_graphics(
-        render_pass: &Arc<RenderPass<'init>>, layout: &Arc<PipelineLayout<'init>>, stages: &[PipelineShaderStage],
-        flags: vk::PipelineCreateFlags, create_info: GraphicsPipelineCreateInfo
+        render_pass: &Arc<RenderPass<'init>>,
+        layout: &Arc<PipelineLayout<'init>>,
+        stages: &[PipelineShaderStage],
+        flags: vk::PipelineCreateFlags,
+        create_info: GraphicsPipelineCreateInfo,
     ) -> Result<Self, VulkanUniversalError> {
         // Stages.
         let mut stage_names = Vec::with_capacity(stages.len());
@@ -28,9 +31,12 @@ impl<'init> Pipeline<'init> {
         for stage in stages {
             let stage_name = match CString::new(&stage.name) {
                 Ok(s) => s,
-                Err(_) => return Err(InvalidOperationError::with_str(
-                    "Pipeline shader stage name contains null character."
-                ).into())
+                Err(_) => {
+                    return Err(InvalidOperationError::with_str(
+                        "Pipeline shader stage name contains null character.",
+                    )
+                    .into())
+                }
             };
 
             final_stages.push(vk::PipelineShaderStageCreateInfo {
@@ -50,10 +56,15 @@ impl<'init> Pipeline<'init> {
             s_type: vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::PipelineVertexInputStateCreateFlags::empty(),
-            vertex_binding_description_count: create_info.vertex_input_binding_descriptions.len() as u32,
+            vertex_binding_description_count: create_info.vertex_input_binding_descriptions.len()
+                as u32,
             p_vertex_binding_descriptions: create_info.vertex_input_binding_descriptions.as_ptr(),
-            vertex_attribute_description_count: create_info.vertex_input_attribute_descriptions.len() as u32,
-            p_vertex_attribute_descriptions: create_info.vertex_input_attribute_descriptions.as_ptr(),
+            vertex_attribute_description_count: create_info
+                .vertex_input_attribute_descriptions
+                .len() as u32,
+            p_vertex_attribute_descriptions: create_info
+                .vertex_input_attribute_descriptions
+                .as_ptr(),
         };
 
         // Input assembly.
@@ -150,10 +161,7 @@ impl<'init> Pipeline<'init> {
         };
 
         // Dynamic.
-        let dynamic_states = [
-            vk::DynamicState::VIEWPORT,
-            vk::DynamicState::SCISSOR
-        ];
+        let dynamic_states = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
 
         let dynamic = vk::PipelineDynamicStateCreateInfo {
             s_type: vk::StructureType::PIPELINE_DYNAMIC_STATE_CREATE_INFO,
@@ -189,24 +197,35 @@ impl<'init> Pipeline<'init> {
         let initialized = layout.device().initialized()?;
         let inner = match unsafe {
             initialized.vulkan_device().create_graphics_pipelines(
-                vk::PipelineCache::null(), &[create_info_final], None
+                vk::PipelineCache::null(),
+                &[create_info_final],
+                None,
             )
         } {
             Ok(i) => i[0],
-            Err((_, err)) => return Err(err.into())
+            Err((_, err)) => return Err(err.into()),
         };
 
-        Ok(Self { inner, _render_pass: Some(render_pass.clone()), layout: layout.clone() })
+        Ok(Self {
+            inner,
+            _render_pass: Some(render_pass.clone()),
+            layout: layout.clone(),
+        })
     }
 
     pub fn with_compute(
-        layout: &Arc<PipelineLayout<'init>>, stage: PipelineShaderStage, flags: vk::PipelineCreateFlags
+        layout: &Arc<PipelineLayout<'init>>,
+        stage: PipelineShaderStage,
+        flags: vk::PipelineCreateFlags,
     ) -> Result<Self, VulkanUniversalError> {
         let stage_name = match CString::new(String::from(stage.name)) {
             Ok(s) => s,
-            Err(_) => return Err(
-                InvalidOperationError::with_str("Pipeline shader stage name contains null character.").into()
-            )
+            Err(_) => {
+                return Err(InvalidOperationError::with_str(
+                    "Pipeline shader stage name contains null character.",
+                )
+                .into())
+            }
         };
 
         let final_stage = vk::PipelineShaderStageCreateInfo {
@@ -232,14 +251,20 @@ impl<'init> Pipeline<'init> {
         let initialized = layout.device().initialized()?;
         let inner = match unsafe {
             initialized.vulkan_device().create_compute_pipelines(
-                vk::PipelineCache::null(), &[create_info], None
+                vk::PipelineCache::null(),
+                &[create_info],
+                None,
             )
         } {
             Ok(i) => i[0],
-            Err((_, err)) => return Err(err.into())
+            Err((_, err)) => return Err(err.into()),
         };
 
-        Ok(Self { inner, _render_pass: None, layout: layout.clone() })
+        Ok(Self {
+            inner,
+            _render_pass: None,
+            layout: layout.clone(),
+        })
     }
 
     pub fn inner(&self) -> vk::Pipeline {
@@ -254,9 +279,12 @@ impl<'init> Pipeline<'init> {
 impl Drop for Pipeline<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.layout.device().initialized().unwrap().vulkan_device().destroy_pipeline(
-                self.inner, None
-            );
+            self.layout
+                .device()
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_pipeline(self.inner, None);
         }
     }
 }

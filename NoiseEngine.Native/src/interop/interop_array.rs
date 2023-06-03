@@ -17,10 +17,7 @@ impl<T> InteropArray<T> {
             ptr = interop_allocator::alloc(size) as *mut T;
         }
 
-        InteropArray {
-            ptr,
-            length,
-        }
+        InteropArray { ptr, length }
     }
 
     pub fn as_slice(&self) -> &[T] {
@@ -35,10 +32,7 @@ impl<T> InteropArray<T> {
     /// The caller must ensure that the pointer is valid for the specified length and that the
     /// ownership of the pointer is transferred.
     pub unsafe fn from_raw_parts(ptr: *mut T, length: i32) -> InteropArray<T> {
-        InteropArray {
-            ptr,
-            length,
-        }
+        InteropArray { ptr, length }
     }
 }
 
@@ -81,16 +75,12 @@ impl<T> From<InteropArray<T>> for Vec<T> {
 
 impl<'a, T> From<&'a InteropArray<T>> for &'a [T] {
     fn from(array: &'a InteropArray<T>) -> &'a [T] {
-        unsafe {
-            slice::from_raw_parts(array.ptr, array.length as usize)
-        }
+        unsafe { slice::from_raw_parts(array.ptr, array.length as usize) }
     }
 }
 
 impl<'a, T> From<&'a mut InteropArray<T>> for &'a mut [T] {
     fn from(array: &'a mut InteropArray<T>) -> &'a mut [T] {
-        unsafe {
-            slice::from_raw_parts_mut(array.ptr, array.length as usize)
-        }
+        unsafe { slice::from_raw_parts_mut(array.ptr, array.length as usize) }
     }
 }

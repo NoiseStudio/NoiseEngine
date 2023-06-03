@@ -6,7 +6,7 @@ const DEFAULT_MESSAGE: &str = "Window is not supported on this graphics device."
 
 #[derive(Debug)]
 pub struct WindowNotSupportedError {
-    message: String
+    message: String,
 }
 
 impl WindowNotSupportedError {
@@ -25,7 +25,9 @@ impl WindowNotSupportedError {
 
 impl Default for WindowNotSupportedError {
     fn default() -> Self {
-        Self { message: DEFAULT_MESSAGE.to_string() }
+        Self {
+            message: DEFAULT_MESSAGE.to_string(),
+        }
     }
 }
 

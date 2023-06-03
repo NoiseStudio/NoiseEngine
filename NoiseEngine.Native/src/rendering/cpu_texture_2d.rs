@@ -6,15 +6,14 @@ use crate::interop::prelude::InteropArray;
 pub enum TextureFileFormat {
     Png,
     Jpeg,
-    WebP
+    WebP,
 }
 
-pub fn vk_format_to_color_type(
-    vk_format: vk::Format,
-) -> Option<image::ColorType> {
+pub fn vk_format_to_color_type(vk_format: vk::Format) -> Option<image::ColorType> {
     type F = vk::Format;
 
-    match vk_format {
+    #[rustfmt::skip]
+    let result = match vk_format {
         F::R8_UNORM | F::R8_SNORM | F::R8_USCALED | F::R8_SSCALED | F::R8_UINT | F::R8_SINT | F::R8_SRGB => {
             Some(image::ColorType::L8)
         },
@@ -46,7 +45,8 @@ pub fn vk_format_to_color_type(
             Some(image::ColorType::Rgba32F)
         },
         _ => None,
-    }
+    };
+    result
 }
 
 #[repr(C)]
@@ -69,8 +69,7 @@ impl CpuTextureData {
         assert_ne!(extent_x, 0);
         assert_ne!(extent_y, 0);
         assert_ne!(extent_z, 0);
-        let size =
-            extent_x * extent_y * extent_z * Self::pixel_size(format) as u32;
+        let size = extent_x * extent_y * extent_z * Self::pixel_size(format) as u32;
         assert_eq!(size, data.as_slice().len() as u32);
 
         Self {
@@ -105,7 +104,8 @@ impl CpuTextureData {
     pub fn pixel_size(format: vk::Format) -> usize {
         type F = vk::Format;
 
-        match format {
+        #[rustfmt::skip]
+        let result = match format {
             F::R8_UNORM | F::R8_SNORM | F::R8_USCALED | F::R8_SSCALED | F::R8_UINT | F::R8_SINT | F::R8_SRGB => {
                 1
             },
@@ -137,6 +137,7 @@ impl CpuTextureData {
                 16
             },
             _ => unimplemented!("unsupported format: {:?}", format),
-        }
+        };
+        result
     }
 }
