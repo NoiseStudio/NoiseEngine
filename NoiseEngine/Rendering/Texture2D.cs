@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Interop;
+﻿using System;
+using NoiseEngine.Interop;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Vulkan;
 
@@ -28,6 +29,38 @@ public class Texture2D : Texture {
         Height = height;
         MipLevels = mipLevels;
         SampleCount = sampleCount;
+    }
+
+    /// <summary>
+    /// Decodes given <paramref name="fileData"/> to <see cref="CpuTexture2D"/>.
+    /// Makes an educated guess about file format.
+    /// </summary>
+    /// <param name="fileData">File data.</param>
+    /// <param name="device"><see cref="GraphicsDevice"/> to use.</param>
+    /// <param name="usage">
+    /// Texture usage flags. Must contain <see cref="TextureUsage.TransferDestination"/> flag
+    /// to allow for copying CPU data into it.
+    /// </param>
+    /// <param name="format">Target format for the texture. Null tries to use the format of the file.</param>
+    /// <param name="mipLevels">Mipmap levels.</param>
+    /// <param name="linear">Use linear memory layout instead of optimal.</param>
+    /// <param name="sampleCount">Samples per texel.</param>
+    /// <returns>Created <see cref="Texture2D"/>.</returns>
+    /// <returns>Result texture.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="usage"/> does not have a <see cref="TextureUsage.TransferDestination"/> flag.
+    /// </exception>
+    /// <exception cref="ArgumentException">Throws if decoding file data fails.</exception>
+    public static Texture2D FromFile(
+        ReadOnlySpan<byte> fileData,
+        GraphicsDevice device,
+        TextureUsage usage,
+        TextureFormat? format = null,
+        uint mipLevels = 1,
+        bool linear = false,
+        uint sampleCount = 1
+    ) {
+        return CpuTexture2D.FromFile(fileData, format).ToTexture2D(device, usage, mipLevels, linear, sampleCount);
     }
 
     /// <summary>
