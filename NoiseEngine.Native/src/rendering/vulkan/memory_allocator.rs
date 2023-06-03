@@ -1,4 +1,10 @@
-use std::{sync::{Mutex, Arc}, ptr, mem::ManuallyDrop, cell::UnsafeCell, rc::Rc};
+use std::{
+    cell::UnsafeCell,
+    mem::ManuallyDrop,
+    ptr,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 use ash::vk;
 use gpu_alloc::{Config, Request, UsageFlags};
@@ -8,7 +14,7 @@ use super::{errors::universal::VulkanUniversalError, instance::VulkanInstance};
 
 pub(crate) struct MemoryAllocator {
     device: Rc<ash::Device>,
-    inner: Mutex<gpu_alloc::GpuAllocator<vk::DeviceMemory>>
+    inner: Mutex<gpu_alloc::GpuAllocator<vk::DeviceMemory>>,
 }
 
 impl MemoryAllocator {
@@ -17,39 +23,44 @@ impl MemoryAllocator {
         device: Rc<ash::Device>,
         physical_device: vk::PhysicalDevice,
     ) -> Result<Self, VulkanUniversalError> {
-        let props = unsafe {
-            gpu_alloc_ash::device_properties(instance.inner(), 0, physical_device)?
-        };
+        let props =
+            unsafe { gpu_alloc_ash::device_properties(instance.inner(), 0, physical_device)? };
 
         // TODO: implement best suitable config.
         let config = Config::i_am_prototyping();
 
         Ok(MemoryAllocator {
             device,
-            inner: Mutex::new(gpu_alloc::GpuAllocator::new(config, props))
+            inner: Mutex::new(gpu_alloc::GpuAllocator::new(config, props)),
         })
     }
 
     pub fn alloc(&self, size: u64, map: bool) -> Result<MemoryBlock, VulkanUniversalError> {
         match unsafe {
-            self.inner.lock().unwrap().alloc(self.memory_device(), Request {
-                size,
-                align_mask: 1,
-                usage: if map {
-                    UsageFlags::HOST_ACCESS
-                } else {
-                    UsageFlags::FAST_DEVICE_ACCESS
+            self.inner.lock().unwrap().alloc(
+                self.memory_device(),
+                Request {
+                    size,
+                    align_mask: 1,
+                    usage: if map {
+                        UsageFlags::HOST_ACCESS
+                    } else {
+                        UsageFlags::FAST_DEVICE_ACCESS
+                    },
+                    memory_types: !0,
                 },
-                memory_types: !0
-            })
+            )
         } {
             Ok(block) => Ok(MemoryBlock::new(self, block)),
-            Err(err) => Err(err.into())
+            Err(err) => Err(err.into()),
         }
     }
 
     pub fn alloc_memory_type(
-        &self, size: u64, _type_bits: u32, property_flags: vk::MemoryPropertyFlags
+        &self,
+        size: u64,
+        _type_bits: u32,
+        property_flags: vk::MemoryPropertyFlags,
     ) -> Result<MemoryBlock, VulkanUniversalError> {
         let mut usage = UsageFlags::empty();
         if property_flags.contains(vk::MemoryPropertyFlags::DEVICE_LOCAL) {
@@ -69,15 +80,18 @@ impl MemoryAllocator {
         }
 
         match unsafe {
-            self.inner.lock().unwrap().alloc(self.memory_device(), Request {
-                size,
-                align_mask: 1,
-                usage,
-                memory_types: !0
-            })
+            self.inner.lock().unwrap().alloc(
+                self.memory_device(),
+                Request {
+                    size,
+                    align_mask: 1,
+                    usage,
+                    memory_types: !0,
+                },
+            )
         } {
             Ok(block) => Ok(MemoryBlock::new(self, block)),
-            Err(err) => Err(err.into())
+            Err(err) => Err(err.into()),
         }
     }
 
@@ -97,15 +111,18 @@ impl Drop for MemoryAllocator {
 pub(crate) struct MemoryBlock<'ma> {
     allocator: &'ma MemoryAllocator,
     inner: UnsafeCell<ManuallyDrop<gpu_alloc::MemoryBlock<vk::DeviceMemory>>>,
-    mutex: Mutex<()>
+    mutex: Mutex<()>,
 }
 
 impl<'ma> MemoryBlock<'ma> {
-    fn new(allocator: &'ma MemoryAllocator, inner: gpu_alloc::MemoryBlock<vk::DeviceMemory>) -> Self {
+    fn new(
+        allocator: &'ma MemoryAllocator,
+        inner: gpu_alloc::MemoryBlock<vk::DeviceMemory>,
+    ) -> Self {
         MemoryBlock {
             allocator,
             inner: ManuallyDrop::new(inner).into(),
-            mutex: Mutex::new(())
+            mutex: Mutex::new(()),
         }
     }
 
@@ -131,7 +148,7 @@ impl<'ma> MemoryBlock<'ma> {
 
         match result {
             Ok(()) => Ok(()),
-            Err(err) => Err(err.into())
+            Err(err) => Err(err.into()),
         }
     }
 
@@ -145,19 +162,22 @@ impl<'ma> MemoryBlock<'ma> {
 
         match result {
             Ok(()) => Ok(()),
-            Err(err) => Err(err.into())
+            Err(err) => Err(err.into()),
         }
     }
 }
 
 impl Drop for MemoryBlock<'_> {
     fn drop(&mut self) {
-        let block = unsafe {
-            ptr::read(self.inner.get_mut() as &gpu_alloc::MemoryBlock<vk::DeviceMemory>)
-        };
+        let block =
+            unsafe { ptr::read(self.inner.get_mut() as &gpu_alloc::MemoryBlock<vk::DeviceMemory>) };
 
         unsafe {
-            self.allocator().inner.lock().unwrap().dealloc(self.allocator().memory_device(), block)
+            self.allocator()
+                .inner
+                .lock()
+                .unwrap()
+                .dealloc(self.allocator().memory_device(), block)
         };
     }
 }

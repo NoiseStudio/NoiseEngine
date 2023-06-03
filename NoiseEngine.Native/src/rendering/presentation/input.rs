@@ -1,6 +1,5 @@
 use cgmath::Vector2;
 
-
 pub const CAPSLOCK_MODIFIER: u16 = 1 << 0;
 pub const SHIFT_MODIFIER: u16 = 1 << 1;
 pub const CONTROL_MODIFIER: u16 = 1 << 2;
@@ -19,14 +18,14 @@ pub const RIGHT_SUPER_MODIFIER: u16 = 1 << 12;
 pub struct InputData {
     pub key_values: [KeyValue; 133],
     pub cursor_position: Vector2<f64>,
-    pub scroll_delta: Vector2<f64>
+    pub scroll_delta: Vector2<f64>,
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct KeyValue {
     pub modifier: u16,
-    pub state: KeyState
+    pub state: KeyState,
 }
 
 #[repr(u16)]
@@ -35,5 +34,5 @@ pub enum KeyState {
     Released = 0,
     JustReleased = 1,
     JustPressed = 2,
-    Pressed = 3
+    Pressed = 3,
 }

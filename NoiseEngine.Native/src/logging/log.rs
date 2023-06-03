@@ -1,4 +1,4 @@
-use super::{logger, log_level::LogLevel};
+use super::{log_level::LogLevel, logger};
 
 pub fn debug(message: &str) {
     logger::log(LogLevel::Debug, message);

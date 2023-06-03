@@ -1,13 +1,16 @@
-use std::sync::{Arc, atomic::{Ordering, AtomicBool}};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
-use rsevents::{ManualResetEvent, EventState, Awaitable};
+use rsevents::{Awaitable, EventState, ManualResetEvent};
 
-use super::{fence::VulkanFence, errors::universal::VulkanUniversalError};
+use super::{errors::universal::VulkanUniversalError, fence::VulkanFence};
 
 pub struct VulkanSynchronizedFence<'init> {
     reset_event: ManualResetEvent,
     is_retired: AtomicBool,
-    fence: Arc<VulkanFence<'init>>
+    fence: Arc<VulkanFence<'init>>,
 }
 
 impl<'init> VulkanSynchronizedFence<'init> {
@@ -15,7 +18,7 @@ impl<'init> VulkanSynchronizedFence<'init> {
         Self {
             reset_event: ManualResetEvent::new(EventState::Unset),
             is_retired: AtomicBool::new(false),
-            fence
+            fence,
         }
     }
 
@@ -23,7 +26,7 @@ impl<'init> VulkanSynchronizedFence<'init> {
         self.reset_event.wait();
 
         if !self.is_retired.load(Ordering::Relaxed) {
-            return self.fence.wait(u64::MAX)
+            return self.fence.wait(u64::MAX);
         }
 
         Ok(true)

@@ -1,11 +1,11 @@
-use std::{sync::Arc, ptr};
+use std::{ptr, sync::Arc};
 
 use ash::vk;
 
 use crate::rendering::texture::Texture;
 
 use super::{
-    device::VulkanDevice, errors::universal::VulkanUniversalError, memory_allocator::MemoryBlock
+    device::VulkanDevice, errors::universal::VulkanUniversalError, memory_allocator::MemoryBlock,
 };
 
 #[repr(C)]
@@ -20,7 +20,7 @@ pub struct VulkanImageCreateInfo {
     pub linear: bool,
     pub usage: vk::ImageUsageFlags,
     pub concurrent: bool,
-    pub layout: vk::ImageLayout
+    pub layout: vk::ImageLayout,
 }
 
 pub struct VulkanImage<'init: 'ma, 'ma> {
@@ -28,12 +28,13 @@ pub struct VulkanImage<'init: 'ma, 'ma> {
     format: vk::Format,
     layout: vk::ImageLayout,
     _memory: MemoryBlock<'ma>,
-    device: Arc<VulkanDevice<'init>>
+    device: Arc<VulkanDevice<'init>>,
 }
 
-impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
+impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma> {
     pub fn new(
-        device: &'ma Arc<VulkanDevice<'init>>, create_info: VulkanImageCreateInfo
+        device: &'ma Arc<VulkanDevice<'init>>,
+        create_info: VulkanImageCreateInfo,
     ) -> Result<Self, VulkanUniversalError> {
         let initialized = device.initialized()?;
 
@@ -71,7 +72,7 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
             samples: vk::SampleCountFlags::from_raw(create_info.sample_count),
             tiling: match create_info.linear {
                 false => vk::ImageTiling::OPTIMAL,
-                true => vk::ImageTiling::LINEAR
+                true => vk::ImageTiling::LINEAR,
             },
             usage: create_info.usage,
             sharing_mode,
@@ -81,21 +82,28 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
         };
 
         let inner = unsafe {
-            initialized.vulkan_device().create_image(&vk_create_info, None)
+            initialized
+                .vulkan_device()
+                .create_image(&vk_create_info, None)
         }?;
 
         // Memory.
         let memory_requirements = unsafe {
-            initialized.vulkan_device().get_image_memory_requirements(inner)
+            initialized
+                .vulkan_device()
+                .get_image_memory_requirements(inner)
         };
 
         let memory = initialized.allocator().alloc_memory_type(
-            memory_requirements.size, memory_requirements.memory_type_bits,
-            vk::MemoryPropertyFlags::DEVICE_LOCAL
+            memory_requirements.size,
+            memory_requirements.memory_type_bits,
+            vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?;
 
         unsafe {
-            initialized.vulkan_device().bind_image_memory(inner, memory.memory(), memory.offset())
+            initialized
+                .vulkan_device()
+                .bind_image_memory(inner, memory.memory(), memory.offset())
         }?;
 
         Ok(Self {
@@ -103,7 +111,7 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
             format: create_info.format,
             layout: create_info.layout,
             _memory: memory,
-            device: device.clone()
+            device: device.clone(),
         })
     }
 
@@ -127,12 +135,13 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma>{
 impl Drop for VulkanImage<'_, '_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.initialized().unwrap().vulkan_device().destroy_image(
-                self.inner, None
-            )
+            self.device
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_image(self.inner, None)
         }
     }
 }
 
-impl Texture for VulkanImage<'_, '_> {
-}
+impl Texture for VulkanImage<'_, '_> {}

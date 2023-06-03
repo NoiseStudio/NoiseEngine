@@ -10,5 +10,5 @@ pub enum GraphicsCommandBufferCommand {
     DrawMesh = 7,
 
     AttachPipeline = 10000,
-    AttachMaterial = 10001
+    AttachMaterial = 10001,
 }

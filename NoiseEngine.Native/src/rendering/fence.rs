@@ -10,6 +10,9 @@ pub trait GraphicsFence {
     /// # Safety
     /// All fences must be from the same API and device.
     unsafe fn wait_multiple(
-        &self, fences: &[&Arc<dyn GraphicsFence>], wait_all: bool, timeout: u64
+        &self,
+        fences: &[&Arc<dyn GraphicsFence>],
+        wait_all: bool,
+        timeout: u64,
     ) -> Result<bool, ResultError>;
 }

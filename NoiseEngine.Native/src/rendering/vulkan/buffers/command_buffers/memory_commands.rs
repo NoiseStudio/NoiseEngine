@@ -3,11 +3,18 @@ use std::sync::Arc;
 use ash::vk;
 
 use crate::{
-    rendering::vulkan::{buffers::{buffer::VulkanBuffer, command_buffer::VulkanCommandBuffer}, image::VulkanImage},
-    serialization::reader::SerializationReader
+    rendering::vulkan::{
+        buffers::{buffer::VulkanBuffer, command_buffer::VulkanCommandBuffer},
+        image::VulkanImage,
+    },
+    serialization::reader::SerializationReader,
 };
 
-pub fn copy_buffer(data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device) {
+pub fn copy_buffer(
+    data: &mut SerializationReader,
+    buffer: &VulkanCommandBuffer,
+    vulkan_device: &ash::Device,
+) {
     let source_buffer = data.read_unchecked::<&&VulkanBuffer>();
     let destination_buffer = data.read_unchecked::<&&VulkanBuffer>();
 
@@ -22,14 +29,18 @@ pub fn copy_buffer(data: &mut SerializationReader, buffer: &VulkanCommandBuffer,
 
     unsafe {
         vulkan_device.cmd_copy_buffer(
-            buffer.inner(), source_buffer.inner(),
-            destination_buffer.inner(), &regions
+            buffer.inner(),
+            source_buffer.inner(),
+            destination_buffer.inner(),
+            &regions,
         )
     };
 }
 
 pub fn copy_buffer_to_texture(
-    data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
+    data: &mut SerializationReader,
+    buffer: &VulkanCommandBuffer,
+    vulkan_device: &ash::Device,
 ) {
     let source_buffer = data.read_unchecked::<vk::Buffer>();
     let destination_texture = data.read_unchecked::<&Arc<VulkanImage>>();
@@ -41,14 +52,19 @@ pub fn copy_buffer_to_texture(
 
     unsafe {
         vulkan_device.cmd_copy_buffer_to_image(
-            buffer.inner(), source_buffer, destination_texture.inner(),
-            destination_texture.layout(), &regions
+            buffer.inner(),
+            source_buffer,
+            destination_texture.inner(),
+            destination_texture.layout(),
+            &regions,
         )
     };
 }
 
 pub fn copy_texture_to_buffer(
-    data: &mut SerializationReader, buffer: &VulkanCommandBuffer, vulkan_device: &ash::Device
+    data: &mut SerializationReader,
+    buffer: &VulkanCommandBuffer,
+    vulkan_device: &ash::Device,
 ) {
     let source_texture = data.read_unchecked::<&Arc<VulkanImage>>();
     let destination_buffer = data.read_unchecked::<vk::Buffer>();
@@ -60,8 +76,11 @@ pub fn copy_texture_to_buffer(
 
     unsafe {
         vulkan_device.cmd_copy_image_to_buffer(
-            buffer.inner(), source_texture.inner(), source_texture.layout(),
-            destination_buffer, &regions
+            buffer.inner(),
+            source_texture.inner(),
+            source_texture.layout(),
+            destination_buffer,
+            &regions,
         )
     };
 }

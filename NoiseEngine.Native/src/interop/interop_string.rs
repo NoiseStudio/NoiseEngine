@@ -10,9 +10,7 @@ pub struct InteropString {
 impl From<InteropString> for String {
     fn from(interop_string: InteropString) -> String {
         // SAFETY: String is guaranteed to be valid UTF-8.
-        unsafe {
-            String::from_utf8_unchecked(interop_string.array.into())
-        }
+        unsafe { String::from_utf8_unchecked(interop_string.array.into()) }
     }
 }
 
@@ -25,9 +23,7 @@ impl From<&InteropString> for Vec<u8> {
 impl<'a> From<&'a InteropString> for &'a str {
     fn from(interop_string: &'a InteropString) -> Self {
         // SAFETY: String is guaranteed to be valid UTF-8.
-        unsafe {
-            str::from_utf8_unchecked((&interop_string.array).into())
-        }
+        unsafe { str::from_utf8_unchecked((&interop_string.array).into()) }
     }
 }
 
@@ -38,13 +34,9 @@ impl From<String> for InteropString {
 
         mem::forget(string);
 
-        let array = unsafe {
-            InteropArray::from_raw_parts(ptr, length)
-        };
+        let array = unsafe { InteropArray::from_raw_parts(ptr, length) };
 
-        InteropString {
-            array,
-        }
+        InteropString { array }
     }
 }
 

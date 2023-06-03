@@ -2,15 +2,18 @@ use std::{ptr, sync::Arc};
 
 use ash::vk;
 
-use super::{swapchain::Swapchain, errors::universal::VulkanUniversalError, device::VulkanDevice};
+use super::{device::VulkanDevice, errors::universal::VulkanUniversalError, swapchain::Swapchain};
 
 pub struct SwapchainImageView<'init> {
     inner: vk::ImageView,
-    device: Arc<VulkanDevice<'init>>
+    device: Arc<VulkanDevice<'init>>,
 }
 
 impl<'init> SwapchainImageView<'init> {
-    pub fn new(swapchain: &Swapchain<'init, '_>, image: vk::Image) -> Result<Self, VulkanUniversalError> {
+    pub fn new(
+        swapchain: &Swapchain<'init, '_>,
+        image: vk::Image,
+    ) -> Result<Self, VulkanUniversalError> {
         let vk_create_info = vk::ImageViewCreateInfo {
             s_type: vk::StructureType::IMAGE_VIEW_CREATE_INFO,
             p_next: ptr::null(),
@@ -35,10 +38,15 @@ impl<'init> SwapchainImageView<'init> {
 
         let initialized = swapchain.device().initialized()?;
         let inner = unsafe {
-            initialized.vulkan_device().create_image_view(&vk_create_info, None)
+            initialized
+                .vulkan_device()
+                .create_image_view(&vk_create_info, None)
         }?;
 
-        Ok(Self { inner, device: swapchain.device().clone() })
+        Ok(Self {
+            inner,
+            device: swapchain.device().clone(),
+        })
     }
 
     pub fn inner(&self) -> vk::ImageView {
@@ -49,9 +57,11 @@ impl<'init> SwapchainImageView<'init> {
 impl Drop for SwapchainImageView<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.initialized().unwrap().vulkan_device().destroy_image_view(
-                self.inner, None
-            );
+            self.device
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_image_view(self.inner, None);
         }
     }
 }

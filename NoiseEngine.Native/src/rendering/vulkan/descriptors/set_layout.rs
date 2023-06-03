@@ -1,10 +1,12 @@
-use std::{ptr, sync::Arc, collections::{HashMap, hash_map::Entry}};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    ptr,
+    sync::Arc,
+};
 
 use ash::vk;
 
-use crate::rendering::vulkan::{
-    device::VulkanDevice, errors::universal::VulkanUniversalError
-};
+use crate::rendering::vulkan::{device::VulkanDevice, errors::universal::VulkanUniversalError};
 
 use super::pool_sizes::DescriptorPoolSizes;
 
@@ -16,8 +18,9 @@ pub struct DescriptorSetLayout<'init> {
 
 impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
     pub fn new(
-        device: &'dev Arc<VulkanDevice<'init>>, flags: vk::DescriptorSetLayoutCreateFlags,
-        bindings: &[vk::DescriptorSetLayoutBinding]
+        device: &'dev Arc<VulkanDevice<'init>>,
+        flags: vk::DescriptorSetLayoutCreateFlags,
+        bindings: &[vk::DescriptorSetLayoutBinding],
     ) -> Result<Self, VulkanUniversalError> {
         let create_info = vk::DescriptorSetLayoutCreateInfo {
             s_type: vk::StructureType::DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -29,7 +32,9 @@ impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
 
         let initialized = device.initialized()?;
         let inner = unsafe {
-            initialized.vulkan_device().create_descriptor_set_layout(&create_info, None)
+            initialized
+                .vulkan_device()
+                .create_descriptor_set_layout(&create_info, None)
         }?;
 
         let mut pool_sizes = HashMap::new();
@@ -47,7 +52,10 @@ impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
 
         Ok(Self {
             inner,
-            pool_sizes: Arc::new(DescriptorPoolSizes { map: pool_sizes, count: sum_count }),
+            pool_sizes: Arc::new(DescriptorPoolSizes {
+                map: pool_sizes,
+                count: sum_count,
+            }),
             device: device.clone(),
         })
     }
@@ -68,9 +76,11 @@ impl<'dev: 'init, 'init> DescriptorSetLayout<'init> {
 impl Drop for DescriptorSetLayout<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.initialized().unwrap().vulkan_device().destroy_descriptor_set_layout(
-                self.inner, None
-            );
+            self.device
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_descriptor_set_layout(self.inner, None);
         }
     }
 }

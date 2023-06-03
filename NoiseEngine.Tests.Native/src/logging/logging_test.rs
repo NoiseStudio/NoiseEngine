@@ -1,4 +1,4 @@
-use noise_engine_native::{logging::prelude::*, interop::prelude::InteropString};
+use noise_engine_native::{interop::prelude::InteropString, logging::prelude::*};
 
 #[no_mangle]
 extern "C" fn logging_interop_logging_test_debug(message: InteropString) {

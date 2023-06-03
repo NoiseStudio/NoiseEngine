@@ -3,9 +3,14 @@ use std::{error::Error, fmt::Display, str::Utf8Error};
 use ash::vk;
 use gpu_alloc::{AllocationError, MapError};
 
-use crate::{interop::prelude::ResultError, errors::{
-    invalid_operation::InvalidOperationError, null_reference::NullReferenceError, overflow::OverflowError
-}, rendering::errors::window_not_supported::WindowNotSupportedError};
+use crate::{
+    errors::{
+        invalid_operation::InvalidOperationError, null_reference::NullReferenceError,
+        overflow::OverflowError,
+    },
+    interop::prelude::ResultError,
+    rendering::errors::window_not_supported::WindowNotSupportedError,
+};
 
 #[derive(Debug)]
 pub enum VulkanUniversalError {
@@ -29,23 +34,27 @@ impl Error for VulkanUniversalError {
             VulkanUniversalError::Vulkan(err) => err.source(),
             VulkanUniversalError::Allocation(err) => err.source(),
             VulkanUniversalError::Map(err) => err.source(),
-            VulkanUniversalError::WindowNotSupported(err) => err.source()
+            VulkanUniversalError::WindowNotSupported(err) => err.source(),
         }
     }
 }
 
 impl Display for VulkanUniversalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            VulkanUniversalError::NullReference(err) => err.to_string(),
-            VulkanUniversalError::InvalidOperation(err) => err.to_string(),
-            VulkanUniversalError::Overflow(err) => err.to_string(),
-            VulkanUniversalError::Utf8(err) => err.to_string(),
-            VulkanUniversalError::Vulkan(err) => err.to_string(),
-            VulkanUniversalError::Allocation(err) => err.to_string(),
-            VulkanUniversalError::Map(err) => err.to_string(),
-            VulkanUniversalError::WindowNotSupported(err) => err.to_string()
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                VulkanUniversalError::NullReference(err) => err.to_string(),
+                VulkanUniversalError::InvalidOperation(err) => err.to_string(),
+                VulkanUniversalError::Overflow(err) => err.to_string(),
+                VulkanUniversalError::Utf8(err) => err.to_string(),
+                VulkanUniversalError::Vulkan(err) => err.to_string(),
+                VulkanUniversalError::Allocation(err) => err.to_string(),
+                VulkanUniversalError::Map(err) => err.to_string(),
+                VulkanUniversalError::WindowNotSupported(err) => err.to_string(),
+            }
+        )
     }
 }
 
@@ -107,7 +116,7 @@ impl From<VulkanUniversalError> for ResultError {
             VulkanUniversalError::Vulkan(err) => err.into(),
             VulkanUniversalError::Allocation(err) => err.into(),
             VulkanUniversalError::Map(err) => err.into(),
-            VulkanUniversalError::WindowNotSupported(err) => err.into()
+            VulkanUniversalError::WindowNotSupported(err) => err.into(),
         }
     }
 }
