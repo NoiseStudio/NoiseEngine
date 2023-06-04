@@ -22,12 +22,29 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     private long referenceCount = 1;
     private AtomicBool isReleased;
     private SimpleCamera? assignedCamera;
+    private string title;
 
     public WindowInput Input { get; }
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
     public uint Height { get; private set; }
-    public string Title { get; private set; }
+
+    public string Title {
+        get => title;
+        set {
+            if (!ReferenceCoutable.TryRcRetain())
+                return;
+            
+            InteropResult<None> result = WindowInterop.SetTitle(Handle, value);
+            ReferenceCoutable.RcRelease();
+
+            if (result.TryGetValue(out _, out ResultError error))
+                title = value;
+            else
+                error.ThrowAndDispose();
+        }
+    }
+
     public bool IsFocused { get; private set; }
 
     internal ulong Id { get; }
@@ -48,7 +65,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
         Width = width;
         Height = height;
-        Title = title;
+        this.title = title;
 
         Id = Interlocked.Increment(ref nextId);
         WindowEventHandler.InitializeStatic();
@@ -128,23 +145,6 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
         ReferenceCoutable.RcRelease();
         
         if (!result.TryGetValue(out _, out ResultError error))
-            error.ThrowAndDispose();
-    }
-    
-    /// <summary>
-    /// Sets the title of this <see cref="Window"/>.
-    /// </summary>
-    /// <param name="title">New title.</param>
-    public void SetTitle(string title) {
-        if (!ReferenceCoutable.TryRcRetain())
-            return;
-        
-        InteropResult<None> result = WindowInterop.SetTitle(Handle, title);
-        ReferenceCoutable.RcRelease();
-
-        if (result.TryGetValue(out _, out ResultError error))
-            Title = title;
-        else
             error.ThrowAndDispose();
     }
 

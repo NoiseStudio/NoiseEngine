@@ -7,7 +7,6 @@ namespace NoiseEngine.Tests;
 public class WindowTest : ApplicationTestEnvironment {
 
     private const int SetTitleCount = 32;
-    
     private const int WaitTime = 8;
     
     public WindowTest(ApplicationFixture fixture) : base(fixture) {
@@ -20,10 +19,10 @@ public class WindowTest : ApplicationTestEnvironment {
     
     [FactRequire(TestRequirements.Gui)]
     public void SetTitle() {
-        using Window window = new Window();
+        Window window = Fixture.GetWindow("counter: null");
         
         for (int i = 0; i < SetTitleCount; i++) {
-            window.SetTitle("counter: " + i);
+            window.Title = "counter: " + i;
             Thread.Sleep(WaitTime);
         }
     }
