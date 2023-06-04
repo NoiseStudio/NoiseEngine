@@ -27,6 +27,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
     public uint Height { get; private set; }
+    public string Title { get; private set; }
     public bool IsFocused { get; private set; }
 
     internal ulong Id { get; }
@@ -47,6 +48,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
         Width = width;
         Height = height;
+        Title = title;
 
         Id = Interlocked.Increment(ref nextId);
         WindowEventHandler.InitializeStatic();
@@ -119,10 +121,31 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     /// <param name="width">New width.</param>
     /// <param name="height">New height.</param>
     public void Resize(uint width, uint height) {
-        if (ReferenceCoutable.TryRcRetain()) {
-            WindowInterop.SetPosition(Handle, null, new Vector2<uint>(width, height));
-            ReferenceCoutable.RcRelease();
-        }
+        if (!ReferenceCoutable.TryRcRetain())
+            return;
+        
+        InteropResult<None> result = WindowInterop.SetPosition(Handle, null, new Vector2<uint>(width, height));
+        ReferenceCoutable.RcRelease();
+        
+        if (!result.TryGetValue(out _, out ResultError error))
+            error.ThrowAndDispose();
+    }
+    
+    /// <summary>
+    /// Sets the title of this <see cref="Window"/>.
+    /// </summary>
+    /// <param name="title">New title.</param>
+    public void SetTitle(string title) {
+        if (!ReferenceCoutable.TryRcRetain())
+            return;
+        
+        InteropResult<None> result = WindowInterop.SetTitle(Handle, title);
+        ReferenceCoutable.RcRelease();
+
+        if (result.TryGetValue(out _, out ResultError error))
+            Title = title;
+        else
+            error.ThrowAndDispose();
     }
 
     internal void ChangeAssignedCamera(SimpleCamera? camera) {
