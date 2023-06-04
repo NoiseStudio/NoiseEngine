@@ -80,6 +80,17 @@ extern "C" fn rendering_presentation_window_interop_set_cursor_position(
 }
 
 #[no_mangle]
+extern "C" fn rendering_presentation_window_interop_set_title(
+    window: &Arc<dyn Window>,
+    title: InteropString,
+) -> InteropResult<()> {
+    match window.set_title(title.into()) {
+        Ok(()) => InteropResult::with_ok(()),
+        Err(err) => InteropResult::with_err(err.into()),
+    }
+}
+
+#[no_mangle]
 extern "C" fn rendering_presentation_window_interop_is_focused(window: &Arc<dyn Window>) -> bool {
     window.is_focused()
 }

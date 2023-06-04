@@ -222,13 +222,14 @@ impl WindowWindows {
             bottom: reference.get_height() as i32,
         })?;
         let (position_x, position_y) = reference.get_winapi_position(&adjust);
-        let wide_title = wide_null(title.as_str()).as_ptr();
+        let wide_title = wide_null(title.as_str());
+        let wide_title_ptr = wide_title.as_ptr();
 
         reference.h_wnd = unsafe {
             CreateWindowExW(
                 0,
                 reference.class_name.as_ptr(),
-                wide_title,
+                wide_title_ptr,
                 reference.get_window_style(),
                 position_x,
                 position_y,
@@ -459,6 +460,7 @@ impl WindowWindows {
             WindowWindowsThreadTask::Hide => self.hide_thread(),
             WindowWindowsThreadTask::IsFocused => self.is_focused_thread(data),
             WindowWindowsThreadTask::Dispose => self.dispose_thread(),
+            WindowWindowsThreadTask::SetTitle(title) => self.set_title_thread(&title, data),
         };
 
         if let Some(s) = signal {
@@ -500,6 +502,23 @@ impl WindowWindows {
             if let Some(s) = signal {
                 s.set();
             }
+        }
+    }
+
+    fn set_title_thread(&self, title: &str, data: *mut c_void) {
+        let wide_title = wide_null(title);
+        let wide_title_ptr = wide_title.as_ptr();
+
+        let result = unsafe { SetWindowTextW(self.h_wnd, wide_title_ptr) };
+
+        let result = if result == 0 {
+            Some(Win32Error::get_last())
+        } else {
+            None
+        };
+
+        unsafe {
+            ptr::write(data as *mut Option<Win32Error>, result);
         }
     }
 }
@@ -625,6 +644,20 @@ impl Window for WindowWindows {
 
         if unsafe { SetCursorPos(position_i.x, position_i.y) } == 0 {
             Err(Win32Error::get_last().into())
+        } else {
+            Ok(())
+        }
+    }
+
+    fn set_title(&self, title: String) -> Result<(), PlatformUniversalError> {
+        let mut result: Option<Win32Error> = None;
+        self.execute_task_wait_with_data(
+            WindowWindowsThreadTask::SetTitle(title.to_string()),
+            &mut result,
+        );
+
+        if let Some(error) = result {
+            Err(error.into())
         } else {
             Ok(())
         }
@@ -860,6 +893,7 @@ enum WindowWindowsThreadTask {
     Hide,
     IsFocused,
     Dispose,
+    SetTitle(String),
 }
 
 #[link(name = "kernel32")]
@@ -931,4 +965,6 @@ extern "system" {
     ) -> u32;
 
     fn SetCursorPos(x: i32, y: i32) -> u32;
+
+    fn SetWindowTextW(h_wnd: *mut c_void, lp_string: *const wchar_t) -> u32;
 }

@@ -24,6 +24,7 @@ pub trait Window {
         size: Option<Vector2<u32>>,
     ) -> Result<(), PlatformUniversalError>;
     fn set_cursor_position(&self, position: Vector2<f64>) -> Result<(), PlatformUniversalError>;
+    fn set_title(&self, title: String) -> Result<(), PlatformUniversalError>;
     fn is_focused(&self) -> bool;
     fn dispose(&self) -> Result<(), PlatformUniversalError>;
 
