@@ -13,7 +13,7 @@ internal class SerializedNeslType : NeslType {
     private NeslType[] genericMakedTypeParameters = Array.Empty<NeslType>();
     private NeslGenericTypeParameter[] genericTypeParameters = Array.Empty<NeslGenericTypeParameter>();
     private NeslField[] fields = Array.Empty<NeslField>();
-    private NeslMethod[] methods = Array.Empty<NeslMethod>();
+    private IReadOnlyList<NeslMethod> methods = Array.Empty<NeslMethod>();
     private NeslType[] interfaces = Array.Empty<NeslType>();
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
@@ -82,7 +82,7 @@ internal class SerializedNeslType : NeslType {
         this.interfaces = interfaces;
     }
 
-    internal void SetMethods(NeslMethod[] methods) {
+    internal void SetMethods(IReadOnlyList<NeslMethod> methods) {
         this.methods = methods;
     }
 
@@ -110,11 +110,10 @@ internal class SerializedNeslType : NeslType {
         SetFields(fields.ToArray());
 
         // Create methods.
-        List<NeslMethod> methods = new List<NeslMethod>();
-
+        List<(NeslMethod, NeslMethod)> methods = new List<(NeslMethod, NeslMethod)>();
         foreach (NeslMethod method in GenericMakedFrom.Methods) {
             if (method.IsGeneric) {
-                methods.Add(new GenericNeslMethodInConstructedGenericNeslType(this, method, targetTypes));
+                methods.Add((method, new GenericNeslMethodInConstructedGenericNeslType(this, method, targetTypes)));
                 continue;
             }
 
@@ -154,7 +153,7 @@ internal class SerializedNeslType : NeslType {
             }
 
             // Construct new method.
-            methods.Add(new SerializedNeslMethod(
+            methods.Add((method, new SerializedNeslMethod(
                 method.Modifiers,
                 this,
                 method.Name,
@@ -165,11 +164,17 @@ internal class SerializedNeslType : NeslType {
                 method.ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
                 method.GenericTypeParameters.ToArray(),
                 ImmutableDictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>>.Empty,
-                GenericIlGenerator.RemoveGenerics(GenericMakedFrom, this, method, targetTypes)
-            ));
+                null
+            )));
         }
 
-        SetMethods(methods.ToArray());
+        SetMethods(methods.Select(x => x.Item2).ToArray());
+        foreach ((NeslMethod original, NeslMethod newMethod) in methods) {
+            if (newMethod is not SerializedNeslMethod serialized)
+                continue;
+
+            serialized.SetIlContainer(GenericIlGenerator.RemoveGenerics(GenericMakedFrom, this, original, targetTypes));
+        }
     }
 
 }

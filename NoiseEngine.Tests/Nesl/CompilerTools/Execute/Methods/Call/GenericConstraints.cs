@@ -60,9 +60,9 @@ public class GenericConstraints : NeslExecuteTestEnvironment {
 
             [Kernel(1, 1, 1)]
             void Main() {
-                buffer[0] = new Wrapper<f32>(420.69) + new Wrapper<f32>(1337.42);
+                buffer[0] = (new Wrapper<f32>(420.69) + new Wrapper<f32>(1337.42)).Value;
             }
-        ", null, 1758.11f);
+        ", null, 1758.1101f);
     }
 
 }

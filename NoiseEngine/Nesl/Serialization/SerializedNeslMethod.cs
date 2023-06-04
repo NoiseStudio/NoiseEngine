@@ -1,10 +1,13 @@
 ﻿using NoiseEngine.Nesl.CompilerTools;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.Serialization;
 
 internal class SerializedNeslMethod : NeslMethod {
+
+    private IlContainer? ilContainer;
 
     public override IEnumerable<NeslAttribute> Attributes { get; }
     public override IEnumerable<NeslAttribute> ReturnValueAttributes { get; }
@@ -15,7 +18,7 @@ internal class SerializedNeslMethod : NeslMethod {
         NeslGenericTypeParameter, IReadOnlyList<NeslType>
     > TypeGenericConstraints { get; }
 
-    protected override IlContainer IlContainer { get; }
+    protected override IlContainer IlContainer => ilContainer ?? throw new NullReferenceException();
 
     public SerializedNeslMethod(
         NeslModifiers modifiers, NeslType type, string name, NeslType? returnType, NeslType[] parameterTypes,
@@ -23,7 +26,7 @@ internal class SerializedNeslMethod : NeslMethod {
         IEnumerable<IEnumerable<NeslAttribute>> parameterAttributes,
         NeslGenericTypeParameter[] genericTypeParameters,
         IReadOnlyDictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>> typeGenericConstraints,
-        IlContainer ilContainer
+        IlContainer? ilContainer
     ) : base(type, name, returnType, parameterTypes) {
         Modifiers = modifiers;
         Attributes = attributes;
@@ -31,7 +34,11 @@ internal class SerializedNeslMethod : NeslMethod {
         ParameterAttributes = parameterAttributes.ToArray();
         GenericTypeParameters = genericTypeParameters;
         TypeGenericConstraints = typeGenericConstraints;
-        IlContainer = ilContainer;
+        this.ilContainer = ilContainer;
+    }
+
+    internal void SetIlContainer(IlContainer ilContainer) {
+        this.ilContainer = ilContainer;
     }
 
 }

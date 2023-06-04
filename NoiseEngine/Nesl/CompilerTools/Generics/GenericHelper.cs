@@ -18,23 +18,38 @@ internal static class GenericHelper {
                 .ToArray()
             );
         }
-        if (!currentType.IsGeneric)
-            return currentType;
         if (oldType == currentType)
             return newType;
 
-        NeslType[] typeParameters = currentType.GenericTypeParameters.ToArray();
+        NeslType[] typeParameters;
         bool changed = false;
+        if (currentType.IsGeneric) {
+            typeParameters = currentType.GenericTypeParameters.ToArray();
 
+            for (int i = 0; i < typeParameters.Length; i++) {
+                if (targetTypes.TryGetValue((NeslGenericTypeParameter)typeParameters[i], out NeslType? n)) {
+                    typeParameters[i] = n;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+                return currentType.MakeGeneric(typeParameters);
+            return currentType;
+        }
+
+        typeParameters = currentType.GenericMakedTypeParameters.ToArray();
         for (int i = 0; i < typeParameters.Length; i++) {
-            if (targetTypes.TryGetValue((NeslGenericTypeParameter)typeParameters[i], out NeslType? n)) {
+            NeslType r = typeParameters[i];
+            NeslType n = GetFinalType(oldType, newType, typeParameters[i], targetTypes);
+            if (r != n) {
                 typeParameters[i] = n;
                 changed = true;
             }
         }
 
         if (changed)
-            return currentType.MakeGeneric(typeParameters);
+            return currentType.GenericMakedFrom!.MakeGeneric(typeParameters);
         return currentType;
     }
 

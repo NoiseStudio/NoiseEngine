@@ -114,10 +114,9 @@ internal class AssignmentDeclaration : ParserExpressionContainer {
 
         ValueData? value = null;
         if (container.Expressions.Count != 1) {
-            value = ValueConstructor.Construct(new ValueToken(
-                null, new ExpressionValueContentContainer(container.Expressions.SkipLast(1).ToArray()),
-                null, null
-            ), Parser);
+            value = ValueConstructor.Construct(new ValueToken(null, new ExpressionValueContentContainer(
+                container.BracketToken, container.Expressions.SkipLast(1).ToArray()
+            ), null, null), Parser);
         }
 
         ExpressionValueContent expression = container.Expressions[^1];

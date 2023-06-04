@@ -75,8 +75,4 @@ internal static class ValueConstructorOperator {
         });
     }
 
-    private static bool CompareInterfaceParameters(NeslType? type, int skip) {
-        return false;
-    }
-
 }

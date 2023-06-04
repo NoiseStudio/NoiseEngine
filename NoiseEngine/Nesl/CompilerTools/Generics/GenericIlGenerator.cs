@@ -47,12 +47,13 @@ internal class GenericIlGenerator {
         GenericIlGenerator g = new GenericIlGenerator(
             new SerializedIlContainer(
                 genericMethod.Assembly,
-                genericMethod.GetIlContainer().GetRawInstructions(),
+                genericMethod.GetIlContainer().GetRawInstructions().ToArray(),
                 genericMethod.GetIlContainer().GetTail(0).ToArray()
             ),
             oldType, newType, genericMethod, targetTypes
         );
 
+        int i = 0;
         foreach ((OpCode opCode, uint tailIndex) in g.container.GetRawInstructions()) {
             Instruction instruction = new Instruction(opCode, tailIndex, g.container);
             switch (opCode) {
@@ -60,9 +61,10 @@ internal class GenericIlGenerator {
                     g.DefVariable(instruction, tailIndex);
                     break;
                 case OpCode.Call:
-                    g.Call(instruction, tailIndex);
+                    g.Call(i, instruction, tailIndex);
                     break;
             }
+            i++;
         }
 
         return g.changes == 0 ? genericMethod.GetIlContainer() : g.container;
@@ -80,24 +82,35 @@ internal class GenericIlGenerator {
         }
     }
 
-    private void Call(Instruction instruction, uint tailIndex) {
+    private void Call(int i, Instruction instruction, uint tailIndex) {
         instruction.OffsetTailIndex(4);
         NeslMethod method = genericMethod.Assembly.GetMethod(instruction.ReadUInt64());
-        if (!method.IsAbstract)
-            return;
-
         NeslType finalType = GenericHelper.GetFinalType(oldType, newType, method.Type, targetTypes);
         if (method.Type == finalType)
             return;
 
         NeslMethod finalMethod = finalType.Methods.First(
-            x => x.Name == method.Name && x.ParameterTypes.SequenceEqual(method.ParameterTypes)
+            x => x.Name == method.Name && x.ParameterTypes.SequenceEqual(method.ParameterTypes.Select(x =>
+            GenericHelper.GetFinalType(oldType, newType, x, targetTypes)))
         );
 
-        BinaryPrimitives.WriteUInt64LittleEndian(
-            container.GetWritableTail((int)tailIndex + 4),
-            genericMethod.Assembly.GetLocalMethodId(finalMethod)
-        );
+        CallOpCodeAttribute callOpCode = CallOpCodeAttribute.Create(0);
+        NeslAttribute? attribute = finalMethod.Attributes.FirstOrDefault(x => x.FullName == callOpCode.FullName);
+        if (attribute is not null) {
+            callOpCode = attribute.Cast<CallOpCodeAttribute>();
+            container.ReplaceOpCode(i, callOpCode.OpCode);
+
+            Span<byte> bytes = stackalloc byte[sizeof(uint) * finalMethod.ParameterTypes.Count];
+            container.GetWritableTail((int)tailIndex + sizeof(uint) + sizeof(ulong) + sizeof(uint))
+                .Slice(0, bytes.Length).CopyTo(bytes);
+            bytes.CopyTo(container.GetWritableTail((int)tailIndex + sizeof(uint)));
+        } else {
+            BinaryPrimitives.WriteUInt64LittleEndian(
+                container.GetWritableTail((int)tailIndex + 4),
+                genericMethod.Assembly.GetLocalMethodId(finalMethod)
+            );
+        }
+
         changes++;
     }
 

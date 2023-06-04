@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.Emit.Attributes.Internal;
+﻿using NoiseEngine.Nesl.CompilerTools.Generics;
+using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
@@ -46,7 +47,19 @@ internal sealed class ParserStorage {
 
                 bool isSatisfied = true;
                 foreach (NeslType constraint in genericTypeParameter.Interfaces) {
-                    if (!genericType.Interfaces.Contains(constraint)) {
+                    NeslType c = constraint;
+                    if (c is NotFullyConstructedGenericNeslType notFully) {
+                        c = c.MakeGeneric(notFully.GenericMakedTypeParameters.Select(y => {
+                            if (y is NeslGenericTypeParameter p) {
+                                int i = x.Key.GenericMakedFrom.GenericTypeParameters.Select((z, i) => (z, i))
+                                    .First(z => z.z == p).i;
+                                return x.Key.GenericMakedTypeParameters.ElementAt(i);
+                            }
+                            return y;
+                        }).ToArray());
+                    }
+
+                    if (!genericType.Interfaces.Contains(c)) {
                         isSatisfied = false;
                         break;
                     }
