@@ -92,9 +92,41 @@ internal class SerializedNeslType : NeslType {
         if (GenericMakedFrom is null)
             throw new InvalidOperationException("This type is not generic maked.");
 
-        SetInterfaces(GenericMakedFrom.Interfaces.Select(x => GenericHelper.GetFinalType(
-            GenericMakedFrom, this, x, targetTypes!
-        )).ToArray());
+        // Interfaces.
+        IReadOnlyDictionary<NeslType, IReadOnlyList<NeslConstraint>>? forConstraints = GenericMakedFrom.ForConstraints;
+        if (forConstraints is not null) {
+            List<NeslType> interfaces = new List<NeslType>();
+            foreach (NeslType i in GenericMakedFrom.Interfaces) {
+                if (forConstraints.TryGetValue(i, out IReadOnlyList<NeslConstraint>? constraints)) {
+                    bool isSatisfied = true;
+
+                    foreach (NeslConstraint constraint in constraints) {
+                        NeslType finalType = targetTypes[constraint.GenericTypeParameter];
+                        foreach (NeslType constraintType in constraint.Constraints) {
+                            if (!finalType.Interfaces.Contains(GenericHelper.GetFinalType(
+                                GenericMakedFrom, this, constraintType, targetTypes!
+                            ))) {
+                                isSatisfied = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!isSatisfied)
+                        continue;
+                }
+
+                interfaces.Add(GenericHelper.GetFinalType(GenericMakedFrom, this, i, targetTypes!));
+            }
+
+            SetInterfaces(interfaces.ToArray());
+        } else {
+            SetInterfaces(GenericMakedFrom.Interfaces.Select(x => GenericHelper.GetFinalType(
+                GenericMakedFrom, this, x, targetTypes!
+            )).ToArray());
+        }
+
+        // Attributes.
         SetAttributes(GenericHelper.RemoveGenericsFromAttributes(GenericMakedFrom.Attributes, targetTypes));
 
         // Create fields.
@@ -125,7 +157,11 @@ internal class SerializedNeslType : NeslType {
             ) {
                 NeslType type = GenericHelper.GetFinalType(GenericMakedFrom, this, parameter, targetTypes);
                 foreach (NeslType constraint in constraints) {
-                    if (!type.Interfaces.Contains(constraint)) {
+                    NeslType finalConstraint = GenericHelper.GetFinalType(
+                        GenericMakedFrom, this, constraint, targetTypes
+                    );
+
+                    if (!type.Interfaces.Contains(finalConstraint)) {
                         constraintsSatisfied = false;
                         break;
                     }

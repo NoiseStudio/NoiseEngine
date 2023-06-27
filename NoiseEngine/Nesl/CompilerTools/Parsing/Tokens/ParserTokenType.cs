@@ -32,7 +32,7 @@ internal enum ParserTokenType {
     SquareBrackets,
     [ParserToken(typeof(GenericDefineToken))]
     GenericDefine,
-    [ParserToken(typeof(InheritanceToken))]
+    [ParserToken(typeof(InheritancesToken))]
     Inheritance,
     [ParserToken(typeof(ConstraintsToken))]
     Constraints,

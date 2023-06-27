@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
+﻿using NoiseEngine.Nesl.CompilerTools.Generics;
+using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -65,7 +66,19 @@ internal static class ValueConstructorOperator {
         rhs = rhs.LoadConst(parser, i.Item2.GenericMakedTypeParameters.Skip(1).First());
 
         NeslType type = i.Item1 ? lhs.Type! : rhs.Type!;
-        NeslMethod method = type.Methods.First(x =>
+
+        IEnumerable<NeslMethod> methods = type.Methods;
+        if (type is NeslGenericTypeParameter genericType && parser.CurrentMethod.TypeGenericConstraints.TryGetValue(
+            genericType, out IReadOnlyList<NeslType>? typeGenericConstraints
+        )) {
+            foreach (NeslType genericConstraint in typeGenericConstraints) {
+                methods = methods.Concat(genericConstraint.Methods.Select(
+                    x => new NeslGenericTypeParameterImplementedMethod(genericType, x)
+                ));
+            }
+        }
+
+        NeslMethod method = methods.First(x =>
             x.Name == data.MethodName && x.ParameterTypes.Count == 2 &&
             x.ParameterTypes[0] == lhs.Type && x.ParameterTypes[1] == rhs.Type
         );

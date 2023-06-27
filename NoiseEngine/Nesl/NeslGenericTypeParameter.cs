@@ -81,7 +81,7 @@ public abstract class NeslGenericTypeParameter : NeslType {
         return false;
     }
 
-    private protected NeslMethod[] CreateMethodsFromInterfaces() {
+    internal NeslMethod[] CreateMethodsFromInterfaces() {
         List<NeslMethod> methods = new List<NeslMethod>();
         foreach (NeslMethod method in Interfaces.SelectMany(type => type.Methods)) {
             methods.Add(new NeslGenericTypeParameterImplementedMethod(

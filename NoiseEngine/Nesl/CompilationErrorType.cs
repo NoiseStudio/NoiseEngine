@@ -96,6 +96,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ExpectedWhereKeyword,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    ExpectedForKeyword,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     InvalidTypeKind,
     [CompilationErrorType(CompilationErrorSeverity.Warning)]
     UsingAlreadyExists,

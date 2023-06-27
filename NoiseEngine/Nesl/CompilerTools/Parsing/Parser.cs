@@ -81,7 +81,7 @@ internal class Parser {
                     TryDefineUsing(new TypeIdentifierToken(default, u, Array.Empty<TypeIdentifierToken>()));
 
                 typeDefinitionData = new TypeDefinitionData(
-                    new CodePointer(Buffer.Tokens[0].Path, 1, 1), currentType, Array.Empty<TypeIdentifierToken>(),
+                    new CodePointer(Buffer.Tokens[0].Path, 1, 1), currentType, Array.Empty<InheritanceToken>(),
                     Array.Empty<ConstraintToken>(), Buffer
                 );
             }
@@ -375,7 +375,7 @@ internal class Parser {
                     method.AddAttribute(attribute);
                 MethodConstructor.SetMethodGenericConstrains(this, method, data.Constraints);
 
-                // Ignore body when has intrinsic or call op code attribute.
+                // Ignore body when method has intrinsic or call op code attribute.
                 if (
                     method.Attributes.HasAnyAttribute(IntrinsicAttribute.Create().FullName) ||
                     method.Attributes.HasAnyAttribute(CallOpCodeAttribute.Create(0).FullName)
@@ -422,17 +422,64 @@ internal class Parser {
             return;
 
         // Inheritances.
-        foreach (TypeIdentifierToken inheritance in typeDefinitionData.Inheritances) {
-            if (!TryGetType(inheritance, out NeslType? type))
+        foreach (InheritanceToken inheritance in typeDefinitionData.Inheritances) {
+            if (!TryGetType(inheritance.Inheritance, out NeslType? type))
                 continue;
             if (!type.IsInterface) {
                 Throw(new CompilationError(
-                    inheritance.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, inheritance
+                    inheritance.Inheritance.Pointer, CompilationErrorType.InheritanceTypeMustBeAInterface, inheritance
                 ));
                 continue;
             }
 
-            currentType.AddInterface(type);
+            if (inheritance.Constraints.Count == 0) {
+                currentType.AddInterface(type);
+                continue;
+            }
+
+            List<NeslConstraint> constraints = new List<NeslConstraint>();
+            List<NeslType> constraintsFragment = new List<NeslType>();
+            foreach (InheritanceConstraintToken constraint in inheritance.Constraints) {
+                if (constraint.GenericParameter.GenericTokens.Count != 0) {
+                    Throw(new CompilationError(
+                        constraint.GenericParameter.GenericTokens[0].Pointer,
+                        CompilationErrorType.ConstraintGenericParameterNotAllowed,
+                        constraint.GenericParameter.GenericTokens[0]
+                    ));
+                    continue;
+                }
+
+                NeslGenericTypeParameter? parameter = currentType.GenericTypeParameters.FirstOrDefault(
+                    x => x.Name == constraint.GenericParameter.Identifier
+                );
+                if (parameter is null) {
+                    Throw(new CompilationError(
+                        constraint.GenericParameter.Pointer, CompilationErrorType.GenericParameterNotFound,
+                        constraint.GenericParameter
+                    ));
+                    continue;
+                }
+
+                if (parameter is not NeslGenericTypeParameterBuilder builder)
+                    throw new UnreachableException();
+
+                foreach (TypeIdentifierToken typeIdentifier in constraint.Inheritance) {
+                    if (!TryGetType(typeIdentifier, out NeslType? constraintType))
+                        continue;
+                    if (!constraintType.IsInterface) {
+                        Throw(new CompilationError(
+                            typeIdentifier.Pointer, CompilationErrorType.ConstraintTypeMustBeAInterface, typeIdentifier
+                        ));
+                    }
+
+                    constraintsFragment.Add(constraintType);
+                }
+
+                constraints.Add(new NeslConstraint(builder, constraintsFragment.ToArray()));
+                constraintsFragment.Clear();
+            }
+
+            currentType.AddInterface(type, constraints);
         }
 
         // Constraints.
@@ -488,7 +535,7 @@ internal class Parser {
 
     public void AnalyzeMethodBody(NeslMethod method) {
         Parser? parser = Storage.GetMethodParser(method);
-        if (parser is null || parser.analyzedMethodBody)
+        if (parser?.analyzedMethodBody != false)
             return;
 
         lock (parser) {

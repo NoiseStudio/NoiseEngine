@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 
 namespace NoiseEngine.Nesl.Emit;
 
@@ -18,6 +19,8 @@ public class NeslTypeBuilder : NeslType {
         new ConcurrentDictionary<NeslMethodIdentifier, NeslMethodBuilder>();
     private readonly ConcurrentHashSet<NeslType> interfaces = new ConcurrentHashSet<NeslType>();
 
+    private ConcurrentDictionary<NeslType, IReadOnlyList<NeslConstraint>>? forConstraints;
+
     private NeslTypeKind kind = NeslTypeKind.Struct;
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
@@ -27,6 +30,9 @@ public class NeslTypeBuilder : NeslType {
     public override NeslTypeKind Kind => kind;
     public override IEnumerable<NeslType> Interfaces =>
         interfaces.Concat(interfaces.SelectMany(x => x.Interfaces)).Distinct();
+
+    protected internal override IReadOnlyDictionary<NeslType, IReadOnlyList<NeslConstraint>>? ForConstraints =>
+        forConstraints;
 
     internal NeslTypeBuilder(NeslAssemblyBuilder assembly, string fullName) : base(assembly, fullName) {
     }
@@ -145,11 +151,32 @@ public class NeslTypeBuilder : NeslType {
     /// Implements given <paramref name="interfaceType"/> in this <see cref="NeslTypeBuilder"/>.
     /// </summary>
     /// <param name="interfaceType">Interface which this <see cref="NeslTypeBuilder"/> implements.</param>
+    /// <param name="constraints"><paramref name="interfaceType"/> for constraints.</param>
     /// <exception cref="ArgumentException">Given <paramref name="interfaceType"/> is not an interface.</exception>
-    public void AddInterface(NeslType interfaceType) {
+    public void AddInterface(NeslType interfaceType, IEnumerable<NeslConstraint>? constraints = null) {
         if (!interfaceType.IsInterface)
             throw new ArgumentException("Given type is not an interface.", nameof(interfaceType));
         interfaces.Add(interfaceType);
+
+        if (constraints is null || !constraints.Any())
+            return;
+
+        if (forConstraints is null) {
+            Interlocked.CompareExchange(
+                ref forConstraints, new ConcurrentDictionary<NeslType, IReadOnlyList<NeslConstraint>>(), null
+            );
+        }
+
+        foreach (NeslType constraint in constraints.SelectMany(x => x.Constraints)) {
+            if (!constraint.IsInterface)
+                throw new ArgumentException("Given type is not an interface.", nameof(constraints));
+        }
+
+        if (!forConstraints.TryAdd(interfaceType, constraints.ToArray())) {
+            throw new ArgumentException(
+                $"Interface `{interfaceType}` is already implemented in `{Name}` type.", nameof(interfaceType)
+            );
+        }
     }
 
     internal void ReplaceMethodIdentifier(NeslMethodIdentifier lastIdentifier, NeslMethodBuilder method) {

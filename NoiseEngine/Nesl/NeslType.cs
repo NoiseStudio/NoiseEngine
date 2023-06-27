@@ -49,6 +49,8 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     public virtual IEnumerable<NeslType> GenericMakedTypeParameters => Enumerable.Empty<NeslType>();
     public virtual NeslType? GenericMakedFrom { get; }
 
+    protected internal virtual IReadOnlyDictionary<NeslType, IReadOnlyList<NeslConstraint>>? ForConstraints { get; }
+
     private ConcurrentDictionary<NeslType[], Lazy<NeslType>> GenericMakedTypes {
         get {
             if (genericMakedTypes is null) {
