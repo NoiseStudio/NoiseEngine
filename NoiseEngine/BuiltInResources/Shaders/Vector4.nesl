@@ -1,7 +1,14 @@
 using System.Operators;
 
 [PlatformDependentTypeRepresentation("OpTypeVector`{&T}`4")]
-public struct Vector4<T> : IAdd<Vector4<T>, Vector4<T>, Vector4<T>> for T : [IAdd<T, T, T>] {
+public struct Vector4<T> :
+    IAdd<Vector4<T>, Vector4<T>, Vector4<T>> for T : [IAdd<T, T, T>],
+    ISubtract<Vector4<T>, Vector4<T>, Vector4<T>> for T : [ISubtract<T, T, T>],
+    IMultiply<Vector4<T>, Vector4<T>, Vector4<T>> for T : [IMultiply<T, T, T>],
+    IDivide<Vector4<T>, Vector4<T>, Vector4<T>> for T : [IDivide<T, T, T>],
+    IRemainder<Vector4<T>, Vector4<T>, Vector4<T>> for T : [IRemainder<T, T, T>],
+    IPower<Vector4<T>, Vector4<T>, Vector4<T>> for T : [IPower<T, T, T>]
+{
 
     public T X;
     public T Y;
@@ -24,6 +31,26 @@ public struct Vector4<T> : IAdd<Vector4<T>, Vector4<T>, Vector4<T>> for T : [IAd
 
     public static Vector4<T> Add(Vector4<T> lhs, Vector4<T> rhs) where T : IAdd<T, T, T> {
         return new Vector4<T>(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z, lhs.W + rhs.W);
+	}
+
+    public static Vector4<T> Subtract(Vector4<T> lhs, Vector4<T> rhs) where T : ISubtract<T, T, T> {
+        return new Vector4<T>(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z, lhs.W - rhs.W);
+	}
+
+    public static Vector4<T> Multiply(Vector4<T> lhs, Vector4<T> rhs) where T : IMultiply<T, T, T> {
+        return new Vector4<T>(lhs.X * rhs.X, lhs.Y * rhs.Y, lhs.Z * rhs.Z, lhs.W * rhs.W);
+	}
+
+    public static Vector4<T> Divide(Vector4<T> lhs, Vector4<T> rhs) where T : IDivide<T, T, T> {
+        return new Vector4<T>(lhs.X / rhs.X, lhs.Y / rhs.Y, lhs.Z / rhs.Z, lhs.W / rhs.W);
+	}
+
+    public static Vector4<T> Remainder(Vector4<T> lhs, Vector4<T> rhs) where T : IRemainder<T, T, T> {
+        return new Vector4<T>(lhs.X % rhs.X, lhs.Y % rhs.Y, lhs.Z % rhs.Z, lhs.W % rhs.W);
+	}
+
+    public static Vector4<T> Power(Vector4<T> lhs, Vector4<T> rhs) where T : IPower<T, T, T> {
+        return new Vector4<T>(lhs.X ** rhs.X, lhs.Y ** rhs.Y, lhs.Z ** rhs.Z, lhs.W ** rhs.W);
 	}
 
 }

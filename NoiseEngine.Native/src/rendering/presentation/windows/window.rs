@@ -186,9 +186,8 @@ impl WindowWindows {
             }),
         });
 
-        let reference = unsafe {
-            &mut *(Arc::as_ptr(&arc) as *mut WindowWindows)
-        };
+        let reference_mut_pointer = Arc::as_ptr(&arc) as *mut WindowWindows;
+        let reference = unsafe { &mut *reference_mut_pointer };
         reference.weak = Arc::downgrade(&arc);
 
         // Create window.

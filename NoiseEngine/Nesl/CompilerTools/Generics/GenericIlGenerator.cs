@@ -40,7 +40,6 @@ internal class GenericIlGenerator {
         if (genericMethod.Attributes.Any(x => x.FullName == intrinsic.FullName))
             return genericMethod.GetIlContainer();
 
-        Console.WriteLine($"{newType.GenericMakedTypeParameters.First()} {genericMethod}");
         Debug.Assert(genericMethod.GetInstructions().Any(), $"Method `{genericMethod.FullName}` has no instructions.");
         Debug.Assert(
             genericMethod.GetInstructions().Last().OpCode == (
