@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use ash::{vk, extensions::khr};
+use ash::{extensions::khr, vk};
 
 use crate::rendering::presentation::window::Window;
 
@@ -10,14 +10,22 @@ pub struct VulkanSurface {
     instance: Arc<VulkanInstance>,
     window: Arc<dyn Window>,
     inner: vk::SurfaceKHR,
-    ash_surface: khr::Surface
+    ash_surface: khr::Surface,
 }
 
 impl VulkanSurface {
     pub fn new(
-        instance: Arc<VulkanInstance>, window: Arc<dyn Window>, inner: vk::SurfaceKHR, ash_surface: khr::Surface
+        instance: Arc<VulkanInstance>,
+        window: Arc<dyn Window>,
+        inner: vk::SurfaceKHR,
+        ash_surface: khr::Surface,
     ) -> Self {
-        Self { instance, window, inner, ash_surface }
+        Self {
+            instance,
+            window,
+            inner,
+            ash_surface,
+        }
     }
 
     pub fn inner(&self) -> vk::SurfaceKHR {

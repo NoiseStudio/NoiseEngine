@@ -1,4 +1,4 @@
-use crate::logging::{logger, log_data};
+use crate::logging::{log_data, logger};
 
 use crate::interop::prelude::InteropResult;
 

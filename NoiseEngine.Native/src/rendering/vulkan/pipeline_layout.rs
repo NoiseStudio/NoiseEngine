@@ -8,12 +8,13 @@ use super::{descriptors::set_layout::DescriptorSetLayout, device::VulkanDevice};
 
 pub struct PipelineLayout<'init> {
     inner: vk::PipelineLayout,
-    device: Arc<VulkanDevice<'init>>
+    device: Arc<VulkanDevice<'init>>,
 }
 
 impl<'init: 'setl, 'setl> PipelineLayout<'init> {
     pub fn new(
-        layouts: &[&'setl Arc<DescriptorSetLayout<'init>>], push_constant_ranges: &[vk::PushConstantRange]
+        layouts: &[&'setl Arc<DescriptorSetLayout<'init>>],
+        push_constant_ranges: &[vk::PushConstantRange],
     ) -> Result<Self, VulkanUniversalError> {
         let mut final_layouts = Vec::with_capacity(layouts.len());
         for layout in layouts {
@@ -33,10 +34,15 @@ impl<'init: 'setl, 'setl> PipelineLayout<'init> {
         let device = layouts[0].device();
         let initialized = device.initialized()?;
         let inner = unsafe {
-            initialized.vulkan_device().create_pipeline_layout(&create_info, None)
+            initialized
+                .vulkan_device()
+                .create_pipeline_layout(&create_info, None)
         }?;
 
-        Ok(Self { inner, device: device.clone() })
+        Ok(Self {
+            inner,
+            device: device.clone(),
+        })
     }
 
     pub fn inner(&self) -> vk::PipelineLayout {
@@ -51,9 +57,11 @@ impl<'init: 'setl, 'setl> PipelineLayout<'init> {
 impl Drop for PipelineLayout<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.initialized().unwrap().vulkan_device().destroy_pipeline_layout(
-                self.inner, None
-            );
+            self.device
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_pipeline_layout(self.inner, None);
         }
     }
 }

@@ -1,31 +1,45 @@
 use std::{
-    ptr, sync::{Arc, Weak, atomic::{AtomicBool, Ordering}}, cell::{UnsafeCell, Cell},
-    thread::{self, JoinHandle, ThreadId}, mem::{self, ManuallyDrop}
+    cell::{Cell, UnsafeCell},
+    mem::{self, ManuallyDrop},
+    ptr,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Weak,
+    },
+    thread::{self, JoinHandle, ThreadId},
 };
 
-use ash::{vk, extensions::khr};
+use ash::{extensions::khr, vk};
 use cgmath::{Vector2, Zero};
 use crossbeam_queue::SegQueue;
 use libc::{c_void, wchar_t};
-use rsevents::{ManualResetEvent, EventState, Awaitable, AutoResetEvent};
+use rsevents::{AutoResetEvent, Awaitable, EventState, ManualResetEvent};
 use uuid::Uuid;
 
 use crate::{
+    common::send_ptr::{SendPtr, SendPtrMut},
     errors::{
-        platform::{windows::win32::Win32Error, platform_universal::PlatformUniversalError},
-        null_reference::NullReferenceError, invalid_operation::InvalidOperationError
+        invalid_operation::InvalidOperationError,
+        null_reference::NullReferenceError,
+        platform::{platform_universal::PlatformUniversalError, windows::win32::Win32Error},
     },
     logging::log,
+    platform::windows::rect::Rect,
     rendering::{
         presentation::{
-            window::Window, window_settings::{WindowSettings, WindowMode, WindowControls, WindowCoordinateMode},
-            window_event_handler::WindowEventHandler, input::{InputData, self, KeyValue, KeyState}
+            input::{self, InputData, KeyState, KeyValue},
+            window::Window,
+            window_event_handler::WindowEventHandler,
+            window_settings::{WindowControls, WindowCoordinateMode, WindowMode, WindowSettings},
         },
-        vulkan::{surface::VulkanSurface, instance::VulkanInstance, errors::universal::VulkanUniversalError}
-    }, platform::windows::rect::Rect, common::send_ptr::{SendPtrMut, SendPtr}
+        vulkan::{
+            errors::universal::VulkanUniversalError, instance::VulkanInstance,
+            surface::VulkanSurface,
+        },
+    },
 };
 
-use super::{wnd_class_w::WndClassW, msg::Msg};
+use super::{msg::Msg, wnd_class_w::WndClassW};
 
 const PROP_NAME: &[u16] = const_utf16::encode!("NEwp\0");
 
@@ -60,12 +74,10 @@ fn is_extended_key(l_param: isize) -> bool {
 
 #[inline]
 fn is_right_shift(l_param: isize) -> bool {
-    match unsafe {
-        MapVirtualKeyW(((l_param & 0x00ff0000) >> 16) as u32, 3)
-    } {
+    match unsafe { MapVirtualKeyW(((l_param & 0x00ff0000) >> 16) as u32, 3) } {
         0xa0 => false,
         0xa1 => true,
-        _ => panic!("Given key is not a shift.")
+        _ => panic!("Given key is not a shift."),
     }
 }
 
@@ -78,61 +90,68 @@ pub struct WindowWindows {
     thread_id: ThreadId,
     thread_work: AtomicBool,
     thread_join_handle: Cell<Option<JoinHandle<()>>>,
-    thread_task_queue: SegQueue<(WindowWindowsThreadTask, Option<Arc<AutoResetEvent>>, *mut c_void)>,
+    thread_task_queue: SegQueue<(
+        WindowWindowsThreadTask,
+        Option<Arc<AutoResetEvent>>,
+        *mut c_void,
+    )>,
     thread_reset_event: AutoResetEvent,
     thread_end_reset_event: Arc<AutoResetEvent>,
     thread_last_signaler: Cell<Option<Arc<AutoResetEvent>>>,
-    data: UnsafeCell<WindowWindowsData>
+    data: UnsafeCell<WindowWindowsData>,
 }
 
 impl WindowWindows {
     pub fn create(
-        id: u64, title: String, width: u32, height: u32, settings: WindowSettings
+        id: u64,
+        title: String,
+        width: u32,
+        height: u32,
+        settings: WindowSettings,
     ) -> Result<Arc<dyn Window>, PlatformUniversalError> {
         let mut result = unsafe { mem::zeroed() };
         let reset_event = ManualResetEvent::new(EventState::Unset);
 
         let result_ptr = SendPtrMut(&mut result);
         let reset_event_ptr = SendPtr(&reset_event);
-        let join_handle = match thread::Builder::new().name(
-            format!("Window {{ Id = {id} }}")
-        ).spawn(move || {
-            let mut window = {
-                let result =
-                    Self::new_worker(id, title, width, height, settings);
+        let join_handle = match thread::Builder::new()
+            .name(format!("Window {{ Id = {id} }}"))
+            .spawn(move || {
+                let mut window = {
+                    let result = Self::new_worker(id, title, width, height, settings);
 
-                let _ = &result_ptr;
-                unsafe {
-                    ptr::copy(&result, result_ptr.0, 1)
+                    let _ = &result_ptr;
+                    unsafe { ptr::copy(&result, result_ptr.0, 1) };
+
+                    let _ = &reset_event_ptr;
+                    unsafe { reset_event_ptr.0.as_ref() }.unwrap().set();
+
+                    match result {
+                        Ok(w) => {
+                            mem::forget(w.clone());
+                            ManuallyDrop::new(w)
+                        }
+                        Err(_) => {
+                            mem::forget(result);
+                            return;
+                        }
+                    }
                 };
 
-                let _ = &reset_event_ptr;
+                window.thread_worker();
+
+                let end_reset_event = window.thread_end_reset_event.clone();
                 unsafe {
-                    reset_event_ptr.0.as_ref()
-                }.unwrap().set();
-
-                match result {
-                    Ok(w) => {
-                        mem::forget(w.clone());
-                        ManuallyDrop::new(w)
-                    },
-                    Err(_) => {
-                        mem::forget(result);
-                        return
-                    },
+                    ManuallyDrop::drop(&mut window);
                 }
-            };
-
-            window.thread_worker();
-
-            let end_reset_event = window.thread_end_reset_event.clone();
-            unsafe {
-                ManuallyDrop::drop(&mut window);
-            }
-            end_reset_event.wait();
-        }) {
+                end_reset_event.wait();
+            }) {
             Ok(j) => j,
-            Err(_) => return Err(InvalidOperationError::with_str("Unable to create window thread.").into()),
+            Err(_) => {
+                return Err(
+                    InvalidOperationError::with_str("Unable to create window thread.").into(),
+                )
+            }
         };
 
         reset_event.wait();
@@ -140,17 +159,19 @@ impl WindowWindows {
             Ok(window) => {
                 window.thread_join_handle.set(Some(join_handle));
                 Ok(window)
-            },
+            }
             Err(err) => Err(err),
         }
     }
 
     fn new_worker(
-        id: u64, title: String, width: u32, height: u32, settings: WindowSettings
+        id: u64,
+        title: String,
+        width: u32,
+        height: u32,
+        settings: WindowSettings,
     ) -> Result<Arc<Self>, PlatformUniversalError> {
-        let h_instance = unsafe {
-            GetModuleHandleW(ptr::null_mut())
-        };
+        let h_instance = unsafe { GetModuleHandleW(ptr::null_mut()) };
 
         // Create window class.
         let class_name = wide_null(Uuid::new_v4().to_string().as_str());
@@ -163,7 +184,7 @@ impl WindowWindows {
         };
 
         if unsafe { RegisterClassW(&window_class) } == 0 {
-            return Err(Win32Error::get_last().into())
+            return Err(Win32Error::get_last().into());
         }
 
         // Construct.
@@ -182,7 +203,11 @@ impl WindowWindows {
             thread_end_reset_event: Arc::new(AutoResetEvent::new(EventState::Unset)),
             thread_last_signaler: Cell::new(None),
             data: UnsafeCell::new(WindowWindowsData {
-                width, height, settings, input_current_modifier: 0, input_data: unsafe { &mut *ptr::null_mut() }
+                width,
+                height,
+                settings,
+                input_current_modifier: 0,
+                input_data: unsafe { &mut *ptr::null_mut() },
             }),
         });
 
@@ -198,13 +223,14 @@ impl WindowWindows {
             bottom: reference.get_height() as i32,
         })?;
         let (position_x, position_y) = reference.get_winapi_position(&adjust);
-        let wide_title = wide_null(title.as_str()).as_ptr();
+        let wide_title = wide_null(title.as_str());
+        let wide_title_ptr = wide_title.as_ptr();
 
         reference.h_wnd = unsafe {
             CreateWindowExW(
                 0,
                 reference.class_name.as_ptr(),
-                wide_title,
+                wide_title_ptr,
                 reference.get_window_style(),
                 position_x,
                 position_y,
@@ -213,68 +239,76 @@ impl WindowWindows {
                 ptr::null_mut(),
                 ptr::null_mut(),
                 h_instance,
-                ptr::null_mut()
+                ptr::null_mut(),
             )
         };
 
         let h_data = reference as *const WindowWindows as *const c_void;
         if unsafe { SetPropW(reference.h_wnd, PROP_NAME.as_ptr(), h_data) } == 0 {
-            return Err(Win32Error::get_last().into())
+            return Err(Win32Error::get_last().into());
         }
 
-        _ = unsafe {
-            ShowWindow(reference.h_wnd, 1)
-        };
+        _ = unsafe { ShowWindow(reference.h_wnd, 1) };
 
         Ok(arc)
     }
 
     fn translate_keys(w_param: usize, l_param: isize) -> usize {
         match w_param {
-            0x30..=0x39 => w_param - 47, // Alpha 0 - 9
-            0x41..=0x5a => w_param - 54, // A - Z
-            0x20 => 37, // Space ( )
-            0xbd => 38, // Minus (-)
-            0xbc => 39, // Comma (,)
+            0x30..=0x39 => w_param - 47,  // Alpha 0 - 9
+            0x41..=0x5a => w_param - 54,  // A - Z
+            0x20 => 37,                   // Space ( )
+            0xbd => 38,                   // Minus (-)
+            0xbc => 39,                   // Comma (,)
             0xbe..=0xbf => w_param - 150, // Period (.), Slash (/)
-            0xdc => 42, // BackSlash (\)
+            0xdc => 42,                   // BackSlash (\)
             0xba..=0xbb => w_param - 143, // Semicolon (;), Equal (=)
-            0xde => 45, // Appostrophe (')
-            0xdb => 46, // LeftBracket ([)
-            0xdd => 47, // RightBracket (])
-            0x1b => 48, // Escape
-            0xc0 => 49, // Grave (`),
-            0x70..=0x87 => w_param - 62, // F1 - F24
-            0x6a..=0x6f => w_param - 32, // NumpadMultiply - NumpadDivide
+            0xde => 45,                   // Appostrophe (')
+            0xdb => 46,                   // LeftBracket ([)
+            0xdd => 47,                   // RightBracket (])
+            0x1b => 48,                   // Escape
+            0xc0 => 49,                   // Grave (`),
+            0x70..=0x87 => w_param - 62,  // F1 - F24
+            0x6a..=0x6f => w_param - 32,  // NumpadMultiply - NumpadDivide
             0xd => match is_extended_key(l_param) {
-                true => 80, // NumpadEnter
+                true => 80,   // NumpadEnter
                 false => 103, // Return
             },
-            0x21..=0x28 => w_param + match is_extended_key(l_param) { // NumpadKeys
-                true => 71, // Normal
-                false => 48, // Numpad
-            },
-            0x90 => 89, // NumpadLock
-            0x60..=0x69 => w_param - 6, // Numpad 0 - 9
-            0x8..=0x9 => w_param + 92, // Backspace, Tab
-            0xc => 102, // Clear
-            0x2c => 112, // PrintScreen
-            0x91 => 113, // ScrollLock
-            0x13 => 114, // Pause
+            0x21..=0x28 => {
+                w_param
+                    + match is_extended_key(l_param) {
+                        // NumpadKeys
+                        true => 71,  // Normal
+                        false => 48, // Numpad
+                    }
+            }
+            0x90 => 89,                  // NumpadLock
+            0x60..=0x69 => w_param - 6,  // Numpad 0 - 9
+            0x8..=0x9 => w_param + 92,   // Backspace, Tab
+            0xc => 102,                  // Clear
+            0x2c => 112,                 // PrintScreen
+            0x91 => 113,                 // ScrollLock
+            0x13 => 114,                 // Pause
             0x2d..=0x2f => w_param + 70, // Insert, Delete, Help
             0x5d => 118,
-            _ => 0
+            _ => 0,
         }
     }
 
     fn keydown_worker(data: &mut WindowWindowsData, last_modifier: u16, key_index: usize) {
         let input = &mut data.input_data;
 
-        input.key_values[0] = KeyValue { modifier: last_modifier, state: KeyState::JustPressed };
+        input.key_values[0] = KeyValue {
+            modifier: last_modifier,
+            state: KeyState::JustPressed,
+        };
 
         let value = input.key_values[key_index];
         if value.state == KeyState::Released {
-            input.key_values[key_index] = KeyValue { modifier: last_modifier, state: KeyState::JustPressed };
+            input.key_values[key_index] = KeyValue {
+                modifier: last_modifier,
+                state: KeyState::JustPressed,
+            };
         }
 
         if data.input_current_modifier == last_modifier {
@@ -287,12 +321,18 @@ impl WindowWindows {
 
         let mut value = input.key_values[0];
         if value.state == KeyState::Pressed {
-            input.key_values[0] = KeyValue { modifier: value.modifier, state: KeyState::JustReleased };
+            input.key_values[0] = KeyValue {
+                modifier: value.modifier,
+                state: KeyState::JustReleased,
+            };
         }
 
         value = input.key_values[key_index];
         if value.state == KeyState::Pressed {
-            input.key_values[key_index] = KeyValue { modifier: value.modifier, state: KeyState::JustReleased };
+            input.key_values[key_index] = KeyValue {
+                modifier: value.modifier,
+                state: KeyState::JustReleased,
+            };
         }
     }
 
@@ -312,7 +352,7 @@ impl WindowWindows {
                 }
 
                 a
-            },
+            }
             WindowMode::Borderless => 0x80000000, // WS_POPUP
         };
 
@@ -324,12 +364,10 @@ impl WindowWindows {
     }
 
     fn get_adjust(&self, rect: Rect) -> Result<Rect, Win32Error> {
-        let result = unsafe {
-            AdjustWindowRectEx(&rect, self.get_window_style(), 0, 0)
-        };
+        let result = unsafe { AdjustWindowRectEx(&rect, self.get_window_style(), 0, 0) };
 
         if result == 0 {
-            return Err(Win32Error::get_last())
+            return Err(Win32Error::get_last());
         }
 
         Ok(rect)
@@ -385,7 +423,11 @@ impl WindowWindows {
         }
 
         let reset_event = Arc::new(AutoResetEvent::new(EventState::Unset));
-        self.thread_task_queue.push((task, Some(reset_event.clone()), data as *mut T as *mut c_void));
+        self.thread_task_queue.push((
+            task,
+            Some(reset_event.clone()),
+            data as *mut T as *mut c_void,
+        ));
         self.thread_reset_event.set();
 
         if self.thread_work.load(Ordering::Relaxed) {
@@ -401,15 +443,16 @@ impl WindowWindows {
     }
 
     fn thread_worker_iterator(&self) {
-        while let Some((
-            task, signal, data
-        )) = self.thread_task_queue.pop() {
+        while let Some((task, signal, data)) = self.thread_task_queue.pop() {
             self.thread_worker_task_invoker(task, signal, data);
         }
     }
 
     fn thread_worker_task_invoker(
-        &self, task: WindowWindowsThreadTask, signal: Option<Arc<AutoResetEvent>>, data: *mut c_void
+        &self,
+        task: WindowWindowsThreadTask,
+        signal: Option<Arc<AutoResetEvent>>,
+        data: *mut c_void,
     ) {
         self.thread_last_signaler.set(signal.clone());
 
@@ -418,6 +461,7 @@ impl WindowWindows {
             WindowWindowsThreadTask::Hide => self.hide_thread(),
             WindowWindowsThreadTask::IsFocused => self.is_focused_thread(data),
             WindowWindowsThreadTask::Dispose => self.dispose_thread(),
+            WindowWindowsThreadTask::SetTitle(title) => self.set_title_thread(&title, data),
         };
 
         if let Some(s) = signal {
@@ -428,9 +472,7 @@ impl WindowWindows {
     fn pool_events_thread(&self) {
         let mut msg = Msg::default();
         loop {
-            let result = unsafe {
-                PeekMessageW(&mut msg, self.h_wnd, 0, 0, 1)
-            };
+            let result = unsafe { PeekMessageW(&mut msg, self.h_wnd, 0, 0, 1) };
 
             if result == 0 {
                 return;
@@ -444,9 +486,7 @@ impl WindowWindows {
     }
 
     fn hide_thread(&self) {
-        unsafe {
-            ShowWindow(self.h_wnd, 0)
-        };
+        unsafe { ShowWindow(self.h_wnd, 0) };
     }
 
     fn is_focused_thread(&self, data: *mut c_void) {
@@ -463,6 +503,23 @@ impl WindowWindows {
             if let Some(s) = signal {
                 s.set();
             }
+        }
+    }
+
+    fn set_title_thread(&self, title: &str, data: *mut c_void) {
+        let wide_title = wide_null(title);
+        let wide_title_ptr = wide_title.as_ptr();
+
+        let result = unsafe { SetWindowTextW(self.h_wnd, wide_title_ptr) };
+
+        let result = if result == 0 {
+            Some(Win32Error::get_last())
+        } else {
+            None
+        };
+
+        unsafe {
+            ptr::write(data as *mut Option<Win32Error>, result);
         }
     }
 }
@@ -506,13 +563,19 @@ impl Window for WindowWindows {
         for i in 0..input_data.key_values.len() {
             let value = input_data.key_values[i];
             match value.state {
-                KeyState::JustReleased => input_data.key_values[i] = KeyValue {
-                    modifier: 0, state: KeyState::Released
-                },
-                KeyState::JustPressed => input_data.key_values[i] = KeyValue {
-                    modifier: value.modifier, state: KeyState::Pressed
-                },
-                _ => ()
+                KeyState::JustReleased => {
+                    input_data.key_values[i] = KeyValue {
+                        modifier: 0,
+                        state: KeyState::Released,
+                    }
+                }
+                KeyState::JustPressed => {
+                    input_data.key_values[i] = KeyValue {
+                        modifier: value.modifier,
+                        state: KeyState::Pressed,
+                    }
+                }
+                _ => (),
             }
         }
 
@@ -525,7 +588,9 @@ impl Window for WindowWindows {
     }
 
     fn set_position(
-        &self, position: Option<Vector2<i32>>, size: Option<Vector2<u32>>
+        &self,
+        position: Option<Vector2<i32>>,
+        size: Option<Vector2<u32>>,
     ) -> Result<(), PlatformUniversalError> {
         let mut flags = 0x0004 | 0x4000; // SWP_NOZORDER | SWP_ASYNCWINDOWPOS
 
@@ -535,12 +600,12 @@ impl Window for WindowWindows {
             Some(p) => {
                 x = p.x;
                 y = p.y;
-            },
+            }
             None => {
                 flags |= 0x0002; // SWP_NOMOVE
                 x = 0;
                 y = 0;
-            },
+            }
         }
 
         let cx;
@@ -556,12 +621,12 @@ impl Window for WindowWindows {
 
                 cx = adjust.right - adjust.left;
                 cy = adjust.bottom - adjust.top;
-            },
+            }
             None => {
                 flags |= 0x0001; // SWP_NOSIZE
                 cx = 0;
                 cy = 0;
-            },
+            }
         }
 
         if unsafe { SetWindowPos(self.h_wnd, ptr::null_mut(), x, y, cx, cy, flags) } == 0 {
@@ -575,11 +640,25 @@ impl Window for WindowWindows {
         let mut position_i = Vector2::new(position.x as i32, position.y as i32);
 
         if unsafe { ClientToScreen(self.h_wnd, &mut position_i) } == 0 {
-            return Err(Win32Error::get_last().into())
+            return Err(Win32Error::get_last().into());
         }
 
         if unsafe { SetCursorPos(position_i.x, position_i.y) } == 0 {
             Err(Win32Error::get_last().into())
+        } else {
+            Ok(())
+        }
+    }
+
+    fn set_title(&self, title: String) -> Result<(), PlatformUniversalError> {
+        let mut result: Option<Win32Error> = None;
+        self.execute_task_wait_with_data(
+            WindowWindowsThreadTask::SetTitle(title.to_string()),
+            &mut result,
+        );
+
+        if let Some(error) = result {
+            Err(error.into())
         } else {
             Ok(())
         }
@@ -591,7 +670,10 @@ impl Window for WindowWindows {
         result
     }
 
-    fn create_vulkan_surface(&self, instance: &Arc<VulkanInstance>) -> Result<VulkanSurface, VulkanUniversalError> {
+    fn create_vulkan_surface(
+        &self,
+        instance: &Arc<VulkanInstance>,
+    ) -> Result<VulkanSurface, VulkanUniversalError> {
         let create_info = vk::Win32SurfaceCreateInfoKHR {
             s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
             p_next: ptr::null(),
@@ -601,9 +683,7 @@ impl Window for WindowWindows {
         };
 
         let creator = khr::Win32Surface::new(instance.library(), instance.inner());
-        let inner = unsafe {
-            creator.create_win32_surface(&create_info, None)
-        }?;
+        let inner = unsafe { creator.create_win32_surface(&create_info, None) }?;
 
         let window_arc = match Weak::upgrade(&self.weak) {
             Some(a) => a,
@@ -611,8 +691,10 @@ impl Window for WindowWindows {
         };
 
         Ok(VulkanSurface::new(
-            instance.clone(), window_arc, inner,
-            khr::Surface::new(instance.library(), instance.inner())
+            instance.clone(),
+            window_arc,
+            inner,
+            khr::Surface::new(instance.library(), instance.inner()),
         ))
     }
 
@@ -628,7 +710,10 @@ impl Window for WindowWindows {
 }
 
 unsafe extern "system" fn window_procedure(
-    h_wnd: *mut c_void, msg: u32, w_param: usize, l_param: isize
+    h_wnd: *mut c_void,
+    msg: u32,
+    w_param: usize,
+    l_param: isize,
 ) -> isize {
     let event_handler = WindowEventHandler::get();
     let window = &*(GetPropW(h_wnd, PROP_NAME.as_ptr()) as *const WindowWindows);
@@ -645,7 +730,7 @@ unsafe extern "system" fn window_procedure(
                 data.height = height;
                 (event_handler.size_changed)(window.id, width, height);
             }
-        },
+        }
         // WM_CLOSE
         0x0010 => {
             if let Some(s) = window.thread_last_signaler.take() {
@@ -653,7 +738,7 @@ unsafe extern "system" fn window_procedure(
             }
 
             (event_handler.user_closed)(window.id);
-        },
+        }
         // WM_SETFOCUS
         0x0007 => (event_handler.focused)(window.id),
         // WM_KILLFOCUS
@@ -665,82 +750,90 @@ unsafe extern "system" fn window_procedure(
                 0x14 => {
                     data.input_current_modifier |= input::CAPSLOCK_MODIFIER;
                     119
-                },
+                }
                 0x10 => match is_right_shift(l_param) {
                     true => {
-                        data.input_current_modifier |= input::SHIFT_MODIFIER | input::RIGHT_SHIFT_MODIFIER;
+                        data.input_current_modifier |=
+                            input::SHIFT_MODIFIER | input::RIGHT_SHIFT_MODIFIER;
                         124
-                    },
+                    }
                     false => {
-                        data.input_current_modifier |= input::SHIFT_MODIFIER | input::LEFT_SHIFT_MODIFIER;
+                        data.input_current_modifier |=
+                            input::SHIFT_MODIFIER | input::LEFT_SHIFT_MODIFIER;
                         120
                     }
                 },
                 0x11 => match is_extended_key(l_param) {
                     true => {
-                        data.input_current_modifier |= input::CONTROL_MODIFIER | input::RIGHT_CONTROL_MODIFIER;
+                        data.input_current_modifier |=
+                            input::CONTROL_MODIFIER | input::RIGHT_CONTROL_MODIFIER;
                         125
-                    },
+                    }
                     false => {
-                        data.input_current_modifier |= input::CONTROL_MODIFIER | input::LEFT_CONTROL_MODIFIER;
+                        data.input_current_modifier |=
+                            input::CONTROL_MODIFIER | input::LEFT_CONTROL_MODIFIER;
                         121
                     }
                 },
                 0x12 => match is_extended_key(l_param) {
                     true => {
-                        data.input_current_modifier |= input::ALT_MODIFIER | input::RIGHT_ALT_MODIFIER;
+                        data.input_current_modifier |=
+                            input::ALT_MODIFIER | input::RIGHT_ALT_MODIFIER;
                         126
-                    },
+                    }
                     false => {
-                        data.input_current_modifier |= input::ALT_MODIFIER | input::LEFT_ALT_MODIFIER;
+                        data.input_current_modifier |=
+                            input::ALT_MODIFIER | input::LEFT_ALT_MODIFIER;
                         122
                     }
                 },
                 0x5b => {
-                    data.input_current_modifier |= input::SUPER_MODIFIER | input::LEFT_SUPER_MODIFIER;
+                    data.input_current_modifier |=
+                        input::SUPER_MODIFIER | input::LEFT_SUPER_MODIFIER;
                     123
-                },
+                }
                 0x5c => {
-                    data.input_current_modifier |= input::SUPER_MODIFIER | input::RIGHT_SUPER_MODIFIER;
+                    data.input_current_modifier |=
+                        input::SUPER_MODIFIER | input::RIGHT_SUPER_MODIFIER;
                     127
-                },
-                _ => WindowWindows::translate_keys(w_param, l_param)
+                }
+                _ => WindowWindows::translate_keys(w_param, l_param),
             };
 
             WindowWindows::keydown_worker(data, last_modifier, key_index);
-        },
+        }
         // WM_SYSKEYDOWN
         0x0104 => {
             WindowWindows::keydown_worker(
-                data, data.input_current_modifier,
-                WindowWindows::translate_keys(w_param, l_param)
+                data,
+                data.input_current_modifier,
+                WindowWindows::translate_keys(w_param, l_param),
             );
             return DefWindowProcW(h_wnd, msg, w_param, l_param);
-        },
+        }
         // WM_KEYUP
         0x0101 => {
             let key_index = match w_param {
                 0x14 => 119, // CapsLock
                 0x10 => match is_right_shift(l_param) {
                     true => 124,
-                    false => 120
+                    false => 120,
                 },
-                0x11..=0x12 => match is_extended_key(l_param) { // Shift, Control, Alt
-                    true => w_param + 108, // Right
-                    false => w_param + 104 // Left
+                0x11..=0x12 => match is_extended_key(l_param) {
+                    // Shift, Control, Alt
+                    true => w_param + 108,  // Right
+                    false => w_param + 104, // Left
                 },
                 0x5b => 123, // LeftSuper
                 0x5c => 127, // RightSuper
-                _ => WindowWindows::translate_keys(w_param, l_param)
+                _ => WindowWindows::translate_keys(w_param, l_param),
             };
 
             WindowWindows::keyup_worker(data, key_index);
-        },
+        }
         // WM_SYSKEYDOWN
         0x105 => {
-            WindowWindows::keyup_worker(
-                data, WindowWindows::translate_keys(w_param, l_param)
-            );
+            WindowWindows::keyup_worker(data, WindowWindows::translate_keys(w_param, l_param));
             return DefWindowProcW(h_wnd, msg, w_param, l_param);
         }
         // WM_LBUTTONDOWN
@@ -753,29 +846,37 @@ unsafe extern "system" fn window_procedure(
         0x020b => match high_word(w_param as isize) {
             0x0001 => WindowWindows::keydown_worker(data, data.input_current_modifier, 131),
             0x0002 => WindowWindows::keydown_worker(data, data.input_current_modifier, 132),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         },
         0x0202 => WindowWindows::keyup_worker(data, 128), // WM_LBUTTONDOWN
         0x0205 => WindowWindows::keyup_worker(data, 129), // WM_RBUTTONDOWN
         0x0208 => WindowWindows::keyup_worker(data, 130), // WM_MBUTTONDOWN
-        0x020c => match high_word(w_param as isize) { // WM_XBUTTONDOWN
+        0x020c => match high_word(w_param as isize) {
+            // WM_XBUTTONDOWN
             0x0001 => WindowWindows::keyup_worker(data, 131),
             0x0002 => WindowWindows::keyup_worker(data, 132),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         },
         // WM_MOUSEMOVE
-        0x0200 => data.input_data.cursor_position = Vector2::new(
-            low_word_i(l_param) as f64, high_word_i(l_param) as f64
-        ),
+        0x0200 => {
+            data.input_data.cursor_position =
+                Vector2::new(low_word_i(l_param) as f64, high_word_i(l_param) as f64)
+        }
         // WM_MOUSEWHEEL
-        0x020a => data.input_data.scroll_delta = Vector2::new(
-            data.input_data.scroll_delta.x, high_word_i(w_param as isize) as f64 / 120.0
-        ),
+        0x020a => {
+            data.input_data.scroll_delta = Vector2::new(
+                data.input_data.scroll_delta.x,
+                high_word_i(w_param as isize) as f64 / 120.0,
+            )
+        }
         // WM_MOUSEHWHEEL
-        0x020e => data.input_data.scroll_delta = Vector2::new(
-            high_word_i(w_param as isize) as f64 / 120.0, data.input_data.scroll_delta.y
-        ),
-        _ => return DefWindowProcW(h_wnd, msg, w_param, l_param)
+        0x020e => {
+            data.input_data.scroll_delta = Vector2::new(
+                high_word_i(w_param as isize) as f64 / 120.0,
+                data.input_data.scroll_delta.y,
+            )
+        }
+        _ => return DefWindowProcW(h_wnd, msg, w_param, l_param),
     };
     0
 }
@@ -785,14 +886,15 @@ struct WindowWindowsData {
     pub height: u32,
     pub settings: WindowSettings,
     pub input_current_modifier: u16,
-    pub input_data: &'static mut InputData
+    pub input_data: &'static mut InputData,
 }
 
 enum WindowWindowsThreadTask {
     PoolEvents,
     Hide,
     IsFocused,
-    Dispose
+    Dispose,
+    SetTitle(String),
 }
 
 #[link(name = "kernel32")]
@@ -804,9 +906,18 @@ extern "system" {
     fn RegisterClassW(lp_wnd_class: *const WndClassW) -> u16;
 
     fn CreateWindowExW(
-        dw_ex_style: u32, lp_class_name: *const wchar_t, lp_window_name: *const wchar_t, dw_style: u32, x: i32, y: i32,
-        n_width: i32, n_height: i32, h_wnd_parent: *mut c_void, h_menu: *mut c_void, h_instance: *mut c_void,
-        lp_param: *mut c_void
+        dw_ex_style: u32,
+        lp_class_name: *const wchar_t,
+        lp_window_name: *const wchar_t,
+        dw_style: u32,
+        x: i32,
+        y: i32,
+        n_width: i32,
+        n_height: i32,
+        h_wnd_parent: *mut c_void,
+        h_menu: *mut c_void,
+        h_instance: *mut c_void,
+        lp_param: *mut c_void,
     ) -> *mut c_void;
 }
 
@@ -823,7 +934,11 @@ extern "system" {
     fn DefWindowProcW(h_wnd: *mut c_void, msg: u32, w_param: usize, l_param: isize) -> isize;
 
     fn PeekMessageW(
-        lp_msg: &mut Msg, h_wnd: *mut c_void, w_msg_filter_min: u32, w_msg_filter_max: u32, w_remove_msg: u32
+        lp_msg: &mut Msg,
+        h_wnd: *mut c_void,
+        w_msg_filter_min: u32,
+        w_msg_filter_max: u32,
+        w_remove_msg: u32,
     ) -> u32;
 
     fn TranslateMessage(lp_msg: &Msg) -> u32;
@@ -841,8 +956,16 @@ extern "system" {
     fn ClientToScreen(h_wnd: *mut c_void, lp_point: &mut Vector2<i32>) -> u32;
 
     fn SetWindowPos(
-        h_wnd: *mut c_void, h_wnd_insert_after: *mut c_void, x: i32, y: i32, cx: i32, cy: i32, flags: u32
+        h_wnd: *mut c_void,
+        h_wnd_insert_after: *mut c_void,
+        x: i32,
+        y: i32,
+        cx: i32,
+        cy: i32,
+        flags: u32,
     ) -> u32;
 
     fn SetCursorPos(x: i32, y: i32) -> u32;
+
+    fn SetWindowTextW(h_wnd: *mut c_void, lp_string: *const wchar_t) -> u32;
 }

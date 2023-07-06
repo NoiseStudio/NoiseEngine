@@ -6,6 +6,7 @@ internal enum ResultErrorKind : uint {
     NullReference = 2,
     InvalidOperation = 3,
     Overflow = 4,
+    Argument = 5,
 
     GraphicsUniversal = 1000,
     GraphicsInstanceCreate = 1001,

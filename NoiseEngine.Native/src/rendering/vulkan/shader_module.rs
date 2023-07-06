@@ -4,7 +4,10 @@ use ash::vk;
 
 use crate::errors::invalid_operation::InvalidOperationError;
 
-use super::{errors::universal::VulkanUniversalError, device::{VulkanDevice, VulkanDeviceInitialized}};
+use super::{
+    device::{VulkanDevice, VulkanDeviceInitialized},
+    errors::universal::VulkanUniversalError,
+};
 
 pub struct ShaderModule<'init> {
     initialized: &'init VulkanDeviceInitialized<'init>,
@@ -13,12 +16,17 @@ pub struct ShaderModule<'init> {
 }
 
 impl<'dev: 'init, 'init> ShaderModule<'init> {
-    pub fn new(device: &'dev Arc<VulkanDevice<'init>>, code: &[u8]) -> Result<Self, VulkanUniversalError> {
+    pub fn new(
+        device: &'dev Arc<VulkanDevice<'init>>,
+        code: &[u8],
+    ) -> Result<Self, VulkanUniversalError> {
         let size = mem::size_of::<u32>();
         if code.len() % size != 0 {
-            return Err(InvalidOperationError::new(
-                format!("Given code length must be a multiple of {} bytes.", size)
-            ).into())
+            return Err(InvalidOperationError::new(format!(
+                "Given code length must be a multiple of {} bytes.",
+                size
+            ))
+            .into());
         }
 
         let create_info = vk::ShaderModuleCreateInfo {
@@ -31,10 +39,16 @@ impl<'dev: 'init, 'init> ShaderModule<'init> {
 
         let initialized = device.initialized()?;
         let inner = unsafe {
-            initialized.vulkan_device().create_shader_module(&create_info, None)
+            initialized
+                .vulkan_device()
+                .create_shader_module(&create_info, None)
         }?;
 
-        Ok(Self { initialized, inner, _device: device.clone() })
+        Ok(Self {
+            initialized,
+            inner,
+            _device: device.clone(),
+        })
     }
 
     pub fn inner(&self) -> vk::ShaderModule {
@@ -45,7 +59,9 @@ impl<'dev: 'init, 'init> ShaderModule<'init> {
 impl Drop for ShaderModule<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.initialized.vulkan_device().destroy_shader_module(self.inner, None);
+            self.initialized
+                .vulkan_device()
+                .destroy_shader_module(self.inner, None);
         }
     }
 }

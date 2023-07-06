@@ -2,24 +2,30 @@ use std::{ptr, sync::Arc};
 
 use ash::vk;
 
-use crate::{rendering::{
-    vulkan::{
-        device::{VulkanDeviceInitialized, VulkanDevice},
-        errors::universal::VulkanUniversalError,
-        memory_allocator::MemoryBlock
+use crate::{
+    interop::prelude::InteropResult,
+    rendering::{
+        buffers::buffer::GraphicsBuffer,
+        vulkan::{
+            device::{VulkanDevice, VulkanDeviceInitialized},
+            errors::universal::VulkanUniversalError,
+            memory_allocator::MemoryBlock,
+        },
     },
-    buffers::buffer::GraphicsBuffer
-}, interop::prelude::InteropResult};
+};
 
 pub(crate) struct VulkanBuffer<'init: 'ma, 'ma> {
     buffer: vk::Buffer,
     memory: MemoryBlock<'ma>,
-    device: Arc<VulkanDevice<'init>>
+    device: Arc<VulkanDevice<'init>>,
 }
 
 impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
     pub fn new(
-        device: &'dev Arc<VulkanDevice<'init>>, usage: vk::BufferUsageFlags, size: u64, map: bool
+        device: &'dev Arc<VulkanDevice<'init>>,
+        usage: vk::BufferUsageFlags,
+        size: u64,
+        map: bool,
     ) -> Result<Self, VulkanUniversalError> {
         let initialized = device.initialized()?;
         let vulkan_device = initialized.vulkan_device();
@@ -27,11 +33,13 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
         let buffer = Self::create_buffer(initialized, size, usage)?;
         let memory = initialized.allocator().alloc(size, map)?;
 
-        unsafe {
-            vulkan_device.bind_buffer_memory(buffer, memory.memory(), memory.offset())
-        }?;
+        unsafe { vulkan_device.bind_buffer_memory(buffer, memory.memory(), memory.offset()) }?;
 
-        Ok(VulkanBuffer { buffer, memory, device: device.clone() })
+        Ok(VulkanBuffer {
+            buffer,
+            memory,
+            device: device.clone(),
+        })
     }
 
     pub fn inner(&self) -> vk::Buffer {
@@ -39,7 +47,9 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
     }
 
     fn create_buffer(
-        initialized: &VulkanDeviceInitialized, size: u64, usage: vk::BufferUsageFlags
+        initialized: &VulkanDeviceInitialized,
+        size: u64,
+        usage: vk::BufferUsageFlags,
     ) -> Result<vk::Buffer, VulkanUniversalError> {
         let sharing_mode;
         let queue_family_index_count;
@@ -70,12 +80,16 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
             usage,
             sharing_mode,
             queue_family_index_count,
-            p_queue_family_indices
+            p_queue_family_indices,
         };
 
-        match unsafe { initialized.vulkan_device().create_buffer(&create_info, None) } {
+        match unsafe {
+            initialized
+                .vulkan_device()
+                .create_buffer(&create_info, None)
+        } {
             Ok(buffer) => Ok(buffer),
-            Err(err) => Err(err.into())
+            Err(err) => Err(err.into()),
         }
     }
 }
@@ -83,7 +97,11 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
 impl Drop for VulkanBuffer<'_, '_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.initialized().unwrap().vulkan_device().destroy_buffer(self.buffer, None);
+            self.device
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_buffer(self.buffer, None);
         }
     }
 }
@@ -92,14 +110,14 @@ impl GraphicsBuffer for VulkanBuffer<'_, '_> {
     fn host_read(&self, buffer: &mut [u8], start: u64) -> InteropResult<()> {
         match self.memory.read(buffer, start) {
             Ok(()) => InteropResult::with_ok(()),
-            Err(err) => InteropResult::with_err(err.into())
+            Err(err) => InteropResult::with_err(err.into()),
         }
     }
 
     fn host_write(&self, data: &[u8], start: u64) -> InteropResult<()> {
         match self.memory.write(data, start) {
             Ok(()) => InteropResult::with_ok(()),
-            Err(err) => InteropResult::with_err(err.into())
+            Err(err) => InteropResult::with_err(err.into()),
         }
     }
 }

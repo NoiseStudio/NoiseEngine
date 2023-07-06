@@ -1,4 +1,7 @@
-use std::{mem::{ManuallyDrop, MaybeUninit}, error::Error};
+use std::{
+    error::Error,
+    mem::{ManuallyDrop, MaybeUninit},
+};
 
 use super::result_error::ResultError;
 
@@ -6,7 +9,7 @@ use super::result_error::ResultError;
 pub struct InteropResult<T> {
     is_ok: bool,
     ok: MaybeUninit<ManuallyDrop<T>>,
-    err: MaybeUninit<ManuallyDrop<ResultError>>
+    err: MaybeUninit<ManuallyDrop<ResultError>>,
 }
 
 impl<T> InteropResult<T> {
@@ -14,7 +17,7 @@ impl<T> InteropResult<T> {
         InteropResult {
             is_ok: true,
             ok: MaybeUninit::new(ManuallyDrop::new(value)),
-            err: MaybeUninit::uninit()
+            err: MaybeUninit::uninit(),
         }
     }
 
@@ -22,7 +25,7 @@ impl<T> InteropResult<T> {
         InteropResult {
             is_ok: false,
             ok: MaybeUninit::uninit(),
-            err: MaybeUninit::new(ManuallyDrop::new(err))
+            err: MaybeUninit::new(ManuallyDrop::new(err)),
         }
     }
 }
@@ -31,7 +34,7 @@ impl<T, E: Error + 'static> From<Result<T, E>> for InteropResult<T> {
     fn from(result: Result<T, E>) -> Self {
         match result {
             Ok(ok) => InteropResult::with_ok(ok),
-            Err(err) => InteropResult::with_err(ResultError::new(&err))
+            Err(err) => InteropResult::with_err(ResultError::new(&err)),
         }
     }
 }
@@ -40,7 +43,7 @@ impl<T> From<Result<T, ResultError>> for InteropResult<T> {
     fn from(result: Result<T, ResultError>) -> Self {
         match result {
             Ok(ok) => InteropResult::with_ok(ok),
-            Err(err) => InteropResult::with_err(err)
+            Err(err) => InteropResult::with_err(err),
         }
     }
 }

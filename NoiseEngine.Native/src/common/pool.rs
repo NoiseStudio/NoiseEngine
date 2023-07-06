@@ -1,10 +1,15 @@
-use std::{mem::ManuallyDrop, ptr, ops::{Deref, DerefMut}, sync::atomic::{AtomicUsize, Ordering}};
+use std::{
+    mem::ManuallyDrop,
+    ops::{Deref, DerefMut},
+    ptr,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 use lockfree::stack::Stack;
 
 pub struct Pool<T> {
     objects: Stack<T>,
-    length: AtomicUsize
+    length: AtomicUsize,
 }
 
 impl<T> Pool<T> {
@@ -13,7 +18,7 @@ impl<T> Pool<T> {
             self.length.fetch_sub(1, Ordering::Relaxed);
             PoolItem {
                 pool: self,
-                inner: ManuallyDrop::new(inner)
+                inner: ManuallyDrop::new(inner),
             }
         })
     }
@@ -21,13 +26,13 @@ impl<T> Pool<T> {
     pub fn wrap(&self, obj: T) -> PoolItem<T> {
         PoolItem {
             pool: self,
-            inner: ManuallyDrop::new(obj)
+            inner: ManuallyDrop::new(obj),
         }
     }
 
     pub fn get_or_create<E, F>(&self, factory: F) -> Result<PoolItem<T>, E>
     where
-        F: FnOnce() -> Result<T, E>
+        F: FnOnce() -> Result<T, E>,
     {
         match self.try_get() {
             Some(s) => Ok(s),
@@ -41,7 +46,7 @@ impl<T> Pool<T> {
     pub fn get_or_create_where<E, W, F>(&self, predicate: W, factory: F) -> Result<PoolItem<T>, E>
     where
         W: Fn(&T) -> bool,
-        F: FnOnce() -> Result<T, E>
+        F: FnOnce() -> Result<T, E>,
     {
         let length = self.length.load(Ordering::Relaxed);
 
@@ -51,11 +56,11 @@ impl<T> Pool<T> {
         for _ in 0..length {
             let obj = match self.try_get() {
                 Some(s) => s,
-                None => continue
+                None => continue,
             };
 
             if predicate(&obj) {
-                return Ok(obj)
+                return Ok(obj);
             }
 
             vec.push(obj)
@@ -68,20 +73,21 @@ impl<T> Pool<T> {
 
 impl<T> Default for Pool<T> {
     fn default() -> Self {
-        Self { objects: Stack::new(), length: AtomicUsize::new(0) }
+        Self {
+            objects: Stack::new(),
+            length: AtomicUsize::new(0),
+        }
     }
 }
 
 pub struct PoolItem<'a, T> {
     pool: &'a Pool<T>,
-    inner: ManuallyDrop<T>
+    inner: ManuallyDrop<T>,
 }
 
 impl<T> Drop for PoolItem<'_, T> {
     fn drop(&mut self) {
-        let t = unsafe {
-            ptr::read(&self.inner as &T)
-        };
+        let t = unsafe { ptr::read(&self.inner as &T) };
 
         self.pool.objects.push(t);
         self.pool.length.fetch_add(1, Ordering::Relaxed);

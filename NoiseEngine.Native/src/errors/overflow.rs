@@ -4,7 +4,7 @@ use crate::interop::prelude::{ResultError, ResultErrorKind};
 
 #[derive(Debug)]
 pub struct OverflowError {
-    message: String
+    message: String,
 }
 
 impl OverflowError {
@@ -19,7 +19,9 @@ impl OverflowError {
 
 impl Default for OverflowError {
     fn default() -> Self {
-        Self { message: "Overflow.".to_string() }
+        Self {
+            message: "Overflow.".to_string(),
+        }
     }
 }
 

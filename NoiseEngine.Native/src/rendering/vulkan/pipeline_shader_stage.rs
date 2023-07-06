@@ -8,5 +8,5 @@ use super::shader_module::ShaderModule;
 pub struct PipelineShaderStage<'init: 'shm, 'shm> {
     pub stage: vk::ShaderStageFlags,
     pub module: &'shm ShaderModule<'init>,
-    pub name: InteropString
+    pub name: InteropString,
 }

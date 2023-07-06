@@ -4,7 +4,7 @@ use crate::interop::prelude::{ResultError, ResultErrorKind};
 
 #[derive(Debug)]
 pub struct NullReferenceError {
-    message: String
+    message: String,
 }
 
 impl NullReferenceError {
@@ -19,7 +19,9 @@ impl NullReferenceError {
 
 impl Default for NullReferenceError {
     fn default() -> Self {
-        Self { message: "Object reference not set to an instance of an object.".to_string() }
+        Self {
+            message: "Object reference not set to an instance of an object.".to_string(),
+        }
     }
 }
 

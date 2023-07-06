@@ -12,5 +12,5 @@ pub(crate) enum GraphicsBufferUsage {
     Storage = 1 << 5,
     Index = 1 << 6,
     Vertex = 1 << 7,
-    Indirect = 1 << 8
+    Indirect = 1 << 8,
 }

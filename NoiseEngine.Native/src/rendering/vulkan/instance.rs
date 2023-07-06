@@ -1,30 +1,40 @@
-use std::{ptr, mem, ffi::{CStr, CString}, sync::Arc};
+use std::{
+    ffi::{CStr, CString},
+    mem, ptr,
+    sync::Arc,
+};
 
 use ash::vk;
 use libc::c_void;
 use uuid::Uuid;
 
 use crate::{
+    errors::invalid_operation::InvalidOperationError,
     interop::{
-        rendering::vulkan::{application_info::VulkanApplicationInfo, device_value::VulkanDeviceValue},
-        prelude::InteropString
+        prelude::InteropString,
+        rendering::vulkan::{
+            application_info::VulkanApplicationInfo, device_value::VulkanDeviceValue,
+        },
     },
-    logging::{logger, log_level::LogLevel, log}, errors::invalid_operation::InvalidOperationError
+    logging::{log, log_level::LogLevel, logger},
 };
 
 use super::{device::VulkanDevice, errors::universal::VulkanUniversalError};
 
 pub struct VulkanInstance {
     inner: ash::Instance,
-    library: Arc<ash::Entry>
+    library: Arc<ash::Entry>,
 }
 
 impl VulkanInstance {
     pub(crate) fn new(
-        library: &Arc<ash::Entry>, application_info: VulkanApplicationInfo,
-        log_severity: vk::DebugUtilsMessageSeverityFlagsEXT, log_type: vk::DebugUtilsMessageTypeFlagsEXT,
-        validation: bool, enabled_extensions: &[InteropString]
-    ) -> Result<Self, VulkanUniversalError>  {
+        library: &Arc<ash::Entry>,
+        application_info: VulkanApplicationInfo,
+        log_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
+        log_type: vk::DebugUtilsMessageTypeFlagsEXT,
+        validation: bool,
+        enabled_extensions: &[InteropString],
+    ) -> Result<Self, VulkanUniversalError> {
         let p_application_info =
             Result::<vk::ApplicationInfo, VulkanUniversalError>::from(application_info)?;
 
@@ -45,9 +55,12 @@ impl VulkanInstance {
         for extension in enabled_extensions {
             let c = match CString::new(extension) {
                 Ok(c) => c,
-                Err(_) => return Err(
-                    InvalidOperationError::with_str("Extension name contains null character.").into()
-                )
+                Err(_) => {
+                    return Err(InvalidOperationError::with_str(
+                        "Extension name contains null character.",
+                    )
+                    .into())
+                }
             };
             enabled_extensions_result.push(c.as_ptr());
             enabled_extensions_c.push(c);
@@ -66,8 +79,9 @@ impl VulkanInstance {
                 p_user_data: ptr::null_mut(),
             };
 
-            messenger_create_info_ptr =
-                &messenger_create_info as *const vk::DebugUtilsMessengerCreateInfoEXT as *const c_void;
+            messenger_create_info_ptr = &messenger_create_info
+                as *const vk::DebugUtilsMessengerCreateInfoEXT
+                as *const c_void;
         } else {
             messenger_create_info_ptr = ptr::null();
         }
@@ -84,13 +98,16 @@ impl VulkanInstance {
         };
 
         match unsafe { library.create_instance(&create_info, None) } {
-            Ok(instance) => Ok(Self { inner: instance, library: library.clone() }),
-            Err(err) => Err(err.into())
+            Ok(instance) => Ok(Self {
+                inner: instance,
+                library: library.clone(),
+            }),
+            Err(err) => Err(err.into()),
         }
     }
 
     pub(crate) fn get_vulkan_physical_devices(
-        instance: &Arc<Self>
+        instance: &Arc<Self>,
     ) -> Result<Vec<VulkanDeviceValue>, VulkanUniversalError> {
         let physical_devices = unsafe { instance.inner.enumerate_physical_devices() }?;
         let mut result = Vec::with_capacity(physical_devices.len());
@@ -105,26 +122,36 @@ impl VulkanInstance {
             };
 
             unsafe {
-                instance.inner.get_physical_device_properties2(physical_device, &mut properties2)
+                instance
+                    .inner
+                    .get_physical_device_properties2(physical_device, &mut properties2)
             };
 
             let properties = properties2.properties;
 
             // Queue families.
             let queue_family_properties = unsafe {
-                instance.inner.get_physical_device_queue_family_properties(physical_device)
+                instance
+                    .inner
+                    .get_physical_device_queue_family_properties(physical_device)
             };
 
             let mut supports_graphics = false;
             let mut supports_computing = false;
             for queue_family_properties in queue_family_properties {
-                supports_graphics |= queue_family_properties.queue_flags.contains(vk::QueueFlags::GRAPHICS);
-                supports_computing |= queue_family_properties.queue_flags.contains(vk::QueueFlags::COMPUTE);
+                supports_graphics |= queue_family_properties
+                    .queue_flags
+                    .contains(vk::QueueFlags::GRAPHICS);
+                supports_computing |= queue_family_properties
+                    .queue_flags
+                    .contains(vk::QueueFlags::COMPUTE);
             }
 
             // Presentation.
             let extensions = unsafe {
-                instance.inner.enumerate_device_extension_properties(physical_device)
+                instance
+                    .inner
+                    .enumerate_device_extension_properties(physical_device)
             }?;
 
             let mut supports_presentation = false;
@@ -140,8 +167,9 @@ impl VulkanInstance {
             result.push(VulkanDeviceValue {
                 name: match unsafe { CStr::from_ptr(properties.device_name.as_ptr()) }.to_str() {
                     Ok(name) => name,
-                    Err(err) => return Err(err.into())
-                }.into(),
+                    Err(err) => return Err(err.into()),
+                }
+                .into(),
                 vendor: properties.vendor_id,
                 device_type: unsafe { mem::transmute(properties.device_type) },
                 api_version: properties.api_version,
@@ -150,7 +178,7 @@ impl VulkanInstance {
                 supports_graphics,
                 supports_computing,
                 supports_presentation,
-                handle: Box::new(Arc::new(VulkanDevice::new(instance, physical_device)))
+                handle: Box::new(Arc::new(VulkanDevice::new(instance, physical_device))),
             });
         }
 
@@ -172,7 +200,13 @@ impl Drop for VulkanInstance {
             self.inner.destroy_instance(None);
         }
 
-        log::info(format!("Dropped VulkanInstance {{ InnerHandle = {:p} }}.", self.inner.handle()).as_str());
+        log::info(
+            format!(
+                "Dropped VulkanInstance {{ InnerHandle = {:p} }}.",
+                self.inner.handle()
+            )
+            .as_str(),
+        );
     }
 }
 

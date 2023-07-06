@@ -22,11 +22,29 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     private long referenceCount = 1;
     private AtomicBool isReleased;
     private SimpleCamera? assignedCamera;
+    private string title;
 
     public WindowInput Input { get; }
     public bool IsDisposed => isDisposed;
     public uint Width { get; private set; }
     public uint Height { get; private set; }
+
+    public string Title {
+        get => title;
+        set {
+            if (!ReferenceCoutable.TryRcRetain())
+                return;
+            
+            InteropResult<None> result = WindowInterop.SetTitle(Handle, value);
+            ReferenceCoutable.RcRelease();
+
+            if (result.TryGetValue(out _, out ResultError error))
+                title = value;
+            else
+                error.ThrowAndDispose();
+        }
+    }
+
     public bool IsFocused { get; private set; }
 
     internal ulong Id { get; }
@@ -47,6 +65,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
         Width = width;
         Height = height;
+        this.title = title;
 
         Id = Interlocked.Increment(ref nextId);
         WindowEventHandler.InitializeStatic();
@@ -119,10 +138,14 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
     /// <param name="width">New width.</param>
     /// <param name="height">New height.</param>
     public void Resize(uint width, uint height) {
-        if (ReferenceCoutable.TryRcRetain()) {
-            WindowInterop.SetPosition(Handle, null, new Vector2<uint>(width, height));
-            ReferenceCoutable.RcRelease();
-        }
+        if (!ReferenceCoutable.TryRcRetain())
+            return;
+        
+        InteropResult<None> result = WindowInterop.SetPosition(Handle, null, new Vector2<uint>(width, height));
+        ReferenceCoutable.RcRelease();
+        
+        if (!result.TryGetValue(out _, out ResultError error))
+            error.ThrowAndDispose();
     }
 
     internal void ChangeAssignedCamera(SimpleCamera? camera) {

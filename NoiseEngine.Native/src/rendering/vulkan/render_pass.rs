@@ -1,4 +1,4 @@
-use std::{sync::Arc, ptr};
+use std::{ptr, sync::Arc};
 
 use ash::vk;
 
@@ -27,7 +27,8 @@ pub struct RenderPass<'init> {
 
 impl<'init> RenderPass<'init> {
     pub fn new(
-        device: &Arc<VulkanDevice<'init>>, create_info: RenderPassCreateInfo
+        device: &Arc<VulkanDevice<'init>>,
+        create_info: RenderPassCreateInfo,
     ) -> Result<Self, VulkanUniversalError> {
         let color_attachment = vk::AttachmentDescription {
             flags: vk::AttachmentDescriptionFlags::default(),
@@ -76,13 +77,13 @@ impl<'init> RenderPass<'init> {
             dependency = vk::SubpassDependency {
                 src_subpass: vk::SUBPASS_EXTERNAL,
                 dst_subpass: 0,
-                src_stage_mask:
-                    vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT | vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
-                dst_stage_mask:
-                    vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT | vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
+                src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT
+                    | vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
+                dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT
+                    | vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
                 src_access_mask: vk::AccessFlags::empty(),
-                dst_access_mask:
-                    vk::AccessFlags::COLOR_ATTACHMENT_WRITE | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE,
+                dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_WRITE
+                    | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE,
                 dependency_flags: vk::DependencyFlags::empty(),
             };
         } else {
@@ -110,7 +111,7 @@ impl<'init> RenderPass<'init> {
             p_resolve_attachments: ptr::null(),
             p_depth_stencil_attachment: match create_info.depth_testing {
                 true => &depth_attachment_reference,
-                false => ptr::null()
+                false => ptr::null(),
             },
             preserve_attachment_count: 0,
             p_preserve_attachments: ptr::null(),
@@ -123,7 +124,7 @@ impl<'init> RenderPass<'init> {
             flags: vk::RenderPassCreateFlags::default(),
             attachment_count: match create_info.depth_testing {
                 true => 2,
-                false => 1
+                false => 1,
             },
             p_attachments: p_attachments.as_ptr(),
             subpass_count: 1,
@@ -134,7 +135,9 @@ impl<'init> RenderPass<'init> {
 
         let initialized = device.initialized()?;
         let inner = unsafe {
-            initialized.vulkan_device().create_render_pass(&vk_create_info, None)
+            initialized
+                .vulkan_device()
+                .create_render_pass(&vk_create_info, None)
         }?;
 
         Ok(Self {
@@ -142,7 +145,7 @@ impl<'init> RenderPass<'init> {
             device: device.clone(),
             depth_testing: create_info.depth_testing,
             depth_stencil_format: create_info.depth_stencil_format,
-            depth_stencil_sample_count: create_info.depth_stencil_sample_count
+            depth_stencil_sample_count: create_info.depth_stencil_sample_count,
         })
     }
 
@@ -170,9 +173,11 @@ impl<'init> RenderPass<'init> {
 impl Drop for RenderPass<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.initialized().unwrap().vulkan_device().destroy_render_pass(
-                self.inner, None
-            );
+            self.device
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_render_pass(self.inner, None);
         }
     }
 }

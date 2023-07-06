@@ -1,28 +1,32 @@
-use std::{ptr, sync::Arc, mem::ManuallyDrop};
+use std::{mem::ManuallyDrop, ptr, sync::Arc};
 
 use ash::vk;
 use libc::c_void;
 
 use crate::{
     common::pool::PoolItem,
-    rendering::vulkan::{pool_wrappers::VulkanDescriptorPool, errors::universal::VulkanUniversalError}
+    rendering::vulkan::{
+        errors::universal::VulkanUniversalError, pool_wrappers::VulkanDescriptorPool,
+    },
 };
 
-use super::{update_template::DescriptorUpdateTemplate, set_layout::DescriptorSetLayout};
+use super::{set_layout::DescriptorSetLayout, update_template::DescriptorUpdateTemplate};
 
 pub struct DescriptorSet<'init> {
     layout: Arc<DescriptorSetLayout<'init>>,
     inner: vk::DescriptorSet,
-    pool: ManuallyDrop<PoolItem<'init, VulkanDescriptorPool<'init>>>
+    pool: ManuallyDrop<PoolItem<'init, VulkanDescriptorPool<'init>>>,
 }
 
 impl<'init> DescriptorSet<'init> {
-    pub fn new(layout: &'init Arc<DescriptorSetLayout<'init>>) -> Result<Self, VulkanUniversalError> {
+    pub fn new(
+        layout: &'init Arc<DescriptorSetLayout<'init>>,
+    ) -> Result<Self, VulkanUniversalError> {
         let initialized = layout.device().initialized()?;
 
-        let pool = initialized.pool().get_descriptor_pool(
-            layout.pool_sizes()
-        )?;
+        let pool = initialized
+            .pool()
+            .get_descriptor_pool(layout.pool_sizes())?;
 
         let allocate_info = vk::DescriptorSetAllocateInfo {
             s_type: vk::StructureType::DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -33,10 +37,16 @@ impl<'init> DescriptorSet<'init> {
         };
 
         let inner = unsafe {
-            initialized.vulkan_device().allocate_descriptor_sets(&allocate_info)
+            initialized
+                .vulkan_device()
+                .allocate_descriptor_sets(&allocate_info)
         }?[0];
 
-        Ok(Self { layout: layout.clone(), inner, pool: ManuallyDrop::new(pool) })
+        Ok(Self {
+            layout: layout.clone(),
+            inner,
+            pool: ManuallyDrop::new(pool),
+        })
     }
 
     pub fn inner(&self) -> vk::DescriptorSet {
@@ -45,10 +55,16 @@ impl<'init> DescriptorSet<'init> {
 
     pub fn update(&self, template: &DescriptorUpdateTemplate, data: &[u8]) {
         unsafe {
-            self.layout.device().initialized().unwrap().vulkan_device().update_descriptor_set_with_template(
-                self.inner, template.inner(),
-                data.as_ptr() as *const c_void
-            );
+            self.layout
+                .device()
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .update_descriptor_set_with_template(
+                    self.inner,
+                    template.inner(),
+                    data.as_ptr() as *const c_void,
+                );
         }
     }
 }
@@ -60,9 +76,13 @@ impl Drop for DescriptorSet<'_> {
         }
 
         unsafe {
-            self.layout.device().initialized().unwrap().vulkan_device().reset_descriptor_pool(
-                self.pool.inner(), vk::DescriptorPoolResetFlags::default()
-            )
-        }.unwrap();
+            self.layout
+                .device()
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .reset_descriptor_pool(self.pool.inner(), vk::DescriptorPoolResetFlags::default())
+        }
+        .unwrap();
     }
 }

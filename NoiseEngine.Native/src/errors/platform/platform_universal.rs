@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use crate::{interop::prelude::ResultError, errors::invalid_operation::InvalidOperationError};
+use crate::{errors::invalid_operation::InvalidOperationError, interop::prelude::ResultError};
 
 #[cfg(target_os = "windows")]
 use super::windows::win32::Win32Error;
@@ -9,7 +9,7 @@ use super::windows::win32::Win32Error;
 pub enum PlatformUniversalError {
     InvalidOperation(InvalidOperationError),
     #[cfg(target_os = "windows")]
-    Windows(Win32Error)
+    Windows(Win32Error),
 }
 
 impl Error for PlatformUniversalError {
@@ -17,18 +17,22 @@ impl Error for PlatformUniversalError {
         match self {
             PlatformUniversalError::InvalidOperation(err) => err.source(),
             #[cfg(target_os = "windows")]
-            PlatformUniversalError::Windows(err) => err.source()
+            PlatformUniversalError::Windows(err) => err.source(),
         }
     }
 }
 
 impl Display for PlatformUniversalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            PlatformUniversalError::InvalidOperation(err) => err.to_string(),
-            #[cfg(target_os = "windows")]
-            PlatformUniversalError::Windows(err) => err.to_string()
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                PlatformUniversalError::InvalidOperation(err) => err.to_string(),
+                #[cfg(target_os = "windows")]
+                PlatformUniversalError::Windows(err) => err.to_string(),
+            }
+        )
     }
 }
 
@@ -50,7 +54,7 @@ impl From<PlatformUniversalError> for ResultError {
         match err {
             PlatformUniversalError::InvalidOperation(err) => err.into(),
             #[cfg(target_os = "windows")]
-            PlatformUniversalError::Windows(err) => err.into()
+            PlatformUniversalError::Windows(err) => err.into(),
         }
     }
 }

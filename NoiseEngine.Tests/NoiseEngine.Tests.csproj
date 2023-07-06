@@ -33,6 +33,16 @@
         <ProjectReference Include="../NoiseEngine/NoiseEngine.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Folder Include="Resources\Textures\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Resources\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
     <Import Project="../NoiseEngine.Shared.xml" />
 
     <!--

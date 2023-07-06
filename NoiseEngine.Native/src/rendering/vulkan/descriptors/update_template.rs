@@ -8,12 +8,13 @@ use super::set_layout::DescriptorSetLayout;
 
 pub struct DescriptorUpdateTemplate<'init> {
     layout: Arc<DescriptorSetLayout<'init>>,
-    inner: vk::DescriptorUpdateTemplate
+    inner: vk::DescriptorUpdateTemplate,
 }
 
 impl<'init> DescriptorUpdateTemplate<'init> {
     pub fn new(
-        layout: &Arc<DescriptorSetLayout<'init>>, entries: &[vk::DescriptorUpdateTemplateEntry]
+        layout: &Arc<DescriptorSetLayout<'init>>,
+        entries: &[vk::DescriptorUpdateTemplateEntry],
     ) -> Result<Self, VulkanUniversalError> {
         let create_info = vk::DescriptorUpdateTemplateCreateInfo {
             s_type: vk::StructureType::DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO,
@@ -30,10 +31,15 @@ impl<'init> DescriptorUpdateTemplate<'init> {
 
         let initialized = layout.device().initialized()?;
         let inner = unsafe {
-            initialized.vulkan_device().create_descriptor_update_template(&create_info, None)
+            initialized
+                .vulkan_device()
+                .create_descriptor_update_template(&create_info, None)
         }?;
 
-        Ok(Self { layout: layout.clone(), inner })
+        Ok(Self {
+            layout: layout.clone(),
+            inner,
+        })
     }
 
     pub fn inner(&self) -> vk::DescriptorUpdateTemplate {
@@ -44,9 +50,12 @@ impl<'init> DescriptorUpdateTemplate<'init> {
 impl Drop for DescriptorUpdateTemplate<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.layout.device().initialized().unwrap().vulkan_device().destroy_descriptor_update_template(
-                self.inner, None
-            );
+            self.layout
+                .device()
+                .initialized()
+                .unwrap()
+                .vulkan_device()
+                .destroy_descriptor_update_template(self.inner, None);
         }
     }
 }

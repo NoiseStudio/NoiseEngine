@@ -1,7 +1,7 @@
 pub mod prelude;
 
-pub mod result_error_kind;
 pub mod result_error;
+pub mod result_error_kind;
 
 pub mod interop_allocator;
 pub mod interop_array;

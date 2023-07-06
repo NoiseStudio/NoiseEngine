@@ -4,7 +4,7 @@ use crate::interop::prelude::{ResultError, ResultErrorKind};
 
 #[derive(Debug)]
 pub struct InvalidOperationError {
-    message: String
+    message: String,
 }
 
 impl InvalidOperationError {
@@ -19,7 +19,9 @@ impl InvalidOperationError {
 
 impl Default for InvalidOperationError {
     fn default() -> Self {
-        Self { message: "Invalid operation.".to_string() }
+        Self {
+            message: "Invalid operation.".to_string(),
+        }
     }
 }
 
