@@ -49,17 +49,15 @@ internal sealed class NotFullyConstructedGenericNeslType : NeslType {
 
     internal override void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {
         used.Add(this, GenericMakedFrom!);
-        used.Add(this, GenericMakedTypeParameters);
     }
 
     internal override bool SerializeHeader(NeslAssembly serializedAssembly, SerializationWriter writer) {
         Debug.Assert(serializedAssembly == Assembly);
 
         writer.WriteBool(true);
-        writer.WriteUInt8((byte)NeslTypeUsageKind.GenericNotFullyConstructed);
+        writer.WriteUInt8((byte)NeslTypeUsageKind.GenericMaked);
         writer.WriteUInt64(Assembly.GetLocalTypeId(GenericMakedFrom!));
-        writer.WriteEnumerable(GenericMakedTypeParameters.Select(Assembly.GetLocalTypeId));
-        return false;
+        return true;
     }
 
 }

@@ -124,6 +124,11 @@ public static class NeslCompiler {
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethods());
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeTypeDependencies());
         Parallel.ForEach(p, (parser, _) => parser.ConstructType());
+
+        storage.CreateGenerics = true;
+        if (parsers.Length > 0)
+            storage.InitializeGenericMakedTypes(parsers[0]);
+
         Parallel.ForEach(p, (parser, _) => parser.AnalyzeMethodBodies());
         Parallel.ForEach(parsers, (parser, _) => parser.AnalyzeUsings());
 

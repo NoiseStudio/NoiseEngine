@@ -1,8 +1,20 @@
+using System.Operators;
+
 [PlatformDependentTypeRepresentation("OpTypeVector`{&T}`3")]
-public struct Vector3<T> {
+public struct Vector3<T> : IAdd<Vector3<T>, Vector3<T>, Vector3<T>> for T : [IAdd<T, T, T>] {
 
     public T X;
     public T Y;
     public T Z;
+
+    public Vector3(T x, T y, T z) {
+        X = x;
+        Y = y;
+        Z = z;
+    }
+
+    public static Vector3<T> Add(Vector3<T> lhs, Vector3<T> rhs) where T : IAdd<T, T, T> {
+        return new Vector3<T>(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z);
+	}
 
 }

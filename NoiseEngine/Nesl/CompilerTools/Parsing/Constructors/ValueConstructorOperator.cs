@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Generics;
 using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
+using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,10 +49,10 @@ internal static class ValueConstructorOperator {
 
         interfaces = interfaces.Where(x =>
             x.Item2.FullNameWithAssembly == data.InterfaceFullNameWithAssembly &&
-            lhs.Type is null ? lhs.CheckLoadConst(x.Item2.GenericMakedTypeParameters.First()) :
-                (lhs.Type == x.Item2.GenericMakedTypeParameters.First()) &&
-            rhs.Type is null ? rhs.CheckLoadConst(x.Item2.GenericMakedTypeParameters.Skip(1).First()) :
-                (rhs.Type == x.Item2.GenericMakedTypeParameters.Skip(1).First())
+            (lhs.Type is null ? lhs.CheckLoadConst(x.Item2.GenericMakedTypeParameters.First()) :
+                (lhs.Type == x.Item2.GenericMakedTypeParameters.First())) &&
+            (rhs.Type is null ? rhs.CheckLoadConst(x.Item2.GenericMakedTypeParameters.Skip(1).First()) :
+                (rhs.Type == x.Item2.GenericMakedTypeParameters.Skip(1).First()))
         );
 
         (bool, NeslType?) i = interfaces.FirstOrDefault();
@@ -68,14 +69,14 @@ internal static class ValueConstructorOperator {
         NeslType type = i.Item1 ? lhs.Type! : rhs.Type!;
 
         IEnumerable<NeslMethod> methods = type.Methods;
-        if (type is NeslGenericTypeParameter genericType && parser.CurrentMethod.TypeGenericConstraints.TryGetValue(
-            genericType, out IReadOnlyList<NeslType>? typeGenericConstraints
-        )) {
-            foreach (NeslType genericConstraint in typeGenericConstraints) {
-                methods = methods.Concat(genericConstraint.Methods.Select(
-                    x => new NeslGenericTypeParameterImplementedMethod(genericType, x)
-                ));
-            }
+        if (
+            type is NeslGenericTypeParameterBuilder genericType &&
+            parser.CurrentMethod.TypeGenericConstraints.TryGetValue(
+                genericType, out IReadOnlyList<NeslType>? typeGenericConstraints
+            )
+        ) {
+            foreach (NeslType genericConstraint in typeGenericConstraints)
+                methods = methods.Concat(genericType.GetOrAddNestedConstraint(genericConstraint));
         }
 
         NeslMethod method = methods.First(x =>

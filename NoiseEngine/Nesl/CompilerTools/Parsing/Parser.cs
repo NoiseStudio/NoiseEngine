@@ -5,6 +5,7 @@ using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
+using NoiseEngine.Nesl.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -312,7 +313,14 @@ internal class Parser {
     }
 
     public void AnalyzeMethods() {
-        if (definedMethods is not null) {
+        List<MethodDefinitionData>? d = definedMethods;
+        if (d is null)
+            return;
+
+        lock (d) {
+            if (definedMethods is null)
+                return;
+
             foreach (MethodDefinitionData data in definedMethods) {
                 // Parameters.
                 TokenBuffer newParameters;
@@ -394,7 +402,7 @@ internal class Parser {
                 if (!method.IsStatic)
                     method.IlGenerator.GetNextVariableId();
                 if (data.IsConstructor)
-                    DefaultConstructorHelper.AppendHeader(method);
+                    ConstructorHelper.AppendHeader(method);
 
                 if (data.CodeBlock is not null) {
                     methods ??= new List<Parser>();
@@ -544,7 +552,7 @@ internal class Parser {
             parser.Parse();
 
             if (parser.CurrentMethodIsConstructor)
-                DefaultConstructorHelper.AppendFooter(parser.CurrentMethod);
+                ConstructorHelper.AppendFooter(parser.CurrentMethod);
             else if (parser.CurrentMethod.ReturnType is null)
                 parser.CurrentMethod.IlGenerator.Emit(OpCode.Return);
 
@@ -705,12 +713,19 @@ internal class Parser {
             if (!constraintsSatisfied)
                 return false;
 
-            if (Assembly == type.Assembly) {
-                foreach (NeslMethod method in type.Methods)
-                    AnalyzeMethodBody(method);
+            if (Storage.CreateGenerics) {
+                if (Assembly == type.Assembly) {
+                    foreach (NeslMethod method in type.Methods)
+                        AnalyzeMethodBody(method);
+                }
+
+                type = type.MakeGeneric(genericTypes);
+            } else {
+                type = type.UnsafeMakeGenericUninitialized(genericTypes);
+                if (type is SerializedNeslType serializedType)
+                    Storage.AddGenericMakedTypeForInitialize(serializedType);
             }
 
-            type = type.MakeGeneric(genericTypes);
             if (Assembly == type.Assembly)
                 Storage.AddGenericMakedType(type, genericTokens.Select(x => x.Pointer).ToArray());
             return true;

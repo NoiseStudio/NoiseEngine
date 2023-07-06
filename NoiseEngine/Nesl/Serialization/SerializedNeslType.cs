@@ -86,7 +86,7 @@ internal class SerializedNeslType : NeslType {
         this.methods = methods;
     }
 
-    internal void UnsafeInitializeTypeFromMakeGeneric(
+    internal List<(NeslMethod, NeslMethod)> UnsafeInitializeTypeFromMakeGeneric(
         IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
         if (GenericMakedFrom is null)
@@ -205,11 +205,19 @@ internal class SerializedNeslType : NeslType {
         }
 
         SetMethods(methods.Select(x => x.Item2).ToArray());
+        return methods;
+    }
+
+    internal void UnsafeInitializeTypeFromMakeGenericMethodIl(
+        List<(NeslMethod, NeslMethod)> methods, IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+    ) {
         foreach ((NeslMethod original, NeslMethod newMethod) in methods) {
             if (newMethod is not SerializedNeslMethod serialized)
                 continue;
 
-            serialized.SetIlContainer(GenericIlGenerator.RemoveGenerics(GenericMakedFrom, this, original, targetTypes));
+            serialized.SetIlContainer(GenericIlGenerator.RemoveGenerics(
+                GenericMakedFrom!, this, original, targetTypes
+            ));
         }
     }
 

@@ -1,6 +1,9 @@
 ﻿using NoiseEngine.Nesl.CompilerTools.Generics;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
+using NoiseEngine.Nesl.Serialization;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,12 +14,21 @@ internal sealed class ParserStorage {
 
     private readonly ConcurrentDictionary<NeslType, ConcurrentBag<CodePointer[]>> genericMakedTypes =
         new ConcurrentDictionary<NeslType, ConcurrentBag<CodePointer[]>>();
+    private readonly ConcurrentBag<SerializedNeslType> genericMakedTypesForInitialize =
+        new ConcurrentBag<SerializedNeslType>();
     private readonly ConcurrentDictionary<NeslMethod, Parser> methodParsers =
         new ConcurrentDictionary<NeslMethod, Parser>();
+
+    public bool CreateGenerics { get; set; }
 
     public void AddGenericMakedType(NeslType type, CodePointer[] pointers) {
         Debug.Assert(type.GenericMakedFrom is not null);
         genericMakedTypes.GetOrAdd(type, _ => new ConcurrentBag<CodePointer[]>()).Add(pointers);
+    }
+
+    public void AddGenericMakedTypeForInitialize(SerializedNeslType type) {
+        Debug.Assert(type.GenericMakedFrom is not null);
+        genericMakedTypesForInitialize.Add(type);
     }
 
     public void AddMethodParser(NeslMethod method, Parser parser) {
@@ -36,6 +48,24 @@ internal sealed class ParserStorage {
         }
 
         throw new UnreachableException();
+    }
+
+    public void InitializeGenericMakedTypes(Parser anyParser) {
+        Parallel.ForEach(genericMakedTypesForInitialize, type => {
+            if (type.Assembly == anyParser.Assembly) {
+                foreach (NeslMethod method in type.GenericMakedFrom!.Methods)
+                    anyParser.AnalyzeMethodBody(method);
+            }
+
+            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes = type.UnsafeTargetTypesFromMakeGeneric(
+                type.GenericMakedFrom!.GenericTypeParameters,
+                type.GenericMakedTypeParameters.ToArray(),
+                out _
+            );
+
+            List<(NeslMethod, NeslMethod)> methods = type.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
+            type.UnsafeInitializeTypeFromMakeGenericMethodIl(methods, targetTypes);
+        });
     }
 
     public void CheckGenericConstraintSatisfying(Parser anyParser) {

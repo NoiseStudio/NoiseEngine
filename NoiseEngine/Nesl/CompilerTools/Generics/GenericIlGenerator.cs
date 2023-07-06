@@ -40,9 +40,15 @@ internal class GenericIlGenerator {
         if (genericMethod.Attributes.Any(x => x.FullName == intrinsic.FullName))
             return genericMethod.GetIlContainer();
 
-        Debug.Assert(genericMethod.GetInstructions().Last().OpCode == (
-            genericMethod.ReturnType is null ? OpCode.Return : OpCode.ReturnValue
-        ));
+        Console.WriteLine($"{newType.GenericMakedTypeParameters.First()} {genericMethod}");
+        Debug.Assert(genericMethod.GetInstructions().Any(), $"Method `{genericMethod.FullName}` has no instructions.");
+        Debug.Assert(
+            genericMethod.GetInstructions().Last().OpCode == (
+                genericMethod.ReturnType is null ? OpCode.Return : OpCode.ReturnValue
+            ),
+            $"Method `{genericMethod.FullName}` does not end with a {nameof(OpCode.Return)} or " +
+            $"{nameof(OpCode.ReturnValue)} op code, but end with {genericMethod.GetInstructions().Last().OpCode}."
+        );
 
         GenericIlGenerator g = new GenericIlGenerator(
             new SerializedIlContainer(

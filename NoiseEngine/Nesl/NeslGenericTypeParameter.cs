@@ -22,6 +22,8 @@ public abstract class NeslGenericTypeParameter : NeslType {
     public override string Name => FullName;
     public override string Namespace => string.Empty;
 
+    internal abstract IReadOnlyDictionary<NeslType, IReadOnlyList<NeslMethod>> ConstraintMethods { get; }
+
     protected NeslGenericTypeParameter(NeslAssembly assembly, string name) : base(assembly, name) {
         instanceId = Interlocked.Increment(ref nextInstanceId);
     }

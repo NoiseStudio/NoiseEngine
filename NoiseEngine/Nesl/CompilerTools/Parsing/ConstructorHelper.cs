@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing;
 
-internal static class DefaultConstructorHelper {
+internal static class ConstructorHelper {
 
     public static void AppendHeader(NeslMethodBuilder method) {
         NeslType type = method.ReturnType ?? throw new UnreachableException();

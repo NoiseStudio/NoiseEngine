@@ -161,13 +161,13 @@ public class Operators : NeslExecuteTestEnvironment {
         Vector3<T>[] initialValues3 = new Vector3<T>[initialValues.Length / 3];
         for (int i = 0; i < initialValues3.Length; i++) {
             initialValues3[i] = new Vector3<T>(
-                initialValues[i * 3], initialValues[i * 3 + 1], initialValues[i * 3 + 2]
+                initialValues[i * 4], initialValues[i * 4 + 1], initialValues[i * 4 + 2]
             );
         }
         Vector3<T>[] expectedValues3 = new Vector3<T>[expectedValues.Length / 3];
         for (int i = 0; i < expectedValues3.Length; i++) {
             expectedValues3[i] = new Vector3<T>(
-                expectedValues[i * 3], expectedValues[i * 3 + 1], expectedValues[i * 3 + 2]
+                expectedValues[i * 4], expectedValues[i * 4 + 1], expectedValues[i * 4 + 2]
             );
         }
         InvokerImplRun(initialValues3, expectedValues3, $"Vector3<{type}>", op);
@@ -196,8 +196,8 @@ public class Operators : NeslExecuteTestEnvironment {
 
             [Kernel({expectedValues.Length}, 1, 1)]
             void Main() {{
-                buffer[ComputeUtils.GlobalInvocation3.X] = {type}.Add(buffer[ComputeUtils.GlobalInvocation3.X],
-                    buffer[ComputeUtils.GlobalInvocation3.X + {expectedValues.Length}]);
+                buffer[ComputeUtils.GlobalInvocation3.X] = buffer[ComputeUtils.GlobalInvocation3.X] {op}
+                    buffer[ComputeUtils.GlobalInvocation3.X + {expectedValues.Length}];
             }}
         ", initialValues, expectedValues);
     }
