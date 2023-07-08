@@ -60,7 +60,8 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// </summary>
     /// <param name="length">Length of the array.</param>
     public unsafe InteropArray(int length) {
-        pointer = (T*)Marshal.AllocHGlobal(length * Marshal.SizeOf<T>());
+        nuint size = (nuint)Marshal.SizeOf<T>();
+        pointer = (T*)NativeMemory.AlignedAlloc(size * (nuint)length, size);
         Length = length;
     }
 
@@ -132,7 +133,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
         if (pointer == null)
             return;
 
-        Marshal.FreeHGlobal((IntPtr)pointer);
+        NativeMemory.AlignedFree(pointer);
         pointer = null;
         Length = -1;
     }

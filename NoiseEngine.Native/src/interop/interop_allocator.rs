@@ -6,19 +6,19 @@ pub struct InteropAllocator;
 
 /// # Safety
 /// This unsafy calls the malloc function of the libc.
-pub unsafe fn alloc(size: usize) -> *mut u8 {
-    libc::malloc(size) as *mut u8
+pub unsafe fn alloc(size: usize, aligment: usize) -> *mut u8 {
+    libc::aligned_malloc(size, aligment) as *mut u8
 }
 
 /// # Safety
 /// This unsafy calls the free function of the libc.
 pub unsafe fn dealloc(ptr: *mut u8) {
-    libc::free(ptr as *mut c_void);
+    libc::aligned_free(ptr as *mut c_void);
 }
 
 unsafe impl GlobalAlloc for InteropAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        alloc(layout.size())
+        alloc(layout.size(), layout.align())
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {

@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, slice};
+use std::{marker::PhantomData, slice, mem};
 
 #[repr(C)]
 pub struct InteropReadOnlySpan<'a, T> {
@@ -23,6 +23,16 @@ impl<'a, T> InteropReadOnlySpan<'a, T> {
 
 impl<'a, T> From<InteropReadOnlySpan<'a, T>> for &'a [T] {
     fn from(span: InteropReadOnlySpan<'a, T>) -> Self {
+        if cfg!(debug_assertions) {
+            if span.length < 0 {
+                panic!("InteropReadOnlySpan length cannot be negative.");
+            }
+
+            if span.reference as usize % mem::align_of::<T>() != 0 {
+                panic!("InteropReadOnlySpan reference is not aligned.");
+            }
+        }
+
         unsafe { slice::from_raw_parts(span.reference, span.length as usize) }
     }
 }
