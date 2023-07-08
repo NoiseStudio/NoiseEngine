@@ -74,6 +74,10 @@ public class NeslGenericTypeParameterBuilder : NeslGenericTypeParameter {
             );
         }
 
+        Console.WriteLine("Wha " + i.FullName + " " + i.GenericMakedTypeParameters.First().FullName + " " + i.GetType().FullName);
+        foreach (NeslMethod method in i.Methods)
+            Console.WriteLine(method.FullName);
+
         return constraintMethods.GetOrAdd(i, _ => i.Methods.Select(x => new NeslGenericTypeParameterImplementedMethod(
             this, x
         )).ToArray());

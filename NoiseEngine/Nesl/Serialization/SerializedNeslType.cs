@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace NoiseEngine.Nesl.Serialization;
 
-internal class SerializedNeslType : NeslType {
+internal class SerializedNeslType : NeslType, IGenericMakedForInitialize {
 
     private NeslAttribute[] attributes = Array.Empty<NeslAttribute>();
     private NeslType[] genericMakedTypeParameters = Array.Empty<NeslType>();

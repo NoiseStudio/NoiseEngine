@@ -7,32 +7,42 @@ using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Generics;
 
-internal sealed class NotFullyConstructedGenericNeslType : NeslType {
+internal sealed class NotFullyConstructedGenericNeslType : NeslType, IGenericMakedForInitialize {
+
+    private IReadOnlyList<NeslField>? fields;
+    private IReadOnlyList<NeslMethod>? methods;
 
     public override IEnumerable<NeslAttribute> Attributes => GenericMakedFrom!.Attributes;
     public override IEnumerable<NeslGenericTypeParameter> GenericTypeParameters =>
         GenericMakedFrom!.GenericTypeParameters;
-    public override IReadOnlyList<NeslField> Fields { get; }
-    public override IEnumerable<NeslMethod> Methods { get; }
+    public override IReadOnlyList<NeslField> Fields => fields ?? throw new UnreachableException();
+    public override IEnumerable<NeslMethod> Methods => methods ?? throw new UnreachableException();
     public override NeslType? GenericMakedFrom { get; }
     public override NeslTypeKind Kind => GenericMakedFrom!.Kind;
     public override IEnumerable<NeslType> Interfaces => GenericMakedFrom!.Interfaces;
     public override IEnumerable<NeslType> GenericMakedTypeParameters { get; }
 
     public NotFullyConstructedGenericNeslType(
-        NeslType parentType, Dictionary<NeslGenericTypeParameter, NeslType> targetTypes,
-        ImmutableArray<NeslType> genericMakedTypeParameters
+        NeslType parentType, ImmutableArray<NeslType> genericMakedTypeParameters
     ) : base(
         parentType.Assembly, parentType.FullName
     ) {
         GenericMakedFrom = parentType;
         GenericMakedTypeParameters = genericMakedTypeParameters;
+    }
 
-        Fields = GenericMakedFrom.Fields.Select(field => new NotFullyConstructedGenericNeslField(
+    public override NeslType MakeGeneric(params NeslType[] typeArguments) {
+        return GenericMakedFrom!.MakeGeneric(typeArguments);
+    }
+
+    internal void UnsafeInitializeTypeFromMakeGeneric(
+        IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+    ) {
+        fields = GenericMakedFrom!.Fields.Select(field => new NotFullyConstructedGenericNeslField(
             this, field, GenericHelper.GetFinalType(GenericMakedFrom, this, field.FieldType, targetTypes)
         )).ToArray();
 
-        Methods = GenericMakedFrom.Methods.Select(method => new NotFullyConstructedGenericNeslMethodForType(
+        methods = GenericMakedFrom.Methods.Select(method => new NotFullyConstructedGenericNeslMethodForType(
             this, method,
             method.ReturnType is null ? null : GenericHelper.GetFinalType(
                 GenericMakedFrom, this, method.ReturnType, targetTypes
@@ -41,10 +51,6 @@ internal sealed class NotFullyConstructedGenericNeslType : NeslType {
                 GenericMakedFrom, this, x, targetTypes
             )).ToArray()
         )).ToArray();
-    }
-
-    public override NeslType MakeGeneric(params NeslType[] typeArguments) {
-        return GenericMakedFrom!.MakeGeneric(typeArguments);
     }
 
     internal override void PrepareHeader(SerializationUsed used, NeslAssembly serializedAssembly) {

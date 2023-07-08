@@ -235,8 +235,14 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
                 parameter.AssertConstraints(targetTypes, typeArguments[i++]);
 
             // Create not fully generic maked type.
-            if (!isFullyConstructed)
-                return new NotFullyConstructedGenericNeslType(this, targetTypes, typeArguments.ToImmutableArray());
+            if (!isFullyConstructed) {
+                NotFullyConstructedGenericNeslType n = new NotFullyConstructedGenericNeslType(
+                    this, typeArguments.ToImmutableArray()
+                );
+                if (initialize)
+                    n.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
+                return n;
+            }
 
             // Create fully generic maked type.
             SerializedNeslType type = UnsafeCreateTypeFromMakeGeneric(typeArguments);

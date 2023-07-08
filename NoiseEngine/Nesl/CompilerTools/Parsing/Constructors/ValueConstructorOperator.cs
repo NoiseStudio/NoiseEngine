@@ -3,7 +3,9 @@ using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Constructors;
 
@@ -75,18 +77,50 @@ internal static class ValueConstructorOperator {
                 genericType, out IReadOnlyList<NeslType>? typeGenericConstraints
             )
         ) {
-            foreach (NeslType genericConstraint in typeGenericConstraints)
+            foreach (NeslType genericConstraint in typeGenericConstraints) {
+                if (genericConstraint is IGenericMakedForInitialize forInitialize)
+                    parser.Storage.InitializeGenericMakedType(parser, forInitialize);
                 methods = methods.Concat(genericType.GetOrAddNestedConstraint(genericConstraint));
+            }
         }
 
-        NeslMethod method = methods.First(x =>
+        NeslMethod? method = methods.FirstOrDefault(x =>
             x.Name == data.MethodName && x.ParameterTypes.Count == 2 &&
             x.ParameterTypes[0] == lhs.Type && x.ParameterTypes[1] == rhs.Type
         );
+        if (method is not null) {
+            return ValueConstructor.CallMethod(parser, method, null, new ValueData[] {
+                lhs, rhs
+            });
+        }
 
-        return ValueConstructor.CallMethod(parser, method, null, new ValueData[] {
-            lhs, rhs
-        });
+        Console.WriteLine("dasdsd " + parser.CurrentMethod.FullName);
+        Console.WriteLine(type is NeslGenericTypeParameterBuilder);
+        if (type is NeslGenericTypeParameterBuilder genericType2) {
+            foreach (var a in parser.CurrentMethod.TypeGenericConstraints) {
+                Console.WriteLine("fd " + a.Key.FullName);
+                foreach (var b in a.Value) {
+                    Console.WriteLine(b.FullName + " " + b.GenericMakedTypeParameters.First().FullName + " methods: " + b.Methods.Count());
+                }
+            }
+        }
+
+        // Unhappy path.
+        StringBuilder builder = new StringBuilder("Unable to find NESL method of operator `");
+        builder.Append(i.Item2.FullName);
+        builder.Append("` with generic maked type parameters (");
+
+        foreach (NeslType genericMakedTypeParameter in i.Item2.GenericMakedTypeParameters) {
+            builder.Append(genericMakedTypeParameter.FullName);
+            builder.Append(", ");
+        }
+        builder.Remove(builder.Length - 2, 2);
+
+        builder.Append(") for type named `");
+        builder.Append(type.FullName);
+        builder.Append("`.");
+
+        throw new UnreachableException(builder.ToString());
     }
 
 }

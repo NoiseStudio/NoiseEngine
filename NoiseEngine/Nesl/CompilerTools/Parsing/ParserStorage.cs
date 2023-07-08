@@ -14,8 +14,8 @@ internal sealed class ParserStorage {
 
     private readonly ConcurrentDictionary<NeslType, ConcurrentBag<CodePointer[]>> genericMakedTypes =
         new ConcurrentDictionary<NeslType, ConcurrentBag<CodePointer[]>>();
-    private readonly ConcurrentBag<SerializedNeslType> genericMakedTypesForInitialize =
-        new ConcurrentBag<SerializedNeslType>();
+    private readonly ConcurrentDictionary<IGenericMakedForInitialize, bool> genericMakedTypesForInitialize =
+        new ConcurrentDictionary<IGenericMakedForInitialize, bool>();
     private readonly ConcurrentDictionary<NeslMethod, Parser> methodParsers =
         new ConcurrentDictionary<NeslMethod, Parser>();
 
@@ -26,9 +26,13 @@ internal sealed class ParserStorage {
         genericMakedTypes.GetOrAdd(type, _ => new ConcurrentBag<CodePointer[]>()).Add(pointers);
     }
 
-    public void AddGenericMakedTypeForInitialize(SerializedNeslType type) {
-        Debug.Assert(type.GenericMakedFrom is not null);
-        genericMakedTypesForInitialize.Add(type);
+    public void AddGenericMakedTypeForInitialize(Parser parser, IGenericMakedForInitialize type) {
+        Console.WriteLine($"AddGenericMakedTypeForInitialize: {type}");
+        Debug.Assert(type is SerializedNeslType || type is NotFullyConstructedGenericNeslType);
+        genericMakedTypesForInitialize.TryAdd(type, false);
+
+        if (CreateGenerics)
+            InitializeGenericMakedType(parser, type);
     }
 
     public void AddMethodParser(NeslMethod method, Parser parser) {
@@ -51,21 +55,43 @@ internal sealed class ParserStorage {
     }
 
     public void InitializeGenericMakedTypes(Parser anyParser) {
-        Parallel.ForEach(genericMakedTypesForInitialize, type => {
-            if (type.Assembly == anyParser.Assembly) {
-                foreach (NeslMethod method in type.GenericMakedFrom!.Methods)
+        Parallel.ForEach(
+            genericMakedTypesForInitialize.Keys.ToArray(), type => InitializeGenericMakedType(anyParser, type)
+        );
+    }
+
+    public void InitializeGenericMakedType(Parser anyParser, IGenericMakedForInitialize type) {
+        if (genericMakedTypesForInitialize[type])
+            return;
+
+        lock (type) {
+            if (genericMakedTypesForInitialize[type])
+                return;
+
+            NeslType neslType = (NeslType)type;
+            if (neslType.Assembly == anyParser.Assembly) {
+                foreach (NeslMethod method in neslType.GenericMakedFrom!.Methods)
                     anyParser.AnalyzeMethodBody(method);
             }
 
-            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes = type.UnsafeTargetTypesFromMakeGeneric(
-                type.GenericMakedFrom!.GenericTypeParameters,
-                type.GenericMakedTypeParameters.ToArray(),
-                out _
+            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes = neslType.UnsafeTargetTypesFromMakeGeneric(
+                neslType.GenericMakedFrom!.GenericTypeParameters,
+                neslType.GenericMakedTypeParameters.ToArray(),
+                out bool _
             );
 
-            List<(NeslMethod, NeslMethod)> methods = type.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
-            type.UnsafeInitializeTypeFromMakeGenericMethodIl(methods, targetTypes);
-        });
+            if (type is SerializedNeslType serialized) {
+                List<(NeslMethod, NeslMethod)> methods = serialized.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
+                serialized.UnsafeInitializeTypeFromMakeGenericMethodIl(methods, targetTypes);
+            } else if (type is NotFullyConstructedGenericNeslType notFully) {
+                notFully.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
+            } else {
+                throw new UnreachableException();
+            }
+
+            genericMakedTypesForInitialize[type] = true;
+            Console.WriteLine("Initialized: " + neslType.FullName + " " + neslType.GenericMakedTypeParameters.First().FullName);
+        }
     }
 
     public void CheckGenericConstraintSatisfying(Parser anyParser) {

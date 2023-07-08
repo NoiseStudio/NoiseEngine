@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
+﻿using NoiseEngine.Nesl.CompilerTools.Generics;
+using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
@@ -200,6 +201,9 @@ internal static class ValueConstructor {
             if (index != -1 || expression.RoundBrackets is null) {
                 // Get field.
                 if (type.Kind != NeslTypeKind.GenericParameter) {
+                    if (type is IGenericMakedForInitialize forInitialize)
+                        parser.Storage.InitializeGenericMakedType(parser, forInitialize);
+
                     NeslField? field = type.GetField(str);
                     if (field is not null) {
                         il.Emit(OpCode.DefVariable, field.FieldType);

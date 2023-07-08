@@ -722,8 +722,8 @@ internal class Parser {
                 type = type.MakeGeneric(genericTypes);
             } else {
                 type = type.UnsafeMakeGenericUninitialized(genericTypes);
-                if (type is SerializedNeslType serializedType)
-                    Storage.AddGenericMakedTypeForInitialize(serializedType);
+                if (type is IGenericMakedForInitialize forInitialize)
+                    Storage.AddGenericMakedTypeForInitialize(this, forInitialize);
             }
 
             if (Assembly == type.Assembly)
