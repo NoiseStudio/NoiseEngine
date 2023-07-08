@@ -27,7 +27,6 @@ internal sealed class ParserStorage {
     }
 
     public void AddGenericMakedTypeForInitialize(Parser parser, IGenericMakedForInitialize type) {
-        Console.WriteLine($"AddGenericMakedTypeForInitialize: {type}");
         Debug.Assert(type is SerializedNeslType || type is NotFullyConstructedGenericNeslType);
         genericMakedTypesForInitialize.TryAdd(type, false);
 
@@ -61,7 +60,7 @@ internal sealed class ParserStorage {
     }
 
     public void InitializeGenericMakedType(Parser anyParser, IGenericMakedForInitialize type) {
-        if (genericMakedTypesForInitialize[type])
+        if (!genericMakedTypesForInitialize.TryGetValue(type, out bool initialized) || initialized)
             return;
 
         lock (type) {
@@ -90,7 +89,6 @@ internal sealed class ParserStorage {
             }
 
             genericMakedTypesForInitialize[type] = true;
-            Console.WriteLine("Initialized: " + neslType.FullName + " " + neslType.GenericMakedTypeParameters.First().FullName);
         }
     }
 

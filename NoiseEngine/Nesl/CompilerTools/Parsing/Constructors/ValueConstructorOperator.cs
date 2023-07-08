@@ -94,17 +94,6 @@ internal static class ValueConstructorOperator {
             });
         }
 
-        Console.WriteLine("dasdsd " + parser.CurrentMethod.FullName);
-        Console.WriteLine(type is NeslGenericTypeParameterBuilder);
-        if (type is NeslGenericTypeParameterBuilder genericType2) {
-            foreach (var a in parser.CurrentMethod.TypeGenericConstraints) {
-                Console.WriteLine("fd " + a.Key.FullName);
-                foreach (var b in a.Value) {
-                    Console.WriteLine(b.FullName + " " + b.GenericMakedTypeParameters.First().FullName + " methods: " + b.Methods.Count());
-                }
-            }
-        }
-
         // Unhappy path.
         StringBuilder builder = new StringBuilder("Unable to find NESL method of operator `");
         builder.Append(i.Item2.FullName);
