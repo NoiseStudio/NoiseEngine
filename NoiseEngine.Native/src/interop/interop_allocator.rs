@@ -6,14 +6,30 @@ pub struct InteropAllocator;
 
 /// # Safety
 /// This unsafy calls the aligned_malloc function of the libc.
+#[cfg(target_os = "windows")]
 pub unsafe fn alloc(size: usize, aligment: usize) -> *mut u8 {
     libc::aligned_malloc(size, aligment) as *mut u8
 }
 
 /// # Safety
+/// This unsafy calls the memalign function of the libc.
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn alloc(size: usize, aligment: usize) -> *mut u8 {
+    libc::memalign(aligment, size) as *mut u8
+}
+
+/// # Safety
 /// This unsafy calls the aligned_free function of the libc.
+#[cfg(target_os = "windows")]
 pub unsafe fn dealloc(ptr: *mut u8) {
     libc::aligned_free(ptr as *mut c_void);
+}
+
+/// # Safety
+/// This unsafy calls the free function of the libc.
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn dealloc(ptr: *mut u8) {
+    libc::free(ptr as *mut c_void);
 }
 
 unsafe impl GlobalAlloc for InteropAllocator {
