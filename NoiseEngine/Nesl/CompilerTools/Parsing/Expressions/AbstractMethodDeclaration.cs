@@ -14,10 +14,11 @@ internal class AbstractMethodDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.TypeIdentifier)]
     [ParserExpressionParameter(ParserTokenType.Name)]
     [ParserExpressionParameter(ParserTokenType.RoundBrackets)]
+    [ParserExpressionParameter(ParserTokenType.Constraints)]
     [ParserExpressionTokenType(ParserTokenType.Semicolon)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
-        TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters
+        TypeIdentifierToken typeIdentifier, NameToken name, RoundBracketsToken parameters, ConstraintsToken constraints
     ) {
         if (modifiers.Modifiers.HasFlag(NeslModifiers.Uniform)) {
             Parser.Throw(new CompilationError(
@@ -32,8 +33,8 @@ internal class AbstractMethodDeclaration : ParserExpressionContainer {
         }
 
         Parser.DefineMethod(new MethodDefinitionData(
-            modifiers.Modifiers | NeslModifiers.Abstract, typeIdentifier, name, parameters.Buffer, null,
-            attributes.Compile(Parser, AttributeTargets.Method)
+            modifiers.Modifiers | NeslModifiers.Abstract, typeIdentifier, name, parameters.Buffer,
+            constraints.Constraints, null, attributes.Compile(Parser, AttributeTargets.Method)
         ));
     }
 

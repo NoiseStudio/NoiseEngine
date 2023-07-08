@@ -1,7 +1,45 @@
+using System.Operators;
+
 [PlatformDependentTypeRepresentation("OpTypeVector`{&T}`2")]
-public struct Vector2<T> {
+public struct Vector2<T> :
+    IAdd<Vector2<T>, Vector2<T>, Vector2<T>> for T : [IAdd<T, T, T>],
+    ISubtract<Vector2<T>, Vector2<T>, Vector2<T>> for T : [ISubtract<T, T, T>],
+    IMultiply<Vector2<T>, T, Vector2<T>> for T : [IMultiply<T, T, T>],
+    IDivide<Vector2<T>, T, Vector2<T>> for T : [IDivide<T, T, T>],
+    IRemainder<Vector2<T>, T, Vector2<T>> for T : [IRemainder<T, T, T>],
+    IPower<Vector2<T>, T, Vector2<T>> for T : [IPower<T, T, T>]
+{
 
     public T X;
     public T Y;
+
+    public Vector2(T x, T y) {
+        X = x;
+        Y = y;
+    }
+
+    public static Vector2<T> Add(Vector2<T> lhs, Vector2<T> rhs) where T : IAdd<T, T, T> {
+        return new Vector2<T>(lhs.X + rhs.X, lhs.Y + rhs.Y);
+	}
+
+    public static Vector2<T> Subtract(Vector2<T> lhs, Vector2<T> rhs) where T : ISubtract<T, T, T> {
+        return new Vector2<T>(lhs.X - rhs.X, lhs.Y - rhs.Y);
+	}
+
+    public static Vector2<T> Multiply(Vector2<T> lhs, T rhs) where T : IMultiply<T, T, T> {
+        return new Vector2<T>(lhs.X * rhs, lhs.Y * rhs);
+	}
+
+    public static Vector2<T> Divide(Vector2<T> lhs, T rhs) where T : IDivide<T, T, T> {
+        return new Vector2<T>(lhs.X / rhs, lhs.Y / rhs);
+	}
+
+    public static Vector2<T> Remainder(Vector2<T> lhs, T rhs) where T : IRemainder<T, T, T> {
+        return new Vector2<T>(lhs.X % rhs, lhs.Y % rhs);
+	}
+
+    public static Vector2<T> Power(Vector2<T> lhs, T rhs) where T : IPower<T, T, T> {
+        return new Vector2<T>(lhs.X ** rhs, lhs.Y ** rhs);
+	}
 
 }

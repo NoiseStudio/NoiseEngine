@@ -49,6 +49,8 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     public virtual IEnumerable<NeslType> GenericMakedTypeParameters => Enumerable.Empty<NeslType>();
     public virtual NeslType? GenericMakedFrom { get; }
 
+    protected internal virtual IReadOnlyDictionary<NeslType, IReadOnlyList<NeslConstraint>>? ForConstraints { get; }
+
     private ConcurrentDictionary<NeslType[], Lazy<NeslType>> GenericMakedTypes {
         get {
             if (genericMakedTypes is null) {
@@ -81,30 +83,7 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
     /// the defined number of generic type parameters.
     /// </exception>
     public virtual NeslType MakeGeneric(params NeslType[] typeArguments) {
-        if (!IsGeneric)
-            throw new InvalidOperationException($"Type {Name} is not generic.");
-
-        if (GenericTypeParameters.Count() != typeArguments.Length) {
-            throw new ArgumentOutOfRangeException(
-                nameof(typeArguments),
-                $"The number of given {nameof(typeArguments)} does not match the " +
-                "defined number of generic type parameters."
-            );
-        }
-
-        return GenericMakedTypes.GetOrAdd(typeArguments, _ => new Lazy<NeslType>(() => {
-            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
-                UnsafeTargetTypesFromMakeGeneric(GenericTypeParameters, typeArguments, out bool isFullyConstructed);
-
-            // Create not fully generic maked type.
-            if (!isFullyConstructed)
-                return new NotFullyConstructedGenericNeslType(this, targetTypes, typeArguments.ToImmutableArray());
-
-            // Create fully generic maked type.
-            SerializedNeslType type = UnsafeCreateTypeFromMakeGeneric(typeArguments);
-            type.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
-            return type;
-        })).Value;
+        return MakeGenericImpl(typeArguments, true);
     }
 
     /// <summary>
@@ -211,6 +190,10 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         );
     }
 
+    internal NeslType UnsafeMakeGenericUninitialized(NeslType[] typeArguments) {
+        return MakeGenericImpl(typeArguments, false);
+    }
+
     internal Dictionary<NeslGenericTypeParameter, NeslType> UnsafeTargetTypesFromMakeGeneric(
         IEnumerable<NeslGenericTypeParameter> genericTypeParameters, NeslType[] typeArguments,
         out bool isFullyConstructed
@@ -222,8 +205,6 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         int i = 0;
         foreach (NeslGenericTypeParameter genericTypeParameter in genericTypeParameters) {
             NeslType typeArgument = typeArguments[i++];
-
-            genericTypeParameter.AssertConstraints(typeArgument);
             targetTypes.Add(genericTypeParameter, typeArgument);
 
             if (isFullyConstructed && typeArgument is NeslGenericTypeParameter)
@@ -231,6 +212,47 @@ public abstract class NeslType : INeslGenericTypeParameterOwner {
         }
 
         return targetTypes;
+    }
+
+    private NeslType MakeGenericImpl(NeslType[] typeArguments, bool initialize) {
+        if (!IsGeneric)
+            throw new InvalidOperationException($"Type {Name} is not generic.");
+
+        if (GenericTypeParameters.Count() != typeArguments.Length) {
+            throw new ArgumentOutOfRangeException(
+                nameof(typeArguments),
+                $"The number of given {nameof(typeArguments)} does not match the " +
+                "defined number of generic type parameters."
+            );
+        }
+
+        return GenericMakedTypes.GetOrAdd(typeArguments, _ => new Lazy<NeslType>(() => {
+            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes =
+                UnsafeTargetTypesFromMakeGeneric(GenericTypeParameters, typeArguments, out bool isFullyConstructed);
+
+            int i = 0;
+            foreach (NeslGenericTypeParameter parameter in GenericTypeParameters)
+                parameter.AssertConstraints(targetTypes, typeArguments[i++]);
+
+            // Create not fully generic maked type.
+            if (!isFullyConstructed) {
+                NotFullyConstructedGenericNeslType n = new NotFullyConstructedGenericNeslType(
+                    this, typeArguments.ToImmutableArray()
+                );
+                if (initialize)
+                    n.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
+                return n;
+            }
+
+            // Create fully generic maked type.
+            SerializedNeslType type = UnsafeCreateTypeFromMakeGeneric(typeArguments);
+            if (initialize) {
+                List<(NeslMethod, NeslMethod)> methods = type.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
+                type.UnsafeInitializeTypeFromMakeGenericMethodIl(methods, targetTypes);
+            }
+
+            return type;
+        })).Value;
     }
 
 }

@@ -1,6 +1,8 @@
-﻿using NoiseEngine.Tests.Environments;
+﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System;
+using System.Numerics;
 
 namespace NoiseEngine.Tests.Nesl.CompilerTools.Execute.Methods;
 
@@ -66,7 +68,7 @@ public class Operators : NeslExecuteTestEnvironment {
         -4.5797176278f, 30.7793068017f, -665.004096585f, 3759.7314064f
     })]
     public void Multiply(object values) {
-        Invoker(values, "*");
+        Invoker(values, "*", false);
     }
 
     [Theory]
@@ -87,7 +89,7 @@ public class Operators : NeslExecuteTestEnvironment {
         2.06662756879f
     })]
     public void Divide(object values) {
-        Invoker(values, "/");
+        Invoker(values, "/", false);
     }
 
     [Theory]
@@ -107,7 +109,7 @@ public class Operators : NeslExecuteTestEnvironment {
         -0.9150002f, 4.60347f, 5.26284f, 4.37281f
     })]
     public void Remainder(object values) {
-        Invoker(values, "%");
+        Invoker(values, "%", false);
     }
 
     [Theory]
@@ -117,47 +119,92 @@ public class Operators : NeslExecuteTestEnvironment {
         8f, 4f, 4029.5f, 17.64f
     })]
     public void Power(object values) {
-        Invoker(values, "**");
+        Invoker(values, "**", false);
     }
 
-    private void Invoker(object values, string op) {
+    private void Invoker(object values, string op, bool supportsVectors = true) {
         // Use typeof instead of is keyword to avoid implicit conversion.
         Type type = values.GetType();
         if (type == typeof(uint[]))
-            InvokerImpl((uint[])values, "u32", op);
+            InvokerImpl((uint[])values, "u32", op, supportsVectors);
         else if (type == typeof(ulong[]))
-            InvokerImpl((ulong[])values, "u64", op);
+            InvokerImpl((ulong[])values, "u64", op, supportsVectors);
         else if (type == typeof(int[]))
-            InvokerImpl((int[])values, "i32", op);
+            InvokerImpl((int[])values, "i32", op, supportsVectors);
         else if (type == typeof(long[]))
-            InvokerImpl((long[])values, "i64", op);
+            InvokerImpl((long[])values, "i64", op, supportsVectors);
         else if (type == typeof(float[]))
-            InvokerImpl((float[])values, "f32", op);
+            InvokerImpl((float[])values, "f32", op, supportsVectors);
         else if (type == typeof(double[]))
-            InvokerImpl((double[])values, "f64", op);
+            InvokerImpl((double[])values, "f64", op, supportsVectors);
         else
             throw new ArgumentException("Invalid type", nameof(values));
     }
 
-    private void InvokerImpl<T>(T[] values, string type, string op) where T : unmanaged {
-        for (int i = 1; i <= 1; i++) {
-            int block = values.Length / 3;
-            int initialLength = block * 2;
-            T[] initialValues = values.AsSpan(0, initialLength).ToArray();
-            T[] expectedValues = values.AsSpan(initialLength).ToArray();
+    private void InvokerImpl<T>(
+        T[] values, string type, string op, bool supportsVectors
+    ) where T : unmanaged, INumber<T> {
+        // 1.
+        int initialLength = values.Length / 3 * 2;
+        T[] initialValues = values.AsSpan(0, initialLength).ToArray();
+        T[] expectedValues = values.AsSpan(initialLength).ToArray();
+        InvokerImplRun(initialValues, expectedValues, type, op);
 
-            RunKernelWithSingleBuffer($@"
-                using System;
+        if (!supportsVectors)
+            return;
 
-                uniform RwBuffer<{type}> buffer;
+        // 2.
+        Vector2<T>[] initialValues2 = new Vector2<T>[initialValues.Length / 2];
+        for (int i = 0; i < initialValues2.Length; i++)
+            initialValues2[i] = new Vector2<T>(initialValues[i * 2], initialValues[i * 2 + 1]);
+        Vector2<T>[] expectedValues2 = new Vector2<T>[expectedValues.Length / 2];
+        for (int i = 0; i < expectedValues2.Length; i++)
+            expectedValues2[i] = new Vector2<T>(expectedValues[i * 2], expectedValues[i * 2 + 1]);
+        InvokerImplRun(initialValues2, expectedValues2, $"Vector2<{type}>", op);
 
-                [Kernel({block}, 1, 1)]
-                void Main() {{
-                    buffer[ComputeUtils.GlobalInvocation3.X] = buffer[ComputeUtils.GlobalInvocation3.X] {op}
-                        buffer[ComputeUtils.GlobalInvocation3.X + {block}];
-                }}
-            ", initialValues, expectedValues);
+        // 3.
+        Vector3<T>[] initialValues3 = new Vector3<T>[initialValues.Length / 3];
+        for (int i = 0; i < initialValues3.Length; i++) {
+            initialValues3[i] = new Vector3<T>(
+                initialValues[i * 4], initialValues[i * 4 + 1], initialValues[i * 4 + 2]
+            );
         }
+        Vector3<T>[] expectedValues3 = new Vector3<T>[expectedValues.Length / 3];
+        for (int i = 0; i < expectedValues3.Length; i++) {
+            expectedValues3[i] = new Vector3<T>(
+                expectedValues[i * 4], expectedValues[i * 4 + 1], expectedValues[i * 4 + 2]
+            );
+        }
+        InvokerImplRun(initialValues3, expectedValues3, $"Vector3<{type}>", op);
+
+        // 4.
+        Vector4<T>[] initialValues4 = new Vector4<T>[initialValues.Length / 4];
+        for (int i = 0; i < initialValues4.Length; i++) {
+            initialValues4[i] = new Vector4<T>(
+                initialValues[i * 4], initialValues[i * 4 + 1], initialValues[i * 4 + 2], initialValues[i * 4 + 3]
+            );
+        }
+        Vector4<T>[] expectedValues4 = new Vector4<T>[expectedValues.Length / 4];
+        for (int i = 0; i < expectedValues4.Length; i++) {
+            expectedValues4[i] = new Vector4<T>(
+                expectedValues[i * 4], expectedValues[i * 4 + 1], expectedValues[i * 4 + 2], expectedValues[i * 4 + 3]
+            );
+        }
+        InvokerImplRun(initialValues4, expectedValues4, $"Vector4<{type}>", op);
+    }
+
+    private void InvokerImplRun<T>(T[] initialValues, T[] expectedValues, string type, string op) where T : unmanaged {
+        RunKernelWithSingleBuffer($@"
+            using System;
+
+            uniform RwBuffer<{type}> buffer;
+
+            [Kernel({expectedValues.Length}, 1, 1)]
+            void Main() {{
+                buffer[ComputeUtils.GlobalInvocation3.X] = buffer[ComputeUtils.GlobalInvocation3.X] {op}
+                    buffer[ComputeUtils.GlobalInvocation3.X + {expectedValues.Length}];
+            }}
+        ", initialValues, expectedValues);
     }
 
 }

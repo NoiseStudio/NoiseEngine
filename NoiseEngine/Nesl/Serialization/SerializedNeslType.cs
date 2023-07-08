@@ -2,17 +2,18 @@
 using NoiseEngine.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace NoiseEngine.Nesl.Serialization;
 
-internal class SerializedNeslType : NeslType {
+internal class SerializedNeslType : NeslType, IGenericMakedForInitialize {
 
     private NeslAttribute[] attributes = Array.Empty<NeslAttribute>();
     private NeslType[] genericMakedTypeParameters = Array.Empty<NeslType>();
     private NeslGenericTypeParameter[] genericTypeParameters = Array.Empty<NeslGenericTypeParameter>();
     private NeslField[] fields = Array.Empty<NeslField>();
-    private NeslMethod[] methods = Array.Empty<NeslMethod>();
+    private IReadOnlyList<NeslMethod> methods = Array.Empty<NeslMethod>();
     private NeslType[] interfaces = Array.Empty<NeslType>();
 
     public override IEnumerable<NeslAttribute> Attributes => attributes;
@@ -81,19 +82,51 @@ internal class SerializedNeslType : NeslType {
         this.interfaces = interfaces;
     }
 
-    internal void SetMethods(NeslMethod[] methods) {
+    internal void SetMethods(IReadOnlyList<NeslMethod> methods) {
         this.methods = methods;
     }
 
-    internal void UnsafeInitializeTypeFromMakeGeneric(
+    internal List<(NeslMethod, NeslMethod)> UnsafeInitializeTypeFromMakeGeneric(
         IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
     ) {
         if (GenericMakedFrom is null)
             throw new InvalidOperationException("This type is not generic maked.");
 
-        SetInterfaces(GenericMakedFrom.Interfaces.Select(x => GenericHelper.GetFinalType(
-            GenericMakedFrom, this, x, targetTypes!
-        )).ToArray());
+        // Interfaces.
+        IReadOnlyDictionary<NeslType, IReadOnlyList<NeslConstraint>>? forConstraints = GenericMakedFrom.ForConstraints;
+        if (forConstraints is not null) {
+            List<NeslType> interfaces = new List<NeslType>();
+            foreach (NeslType i in GenericMakedFrom.Interfaces) {
+                if (forConstraints.TryGetValue(i, out IReadOnlyList<NeslConstraint>? constraints)) {
+                    bool isSatisfied = true;
+
+                    foreach (NeslConstraint constraint in constraints) {
+                        NeslType finalType = targetTypes[constraint.GenericTypeParameter];
+                        foreach (NeslType constraintType in constraint.Constraints) {
+                            if (!finalType.Interfaces.Contains(GenericHelper.GetFinalType(
+                                GenericMakedFrom, this, constraintType, targetTypes!
+                            ))) {
+                                isSatisfied = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!isSatisfied)
+                        continue;
+                }
+
+                interfaces.Add(GenericHelper.GetFinalType(GenericMakedFrom, this, i, targetTypes!));
+            }
+
+            SetInterfaces(interfaces.ToArray());
+        } else {
+            SetInterfaces(GenericMakedFrom.Interfaces.Select(x => GenericHelper.GetFinalType(
+                GenericMakedFrom, this, x, targetTypes!
+            )).ToArray());
+        }
+
+        // Attributes.
         SetAttributes(GenericHelper.RemoveGenericsFromAttributes(GenericMakedFrom.Attributes, targetTypes));
 
         // Create fields.
@@ -109,13 +142,37 @@ internal class SerializedNeslType : NeslType {
         SetFields(fields.ToArray());
 
         // Create methods.
-        List<NeslMethod> methods = new List<NeslMethod>();
-
+        List<(NeslMethod, NeslMethod)> methods = new List<(NeslMethod, NeslMethod)>();
         foreach (NeslMethod method in GenericMakedFrom.Methods) {
             if (method.IsGeneric) {
-                methods.Add(new GenericNeslMethodInConstructedGenericNeslType(this, method, targetTypes));
+                methods.Add((method, new GenericNeslMethodInConstructedGenericNeslType(this, method, targetTypes)));
                 continue;
             }
+
+            // Check type constraints.
+            bool constraintsSatisfied = true;
+            foreach (
+                (NeslGenericTypeParameter parameter, IReadOnlyList<NeslType> constraints) in
+                method.TypeGenericConstraints
+            ) {
+                NeslType type = GenericHelper.GetFinalType(GenericMakedFrom, this, parameter, targetTypes);
+                foreach (NeslType constraint in constraints) {
+                    NeslType finalConstraint = GenericHelper.GetFinalType(
+                        GenericMakedFrom, this, constraint, targetTypes
+                    );
+
+                    if (!type.Interfaces.Contains(finalConstraint)) {
+                        constraintsSatisfied = false;
+                        break;
+                    }
+                }
+
+                if (!constraintsSatisfied)
+                    break;
+            }
+
+            if (!constraintsSatisfied)
+                continue;
 
             // Return and parameter types.
             NeslType? methodReturnType = method.ReturnType;
@@ -132,7 +189,7 @@ internal class SerializedNeslType : NeslType {
             }
 
             // Construct new method.
-            methods.Add(new SerializedNeslMethod(
+            methods.Add((method, new SerializedNeslMethod(
                 method.Modifiers,
                 this,
                 method.Name,
@@ -142,11 +199,26 @@ internal class SerializedNeslType : NeslType {
                 GenericHelper.RemoveGenericsFromAttributes(method.ReturnValueAttributes, targetTypes),
                 method.ParameterAttributes.Select(x => GenericHelper.RemoveGenericsFromAttributes(x, targetTypes)),
                 method.GenericTypeParameters.ToArray(),
-                GenericIlGenerator.RemoveGenerics(GenericMakedFrom, this, method, targetTypes)
-            ));
+                ImmutableDictionary<NeslGenericTypeParameter, IReadOnlyList<NeslType>>.Empty,
+                null
+            )));
         }
 
-        SetMethods(methods.ToArray());
+        SetMethods(methods.Select(x => x.Item2).ToArray());
+        return methods;
+    }
+
+    internal void UnsafeInitializeTypeFromMakeGenericMethodIl(
+        List<(NeslMethod, NeslMethod)> methods, IReadOnlyDictionary<NeslGenericTypeParameter, NeslType> targetTypes
+    ) {
+        foreach ((NeslMethod original, NeslMethod newMethod) in methods) {
+            if (newMethod is not SerializedNeslMethod serialized)
+                continue;
+
+            serialized.SetIlContainer(GenericIlGenerator.RemoveGenerics(
+                GenericMakedFrom!, this, original, targetTypes
+            ));
+        }
     }
 
 }

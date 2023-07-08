@@ -22,6 +22,8 @@ public abstract class NeslGenericTypeParameter : NeslType {
     public override string Name => FullName;
     public override string Namespace => string.Empty;
 
+    internal abstract IReadOnlyDictionary<NeslType, IReadOnlyList<NeslMethod>> ConstraintMethods { get; }
+
     protected NeslGenericTypeParameter(NeslAssembly assembly, string name) : base(assembly, name) {
         instanceId = Interlocked.Increment(ref nextInstanceId);
     }
@@ -41,10 +43,19 @@ public abstract class NeslGenericTypeParameter : NeslType {
         return $"{base.ToString()} {{ InstanceId = {instanceId} }}";
     }
 
-    internal void AssertConstraints(NeslType type) {
+    internal void AssertConstraints(Dictionary<NeslGenericTypeParameter, NeslType> targetTypes, NeslType type) {
         bool isSatisfied = true;
         foreach (NeslType constraint in Interfaces) {
-            if (!type.Interfaces.Contains(constraint)) {
+            NeslType c = constraint;
+            if (c is NotFullyConstructedGenericNeslType notFully) {
+                c = c.MakeGeneric(notFully.GenericMakedTypeParameters.Select(x => {
+                    if (x is NeslGenericTypeParameter p)
+                        return targetTypes[p];
+                    return x;
+                }).ToArray());
+            }
+
+            if (!type.Interfaces.Contains(c)) {
                 isSatisfied = false;
                 break;
             }
@@ -72,7 +83,7 @@ public abstract class NeslGenericTypeParameter : NeslType {
         return false;
     }
 
-    private protected NeslMethod[] CreateMethodsFromInterfaces() {
+    internal NeslMethod[] CreateMethodsFromInterfaces() {
         List<NeslMethod> methods = new List<NeslMethod>();
         foreach (NeslMethod method in Interfaces.SelectMany(type => type.Methods)) {
             methods.Add(new NeslGenericTypeParameterImplementedMethod(

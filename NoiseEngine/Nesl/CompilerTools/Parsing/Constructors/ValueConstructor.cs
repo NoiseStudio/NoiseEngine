@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
+﻿using NoiseEngine.Nesl.CompilerTools.Generics;
+using NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 using NoiseEngine.Nesl.Emit;
 using NoiseEngine.Nesl.Emit.Attributes.Internal;
 using System;
@@ -24,6 +25,9 @@ internal static class ValueConstructor {
                 throw new UnreachableException();
 
             ValueData data = ValueData.Invalid;
+            if (container.BracketToken is not null)
+                data = Construct(container.BracketToken, parser);
+
             foreach (ExpressionValueContent expression in container.Expressions) {
                 if (expression.IsNew) {
                     if (!data.IsInvalid)
@@ -92,11 +96,25 @@ internal static class ValueConstructor {
             return ValueData.Invalid;
 
         NeslMethod? constructor = null;
-        foreach (NeslMethod m in type.Methods.Where(x => x.Name == NeslOperators.Constructor)) {
-            if (m.ParameterTypes.SequenceEqual(parameters.Select(x => x.Type))) {
+        foreach (NeslMethod m in type.Methods.Where(x =>
+            x.Name == NeslOperators.Constructor && x.ParameterTypes.Count == parameters.Count
+        )) {
+            if (m.ParameterTypes.Count == 0) {
                 constructor = m;
                 break;
             }
+
+            int i = 0;
+            foreach (NeslType parameterType in m.ParameterTypes) {
+                ValueData p = parameters[i++];
+                if (parameterType == p.Type || p.CheckLoadConst(parameterType)) {
+                    constructor = m;
+                    break;
+                }
+            }
+
+            if (constructor is not null)
+                break;
         }
 
         if (constructor is null) {
@@ -105,6 +123,10 @@ internal static class ValueConstructor {
             ));
             return ValueData.Invalid;
         }
+
+        int j = 0;
+        foreach (NeslType parameterType in constructor.ParameterTypes)
+            parameters[j] = parameters[j++].LoadConst(parser, parameterType);
 
         IlGenerator il = parser.CurrentMethod.IlGenerator;
         il.Emit(OpCode.DefVariable, type);
@@ -179,6 +201,9 @@ internal static class ValueConstructor {
             if (index != -1 || expression.RoundBrackets is null) {
                 // Get field.
                 if (type.Kind != NeslTypeKind.GenericParameter) {
+                    if (type is IGenericMakedForInitialize forInitialize)
+                        parser.Storage.InitializeGenericMakedType(parser, forInitialize);
+
                     NeslField? field = type.GetField(str);
                     if (field is not null) {
                         il.Emit(OpCode.DefVariable, field.FieldType);

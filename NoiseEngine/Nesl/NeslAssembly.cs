@@ -6,7 +6,6 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 
 namespace NoiseEngine.Nesl;
 
@@ -84,8 +83,6 @@ public abstract class NeslAssembly {
                         reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray()
                     ),
                     NeslTypeUsageKind.GenericMaked => assembly.DeserializeGenericMaked(reader),
-                    NeslTypeUsageKind.GenericNotFullyConstructed =>
-                        assembly.DeserializeGenericNotFullyConstructed(reader),
                     _ => throw new NotImplementedException(),
                 };
             } else {
@@ -126,6 +123,7 @@ public abstract class NeslAssembly {
 
         // Create generics.
         l = reader.ReadInt32();
+        NeslGenericsInitializeIlContainer[] genericsToInitializeIl = new NeslGenericsInitializeIlContainer[l];
         for (int i = 0; i < l; i++) {
             ulong id = reader.ReadUInt64();
 
@@ -133,17 +131,28 @@ public abstract class NeslAssembly {
             type.SetGenericMakedTypeParameters(reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray());
             type.GenericMakedFrom!.UnsafeAddToGenericMaked(type);
 
-            type.UnsafeInitializeTypeFromMakeGeneric(type.UnsafeTargetTypesFromMakeGeneric(
+            Dictionary<NeslGenericTypeParameter, NeslType> targetTypes = type.UnsafeTargetTypesFromMakeGeneric(
                 type.GenericMakedFrom!.GenericTypeParameters,
                 type.GenericMakedTypeParameters.ToArray(),
-                out bool isFullyConstructed
-            ));
-            Debug.Assert(isFullyConstructed);
+                out _
+            );
+            List<(NeslMethod, NeslMethod)> methods = type.UnsafeInitializeTypeFromMakeGeneric(targetTypes);
+            genericsToInitializeIl[i] = new NeslGenericsInitializeIlContainer(type, targetTypes, methods);
 
             assembly.typeToId[type] = id;
             assembly.idToType[id] = type;
         }
 
+        // Read constraint methods.
+        l = reader.ReadInt32();
+        for (int i = 0; i < l; i++) {
+            ulong id = reader.ReadUInt64();
+            ((SerializedNeslGenericTypeParameter)assembly.idToType[id]).SetNestedConstraintInterfaces(
+                reader.ReadEnumerableUInt64().Select(assembly.GetType)
+            );
+        }
+
+        // Set method ids.
         length = (ulong)reader.ReadInt32();
         for (ulong i = 0; i < length; i++) {
             NeslType type = assembly.GetType(reader.ReadUInt64());
@@ -151,14 +160,29 @@ public abstract class NeslAssembly {
             NeslGenericTypeParameter[] genericTypeParameters = reader.ReadEnumerableUInt64().Select(assembly.GetType)
                 .Cast<NeslGenericTypeParameter>().ToArray();
             NeslType[] parameterTypes = reader.ReadEnumerableUInt64().Select(assembly.GetType).ToArray();
-            NeslMethod method = type.Methods.First(
+
+            NeslMethod? method = type.Methods.FirstOrDefault(
                 x => x.Name == name && x.GenericTypeParameters.SequenceEqual(genericTypeParameters) &&
                 x.ParameterTypes.SequenceEqual(parameterTypes)
             );
 
+            if (method is null) {
+                if (type is not NeslGenericTypeParameter genericTypeParameter)
+                    throw new UnreachableException();
+
+                method = genericTypeParameter.ConstraintMethods.Values.SelectMany(x => x).First(
+                    x => x.Name == name && x.GenericTypeParameters.SequenceEqual(genericTypeParameters) &&
+                    x.ParameterTypes.SequenceEqual(parameterTypes)
+                );
+            }
+
             assembly.methodToId[method] = i;
             assembly.idToMethod[i] = method;
         }
+
+        // Initialize generics method ils.
+        foreach (NeslGenericsInitializeIlContainer container in genericsToInitializeIl)
+            container.Type.UnsafeInitializeTypeFromMakeGenericMethodIl(container.Methods, container.TargetTypes);
 
         return assembly;
     }
@@ -203,10 +227,12 @@ public abstract class NeslAssembly {
         List<NeslType> genericMakedTypes = new List<NeslType>();
 
         // Write type headers.
+        int constraintMethodStart = typeWriter.Count;
         int startCount = writer.Count;
         writer.WriteInt32(-1);
 
         int i = 0;
+        int j = 0;
         foreach (NeslType type in used.OrderedTypes.Concat(idToType.Values.Except(used.Types)).Distinct().ToArray()) {
             writer.WriteUInt64(GetLocalTypeId(type));
             if (type.SerializeHeader(this, writer))
@@ -214,6 +240,13 @@ public abstract class NeslAssembly {
 
             if (typeWriters.TryGetValue(type, out (int, int) o))
                 writer.WriteBytes(typeWriter.AsSpan(o.Item1, o.Item2));
+
+            if (type is NeslGenericTypeParameter genericTypeParameter) {
+                typeWriter.WriteUInt64(GetLocalTypeId(type));
+                typeWriter.WriteEnumerable(genericTypeParameter.ConstraintMethods.Keys.Select(GetLocalTypeId));
+                j++;
+            }
+
             i++;
         }
 
@@ -237,7 +270,12 @@ public abstract class NeslAssembly {
             writer.WriteEnumerable(type.GenericMakedTypeParameters.Select(GetLocalTypeId));
         }
 
-        writer.WriteBytes(typeWriter.AsSpan(methodStart));
+        // Write constraint methods.
+        writer.WriteInt32(j);
+        writer.WriteBytes(typeWriter.AsSpan(constraintMethodStart));
+
+        // Write method ids.
+        writer.WriteBytes(typeWriter.AsSpan(methodStart, constraintMethodStart - methodStart));
 
         return writer.ToArray();
     }
@@ -325,11 +363,6 @@ public abstract class NeslAssembly {
     private NeslType DeserializeGenericMaked(SerializationReader reader) {
         NeslType parent = GetType(reader.ReadUInt64());
         return parent.UnsafeCreateTypeFromMakeGeneric(Array.Empty<NeslType>());
-    }
-
-    private NeslType DeserializeGenericNotFullyConstructed(SerializationReader reader) {
-        NeslType parent = GetType(reader.ReadUInt64());
-        return parent.MakeGeneric(reader.ReadEnumerableUInt64().Select(GetType).ToArray());
     }
 
 }

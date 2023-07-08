@@ -1,44 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NoiseEngine.Nesl.CompilerTools.Parsing.Tokens;
 
 internal readonly record struct InheritanceToken(
-    IReadOnlyList<TypeIdentifierToken> Inheritances
+    TypeIdentifierToken Inheritance, IReadOnlyList<InheritanceConstraintToken> Constraints
 ) : IParserToken<InheritanceToken> {
 
-    public bool IsIgnored => Inheritances.Count == 0;
+    public bool IsIgnored => false;
     public int Priority => 0;
 
     public static bool Parse(
         TokenBuffer buffer, CompilationErrorMode errorMode, [NotNullWhen(true)] out InheritanceToken result,
         out CompilationError error
     ) {
+        if (!TypeIdentifierToken.Parse(buffer, errorMode, out TypeIdentifierToken inheritance, out error)) {
+            result = default;
+            return false;
+        }
+
         int index = buffer.Index;
-        if (!buffer.TryReadNext(TokenType.Colon)) {
-            buffer.Index = index;
-            result = new InheritanceToken(Array.Empty<TypeIdentifierToken>());
-            error = default;
-            return true;
-        }
-
-        List<TypeIdentifierToken> inheritances = new List<TypeIdentifierToken>();
-        while (true) {
-            if (!TypeIdentifierToken.Parse(buffer, errorMode, out TypeIdentifierToken inheritance, out error)) {
-                result = default;
-                return false;
-            }
-            inheritances.Add(inheritance);
-
+        List<InheritanceConstraintToken> constraints = new List<InheritanceConstraintToken>();
+        while (InheritanceConstraintToken.Parse(
+            buffer, errorMode, out InheritanceConstraintToken constraint, out error
+        )) {
+            constraints.Add(constraint);
             index = buffer.Index;
-            if (!buffer.TryReadNext(TokenType.Comma)) {
-                buffer.Index = index;
-                break;
-            }
         }
 
-        result = new InheritanceToken(inheritances.ToArray());
+        if (error.Type != CompilationErrorType.ExpectedForKeyword) {
+            result = default;
+            return false;
+        }
+        buffer.Index = index;
+
+        result = new InheritanceToken(inheritance, constraints.ToArray());
         error = default;
         return true;
     }

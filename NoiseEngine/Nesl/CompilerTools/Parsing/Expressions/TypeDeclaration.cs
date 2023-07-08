@@ -21,7 +21,7 @@ internal class TypeDeclaration : ParserExpressionContainer {
     [ParserExpressionParameter(ParserTokenType.CurlyBrackets)]
     public void Define(
         AttributesToken attributes, AccessModifiersToken accessModifiers, ModifiersToken modifiers,
-        TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, InheritanceToken inheritance,
+        TypeKindToken typeKind, NameToken name, GenericDefineToken genericParameters, InheritancesToken inheritances,
         ConstraintsToken constraints, CurlyBracketsToken codeBlock
     ) {
         string fullName = $"{Parser.GetNamespaceFromFilePath(name.Pointer.Path)}.{name.Name}";
@@ -46,7 +46,7 @@ internal class TypeDeclaration : ParserExpressionContainer {
             typeBuilder.DefineGenericTypeParameter(genericParameterName);
 
         Parser.DefineType(new TypeDefinitionData(
-            name.Pointer, typeBuilder!, inheritance.Inheritances, constraints.Constraints, codeBlock.Buffer
+            name.Pointer, typeBuilder!, inheritances.Inheritances, constraints.Constraints, codeBlock.Buffer
         ));
     }
 

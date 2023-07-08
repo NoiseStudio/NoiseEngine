@@ -7,15 +7,20 @@ namespace NoiseEngine.Nesl.Serialization;
 
 internal class SerializedIlContainer : IlContainer {
 
+    private readonly (OpCode opCode, uint tailIndex)[] rawInstructions;
     private readonly byte[] tail;
 
-    protected override IEnumerable<(OpCode opCode, uint tailIndex)> RawInstructions { get; }
+    protected override IEnumerable<(OpCode opCode, uint tailIndex)> RawInstructions => rawInstructions;
 
     public SerializedIlContainer(
-        NeslAssembly assembly, IEnumerable<(OpCode opCode, uint tailIndex)> rawInstructions, byte[] tail
+        NeslAssembly assembly, (OpCode opCode, uint tailIndex)[] rawInstructions, byte[] tail
     ) : base(assembly) {
-        RawInstructions = rawInstructions;
+        this.rawInstructions = rawInstructions;
         this.tail = tail;
+    }
+
+    internal void ReplaceOpCode(int index, OpCode opCode) {
+        rawInstructions[index].opCode = opCode;
     }
 
     internal Span<byte> GetWritableTail(int start) {

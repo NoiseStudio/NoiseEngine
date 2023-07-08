@@ -1,8 +1,47 @@
+using System.Operators;
+
 [PlatformDependentTypeRepresentation("OpTypeVector`{&T}`3")]
-public struct Vector3<T> {
+public struct Vector3<T> :
+    IAdd<Vector3<T>, Vector3<T>, Vector3<T>> for T : [IAdd<T, T, T>],
+    ISubtract<Vector3<T>, Vector3<T>, Vector3<T>> for T : [ISubtract<T, T, T>],
+    IMultiply<Vector3<T>, T, Vector3<T>> for T : [IMultiply<T, T, T>],
+    IDivide<Vector3<T>, T, Vector3<T>> for T : [IDivide<T, T, T>],
+    IRemainder<Vector3<T>, T, Vector3<T>> for T : [IRemainder<T, T, T>],
+    IPower<Vector3<T>, T, Vector3<T>> for T : [IPower<T, T, T>]
+{
 
     public T X;
     public T Y;
     public T Z;
+
+    public Vector3(T x, T y, T z) {
+        X = x;
+        Y = y;
+        Z = z;
+    }
+
+    public static Vector3<T> Add(Vector3<T> lhs, Vector3<T> rhs) where T : IAdd<T, T, T> {
+        return new Vector3<T>(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z);
+	}
+
+    public static Vector3<T> Subtract(Vector3<T> lhs, Vector3<T> rhs) where T : ISubtract<T, T, T> {
+        return new Vector3<T>(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z);
+	}
+
+    public static Vector3<T> Multiply(Vector3<T> lhs, T rhs) where T : IMultiply<T, T, T> {
+        return new Vector3<T>(lhs.X * rhs, lhs.Y * rhs, lhs.Z * rhs);
+	}
+
+    public static Vector3<T> Divide(Vector3<T> lhs, T rhs) where T : IDivide<T, T, T> {
+        return new Vector3<T>(lhs.X / rhs, lhs.Y / rhs, lhs.Z / rhs);
+	}
+
+    public static Vector3<T> Remainder(Vector3<T> lhs, T rhs) where T : IRemainder<T, T, T> {
+        return new Vector3<T>(lhs.X % rhs, lhs.Y % rhs, lhs.Z % rhs);
+	}
+
+    public static Vector3<T> Power(Vector3<T> lhs, T rhs) where T : IPower<T, T, T> {
+        return new Vector3<T>(lhs.X ** rhs, lhs.Y ** rhs, lhs.Z ** rhs);
+	}
 
 }
