@@ -5,20 +5,36 @@ use libc::c_void;
 pub struct InteropAllocator;
 
 /// # Safety
-/// This unsafy calls the malloc function of the libc.
-pub unsafe fn alloc(size: usize) -> *mut u8 {
-    libc::malloc(size) as *mut u8
+/// This unsafy calls the aligned_malloc function of the libc.
+#[cfg(target_os = "windows")]
+pub unsafe fn alloc(size: usize, aligment: usize) -> *mut u8 {
+    libc::aligned_malloc(size, aligment) as *mut u8
+}
+
+/// # Safety
+/// This unsafy calls the memalign function of the libc.
+#[cfg(not(target_os = "windows"))]
+pub unsafe fn alloc(size: usize, aligment: usize) -> *mut u8 {
+    libc::memalign(aligment, size) as *mut u8
+}
+
+/// # Safety
+/// This unsafy calls the aligned_free function of the libc.
+#[cfg(target_os = "windows")]
+pub unsafe fn dealloc(ptr: *mut u8) {
+    libc::aligned_free(ptr as *mut c_void);
 }
 
 /// # Safety
 /// This unsafy calls the free function of the libc.
+#[cfg(not(target_os = "windows"))]
 pub unsafe fn dealloc(ptr: *mut u8) {
     libc::free(ptr as *mut c_void);
 }
 
 unsafe impl GlobalAlloc for InteropAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        alloc(layout.size())
+        alloc(layout.size(), layout.align())
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {

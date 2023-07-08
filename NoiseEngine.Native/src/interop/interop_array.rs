@@ -10,11 +10,12 @@ pub struct InteropArray<T> {
 
 impl<T> InteropArray<T> {
     pub fn new(length: i32) -> InteropArray<T> {
-        let size = (length as usize) * mem::size_of::<T>();
+        let element_size = mem::size_of::<T>();
+        let size = (length as usize) * element_size;
         let ptr;
 
         unsafe {
-            ptr = interop_allocator::alloc(size) as *mut T;
+            ptr = interop_allocator::alloc(size, element_size) as *mut T;
         }
 
         InteropArray { ptr, length }
