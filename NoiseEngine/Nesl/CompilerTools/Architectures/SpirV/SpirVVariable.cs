@@ -40,6 +40,7 @@ internal class SpirVVariable {
 
         SpirVVariableCreationOutput output;
         switch (storageClass) {
+            case StorageClass.UniformConstant:
             case StorageClass.Uniform:
             case StorageClass.PushConstant:
                 output = CreateUniformStorage(generator, type, out uint binding);
@@ -60,7 +61,7 @@ internal class SpirVVariable {
     }
 
     public SpirVVariable(SpirVCompiler compiler, NeslField neslField) : this(
-        compiler, neslField.FieldType, GetStorageClass(neslField), compiler.TypesAndVariables,
+        compiler, neslField.FieldType, GetStorageClass(compiler, neslField), compiler.TypesAndVariables,
         neslField, GetAdditionalData(neslField)
     ) {
     }
@@ -79,22 +80,20 @@ internal class SpirVVariable {
     }
 
     public static SpirVVariable CreateFromParameter(
-        SpirVCompiler compiler, NeslType neslType, SpirVId id
+        SpirVCompiler compiler, NeslType neslType, SpirVId id, StorageClass storageClass
     ) {
         SpirVType pointerType = compiler.BuiltInTypes.GetOpTypePointer(
-            StorageClass.Function, compiler.GetSpirVType(neslType)
+            storageClass, compiler.GetSpirVType(neslType)
         );
 
-        return new SpirVVariable(compiler, neslType, StorageClass.Function, id, pointerType);
+        return new SpirVVariable(compiler, neslType, storageClass, id, pointerType);
     }
 
-    private static StorageClass GetStorageClass(NeslField neslField) {
-        if (neslField.Attributes.HasAnyAttribute("InAttribute"))
-            return StorageClass.Input;
-        if (neslField.Attributes.HasAnyAttribute("OutAttribute"))
-            return StorageClass.Output;
-        if (neslField.Attributes.HasAnyAttribute(nameof(UniformAttribute)))
-            return StorageClass.Uniform;
+    private static StorageClass GetStorageClass(SpirVCompiler compiler, NeslField neslField) {
+        if (neslField.Attributes.HasAnyAttribute(nameof(UniformAttribute))) {
+            return compiler.GetSpirVType(neslField.FieldType).IsOpaque ?
+                StorageClass.UniformConstant : StorageClass.Uniform;
+        }
         return StorageClass.Private;
     }
 
@@ -114,6 +113,7 @@ internal class SpirVVariable {
 
     public SpirVId GetAccess(SpirVGenerator generator) {
         return StorageClass switch {
+            StorageClass.UniformConstant => Id,
             StorageClass.Input => Id,
             StorageClass.Uniform => GetAccessUniformStorage(generator),
             StorageClass.Output => Id,
@@ -133,7 +133,7 @@ internal class SpirVVariable {
     private SpirVVariableCreationOutput CreateUniformStorage(
         SpirVGenerator generator, SpirVType type, out uint binding
     ) {
-        SpirVType content = Compiler.GetSpirVStruct(new SpirVType[] { type });
+        SpirVType content = type.IsOpaque ? type : Compiler.GetSpirVStruct(new SpirVType[] { type });
         SpirVType pointer = Compiler.BuiltInTypes.GetOpTypePointer(StorageClass, content);
 
         SpirVId id;
@@ -141,11 +141,14 @@ internal class SpirVVariable {
             id = CreateVariableFromPointer(generator, pointer, StorageClass);
 
         lock (Compiler.Annotations) {
-            Compiler.Annotations.Emit(
-                SpirVOpCode.OpMemberDecorate, content.Id, 0u.ToSpirVLiteral(), (uint)Decoration.Offset,
-                0u.ToSpirVLiteral()
-            );
-            Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, content.Id, (uint)Decoration.BufferBlock);
+            if (!type.IsOpaque) {
+                Compiler.Annotations.Emit(
+                    SpirVOpCode.OpMemberDecorate, content.Id, 0u.ToSpirVLiteral(), (uint)Decoration.Offset,
+                    0u.ToSpirVLiteral()
+                );
+                Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, content.Id, (uint)Decoration.BufferBlock);
+            }
+
             Compiler.Annotations.Emit(SpirVOpCode.OpDecorate, id, (uint)Decoration.DescriptorSet, 0u.ToSpirVLiteral());
 
             binding = Compiler.GetDescriptorSet(0u).NextBinding();

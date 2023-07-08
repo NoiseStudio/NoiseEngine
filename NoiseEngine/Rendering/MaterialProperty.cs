@@ -22,6 +22,18 @@ public abstract class MaterialProperty {
     }
 
     /// <summary>
+    /// Sets <paramref name="texture"/> to this <see cref="MaterialProperty"/>.
+    /// </summary>
+    /// <param name="texture">
+    /// <see cref="Texture2D"/> which will be assigned to this <see cref="MaterialProperty"/>.
+    /// </param>
+    public void SetTexture(Texture2D texture) {
+        AssertType(MaterialPropertyType.Texture2D);
+        Value = texture;
+        SetTexture2DUnchecked(texture);
+    }
+
+    /// <summary>
     /// Sets <paramref name="buffer"/> to this <see cref="MaterialProperty"/>.
     /// </summary>
     /// <typeparam name="T">Type of the <paramref name="buffer"/>'s element.</typeparam>
@@ -36,6 +48,7 @@ public abstract class MaterialProperty {
 
     internal abstract MaterialProperty Clone(CommonMaterial newMaterial);
 
+    private protected abstract void SetTexture2DUnchecked(Texture2D texture);
     private protected abstract void SetBufferUnchecked<T>(GraphicsBuffer<T> buffer) where T : unmanaged;
 
     private void AssertType(MaterialPropertyType usedType) {

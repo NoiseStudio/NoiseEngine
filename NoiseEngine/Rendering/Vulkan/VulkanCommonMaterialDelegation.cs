@@ -2,6 +2,7 @@
 using NoiseEngine.Rendering.Vulkan.Descriptors;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace NoiseEngine.Rendering.Vulkan;
@@ -9,6 +10,8 @@ namespace NoiseEngine.Rendering.Vulkan;
 internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation {
 
     private readonly (bool isDirty, VulkanMaterialProperty property)[] propertiesToUpdate;
+    private readonly object[] valueReferences;
+    private readonly object?[] valueReferencesTemp;
 
     private bool isInitialized;
     private bool isDirty;
@@ -23,6 +26,9 @@ internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation 
         propertiesToUpdate = new (bool, VulkanMaterialProperty)[properties.Count];
         foreach ((_, MaterialProperty property) in properties)
             propertiesToUpdate[property.Index].property = (VulkanMaterialProperty)property;
+
+        valueReferences = new object[properties.Count];
+        valueReferencesTemp = new object[properties.Count];
 
         VulkanCommonShaderDelegation delegation = (VulkanCommonShaderDelegation)shader.Delegation;
         DescriptorSet = new DescriptorSet(delegation.Layout);
@@ -83,9 +89,10 @@ internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation 
 
             if (comparedIndexes.SequenceEqual(lastUpdateIndexes)) {
                 for (int i = 0; i < lastIndex; i++) {
-                    VulkanMaterialProperty property = propertiesToUpdate[indexes[i]].property;
+                    int index = indexes[i];
+                    VulkanMaterialProperty property = propertiesToUpdate[index].property;
 
-                    property.WriteUpdateTemplateData(data[dataIndex..]);
+                    property.WriteUpdateTemplateData(data[dataIndex..], valueReferencesTemp, index);
                     dataIndex += property.UpdateTemplateDataSize;
                 }
             } else {
@@ -93,10 +100,11 @@ internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation 
                 Span<DescriptorUpdateTemplateEntry> entries = stackalloc DescriptorUpdateTemplateEntry[lastIndex];
 
                 for (int i = 0; i < lastIndex; i++) {
-                    VulkanMaterialProperty property = propertiesToUpdate[indexes[i]].property;
+                    int index = indexes[i];
+                    VulkanMaterialProperty property = propertiesToUpdate[index].property;
 
                     entries[i] = property.UpdateTemplateEntry;
-                    property.WriteUpdateTemplateData(data[dataIndex..]);
+                    property.WriteUpdateTemplateData(data[dataIndex..], valueReferencesTemp, index);
                     dataIndex += property.UpdateTemplateDataSize;
                 }
 
@@ -107,6 +115,11 @@ internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation 
 
             // Update.
             DescriptorSet.Update(lastUpdateTemplate!, data);
+
+            foreach (int index in indexes) {
+                valueReferences[index] = valueReferencesTemp[index]!;
+                Debug.Assert(valueReferences[index] is not null);
+            }
         }
     }
 

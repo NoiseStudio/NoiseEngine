@@ -9,10 +9,11 @@ namespace NoiseEngine.Rendering.Vulkan;
 internal class VulkanMaterialProperty : MaterialProperty {
 
     public uint Binding { get; }
+    public DescriptorType DescriptorType { get; }
     public nuint Offset { get; }
 
     public DescriptorUpdateTemplateEntry UpdateTemplateEntry =>
-        new DescriptorUpdateTemplateEntry(Binding, 0, 1, DescriptorType.Storage, Offset, 0);
+        new DescriptorUpdateTemplateEntry(Binding, 0, 1, DescriptorType, Offset, 0);
 
     public int UpdateTemplateDataSize {
         get {
@@ -28,28 +29,32 @@ internal class VulkanMaterialProperty : MaterialProperty {
     );
 
     public VulkanMaterialProperty(
-        CommonMaterial material, int index, MaterialPropertyType type, string name, uint binding, nuint offset
+        CommonMaterial material, int index, MaterialPropertyType type, string name, uint binding,
+        DescriptorType descriptorType, nuint offset
     ) : base(material, index, type, name) {
         Binding = binding;
+        DescriptorType = descriptorType;
         Offset = offset;
     }
 
-    public unsafe void WriteUpdateTemplateData(Span<byte> buffer) {
+    public unsafe void WriteUpdateTemplateData(Span<byte> buffer, object?[] valueReferences, int index) {
         switch (Type) {
             case MaterialPropertyType.Buffer:
-                fixed (byte* pointer = buffer) {
-                    Marshal.StructureToPtr(
-                        DescriptorBufferInfo.Create(
-                            (GraphicsReadOnlyBuffer)(Value ?? throw new NullReferenceException())
-                        ), (nint)pointer, false
-                    );
-                }
+                GraphicsReadOnlyBuffer value = (GraphicsReadOnlyBuffer)(Value ?? throw new NullReferenceException());
+                valueReferences[index] = value;
+
+                fixed (byte* pointer = buffer)
+                    Marshal.StructureToPtr(DescriptorBufferInfo.Create(value), (nint)pointer, false);
                 break;
         }
     }
 
     internal override VulkanMaterialProperty Clone(CommonMaterial newMaterial) {
-        return new VulkanMaterialProperty(newMaterial, Index, Type, Name, Binding, Offset);
+        return new VulkanMaterialProperty(newMaterial, Index, Type, Name, Binding, DescriptorType, Offset);
+    }
+
+    private protected override void SetTexture2DUnchecked(Texture2D texture) {
+        Delegation.SetPropertyAsDirty(this);
     }
 
     private protected override void SetBufferUnchecked<T>(GraphicsBuffer<T> buffer) {

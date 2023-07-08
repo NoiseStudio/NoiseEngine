@@ -37,7 +37,7 @@ internal static class ValueConstructor {
                     ConstructValue(ref data, parser, expression);
                 }
 
-                if (expression.Indexer is not null)
+                if (expression.Indexer is not null && !data.IsInvalid)
                     CallIndexer(ref data, parser, expression.Indexer, NeslOperators.IndexerGet);
             }
             return data;

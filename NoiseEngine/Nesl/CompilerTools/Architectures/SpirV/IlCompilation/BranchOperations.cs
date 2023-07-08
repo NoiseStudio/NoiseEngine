@@ -15,7 +15,7 @@ internal class BranchOperations : IlCompilerOperation {
         Span<SpirVVariable> parameters = instruction.ReadRangeSpirVVariable(IlCompiler, NeslMethod);
 
         SpirVFunctionIdentifier identifier = new SpirVFunctionIdentifier(method, parameters);
-        Span<SpirVId> parameterIds = stackalloc SpirVId[identifier.DynamicParameters];
+        Span<SpirVId> parameterIds = stackalloc SpirVId[identifier.DynamicParameters.Count];
 
         int i = 0;
         for (int j = 0; j < parameters.Length; j++) {

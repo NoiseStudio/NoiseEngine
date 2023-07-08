@@ -53,8 +53,8 @@ internal class SpirVFunction {
 
         // Create function type.
         SpirVVariable[] parameters = new SpirVVariable[identifier.Parameters.Count];
-        SpirVVariable[] dynamicParameters = new SpirVVariable[identifier.DynamicParameters];
-        SpirVType[] typeFunctionParameterPointers = new SpirVType[identifier.DynamicParameters];
+        SpirVVariable[] dynamicParameters = new SpirVVariable[identifier.DynamicParameters.Count];
+        SpirVType[] typeFunctionParameterPointers = new SpirVType[identifier.DynamicParameters.Count];
         bool isStatic = identifier.IsStatic;
 
         int j = 0;
@@ -71,7 +71,7 @@ internal class SpirVFunction {
                     neslType = NeslMethod.ParameterTypes[i - 1];
 
                 SpirVId id = Compiler.GetNextId();
-                parameter = SpirVVariable.CreateFromParameter(Compiler, neslType, id);
+                parameter = SpirVVariable.CreateFromParameter(Compiler, neslType, id, identifier.DynamicParameters[j]);
 
                 typeFunctionParameterPointers[j] = parameter.PointerType;
                 dynamicParameters[j] = parameter;

@@ -28,7 +28,7 @@ internal class VulkanVertexFragmentShaderDelegation : VulkanCommonShaderDelegati
 
         System.IO.File.WriteAllBytes("tak.spv", SpirVCompiler.Compile(new NeslEntryPoint[] {
             new NeslEntryPoint(vertex, ExecutionModel.Vertex),
-            //new NeslEntryPoint(Fragment, ExecutionModel.Fragment),
+            //new NeslEntryPoint(fragment, ExecutionModel.Fragment),
         }, settings).GetCode());
 
         result = SpirVCompiler.Compile(new NeslEntryPoint[] {

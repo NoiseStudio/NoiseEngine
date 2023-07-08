@@ -161,7 +161,7 @@ internal class SpirVCompiler {
                     throw new InvalidOperationException();
 
                 if (!BuiltInTypes.TryGetTypeByName(neslType, name, additionalData, out SpirVType ? type))
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException("Invalid built-in type name.");
                 return type;
             }
 

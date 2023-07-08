@@ -57,6 +57,8 @@ internal struct Instruction {
             OpCode.DefVariable => StringReadType(),
             OpCode.Call => $"{ReadUInt32()}u {StringReadMethod()}",
             OpCode.ReturnValue => $"{ReadUInt32()}u",
+            OpCode.LoadField => $"{ReadUInt32()}u {ReadUInt32()}u {ReadUInt32()}u",
+            OpCode.SetField => $"{ReadUInt32()}u {ReadUInt32()}u {ReadUInt32()}u",
             _ => null
         };
 
