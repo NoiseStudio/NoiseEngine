@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, slice, mem};
+use std::{marker::PhantomData, mem, slice};
 
 #[repr(C)]
 pub struct InteropReadOnlySpan<'a, T> {
