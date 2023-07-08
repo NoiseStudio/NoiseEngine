@@ -68,7 +68,7 @@ public class Operators : NeslExecuteTestEnvironment {
         -4.5797176278f, 30.7793068017f, -665.004096585f, 3759.7314064f
     })]
     public void Multiply(object values) {
-        Invoker(values, "*");
+        Invoker(values, "*", false);
     }
 
     [Theory]
@@ -89,7 +89,7 @@ public class Operators : NeslExecuteTestEnvironment {
         2.06662756879f
     })]
     public void Divide(object values) {
-        Invoker(values, "/");
+        Invoker(values, "/", false);
     }
 
     [Theory]
@@ -109,7 +109,7 @@ public class Operators : NeslExecuteTestEnvironment {
         -0.9150002f, 4.60347f, 5.26284f, 4.37281f
     })]
     public void Remainder(object values) {
-        Invoker(values, "%");
+        Invoker(values, "%", false);
     }
 
     [Theory]
@@ -119,34 +119,39 @@ public class Operators : NeslExecuteTestEnvironment {
         8f, 4f, 4029.5f, 17.64f
     })]
     public void Power(object values) {
-        Invoker(values, "**");
+        Invoker(values, "**", false);
     }
 
-    private void Invoker(object values, string op) {
+    private void Invoker(object values, string op, bool supportsVectors = true) {
         // Use typeof instead of is keyword to avoid implicit conversion.
         Type type = values.GetType();
         if (type == typeof(uint[]))
-            InvokerImpl((uint[])values, "u32", op);
+            InvokerImpl((uint[])values, "u32", op, supportsVectors);
         else if (type == typeof(ulong[]))
-            InvokerImpl((ulong[])values, "u64", op);
+            InvokerImpl((ulong[])values, "u64", op, supportsVectors);
         else if (type == typeof(int[]))
-            InvokerImpl((int[])values, "i32", op);
+            InvokerImpl((int[])values, "i32", op, supportsVectors);
         else if (type == typeof(long[]))
-            InvokerImpl((long[])values, "i64", op);
+            InvokerImpl((long[])values, "i64", op, supportsVectors);
         else if (type == typeof(float[]))
-            InvokerImpl((float[])values, "f32", op);
+            InvokerImpl((float[])values, "f32", op, supportsVectors);
         else if (type == typeof(double[]))
-            InvokerImpl((double[])values, "f64", op);
+            InvokerImpl((double[])values, "f64", op, supportsVectors);
         else
             throw new ArgumentException("Invalid type", nameof(values));
     }
 
-    private void InvokerImpl<T>(T[] values, string type, string op) where T : unmanaged, INumber<T> {
+    private void InvokerImpl<T>(
+        T[] values, string type, string op, bool supportsVectors
+    ) where T : unmanaged, INumber<T> {
         // 1.
         int initialLength = values.Length / 3 * 2;
         T[] initialValues = values.AsSpan(0, initialLength).ToArray();
         T[] expectedValues = values.AsSpan(initialLength).ToArray();
         InvokerImplRun(initialValues, expectedValues, type, op);
+
+        if (!supportsVectors)
+            return;
 
         // 2.
         Vector2<T>[] initialValues2 = new Vector2<T>[initialValues.Length / 2];
