@@ -10,6 +10,8 @@ public abstract class MaterialProperty {
     public string Name { get; }
     public object? Value { get; private set; }
 
+    public GraphicsDevice Device => Material.Device;
+
     internal int Index { get; }
 
     private protected MaterialProperty(
@@ -24,13 +26,19 @@ public abstract class MaterialProperty {
     /// <summary>
     /// Sets <paramref name="texture"/> to this <see cref="MaterialProperty"/>.
     /// </summary>
+    /// <remarks>Sets <see cref="Value"/> as <see cref="SampledTexture"/>.</remarks>
     /// <param name="texture">
     /// <see cref="Texture2D"/> which will be assigned to this <see cref="MaterialProperty"/>.
     /// </param>
-    public void SetTexture(Texture2D texture) {
+    /// <param name="sampler">
+    /// <see cref="TextureSampler"/> or <see langword="null"/>. When <see langword="null"/>
+    /// <see cref="GraphicsDevice.DefaultTextureSampler"/> is used.
+    /// </param>
+    public void SetTexture(Texture2D texture, TextureSampler? sampler = null) {
         AssertType(MaterialPropertyType.Texture2D);
-        Value = texture;
-        SetTexture2DUnchecked(texture);
+        SampledTexture sampled = new SampledTexture(texture, sampler ?? Device.DefaultTextureSampler);
+        Value = sampled;
+        SetTexture2DUnchecked(sampled);
     }
 
     /// <summary>
@@ -48,7 +56,7 @@ public abstract class MaterialProperty {
 
     internal abstract MaterialProperty Clone(CommonMaterial newMaterial);
 
-    private protected abstract void SetTexture2DUnchecked(Texture2D texture);
+    private protected abstract void SetTexture2DUnchecked(SampledTexture sampled);
     private protected abstract void SetBufferUnchecked<T>(GraphicsBuffer<T> buffer) where T : unmanaged;
 
     private void AssertType(MaterialPropertyType usedType) {

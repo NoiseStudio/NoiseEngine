@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using NoiseEngine.Interop;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Vulkan;
@@ -6,6 +7,8 @@ using NoiseEngine.Rendering.Vulkan;
 namespace NoiseEngine.Rendering;
 
 public class Texture2D : Texture {
+
+    private VulkanImageView? vulkanDefaultImageView;
 
     public uint Width { get; }
     public uint Height { get; }
@@ -90,6 +93,23 @@ public class Texture2D : Texture {
     /// <returns>File data.</returns>
     public byte[] ToWebP(byte? quality = null) {
         return CpuTexture2D.FromTexture2D(this).ToWebP(quality);
+    }
+
+    internal override VulkanImageView GetVulkanDefaultImageView() {
+        VulkanImageView? view = vulkanDefaultImageView;
+        if (view is not null)
+            return view;
+
+        Interlocked.CompareExchange(ref vulkanDefaultImageView, new VulkanImageView(this, new VulkanImageViewCreateInfo(
+            Handle, 0, VulkanImageViewType.Type2D,
+            new ComponentMapping(
+                ComponentSwizzle.Identity, ComponentSwizzle.Identity, ComponentSwizzle.Identity,
+                ComponentSwizzle.Identity
+            ),
+            VulkanImageAspect.Color, 0, MipLevels, 0, 1
+        )), null);
+
+        return vulkanDefaultImageView;
     }
 
 }

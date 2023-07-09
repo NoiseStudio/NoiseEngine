@@ -11,8 +11,10 @@ namespace NoiseEngine.Rendering;
 public abstract class GraphicsDevice {
 
     private readonly object initializeLocker = new object();
+
     private bool isInitialized;
     private GraphicsBufferPool? bufferPool;
+    private TextureSampler? defaultTextureSampler;
 
     public GraphicsInstance Instance { get; }
     public string Name { get; }
@@ -23,6 +25,18 @@ public abstract class GraphicsDevice {
     public bool SupportsGraphics { get; }
     public bool SupportsComputing { get; }
     public bool SupportsPresentation { get; }
+
+    public TextureSampler DefaultTextureSampler {
+        get {
+            TextureSampler? sampler = defaultTextureSampler;
+            if (sampler is not null)
+                return sampler;
+
+            Interlocked.CompareExchange(ref defaultTextureSampler, new TextureSamplerBuilder().Build(this), null);
+            return defaultTextureSampler;
+        }
+        set => defaultTextureSampler = value;
+    }
 
     internal InteropHandle<GraphicsDevice> Handle { get; }
 

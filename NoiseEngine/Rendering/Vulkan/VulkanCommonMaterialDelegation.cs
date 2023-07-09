@@ -54,11 +54,11 @@ internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation 
     }
 
     public void Update() {
-        if (!isDirty)
+        if (!isDirty && isInitialized)
             return;
 
         lock (propertiesToUpdate) {
-            if (!isDirty)
+            if (!isDirty && this.isInitialized)
                 return;
             isDirty = false;
 
@@ -115,6 +115,7 @@ internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation 
 
             // Update.
             DescriptorSet.Update(lastUpdateTemplate!, data);
+            this.isInitialized = isInitialized;
 
             foreach (int index in indexes) {
                 valueReferences[index] = valueReferencesTemp[index]!;

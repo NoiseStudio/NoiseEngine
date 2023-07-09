@@ -3,6 +3,7 @@ using NoiseEngine.Interop.Rendering;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
+using NoiseEngine.Rendering.Vulkan;
 using System;
 
 namespace NoiseEngine.Rendering;
@@ -92,5 +93,8 @@ public abstract class Texture {
 
         Device.BufferPool.UnsafeReturnHostToPool(host);
     }
+
+    // In future, when another graphics API's will be supported, this method should be moved to delegation.
+    internal abstract VulkanImageView GetVulkanDefaultImageView();
 
 }

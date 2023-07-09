@@ -18,6 +18,7 @@ internal class VulkanMaterialProperty : MaterialProperty {
     public int UpdateTemplateDataSize {
         get {
             return Type switch {
+                MaterialPropertyType.Texture2D => Marshal.SizeOf<DescriptorImageInfo>(),
                 MaterialPropertyType.Buffer => Marshal.SizeOf<DescriptorBufferInfo>(),
                 _ => throw new NotImplementedException(),
             };
@@ -39,12 +40,19 @@ internal class VulkanMaterialProperty : MaterialProperty {
 
     public unsafe void WriteUpdateTemplateData(Span<byte> buffer, object?[] valueReferences, int index) {
         switch (Type) {
-            case MaterialPropertyType.Buffer:
-                GraphicsReadOnlyBuffer value = (GraphicsReadOnlyBuffer)(Value ?? throw new NullReferenceException());
-                valueReferences[index] = value;
+            case MaterialPropertyType.Texture2D:
+                SampledTexture sampled = (SampledTexture)(Value ?? throw new NullReferenceException());
+                valueReferences[index] = sampled;
 
                 fixed (byte* pointer = buffer)
-                    Marshal.StructureToPtr(DescriptorBufferInfo.Create(value), (nint)pointer, false);
+                    Marshal.StructureToPtr(new DescriptorImageInfo(sampled), (nint)pointer, false);
+                break;
+            case MaterialPropertyType.Buffer:
+                GraphicsReadOnlyBuffer vbuffer = (GraphicsReadOnlyBuffer)(Value ?? throw new NullReferenceException());
+                valueReferences[index] = vbuffer;
+
+                fixed (byte* pointer = buffer)
+                    Marshal.StructureToPtr(DescriptorBufferInfo.Create(vbuffer), (nint)pointer, false);
                 break;
         }
     }
@@ -53,7 +61,7 @@ internal class VulkanMaterialProperty : MaterialProperty {
         return new VulkanMaterialProperty(newMaterial, Index, Type, Name, Binding, DescriptorType, Offset);
     }
 
-    private protected override void SetTexture2DUnchecked(Texture2D texture) {
+    private protected override void SetTexture2DUnchecked(SampledTexture sampled) {
         Delegation.SetPropertyAsDirty(this);
     }
 
