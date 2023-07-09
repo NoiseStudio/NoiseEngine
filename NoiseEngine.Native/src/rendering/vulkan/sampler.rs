@@ -1,8 +1,8 @@
-use std::{sync::Arc, ptr};
+use std::{ptr, sync::Arc};
 
 use ash::vk;
 
-use crate::rendering::texture_sampler::{TextureSamplerCreateInfo, TextureSampler};
+use crate::rendering::texture_sampler::{TextureSampler, TextureSamplerCreateInfo};
 
 use super::{device::VulkanDevice, errors::universal::VulkanUniversalError};
 
@@ -13,7 +13,8 @@ pub struct VulkanSampler<'init> {
 
 impl<'init> VulkanSampler<'init> {
     pub fn new(
-        device: &Arc<VulkanDevice<'init>>, create_info: TextureSamplerCreateInfo
+        device: &Arc<VulkanDevice<'init>>,
+        create_info: TextureSamplerCreateInfo,
     ) -> Result<Self, VulkanUniversalError> {
         let vk_create_info = vk::SamplerCreateInfo {
             s_type: vk::StructureType::SAMPLER_CREATE_INFO,
@@ -44,7 +45,9 @@ impl<'init> VulkanSampler<'init> {
 
         let initialized = device.initialized().unwrap();
         let inner = unsafe {
-            initialized.vulkan_device().create_sampler(&vk_create_info, None)
+            initialized
+                .vulkan_device()
+                .create_sampler(&vk_create_info, None)
         }?;
 
         Ok(Self {

@@ -5,9 +5,8 @@ use ash::vk;
 use crate::{
     interop::prelude::InteropResult,
     rendering::{
-        vulkan::{
-            device::VulkanDevice, sampler::VulkanSampler,
-        }, texture_sampler::{TextureSamplerCreateInfo, TextureSampler},
+        texture_sampler::{TextureSampler, TextureSamplerCreateInfo},
+        vulkan::{device::VulkanDevice, sampler::VulkanSampler},
     },
 };
 

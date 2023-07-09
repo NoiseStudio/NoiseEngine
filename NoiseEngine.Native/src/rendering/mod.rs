@@ -7,5 +7,5 @@ pub mod camera_clear;
 pub mod cpu_texture_2d;
 pub mod cpu_texture_2d_encoding;
 pub mod fence;
-pub mod texture_sampler;
 pub mod texture;
+pub mod texture_sampler;

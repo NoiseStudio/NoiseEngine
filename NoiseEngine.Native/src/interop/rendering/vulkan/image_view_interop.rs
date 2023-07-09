@@ -4,17 +4,16 @@ use ash::vk;
 
 use crate::{
     interop::prelude::InteropResult,
-    rendering::{
-        vulkan::{
-            image::VulkanImage, image_view::{VulkanImageView, VulkanImageViewCreateInfo},
-        },
+    rendering::vulkan::{
+        image::VulkanImage,
+        image_view::{VulkanImageView, VulkanImageViewCreateInfo},
     },
 };
 
 #[repr(C)]
 struct VulkanImageViewCreateValue<'init: 'ma, 'ma> {
     image: &'init Arc<VulkanImage<'init, 'ma>>,
-    create_info: VulkanImageViewCreateInfo
+    create_info: VulkanImageViewCreateInfo,
 }
 
 #[repr(C)]
