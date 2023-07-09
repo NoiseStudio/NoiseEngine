@@ -79,6 +79,12 @@ internal class EntryPointHelper {
         FastList<SpirVVariable> innerVariables
     ) {
         switch (type.FullNameWithAssembly) {
+            case Vectors.Vector2Name:
+                GetInnerVariablesVector(
+                    ref location, ref offset, type, inputAttributes, innerVariables, 2,
+                    VulkanFormat.R32G32_SFloat
+                );
+                break;
             case Vectors.Vector3Name:
                 GetInnerVariablesVector(
                     ref location, ref offset, type, inputAttributes, innerVariables, 3,

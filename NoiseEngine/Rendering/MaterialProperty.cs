@@ -35,6 +35,9 @@ public abstract class MaterialProperty {
     /// <see cref="GraphicsDevice.DefaultTextureSampler"/> is used.
     /// </param>
     public void SetTexture(Texture2D texture, TextureSampler? sampler = null) {
+        if (!texture.Usage.HasFlag(TextureUsage.Sampled))
+            throw new InvalidOperationException("Texture has not TextureUsage.Sampled flag.");
+
         AssertType(MaterialPropertyType.Texture2D);
         SampledTexture sampled = new SampledTexture(texture, sampler ?? Device.DefaultTextureSampler);
         Value = sampled;

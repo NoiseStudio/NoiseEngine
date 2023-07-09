@@ -47,7 +47,7 @@ public class Texture2DTest : ApplicationTestEnvironment {
             }
 
             f32v4 Fragment(FragmentData data) {
-                return texture[data.Uv];
+                return new f32v4(texture[data.Uv].X, 0.0, texture[data.Uv].Z, 1.0);
             }
         ") });
 
@@ -63,7 +63,7 @@ public class Texture2DTest : ApplicationTestEnvironment {
 
             Texture2D texture = Texture2D.FromFile(
                 File.ReadAllBytes("C:\\Users\\Vixen\\Downloads\\cholibka.jpg"),
-                scene.GraphicsDevice, TextureUsage.TransferAll | TextureUsage.ColorAttachment,
+                scene.GraphicsDevice, TextureUsage.TransferAll | TextureUsage.Sampled,
                 TextureFormat.R8G8B8A8_SRGB
             );
             material.GetProperty("texture")!.SetTexture(texture);
