@@ -25,7 +25,7 @@ public class Texture2D : Texture {
     ) : base(device, usage, format, TextureHelper.CreateHandle(device, new TextureCreateInfo(
         new Vector3<uint>(width, height, 1), format, mipLevels, 1, sampleCount, linear, usage, true,
         new VulkanImageCreateInfo(
-            0, VulkanImageType.Image2D, VulkanImageLayout.Undefined
+            0, VulkanImageType.Image2D, VulkanImageLayout.General
         )), out InteropHandle<Texture> innerHandle
     ), innerHandle) {
         Width = width;

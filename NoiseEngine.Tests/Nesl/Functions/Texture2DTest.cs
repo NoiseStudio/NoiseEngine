@@ -1,15 +1,13 @@
 ﻿using NoiseEngine.Components;
-using NoiseEngine.DeveloperTools.Systems;
-using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Nesl;
-using NoiseEngine.Primitives;
 using NoiseEngine.Rendering;
+using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
+using NoiseEngine.Tests.Rendering;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace NoiseEngine.Tests.Nesl.Functions;
 
@@ -21,10 +19,12 @@ public class Texture2DTest : ApplicationTestEnvironment {
     public Texture2DTest(ApplicationFixture fixture) : base(fixture) {
     }
 
-    [FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
+    [Fact]
     public void Sample() {
-        string path = "Path";
-        NeslAssembly assembly = NeslCompiler.Compile(nameof(Sample), "", new NeslFile[] { new NeslFile(path, @"
+        const int TextureSize = 64;
+        const string Path = "Path";
+
+        NeslAssembly assembly = NeslCompiler.Compile(nameof(Sample), "", new NeslFile[] { new NeslFile(Path, @"
             using System;
 
             struct VertexData {
@@ -47,98 +47,58 @@ public class Texture2DTest : ApplicationTestEnvironment {
             }
 
             f32v4 Fragment(FragmentData data) {
-                return new f32v4(texture[data.Uv].X, 0.0, texture[data.Uv].Z, 1.0);
+                return texture[data.Uv];
             }
         ") });
 
-        ExecuteOnAllDevices(scene => {
-            Window window = Fixture.GetWindow("Sample textures");
-            Camera camera = new Camera(scene) {
-                RenderTarget = window,
-                RenderLoop = new PerformanceRenderLoop()
+        Color[] bufferA = new Color[TextureSize * TextureSize];
+        Color[] bufferB = new Color[TextureSize * TextureSize];
+
+        foreach (GraphicsDevice device in GraphicsDevices) {
+            Texture2D result = new Texture2D(
+                device, TextureUsage.TransferAll | TextureUsage.ColorAttachment,
+                TextureSize, TextureSize, TextureFormat.R8G8B8A8_UNORM
+            );
+            SimpleCamera camera = new SimpleCamera(device) {
+                RenderTarget = new RenderTexture(result),
+                ClearFlags = CameraClearFlags.SolidColor,
+                ClearColor = Color.Green,
+                DepthTesting = false,
+                ProjectionType = ProjectionType.Orthographic,
+                OrthographicSize = 0.5f
             };
 
-            Shader shader = new Shader(scene.GraphicsDevice, assembly.GetType(path)!);
+            Shader shader = new Shader(device, assembly.GetType(Path)!);
             Material material = new Material(shader);
 
             Texture2D texture = Texture2D.FromFile(
-                File.ReadAllBytes("C:\\Users\\Vixen\\Downloads\\cholibka.jpg"),
-                scene.GraphicsDevice, TextureUsage.TransferAll | TextureUsage.Sampled,
-                TextureFormat.R8G8B8A8_SRGB
+                File.ReadAllBytes("./Resources/Textures/Dummy64.png"),
+                device, TextureUsage.TransferAll | TextureUsage.Sampled, TextureFormat.R8G8B8A8_UNORM
             );
             material.GetProperty("texture")!.SetTexture(texture);
 
-            Mesh mesh = new Mesh<VertexData, ushort>(
-                scene.GraphicsDevice,
+            GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
+            commandBuffer.AttachCameraUnchecked(camera);
+            commandBuffer.DrawMeshUnchecked(new Mesh<VertexData, ushort>(
+                device,
                 new VertexData[] {
-                    // Top
-                    new VertexData(new Vector3<float>(-0.5f, 0.5f, 0.5f), new Vector2<float>(0, 0)),
-                    new VertexData(new Vector3<float>(0.5f, 0.5f, 0.5f), new Vector2<float>(1, 0)),
-                    new VertexData(new Vector3<float>(-0.5f, 0.5f, -0.5f), new Vector2<float>(0, 1)),
-                    new VertexData(new Vector3<float>(0.5f, 0.5f, -0.5f), new Vector2<float>(1, 1)),
-
-                    // Bottom
-                    new VertexData(new Vector3<float>(-0.5f, -0.5f, -0.5f), new Vector2<float>(0, 0)),
-                    new VertexData(new Vector3<float>(0.5f, -0.5f, -0.5f), new Vector2<float>(1, 0)),
-                    new VertexData(new Vector3<float>(-0.5f, -0.5f, 0.5f), new Vector2<float>(0, 1)),
-                    new VertexData(new Vector3<float>(0.5f, -0.5f, 0.5f), new Vector2<float>(1, 1)),
-
-                    // Right
-                    new VertexData(new Vector3<float>(0.5f, -0.5f, -0.5f), new Vector2<float>(0, 0)),
-                    new VertexData(new Vector3<float>(0.5f, 0.5f, -0.5f), new Vector2<float>(1, 0)),
-                    new VertexData(new Vector3<float>(0.5f, -0.5f, 0.5f), new Vector2<float>(0, 1)),
-                    new VertexData(new Vector3<float>(0.5f, 0.5f, 0.5f), new Vector2<float>(1, 1)),
-
-                    // Left
-                    new VertexData(new Vector3<float>(-0.5f, -0.5f, 0.5f), new Vector2<float>(0, 0)),
-                    new VertexData(new Vector3<float>(-0.5f, 0.5f, 0.5f), new Vector2<float>(1, 0)),
-                    new VertexData(new Vector3<float>(-0.5f, -0.5f, -0.5f), new Vector2<float>(0, 1)),
-                    new VertexData(new Vector3<float>(-0.5f, 0.5f, -0.5f), new Vector2<float>(1, 1)),
-
-                    // Front
-                    new VertexData(new Vector3<float>(0.5f, -0.5f, 0.5f), new Vector2<float>(0, 0)),
-                    new VertexData(new Vector3<float>(0.5f, 0.5f, 0.5f), new Vector2<float>(1, 0)),
-                    new VertexData(new Vector3<float>(-0.5f, -0.5f, 0.5f), new Vector2<float>(0, 1)),
-                    new VertexData(new Vector3<float>(-0.5f, 0.5f, 0.5f), new Vector2<float>(1, 1)),
-
-                    // Back
-                    new VertexData(new Vector3<float>(-0.5f, -0.5f, -0.5f), new Vector2<float>(0, 0)),
-                    new VertexData(new Vector3<float>(-0.5f, 0.5f, -0.5f), new Vector2<float>(1, 0)),
-                    new VertexData(new Vector3<float>(0.5f, -0.5f, -0.5f), new Vector2<float>(0, 1)),
-                    new VertexData(new Vector3<float>(0.5f, 0.5f, -0.5f), new Vector2<float>(1, 1))
+                    new VertexData(new Vector3<float>(-0.5f, -0.5f, 0f), new Vector2<float>(0, 1)),
+                    new VertexData(new Vector3<float>(-0.5f, 0.5f, 0f), new Vector2<float>(0, 0)),
+                    new VertexData(new Vector3<float>(0.5f, -0.5f, 0f), new Vector2<float>(1, 1)),
+                    new VertexData(new Vector3<float>(0.5f, 0.5f, 0f), new Vector2<float>(1, 0))
                 },
                 new ushort[] {
-                    0, 1, 2, 3, 2, 1,
-                    4, 5, 6, 7, 6, 5,
-                    8, 9, 10, 11, 10, 9,
-                    12, 13, 14, 15, 14, 13,
-                    16, 17, 18, 19, 18, 17,
-                    20, 21, 22, 23, 22, 21
+                    0, 1, 2, 3, 2, 1
                 }
-            );
+            ), material, new TransformComponent(new Vector3<float>(0, 0, 5)).Matrix);
+            commandBuffer.DetachCameraUnchecked();
 
-            for (int x = -10; x < 10; x += 2) {
-                for (int y = -10; y < 10; y += 2) {
-                    scene.Spawn(new TransformComponent(new Vector3<float>(x, 0, y)), new MeshRendererComponent(
-                        mesh, material
-                    ));
-                }
-            }
+            commandBuffer.Execute();
+            commandBuffer.Clear();
 
-            SystemCommands commands = new SystemCommands();
-            commands.GetEntity(camera.Entity).Insert(new ApplicationTestSimpleSceneManagerComponent());
-            camera.Scene.ExecuteCommands(commands);
-            camera.Scene.AddFrameDependentSystem(new ApplicationTestSimpleSceneManagerSystem(scene, window));
-
-            Thread.Sleep(1000);
-
-            if (scene.HasAnySystem<DebugMovementSystem>()) {
-                AutoResetEvent autoResetEvent = new AutoResetEvent(false);
-                window.Disposed += (_, _) => autoResetEvent.Set();
-                if (!window.IsDisposed)
-                    autoResetEvent.WaitOne();
-            }
-        });
+            // Assert.
+            Assert.True(TextureTestUtils.CompareLossy(texture, result));
+        }
     }
 
 }

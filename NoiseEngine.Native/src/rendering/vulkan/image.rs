@@ -78,7 +78,7 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma> {
             sharing_mode,
             queue_family_index_count: queue_family_indices.len() as u32,
             p_queue_family_indices: queue_family_indices.as_ptr(),
-            initial_layout: create_info.layout,
+            initial_layout: vk::ImageLayout::UNDEFINED,
         };
 
         let inner = unsafe {

@@ -33,6 +33,11 @@ public class RenderTexture : ICameraRenderTarget {
                 $"{nameof(Color)} texture must have TextureUsage.ColorAttachment flag.", nameof(color)
             );
         }
+        if (!color.Usage.HasFlag(TextureUsage.TransferDestination)) {
+            throw new ArgumentException(
+                $"{nameof(Color)} texture must have TextureUsage.TransferDestination flag.", nameof(color)
+            );
+        }
     }
 
     public RenderTexture(Texture color, Texture depthStencil) : this(color) {

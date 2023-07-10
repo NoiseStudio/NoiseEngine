@@ -13,7 +13,7 @@ internal readonly record struct DescriptorImageInfo(
 
     public DescriptorImageInfo(SampledTexture sampled) : this(
         sampled.Sampler.InnerHandle, sampled.Texture.GetVulkanDefaultImageView().InnerHandle,
-        VulkanImageLayout.Undefined
+        VulkanImageLayout.AttachmentOptimal
     ) {
     }
 

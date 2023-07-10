@@ -87,7 +87,7 @@ internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation 
             Span<byte> data = stackalloc byte[size];
             int dataIndex = 0;
 
-            if (comparedIndexes.SequenceEqual(lastUpdateIndexes)) {
+            if (lastUpdateTemplate is not null && comparedIndexes.SequenceEqual(lastUpdateIndexes)) {
                 for (int i = 0; i < lastIndex; i++) {
                     int index = indexes[i];
                     VulkanMaterialProperty property = propertiesToUpdate[index].property;
@@ -114,10 +114,11 @@ internal sealed class VulkanCommonMaterialDelegation : CommonMaterialDelegation 
             }
 
             // Update.
-            DescriptorSet.Update(lastUpdateTemplate!, data);
+            DescriptorSet.Update(lastUpdateTemplate, data);
             this.isInitialized = isInitialized;
 
-            foreach (int index in indexes) {
+            for (int i = 0; i < lastIndex; i++) {
+                int index = indexes[i];
                 valueReferences[index] = valueReferencesTemp[index]!;
                 Debug.Assert(valueReferences[index] is not null);
             }
