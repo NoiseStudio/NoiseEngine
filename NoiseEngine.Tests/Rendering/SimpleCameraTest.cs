@@ -46,7 +46,7 @@ public class SimpleCameraTest : ApplicationTestEnvironment {
             PrimitiveCreatorShared shared = PrimitiveCreatorShared.CreateOrGet(device);
 
             Texture2D texture = new Texture2D(
-                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 16, 16, TextureFormat.R8G8B8A8_UNORM
+                device, TextureUsage.TransferAll | TextureUsage.ColorAttachment, 16, 16, TextureFormat.R8G8B8A8_UNORM
             );
             SimpleCamera camera = new SimpleCamera(device) {
                 RenderTarget = new RenderTexture(texture),

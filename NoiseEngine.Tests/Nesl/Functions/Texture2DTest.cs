@@ -5,7 +5,6 @@ using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
-using NoiseEngine.Tests.Rendering;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -72,7 +71,7 @@ public class Texture2DTest : ApplicationTestEnvironment {
             Material material = new Material(shader);
 
             Texture2D texture = Texture2D.FromFile(
-                File.ReadAllBytes("./Resources/Textures/Dummy64.png"),
+                File.ReadAllBytes("./Resources/Textures/Dummy64.webp"),
                 device, TextureUsage.TransferAll | TextureUsage.Sampled, TextureFormat.R8G8B8A8_UNORM
             );
             material.GetProperty("texture")!.SetTexture(texture);
@@ -97,7 +96,9 @@ public class Texture2DTest : ApplicationTestEnvironment {
             commandBuffer.Clear();
 
             // Assert.
-            Assert.True(TextureTestUtils.CompareLossy(texture, result));
+            texture.GetPixels<Color>(bufferA);
+            result.GetPixels<Color>(bufferB);
+            Assert.Equal(bufferA, bufferB);
         }
     }
 
