@@ -1,10 +1,12 @@
 ﻿using NoiseEngine.Collections;
 using NoiseEngine.Nesl.CompilerTools.Architectures.SpirV.Types;
 using NoiseEngine.Nesl.Default;
+using NoiseEngine.Rendering;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace NoiseEngine.Nesl.CompilerTools.Architectures.SpirV;
 
@@ -67,6 +69,12 @@ internal class SpirVBuiltInTypes {
             case nameof(SpirVOpCode.OpTypeMatrix) + "4":
                 type = GetOpTypeMatrix(
                     Vectors.GetVector4(neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!), uint.Parse(args[2])
+                );
+                return true;
+            case nameof(SpirVOpCode.OpTypeImage):
+                type = GetOpTypeImage(
+                    neslType.Assembly.GetType(Convert.ToUInt64(args[1], 16))!, uint.Parse(args[2]), long.Parse(args[3]),
+                    long.Parse(args[4]), long.Parse(args[5]), long.Parse(args[6])
                 );
                 return true;
             case nameof(SpirVOpCode.OpTypeArray):
@@ -142,6 +150,26 @@ internal class SpirVBuiltInTypes {
                     );
 
                     return new SpirVType(Compiler, id);
+                }
+            })).Value;
+    }
+
+    public SpirVType GetOpTypeImage(NeslType sampledType, uint dim, long depth, long arrayed, long ms, long sampled) {
+        return types.GetOrAdd(new object[] { SpirVOpCode.OpTypeImage, sampledType, dim, depth, arrayed, ms, sampled },
+            _ => new Lazy<SpirVType>(() => {
+                lock (Compiler.TypesAndVariables) {
+                    SpirVId imageId = Compiler.GetNextId();
+                    Compiler.TypesAndVariables.Emit(
+                        SpirVOpCode.OpTypeImage, imageId,
+                        Compiler.GetSpirVType(sampledType.GenericMakedTypeParameters.First()).Id,
+                        dim, depth.ToSpirVLiteral(), arrayed.ToSpirVLiteral(), ms.ToSpirVLiteral(),
+                        sampled.ToSpirVLiteral(), 0u
+                    );
+
+                    SpirVId sampledId = Compiler.GetNextId();
+                    Compiler.TypesAndVariables.Emit(SpirVOpCode.OpTypeSampledImage, sampledId, imageId);
+
+                    return new SpirVType(Compiler, sampledId, true);
                 }
             })).Value;
     }

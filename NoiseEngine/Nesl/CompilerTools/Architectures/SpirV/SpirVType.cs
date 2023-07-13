@@ -8,10 +8,12 @@ internal class SpirVType {
     public NeslType? NeslType { get; }
 
     public SpirVId Id { get; }
+    public bool IsOpaque { get; }
 
-    public SpirVType(SpirVCompiler compiler, SpirVId id) {
+    public SpirVType(SpirVCompiler compiler, SpirVId id, bool isOpaque = false) {
         Compiler = compiler;
         Id = id;
+        IsOpaque = isOpaque;
     }
 
     public SpirVType(SpirVCompiler compiler, NeslType neslType) {

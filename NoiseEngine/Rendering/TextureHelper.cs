@@ -1,9 +1,7 @@
 ﻿using NoiseEngine.Interop;
 using NoiseEngine.Interop.Rendering;
 using NoiseEngine.Interop.Rendering.Vulkan;
-using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Exceptions;
-using NoiseEngine.Rendering.Vulkan;
 using System;
 
 namespace NoiseEngine.Rendering;

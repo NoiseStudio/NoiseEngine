@@ -10,7 +10,7 @@ internal readonly struct SpirVFunctionIdentifier : IEquatable<SpirVFunctionIdent
 
     public NeslMethod NeslMethod { get; }
     public IReadOnlyList<SpirVVariable?> Parameters { get; }
-    public int DynamicParameters { get; }
+    public IReadOnlyList<StorageClass> DynamicParameters { get; }
 
     public bool IsStatic => Parameters.Count == NeslMethod.ParameterTypes.Count;
 
@@ -18,17 +18,17 @@ internal readonly struct SpirVFunctionIdentifier : IEquatable<SpirVFunctionIdent
         NeslMethod = neslMethod;
 
         SpirVVariable?[] p = new SpirVVariable?[parameters.Length];
-        int dynamicParameters = 0;
+        List<StorageClass> dynamicParameters = new List<StorageClass>();
 
         for (int i = 0; i < parameters.Length; i++) {
             if (!parameters[i].StorageClass.IsDynamicInLogicalAddressingModel())
                 p[i] = parameters[i];
             else
-                dynamicParameters++;
+                dynamicParameters.Add(parameters[i].StorageClass);
         }
 
         Parameters = p;
-        DynamicParameters = dynamicParameters;
+        DynamicParameters = dynamicParameters.ToArray();
 
         // Compute hash code.
         HashCode hashCode = new HashCode();
@@ -36,6 +36,8 @@ internal readonly struct SpirVFunctionIdentifier : IEquatable<SpirVFunctionIdent
         hashCode.Add(NeslMethod.Guid);
         foreach (SpirVVariable? parameter in Parameters)
             hashCode.Add(parameter);
+        foreach (StorageClass storageClass in DynamicParameters)
+            hashCode.Add(storageClass);
 
         this.hashCode = hashCode.ToHashCode();
     }

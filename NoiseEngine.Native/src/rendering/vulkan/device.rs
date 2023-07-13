@@ -74,11 +74,10 @@ impl<'init> VulkanDevice<'init> {
             flags: vk::DeviceCreateFlags::empty(),
             queue_create_info_count: queue_create_infos.len() as u32,
             p_queue_create_infos: queue_create_infos.as_ptr(),
-            enabled_layer_count: 0,
-            pp_enabled_layer_names: ptr::null(),
             enabled_extension_count: enabled_extensions_result.len() as u32,
             pp_enabled_extension_names: enabled_extensions_result.as_ptr(),
             p_enabled_features: &physical_device_features,
+            ..Default::default()
         };
 
         let device = unsafe {

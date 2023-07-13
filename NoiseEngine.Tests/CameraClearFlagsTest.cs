@@ -17,7 +17,7 @@ public class CameraClearFlagsTest : ApplicationTestEnvironment {
 
         foreach (GraphicsDevice device in GraphicsDevices) {
             Texture2D texture = new Texture2D(
-                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 1, 1
+                device, TextureUsage.TransferAll | TextureUsage.ColorAttachment, 1, 1
             );
             SimpleCamera camera = new SimpleCamera(device) {
                 RenderTarget = new RenderTexture(texture),

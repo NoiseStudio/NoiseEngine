@@ -27,6 +27,9 @@ internal static class IntrinsicsManager {
             case $"{DefaultAssembly}.RwBuffer`1":
                 new RwBuffer(generator, function, parameters).Process();
                 break;
+            case $"{DefaultAssembly}.Texture2D`1":
+                new Texture2D(generator, function, parameters).Process();
+                break;
             default:
                 throw new InvalidOperationException($"Unable to find given {nameof(IntrinsicAttribute)} definition.");
         }

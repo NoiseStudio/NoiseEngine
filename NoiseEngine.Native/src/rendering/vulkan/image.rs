@@ -78,33 +78,16 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma> {
             sharing_mode,
             queue_family_index_count: queue_family_indices.len() as u32,
             p_queue_family_indices: queue_family_indices.as_ptr(),
-            initial_layout: create_info.layout,
+            initial_layout: vk::ImageLayout::UNDEFINED,
         };
 
-        let inner = unsafe {
-            initialized
-                .vulkan_device()
-                .create_image(&vk_create_info, None)
-        }?;
-
-        // Memory.
-        let memory_requirements = unsafe {
-            initialized
-                .vulkan_device()
-                .get_image_memory_requirements(inner)
+        let alloc_info = vma::AllocationCreateInfo {
+            required_flags: vk::MemoryPropertyFlags::DEVICE_LOCAL,
+            ..Default::default()
         };
-
-        let memory = initialized.allocator().alloc_memory_type(
-            memory_requirements.size,
-            memory_requirements.memory_type_bits,
-            vk::MemoryPropertyFlags::DEVICE_LOCAL,
-        )?;
-
-        unsafe {
-            initialized
-                .vulkan_device()
-                .bind_image_memory(inner, memory.memory(), memory.offset())
-        }?;
+        let (inner, memory) = initialized
+            .allocator()
+            .create_image(&vk_create_info, &alloc_info)?;
 
         Ok(Self {
             inner,

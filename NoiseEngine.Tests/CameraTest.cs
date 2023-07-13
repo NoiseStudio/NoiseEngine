@@ -25,7 +25,7 @@ public class CameraTest : ApplicationTestEnvironment {
     public void RenderToTexture() {
         ExecuteOnAllDevices(scene => {
             Texture2D texture = new Texture2D(
-                scene.GraphicsDevice, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 1, 1
+                scene.GraphicsDevice, TextureUsage.TransferAll | TextureUsage.ColorAttachment, 1, 1
             );
 
             Camera camera = new Camera(scene) {

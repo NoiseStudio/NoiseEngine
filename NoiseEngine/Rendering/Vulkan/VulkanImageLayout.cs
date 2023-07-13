@@ -9,9 +9,12 @@ internal enum VulkanImageLayout : uint {
     ColorAttachmentOptimal = 2,
     DepthStencilAttachmentOptimal = 3,
     DepthStencilReadOnlyOptimal = 4,
-    TransferSourceOptimal = 5,
-    TransferDestinationOptimal = 6,
-    Preinitialized = 7,
+    ShaderReadOnlyOptimal = 5,
+    TransferSourceOptimal = 6,
+    TransferDestinationOptimal = 7,
+    Preinitialized = 8,
+
+    AttachmentOptimal = 1000314001,
 
     PresentSourceKHR = 1000001002
 }

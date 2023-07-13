@@ -71,4 +71,34 @@ internal static class TextureTestUtils {
         return true;
     }
 
+    public static bool CompareLossy(Texture2D expected, Texture2D actual, float maxDifference = 0.01f) {
+        if (expected.Format != actual.Format)
+            throw new ArgumentException("Texture formats do not match.");
+        if (expected.Width != actual.Width || expected.Height != actual.Height)
+            throw new ArgumentException("Texture sizes do not match.");
+        if (expected.Format != TextureFormat.R8G8B8A8_SRGB && expected.Format != TextureFormat.R8G8B8A8_UNORM)
+            throw new ArgumentException("Unsupported texture format.");
+
+        Color[] expectedData = new Color[expected.Width * expected.Height];
+        expected.GetPixels<Color>(expectedData);
+        Color[] actualData = new Color[actual.Width * actual.Height];
+        actual.GetPixels<Color>(actualData);
+
+        for (int i = 0; i < expectedData.Length; i++) {
+            Color e = expectedData[i];
+            Color a = actualData[i];
+
+            if (
+                MathF.Abs(e.R - a.R) > maxDifference ||
+                MathF.Abs(e.G - a.G) > maxDifference ||
+                MathF.Abs(e.B - a.B) > maxDifference ||
+                MathF.Abs(e.A - a.A) > maxDifference
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 }

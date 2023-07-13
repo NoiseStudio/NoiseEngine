@@ -652,10 +652,7 @@ impl Window for WindowWindows {
 
     fn set_title(&self, title: String) -> Result<(), PlatformUniversalError> {
         let mut result: Option<Win32Error> = None;
-        self.execute_task_wait_with_data(
-            WindowWindowsThreadTask::SetTitle(title.to_string()),
-            &mut result,
-        );
+        self.execute_task_wait_with_data(WindowWindowsThreadTask::SetTitle(title), &mut result);
 
         if let Some(error) = result {
             Err(error.into())

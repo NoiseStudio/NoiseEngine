@@ -28,12 +28,28 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
         map: bool,
     ) -> Result<Self, VulkanUniversalError> {
         let initialized = device.initialized()?;
-        let vulkan_device = initialized.vulkan_device();
 
-        let buffer = Self::create_buffer(initialized, size, usage)?;
-        let memory = initialized.allocator().alloc(size, map)?;
-
-        unsafe { vulkan_device.bind_buffer_memory(buffer, memory.memory(), memory.offset()) }?;
+        let buffer_info = Self::create_buffer_info(initialized, size, usage);
+        let alloc_info = vma::AllocationCreateInfo {
+            flags: match map {
+                true => vma::AllocationCreateFlags::HOST_ACCESS_SEQUENTIAL_WRITE,
+                false => vma::AllocationCreateFlags::empty(),
+            },
+            usage: match map {
+                true => vma::MemoryUsage::AutoPreferHost,
+                false => vma::MemoryUsage::AutoPreferDevice,
+            },
+            required_flags: match map {
+                true => {
+                    vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
+                }
+                false => vk::MemoryPropertyFlags::DEVICE_LOCAL,
+            },
+            ..Default::default()
+        };
+        let (buffer, memory) = initialized
+            .allocator()
+            .create_buffer(&buffer_info, &alloc_info)?;
 
         Ok(VulkanBuffer {
             buffer,
@@ -46,11 +62,11 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
         self.buffer
     }
 
-    fn create_buffer(
+    fn create_buffer_info(
         initialized: &VulkanDeviceInitialized,
         size: u64,
         usage: vk::BufferUsageFlags,
-    ) -> Result<vk::Buffer, VulkanUniversalError> {
+    ) -> vk::BufferCreateInfo {
         let sharing_mode;
         let queue_family_index_count;
         let p_queue_family_indices;
@@ -72,7 +88,7 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
             p_queue_family_indices = ptr::null();
         }
 
-        let create_info = vk::BufferCreateInfo {
+        vk::BufferCreateInfo {
             s_type: vk::StructureType::BUFFER_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::BufferCreateFlags::empty(),
@@ -81,15 +97,6 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
             sharing_mode,
             queue_family_index_count,
             p_queue_family_indices,
-        };
-
-        match unsafe {
-            initialized
-                .vulkan_device()
-                .create_buffer(&create_info, None)
-        } {
-            Ok(buffer) => Ok(buffer),
-            Err(err) => Err(err.into()),
         }
     }
 }

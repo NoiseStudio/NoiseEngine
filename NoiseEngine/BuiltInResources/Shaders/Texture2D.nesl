@@ -1,0 +1,7 @@
+[PlatformDependentTypeRepresentation("OpTypeImage`{&T}`1`0`0`0`1")]
+public class Texture2D<T> {
+
+    [Intrinsic]
+    public T this[f32v2 coordinates] { get; }
+
+}
