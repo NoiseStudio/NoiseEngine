@@ -12,9 +12,6 @@ namespace NoiseEngine.Tests.Nesl.Functions;
 
 public class Texture2DTest : ApplicationTestEnvironment {
 
-    [StructLayout(LayoutKind.Sequential)]
-    readonly record struct VertexData(Vector3<float> Position, Vector2<float> Uv);
-
     public Texture2DTest(ApplicationFixture fixture) : base(fixture) {
     }
 
@@ -78,13 +75,13 @@ public class Texture2DTest : ApplicationTestEnvironment {
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
             commandBuffer.AttachCameraUnchecked(camera);
-            commandBuffer.DrawMeshUnchecked(new Mesh<VertexData, ushort>(
+            commandBuffer.DrawMeshUnchecked(new Mesh<VertexPosition3Uv2, ushort>(
                 device,
-                new VertexData[] {
-                    new VertexData(new Vector3<float>(-0.5f, -0.5f, 0f), new Vector2<float>(0, 1)),
-                    new VertexData(new Vector3<float>(-0.5f, 0.5f, 0f), new Vector2<float>(0, 0)),
-                    new VertexData(new Vector3<float>(0.5f, -0.5f, 0f), new Vector2<float>(1, 1)),
-                    new VertexData(new Vector3<float>(0.5f, 0.5f, 0f), new Vector2<float>(1, 0))
+                new VertexPosition3Uv2[] {
+                    new VertexPosition3Uv2(new Vector3<float>(-0.5f, -0.5f, 0f), new Vector2<float>(0, 1)),
+                    new VertexPosition3Uv2(new Vector3<float>(-0.5f, 0.5f, 0f), new Vector2<float>(0, 0)),
+                    new VertexPosition3Uv2(new Vector3<float>(0.5f, -0.5f, 0f), new Vector2<float>(1, 1)),
+                    new VertexPosition3Uv2(new Vector3<float>(0.5f, 0.5f, 0f), new Vector2<float>(1, 0))
                 },
                 new ushort[] {
                     0, 1, 2, 3, 2, 1
