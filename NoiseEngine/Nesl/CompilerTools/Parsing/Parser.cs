@@ -761,12 +761,20 @@ internal class Parser {
         return methods.Any();
     }
 
-    public uint DefineVariable(NeslType type, string name) {
+    public VariableData DefineVariable(NeslType type, NameToken name) {
         variables ??= new Dictionary<string, VariableData>();
+
         uint id = CurrentMethod.IlGenerator.GetNextVariableId();
-        if (!variables.TryAdd(name, new VariableData(type, name, id)))
-            throw new NotImplementedException(); // TODO: Add error.
-        return id;
+        CurrentMethod.IlGenerator.Emit(OpCode.DefVariable, type);
+
+        VariableData data = new VariableData(type, name.Name, id);
+        if (!variables.TryAdd(name.Name, data)) {
+            Throw(new CompilationError(
+                name.Pointer, CompilationErrorType.VariableAlreadyExists, name.Name
+            ));
+        }
+
+        return data;
     }
 
     public VariableData? GetVariable(string name) {

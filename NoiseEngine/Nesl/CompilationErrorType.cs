@@ -110,6 +110,8 @@ public enum CompilationErrorType {
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     ParameterAlreadyExists,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
+    VariableAlreadyExists,
+    [CompilationErrorType(CompilationErrorSeverity.Error)]
     UsingNotFound,
     [CompilationErrorType(CompilationErrorSeverity.Error)]
     TypeNotFound,

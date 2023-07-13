@@ -26,7 +26,13 @@ internal class AssignmentDeclaration : ParserExpressionContainer {
 
         (NeslType type, uint id, bool isField, NeslMethod? indexerMethod, ValueToken? indexer)? v =
             GetVariable(assignment);
+        AssignmentWorker(successful, op, value, v);
+    }
 
+    public void AssignmentWorker(
+        bool successful, OperatorToken op, ValueToken value,
+        (NeslType type, uint id, bool isField, NeslMethod? indexerMethod, ValueToken? indexer)? v
+    ) {
         ValueData valueData = ValueConstructor.Construct(value, Parser);
 
         ValueData? indexerData = null;
@@ -56,9 +62,12 @@ internal class AssignmentDeclaration : ParserExpressionContainer {
             valueData = valueData.LoadConst(Parser, indexerMethod.ParameterTypes[1]);
 
             Span<uint> parameters = v.Value.id != uint.MaxValue ? stackalloc uint[] {
-                v.Value.id, indexerDataB.Id, valueData.Id
+                v.Value.id,
+                indexerDataB.Id,
+                valueData.Id
             } : stackalloc uint[] {
-                indexerDataB.Id, valueData.Id
+                indexerDataB.Id,
+                valueData.Id
             };
 
             il.Emit(OpCode.Call, uint.MaxValue, indexerMethod, parameters);
