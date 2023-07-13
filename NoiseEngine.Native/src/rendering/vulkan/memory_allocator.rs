@@ -4,12 +4,12 @@ use std::{
 };
 
 use ash::vk;
-use vma::{AllocationCreateInfo, Alloc};
+use vma::{Alloc, AllocationCreateInfo};
 
 use super::{errors::universal::VulkanUniversalError, instance::VulkanInstance};
 
 pub(crate) struct MemoryAllocator {
-    inner: vma::Allocator
+    inner: vma::Allocator,
 }
 
 impl MemoryAllocator {
@@ -18,46 +18,41 @@ impl MemoryAllocator {
         device: Rc<ash::Device>,
         physical_device: vk::PhysicalDevice,
     ) -> Result<Self, VulkanUniversalError> {
-        let create_info = vma::AllocatorCreateInfo::new(
-            instance.inner(), &device, physical_device
-        );
+        let create_info = vma::AllocatorCreateInfo::new(instance.inner(), &device, physical_device);
         let inner = vma::Allocator::new(create_info)?;
 
         Ok(MemoryAllocator { inner })
     }
 
     pub fn create_buffer(
-        &self, buffer_info: &vk::BufferCreateInfo, create_info: &AllocationCreateInfo
+        &self,
+        buffer_info: &vk::BufferCreateInfo,
+        create_info: &AllocationCreateInfo,
     ) -> Result<(vk::Buffer, MemoryBlock), VulkanUniversalError> {
-        let allocation = unsafe {
-            self.inner.create_buffer(buffer_info, create_info)
-        }?;
+        let allocation = unsafe { self.inner.create_buffer(buffer_info, create_info) }?;
         Ok((allocation.0, MemoryBlock::new(self, allocation.1)))
     }
 
     pub fn create_image(
-        &self, image_info: &vk::ImageCreateInfo, create_info: &AllocationCreateInfo
+        &self,
+        image_info: &vk::ImageCreateInfo,
+        create_info: &AllocationCreateInfo,
     ) -> Result<(vk::Image, MemoryBlock), VulkanUniversalError> {
-        let allocation = unsafe {
-            self.inner.create_image(image_info, create_info)
-        }?;
+        let allocation = unsafe { self.inner.create_image(image_info, create_info) }?;
         Ok((allocation.0, MemoryBlock::new(self, allocation.1)))
     }
 }
 
 pub(crate) struct MemoryBlock<'ma> {
     allocator: &'ma MemoryAllocator,
-    inner: Mutex<vma::Allocation>
+    inner: Mutex<vma::Allocation>,
 }
 
 impl<'ma> MemoryBlock<'ma> {
-    fn new(
-        allocator: &'ma MemoryAllocator,
-        inner: vma::Allocation,
-    ) -> Self {
+    fn new(allocator: &'ma MemoryAllocator, inner: vma::Allocation) -> Self {
         MemoryBlock {
             allocator,
-            inner: Mutex::new(inner)
+            inner: Mutex::new(inner),
         }
     }
 
@@ -73,13 +68,13 @@ impl<'ma> MemoryBlock<'ma> {
 
         unsafe {
             std::ptr::copy_nonoverlapping(
-                ptr.offset(start as isize), buffer.as_mut_ptr(), buffer.len()
+                ptr.offset(start as isize),
+                buffer.as_mut_ptr(),
+                buffer.len(),
             );
         }
 
-        unsafe {
-            allocator.unmap_memory(&mut allocation)
-        };
+        unsafe { allocator.unmap_memory(&mut allocation) };
         Ok(())
     }
 
@@ -90,14 +85,10 @@ impl<'ma> MemoryBlock<'ma> {
         // TODO: Support not coherent.
 
         unsafe {
-            std::ptr::copy_nonoverlapping(
-                data.as_ptr(), ptr.offset(start as isize), data.len()
-            );
+            std::ptr::copy_nonoverlapping(data.as_ptr(), ptr.offset(start as isize), data.len());
         }
 
-        unsafe {
-            allocator.unmap_memory(&mut allocation)
-        };
+        unsafe { allocator.unmap_memory(&mut allocation) };
         Ok(())
     }
 }

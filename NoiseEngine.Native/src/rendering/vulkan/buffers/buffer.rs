@@ -40,14 +40,16 @@ impl<'dev: 'init, 'init: 'ma, 'ma> VulkanBuffer<'init, 'ma> {
                 false => vma::MemoryUsage::AutoPreferDevice,
             },
             required_flags: match map {
-                true => vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
+                true => {
+                    vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
+                }
                 false => vk::MemoryPropertyFlags::DEVICE_LOCAL,
             },
             ..Default::default()
         };
-        let (buffer, memory) = initialized.allocator().create_buffer(
-            &buffer_info, &alloc_info
-        )?;
+        let (buffer, memory) = initialized
+            .allocator()
+            .create_buffer(&buffer_info, &alloc_info)?;
 
         Ok(VulkanBuffer {
             buffer,

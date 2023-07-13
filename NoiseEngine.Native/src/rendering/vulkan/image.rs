@@ -85,9 +85,9 @@ impl<'init: 'ma, 'ma> VulkanImage<'init, 'ma> {
             required_flags: vk::MemoryPropertyFlags::DEVICE_LOCAL,
             ..Default::default()
         };
-        let (inner, memory) = initialized.allocator().create_image(
-            &vk_create_info, &alloc_info
-        )?;
+        let (inner, memory) = initialized
+            .allocator()
+            .create_image(&vk_create_info, &alloc_info)?;
 
         Ok(Self {
             inner,
