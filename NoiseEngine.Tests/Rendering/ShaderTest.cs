@@ -83,7 +83,7 @@ public class ShaderTest : ApplicationTestEnvironment {
             Shader shader = new Shader(device, shaderClassData);
 
             Texture2D texture = new Texture2D(
-                device, TextureUsage.TransferSource | TextureUsage.ColorAttachment, 2, 2
+                device, TextureUsage.TransferAll | TextureUsage.ColorAttachment, 2, 2
             );
             SimpleCamera camera = new SimpleCamera(device) {
                 RenderTarget = new RenderTexture(texture),

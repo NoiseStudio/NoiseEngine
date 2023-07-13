@@ -77,16 +77,14 @@ internal abstract class VulkanCommonShaderDelegation : CommonShaderDelegation {
     private static DescriptorType GetDescriptorTypeFromNeslType(NeslType neslType) {
         return neslType.FullNameWithAssembly switch {
             Nesl.Default.Textures.Texture2DName => DescriptorType.CombinedImageSampler,
-            Nesl.Default.Buffers.RwBufferName => DescriptorType.Storage,
-            _ => throw new NotImplementedException()
+            _ => DescriptorType.Storage
         };
     }
 
     private static MaterialPropertyType GetMaterialPropertyTypeFromNeslType(NeslType neslType) {
         return neslType.FullNameWithAssembly switch {
             Nesl.Default.Textures.Texture2DName => MaterialPropertyType.Texture2D,
-            Nesl.Default.Buffers.RwBufferName => MaterialPropertyType.Buffer,
-            _ => throw new NotImplementedException()
+            _ => MaterialPropertyType.Buffer
         };
     }
 
