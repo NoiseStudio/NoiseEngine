@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Interop;
 
+[StructLayout(LayoutKind.Sequential)]
 internal readonly record struct InteropHandle<T>(IntPtr Pointer) {
 
     public static InteropHandle<T> Zero => new InteropHandle<T>(IntPtr.Zero);
