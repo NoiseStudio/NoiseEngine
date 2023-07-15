@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Jobs;
+using NoiseEngine.Physics;
 using NoiseEngine.Primitives;
 using NoiseEngine.Rendering;
 using System;
@@ -15,6 +16,8 @@ public class ApplicationScene : EntityWorld {
 
     private GraphicsDevice? graphicsDevice;
     private PrimitiveCreator? primitive;
+
+    public PhysicsSettings PhysicsSettings { get; init; } = new PhysicsSettings();
 
     public GraphicsDevice GraphicsDevice {
         get {

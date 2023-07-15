@@ -182,8 +182,10 @@ internal class SystemCommandsExecutor {
                             changed ??= new List<(Type, IComponent, int)>();
                             IComponent old = oldChunk.ReadComponentBoxed(type, size, (nint)si + oldChunk.Offsets[type]);
                             changed.Add((type, old, size));
-                        } else {
-                            component = components[type];
+                        } else if (!components.TryGetValue(type, out component)) {
+                            // Skip if appended default.
+                            Debug.Assert(newArchetype.Offsets.ContainsKey(type));
+                            continue;
                         }
 
                         // Copy new component.
