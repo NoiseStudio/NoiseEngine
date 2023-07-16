@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.InternalGenerat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Generator", "NoiseEngine.Generator\NoiseEngine.Generator.csproj", "{7E2CDF35-81EA-434F-8184-B15399A6BE02}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoiseEngine.Builder", "NoiseEngine.Builder\NoiseEngine.Builder.csproj", "{B5FC536D-FE1E-4C0D-84C1-9DA38180EE6E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoiseEngine.Builder", "NoiseEngine.Builder\NoiseEngine.Builder.csproj", "{B5FC536D-FE1E-4C0D-84C1-9DA38180EE6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
