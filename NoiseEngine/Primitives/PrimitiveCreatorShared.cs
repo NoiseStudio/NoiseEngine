@@ -2,8 +2,10 @@
 using NoiseEngine.Nesl;
 using NoiseEngine.Nesl.Default;
 using NoiseEngine.Nesl.Emit;
+using NoiseEngine.Primitives.Sphere;
 using NoiseEngine.Rendering;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace NoiseEngine.Primitives;
@@ -12,8 +14,9 @@ internal class PrimitiveCreatorShared {
 
     private static readonly ConcurrentDictionary<GraphicsDevice, PrimitiveCreatorShared> shareds =
         new ConcurrentDictionary<GraphicsDevice, PrimitiveCreatorShared>();
+    private static readonly NeslType defaultShaderClassData;
 
-    private static NeslType defaultShaderClassData;
+    private readonly Dictionary<(uint, SphereType), Mesh> sphereMeshes = new Dictionary<(uint, SphereType), Mesh>();
 
     private Shader? defaultShader;
     private Material? defaultMaterial;
@@ -86,6 +89,20 @@ internal class PrimitiveCreatorShared {
 
     public static PrimitiveCreatorShared CreateOrGet(GraphicsDevice graphicsDevice) {
         return shareds.GetOrAdd(graphicsDevice, static (device) => new PrimitiveCreatorShared(device));
+    }
+
+    public Mesh GetSphereMesh(uint resolution, SphereType type) {
+        if (sphereMeshes.TryGetValue((resolution, type), out Mesh? mesh))
+            return mesh;
+
+        lock (sphereMeshes) {
+            if (sphereMeshes.TryGetValue((resolution, type), out mesh))
+                return mesh;
+
+            mesh = SpherePrimitveGenerator.GenerateMesh(this, resolution, type);
+            sphereMeshes.Add((resolution, type), mesh);
+            return mesh;
+        }
     }
 
     private Shader CreateDefaultShader() {
