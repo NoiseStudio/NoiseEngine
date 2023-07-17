@@ -1,7 +1,6 @@
-﻿using NoiseEngine.Components;
-using NoiseEngine.Jobs;
+﻿using NoiseEngine.Jobs;
 
-namespace NoiseEngine.Physics.Systems;
+namespace NoiseEngine.Physics.Simulation;
 
 internal sealed partial class SimulationSystem : EntitySystem {
 

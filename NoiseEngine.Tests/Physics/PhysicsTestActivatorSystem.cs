@@ -3,7 +3,7 @@ using NoiseEngine.Inputs;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Physics.FrameSmoothing;
-using NoiseEngine.Physics.Systems;
+using NoiseEngine.Physics.Simulation;
 
 namespace NoiseEngine.Tests.Physics;
 

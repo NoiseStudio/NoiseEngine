@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.DeveloperTools.Systems;
-using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Physics;
 using NoiseEngine.Tests.Environments;
@@ -24,18 +23,28 @@ public class PhysicsTest : ApplicationTestEnvironment {
         };
         scene.AddFrameDependentSystem(new PhysicsTestActivatorSystem(scene, window));
 
+        scene.Spawn(
+            new TransformComponent(
+                new Vector3<float>(0, -105, 0), Quaternion<float>.Identity, new Vector3<float>(200, 200, 200)
+            ),
+            new MeshRendererComponent(scene.Primitive.GetSphereMesh(), scene.Primitive.DefaultMaterial),
+            new ColliderComponent(new SphereCollider(false, 100))
+        );
+
         for (int x = 0; x < 1; x += 2) {
             for (int y = 0; y < 1; y += 2) {
                 scene.Spawn(
                     new TransformComponent(new Vector3<float>(x, 0, y)),
-                    new MeshRendererComponent(scene.Primitive.CubeMesh, scene.Primitive.DefaultMaterial),
-                    new RigidBodyComponent()
+                    new MeshRendererComponent(scene.Primitive.GetSphereMesh(), scene.Primitive.DefaultMaterial),
+                    new RigidBodyComponent(),
+                    new ColliderComponent(new SphereCollider())
                 );
             }
         }
 
         DebugMovementSystem.InitializeTo(camera);
-        Thread.Sleep(10000000);
+        while (!window.IsDisposed)
+            Thread.Sleep(10);
     }
 
 }
