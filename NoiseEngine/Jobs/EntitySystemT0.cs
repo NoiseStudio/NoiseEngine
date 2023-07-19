@@ -138,15 +138,19 @@ public abstract class EntitySystem : IDisposable {
             return !oldValue.Equals(newValue);
         }
 
-        public readonly T PopThreadStorage<T>() where T : new() {
-            if (Unsafe.As<ConcurrentStack<T>>(ThreadStorages)!.TryPop(out T? threadStorage))
+        public readonly TThreadStorage PopThreadStorage<TThreadStorage>()
+            where TThreadStorage : IThreadStorage<TThreadStorage>
+        {
+            if (Unsafe.As<ConcurrentStack<TThreadStorage>>(ThreadStorages)!.TryPop(out TThreadStorage? threadStorage))
                 return threadStorage;
-            return new T();
+            return TThreadStorage.Create(Unsafe.As<EntitySystem<TThreadStorage>>(this));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly void PushThreadStorage<T>(T threadStorage) where T : new() {
-            Unsafe.As<ConcurrentStack<T>>(ThreadStorages)!.Push(threadStorage);
+        public readonly void PushThreadStorage<TThreadStorage>(TThreadStorage threadStorage)
+            where TThreadStorage : IThreadStorage<TThreadStorage>
+        {
+            Unsafe.As<ConcurrentStack<TThreadStorage>>(ThreadStorages)!.Push(threadStorage);
         }
 
     }

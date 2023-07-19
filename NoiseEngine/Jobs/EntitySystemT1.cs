@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Jobs;
 
-public abstract class EntitySystem<TThreadStorage> : EntitySystem where TThreadStorage : new() {
+public abstract class EntitySystem<TThreadStorage> : EntitySystem
+    where TThreadStorage : IThreadStorage<TThreadStorage>
+{
 
     protected IReadOnlyCollection<TThreadStorage> ThreadStorages {
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
