@@ -12,7 +12,8 @@ namespace NoiseEngine.Generator.Jobs;
 [Generator]
 public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
-    private const string SystemFullName = "NoiseEngine.Jobs.EntitySystem";
+    private const string SystemFullNameT0 = "NoiseEngine.Jobs.EntitySystem";
+    private const string SystemFullNameT1 = "NoiseEngine.Jobs.EntitySystem<TThreadStorage>";
     private const string AffectiveComponentFullName = "NoiseEngine.Jobs.IAffectiveComponent";
     private const string EntityFullName = "NoiseEngine.Jobs.Entity";
     private const string SystemCommandsFullName = "NoiseEngine.Jobs.SystemCommands";
@@ -26,8 +27,13 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                 static (context, _) => {
                     if (
                         context.SemanticModel.GetDeclaredSymbol(context.Node) is not ITypeSymbol typeSymbol ||
-                        typeSymbol.BaseType is null ||
-                        typeSymbol.BaseType.ToDisplayString() != SystemFullName
+                        typeSymbol.BaseType is null || (
+                            typeSymbol.BaseType.ToDisplayString() != SystemFullNameT0 &&
+                            !(
+                                typeSymbol.BaseType.ToDisplayString().StartsWith(SystemFullNameT0 + "<") &&
+                                typeSymbol.BaseType.ToDisplayString().EndsWith(">")
+                            )
+                        ) || typeSymbol.ToDisplayString() == SystemFullNameT1
                     ) {
                         return null!;
                     }
@@ -74,6 +80,15 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         GeneratorHelpers.GenerateNamespaceWithType(builder, system);
         builder.AppendLine();
 
+        string? threadStorageType = system.ChildNodes().OfType<BaseListSyntax>().Single().ChildNodes()
+            .OfType<SimpleBaseTypeSyntax>()
+            .Select(x => x.Type.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString())
+            .SingleOrDefault(x => x.StartsWith(SystemFullNameT0 + "<") && x.EndsWith(">"));
+        if (threadStorageType is not null) {
+            int index = threadStorageType!.IndexOf('<') + 1;
+            threadStorageType = threadStorageType.Substring(index, threadStorageType.Length - index - 1);
+        }
+
         MethodDeclarationSyntax[] methods = system.ChildNodes().OfType<MethodDeclarationSyntax>()
             .Where(x => x.Identifier.Text == "OnUpdateEntity").ToArray();
         if (methods.Length > 1)
@@ -88,7 +103,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         }
 
         (string parameterType, bool isRef, bool isIn, bool isOut, bool isAffective)[] parameters =
-            GenerateInitializeMethod(compilation, builder, onUpdateEntity);
+            GenerateInitializeMethod(compilation, builder, onUpdateEntity, threadStorageType);
 
         foreach ((string parameterType, bool isRef, bool isIn, bool isOut, _) in parameters) {
             if (isIn || isOut) {
@@ -111,14 +126,15 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         }
 
         if (onUpdateEntity is not null)
-            GenerateSystemExecutionMethod(builder, onUpdateEntity, parameters);
+            GenerateSystemExecutionMethod(builder, onUpdateEntity, threadStorageType, parameters);
 
         builder.AppendIndentation().AppendLine("}");
         builder.AppendLine("}");
     }
 
     private (string parameterType, bool isRef, bool isIn, bool isOut, bool isAffective)[] GenerateInitializeMethod(
-        Compilation compilation, StringBuilder builder, MethodDeclarationSyntax? onUpdateEntity
+        Compilation compilation, StringBuilder builder, MethodDeclarationSyntax? onUpdateEntity,
+        string? threadStorageType
     ) {
         builder.AppendIndentation(2)
             .Append("[System.Obsolete(\"").Append(InternalMethodObsoleteMessage).AppendLine("\")]")
@@ -139,7 +155,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
             bool empty = onUpdateEntity.ParameterList.Parameters.All(x => {
                 string s = x.Type!.GetSymbol<INamedTypeSymbol>(compilation).ToDisplayString();
-                return s == EntityFullName || s == SystemCommandsFullName;
+                return s == EntityFullName || s == SystemCommandsFullName || s == threadStorageType;
             });
 
             if (empty) {
@@ -158,7 +174,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                     x => x.ToDisplayString() == AffectiveComponentFullName
                 );
 
-                if (name != EntityFullName && name != SystemCommandsFullName) {
+                if (name != EntityFullName && name != SystemCommandsFullName && name != threadStorageType) {
                     builder.AppendIndentation(4).Append("new ").Append(GeneratorConstants.InternalThings)
                         .Append(".ComponentUsage(typeof(").Append(name).Append("), ").Append(isRef ? "true" : "false")
                         .AppendLine("),");
@@ -179,12 +195,18 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             .Append("_Storage.ComponentWriteAccess = ").Append(componentWriteAccess ? "true" : "false")
             .AppendLine(";");
 
+        if (threadStorageType is not null) {
+            builder.AppendIndentation(3).Append(GeneratorConstants.InternalThings)
+                .Append("_Storage.ThreadStorages = new System.Collections.Concurrent.ConcurrentStack<")
+                .Append(threadStorageType).AppendLine(">();");
+        }
+
         builder.AppendIndentation(2).AppendLine("}").AppendLine();
         return parameters;
     }
 
     private void GenerateSystemExecutionMethod(
-        StringBuilder builder, MethodDeclarationSyntax onUpdateEntity,
+        StringBuilder builder, MethodDeclarationSyntax onUpdateEntity, string? threadStorageType,
         (string parameterType, bool isRef, bool isIn, bool isOut, bool isAffective)[] parameters
     ) {
         builder.AppendIndentation(2)
@@ -208,6 +230,12 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
             "AggressiveInlining | System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]"
         ).Append(content).AppendLine("#endif").AppendLine();
 
+        if (threadStorageType is not null) {
+            builder.AppendIndentation(3).Append(threadStorageType)
+                .Append(" threadStorage = ").Append(GeneratorConstants.InternalThings)
+                .Append("_Storage.PopThreadStorage<").Append(threadStorageType).AppendLine(">();");
+        }
+
         builder.AppendIndentation(3).Append(EntityFullName).AppendLine("? entity;");
         if (parameters.Any(x => x.isAffective)) {
             builder.AppendIndentation(3).AppendLine("bool changeArchetype;");
@@ -218,7 +246,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
         int i = 0;
         foreach ((string parameterType, bool isRef, _, _, _) in parameters) {
-            if (parameterType == EntityFullName || parameterType == SystemCommandsFullName)
+            if (parameterType is EntityFullName or SystemCommandsFullName || parameterType == threadStorageType)
                 continue;
 
             builder.AppendIndentation(3).Append("nint offset").Append(i).Append(" = data.GetOffset<")
@@ -253,7 +281,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
         i = 0;
         foreach ((string parameterType, bool isRef, _, _, _) in parameters) {
-            if (parameterType == EntityFullName || parameterType == SystemCommandsFullName)
+            if (parameterType is EntityFullName or SystemCommandsFullName || parameterType == threadStorageType)
                 continue;
 
             builder.AppendIndentation(4).Append("parameter").Append(i).Append(" = ");
@@ -275,6 +303,8 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                 builder.Append("entity");
             } else if (parameterType == SystemCommandsFullName) {
                 builder.Append("systemCommands");
+            } else if (parameterType == threadStorageType) {
+                builder.Append("threadStorage");
             } else {
                 if (isRef)
                     builder.Append("ref ");
@@ -293,7 +323,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
         i = 0;
         bool first = true;
         foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
-            if (parameterType == EntityFullName || parameterType == SystemCommandsFullName)
+            if (parameterType is EntityFullName or SystemCommandsFullName || parameterType == threadStorageType)
                 continue;
 
             if (!isRef) {
@@ -366,7 +396,7 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
 
         i = 0;
         foreach ((string parameterType, bool isRef, _, _, bool isAffective) in parameters) {
-            if (parameterType == EntityFullName || parameterType == SystemCommandsFullName)
+            if (parameterType is EntityFullName or SystemCommandsFullName || parameterType == threadStorageType)
                 continue;
 
             if (!isRef) {
@@ -378,6 +408,12 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                 .Append(i).AppendLine(".Inner is not null)");
             builder.AppendIndentation(4).Append("data.Changed.Add((observers").Append(i).Append(", changed").Append(i)
                 .AppendLine(".Inner));");
+        }
+
+        if (threadStorageType is not null) {
+            builder.AppendLine();
+            builder.AppendIndentation(3).Append(GeneratorConstants.InternalThings)
+                .AppendLine("_Storage.PushThreadStorage(threadStorage);");
         }
 
         builder.AppendIndentation(2).AppendLine("}").AppendLine();
