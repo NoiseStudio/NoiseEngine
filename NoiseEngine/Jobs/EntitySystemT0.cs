@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Collections.Concurrent;
 using NoiseEngine.Threading;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -95,6 +96,7 @@ public abstract class EntitySystem : IDisposable {
 
         public ComponentUsage[] UsedComponents { get; set; }
         public bool ComponentWriteAccess { get; set; }
+        public object? ThreadStorages { get; set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe static ref T NullRef<T>() {
@@ -136,6 +138,21 @@ public abstract class EntitySystem : IDisposable {
             return !oldValue.Equals(newValue);
         }
 
+        public readonly TThreadStorage PopThreadStorage<TThreadStorage>()
+            where TThreadStorage : IThreadStorage<TThreadStorage>
+        {
+            if (Unsafe.As<ConcurrentStack<TThreadStorage>>(ThreadStorages)!.TryPop(out TThreadStorage? threadStorage))
+                return threadStorage;
+            return TThreadStorage.Create(Unsafe.As<EntitySystem<TThreadStorage>>(this));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly void PushThreadStorage<TThreadStorage>(TThreadStorage threadStorage)
+            where TThreadStorage : IThreadStorage<TThreadStorage>
+        {
+            Unsafe.As<ConcurrentStack<TThreadStorage>>(ThreadStorages)!.Push(threadStorage);
+        }
+
     }
 
     [Obsolete("This field is internal and is not part of the API. Do not use.")]
@@ -153,7 +170,7 @@ public abstract class EntitySystem : IDisposable {
         throw new InvalidOperationException("NoiseEngine.Generator did not generate the code.");
     }
 
-    #endregion
+#endregion
 
     internal readonly ConcurrentList<Archetype> archetypes = new ConcurrentList<Archetype>();
 
