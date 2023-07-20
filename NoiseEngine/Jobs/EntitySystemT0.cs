@@ -382,7 +382,7 @@ public abstract class EntitySystem : IDisposable {
         if (system == this)
             throw new ArgumentException("Entity system cannot be dependency on itself.");
         lock (dependencies)
-            dependencies.Add(system, system.cycleCount);
+            dependencies.Add(system, system.cycleCount - 1);
     }
 
     /// <summary>

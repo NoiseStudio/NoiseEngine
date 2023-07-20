@@ -2,6 +2,7 @@
 using NoiseEngine.Inputs;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
+using NoiseEngine.Physics.Collision;
 using NoiseEngine.Physics.FrameSmoothing;
 using NoiseEngine.Physics.Simulation;
 
@@ -29,10 +30,25 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
         );
 
         scene.AddFrameDependentSystem(new RigidBodyFrameSmoothingSystem());
-        scene.AddSystem(new SimulationSystem(), 150);
+        double cycleTime = 150;
+        CollisionSpace space = new CollisionSpace();
+
+        SimulationSystem simulationSystem = new SimulationSystem(space);
+        ColliderSpaceRegisterSystem colliderSpaceRegisterSystem = new ColliderSpaceRegisterSystem(space);
+        CollisionDetectionSystem collisionDetectionSystem = new CollisionDetectionSystem(space);
+
+        simulationSystem.AddDependency(collisionDetectionSystem);
+        colliderSpaceRegisterSystem.AddDependency(collisionDetectionSystem);
+
+        collisionDetectionSystem.AddDependency(simulationSystem);
+        collisionDetectionSystem.AddDependency(colliderSpaceRegisterSystem);
+
+        scene.AddSystem(simulationSystem, cycleTime);
+        scene.AddSystem(colliderSpaceRegisterSystem, cycleTime);
+        scene.AddSystem(collisionDetectionSystem, cycleTime);
     }
 
-    private void OnUpdateEntity(NotUsedComponent notUsed) {
+    private void OnUpdateEntity() {
     }
 
 }

@@ -28,7 +28,7 @@ public class PhysicsTest : ApplicationTestEnvironment {
                 new Vector3<float>(0, -105, 0), Quaternion<float>.Identity, new Vector3<float>(200, 200, 200)
             ),
             new MeshRendererComponent(scene.Primitive.GetSphereMesh(), scene.Primitive.DefaultMaterial),
-            new ColliderComponent(new SphereCollider(false, 100))
+            new ColliderComponent(new SphereCollider())
         );
 
         for (int x = 0; x < 1; x += 2) {

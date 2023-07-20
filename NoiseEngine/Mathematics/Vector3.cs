@@ -57,6 +57,18 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     /// <summary>
+    /// Returns greatest component of this <see cref="Vector3{T}"/>.
+    /// </summary>
+    /// <returns>
+    /// <see cref="X"/> if it greater than <see cref="Y"/> or <see cref="Z"/>; otherwise <see cref="Y"/> if it greater
+    /// than <see cref="Z"/>; otherwise <see cref="Z"/>.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T MaxComponent() {
+        return T.Max(X, T.Max(Y, Z));
+    }
+
+    /// <summary>
     /// Calculates dot product of this <see cref="Vector3{T}"/> and <paramref name="rhs"/>.
     /// </summary>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>

@@ -1,8 +1,16 @@
-﻿namespace NoiseEngine.Physics;
+﻿using NoiseEngine.Mathematics;
+using System.Runtime.CompilerServices;
+
+namespace NoiseEngine.Physics;
 
 public readonly record struct SphereCollider(bool IsTrigger = false, float Radius = 1f) {
 
     public SphereCollider() : this(false) {
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal float ScaledRadius(Vector3<float> scale) {
+        return Radius * scale.MaxComponent();
     }
 
     /// <summary>

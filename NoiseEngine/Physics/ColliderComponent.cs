@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Jobs;
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics;
@@ -37,6 +38,12 @@ public readonly struct ColliderComponent : IComponent {
             throw new InvalidCastException($"Cannot cast {collider.Type} to {type}.");
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal readonly SphereCollider UnsafeCastToSphereCollider() {
+        Debug.Assert(Type == ColliderType.Sphere);
+        return new SphereCollider(IsTrigger, inner.SphereRadius);
+    }
+
     /// <summary>
     /// Casts <paramref name="collider"/> to <see cref="SphereCollider"/>.
     /// </summary>
@@ -46,7 +53,7 @@ public readonly struct ColliderComponent : IComponent {
     /// </exception>
     public static explicit operator SphereCollider(ColliderComponent collider) {
         AssertType(collider, ColliderType.Sphere);
-        return new SphereCollider(collider.IsTrigger, collider.inner.SphereRadius);
+        return collider.UnsafeCastToSphereCollider();
     }
 
 }

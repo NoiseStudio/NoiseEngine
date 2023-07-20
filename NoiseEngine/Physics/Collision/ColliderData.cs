@@ -1,3 +1,9 @@
-﻿namespace NoiseEngine.Physics.Collision;
+﻿using NoiseEngine.Jobs;
 
-internal readonly record struct ColliderData(ColliderComponent Component);
+namespace NoiseEngine.Physics.Collision;
+
+internal readonly record struct ColliderData(
+    Entity Entity,
+    ColliderTransform Transform,
+    ColliderComponent Collider
+);
