@@ -30,22 +30,27 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
         );
 
         scene.AddFrameDependentSystem(new RigidBodyFrameSmoothingSystem());
-        double cycleTime = 150;
+        double cycleTime = 10;
         CollisionSpace space = new CollisionSpace();
+        ContactPointsBuffer contactPoints = new ContactPointsBuffer();
 
         SimulationSystem simulationSystem = new SimulationSystem(space);
         ColliderSpaceRegisterSystem colliderSpaceRegisterSystem = new ColliderSpaceRegisterSystem(space);
-        CollisionDetectionSystem collisionDetectionSystem = new CollisionDetectionSystem(space);
+        CollisionDetectionSystem collisionDetectionSystem = new CollisionDetectionSystem(space, contactPoints);
+        CollisionResolveSystem collisionResolveSystem = new CollisionResolveSystem(contactPoints);
 
-        simulationSystem.AddDependency(collisionDetectionSystem);
+        simulationSystem.AddDependency(collisionResolveSystem);
         colliderSpaceRegisterSystem.AddDependency(collisionDetectionSystem);
 
         collisionDetectionSystem.AddDependency(simulationSystem);
         collisionDetectionSystem.AddDependency(colliderSpaceRegisterSystem);
 
+        collisionResolveSystem.AddDependency(collisionDetectionSystem);
+
         scene.AddSystem(simulationSystem, cycleTime);
         scene.AddSystem(colliderSpaceRegisterSystem, cycleTime);
         scene.AddSystem(collisionDetectionSystem, cycleTime);
+        scene.AddSystem(collisionResolveSystem, cycleTime);
     }
 
     private void OnUpdateEntity() {

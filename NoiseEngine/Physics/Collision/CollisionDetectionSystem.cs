@@ -10,13 +10,15 @@ namespace NoiseEngine.Physics.Collision;
 internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionDetectionThreadStorage> {
 
     private readonly CollisionSpace space;
+    private readonly ContactPointsBuffer buffer;
 
-    public CollisionDetectionSystem(CollisionSpace space) {
+    public CollisionDetectionSystem(CollisionSpace space, ContactPointsBuffer buffer) {
         this.space = space;
+        this.buffer = buffer;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void FromSphere(
+    private void FromSphere(
         Entity entity, CollisionDetectionThreadStorage storage, SphereCollider current,
         ColliderTransform currentTransform
     ) {
@@ -28,7 +30,8 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
                 switch (other.Collider.Type) {
                     case ColliderType.Sphere:
                         SphereToSphere.Collide(
-                            current, currentTransform, other.Collider.UnsafeCastToSphereCollider(), other.Transform
+                            buffer, current, currentTransform, entity, other.Collider.UnsafeCastToSphereCollider(),
+                            other.Transform
                         );
                         break;
                     default:
@@ -38,16 +41,20 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
         }
     }
 
+    protected override void OnUpdate() {
+        buffer.Clear();
+    }
+
     protected override void OnLateUpdate() {
         space.ClearColliders();
     }
 
     private void OnUpdateEntity(
         Entity entity, CollisionDetectionThreadStorage storage, TransformComponent transform,
-        RigidBodyDataComponent data, ColliderComponent collider
+        RigidBodyMiddleDataComponent middle, ColliderComponent collider
     ) {
         ColliderTransform currentTransform = new ColliderTransform(
-            data.TargetPosition, transform.Rotation, transform.Scale
+            middle.Position, transform.Rotation, transform.Scale
         );
         space.GetNearColliders(storage.ColliderDataBuffer);
 

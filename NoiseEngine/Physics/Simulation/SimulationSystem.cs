@@ -1,8 +1,6 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.Jobs;
 using NoiseEngine.Physics.Collision;
-using System.Linq;
-using System;
 
 namespace NoiseEngine.Physics.Simulation;
 
@@ -26,17 +24,16 @@ internal sealed partial class SimulationSystem : EntitySystem {
     }
 
     private void OnUpdateEntity(
-        Entity entity, ref RigidBodyComponent rigidBody, ref RigidBodyDataComponent data, TransformComponent transform,
-        ColliderComponent collider
+        Entity entity, ref RigidBodyComponent rigidBody, ref RigidBodyMiddleDataComponent middle,
+        RigidBodyFinalDataComponent data, TransformComponent transform, ColliderComponent collider
     ) {
-        rigidBody = rigidBody with { Velocity = rigidBody.Velocity with {
+        rigidBody.Velocity = rigidBody.Velocity = rigidBody.Velocity with {
             Y = rigidBody.Velocity.Y - gravityAcceleration
-        } };
+        };
 
-        data = data with { TargetPosition = data.TargetPosition + rigidBody.Velocity * DeltaTimeF };
-
+        middle.Position = data.TargetPosition + rigidBody.Velocity * DeltaTimeF;
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            data.TargetPosition, transform.Rotation, transform.Scale
+            middle.Position, transform.Rotation, transform.Scale
         ), collider));
     }
 
