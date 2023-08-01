@@ -31,7 +31,7 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
                     case ColliderType.Sphere:
                         SphereToSphere.Collide(
                             buffer, current, currentTransform, entity, other.Collider.UnsafeCastToSphereCollider(),
-                            other.Transform
+                            other.Transform, other.Entity
                         );
                         break;
                     default:
@@ -51,10 +51,10 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
 
     private void OnUpdateEntity(
         Entity entity, CollisionDetectionThreadStorage storage, TransformComponent transform,
-        RigidBodyMiddleDataComponent middle, ColliderComponent collider
+        RigidBodyComponent rigidBody, RigidBodyMiddleDataComponent middle, ColliderComponent collider
     ) {
         ColliderTransform currentTransform = new ColliderTransform(
-            middle.Position, transform.Rotation, transform.Scale
+            middle.Position, transform.Rotation, transform.Scale, rigidBody.Velocity, true
         );
         space.GetNearColliders(storage.ColliderDataBuffer);
 

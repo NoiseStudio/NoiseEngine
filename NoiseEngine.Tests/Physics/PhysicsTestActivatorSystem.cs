@@ -30,7 +30,7 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
         );
 
         scene.AddFrameDependentSystem(new RigidBodyFrameSmoothingSystem());
-        double cycleTime = 10;
+        double cycleTime = 3;
         CollisionSpace space = new CollisionSpace();
         ContactPointsBuffer contactPoints = new ContactPointsBuffer();
 

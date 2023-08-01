@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.Jobs;
+using NoiseEngine.Mathematics;
 using System;
 using System.Linq;
 
@@ -16,8 +17,8 @@ internal partial class ColliderSpaceRegisterSystem : EntitySystem {
 
     private void OnUpdateEntity(Entity entity, TransformComponent transform, ColliderComponent collider) {
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            transform.Position, transform.Rotation, transform.Scale),
-        collider));
+            transform.Position, transform.Rotation, transform.Scale, Vector3<float>.Zero, false
+        ), collider));
     }
 
 }

@@ -33,7 +33,7 @@ internal sealed partial class SimulationSystem : EntitySystem {
 
         middle.Position = data.TargetPosition + rigidBody.Velocity * DeltaTimeF;
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            middle.Position, transform.Rotation, transform.Scale
+            middle.Position, transform.Rotation, transform.Scale, rigidBody.Velocity, true
         ), collider));
     }
 

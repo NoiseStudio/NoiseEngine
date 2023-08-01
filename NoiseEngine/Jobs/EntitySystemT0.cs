@@ -504,11 +504,11 @@ public abstract class EntitySystem : IDisposable {
 
         OnLateUpdate();
         lock (workLocker) {
-            cycleCount++;
             lock (dependencies) {
                 foreach (EntitySystem system in Dependencies)
                     dependencies[system] = system.cycleCount;
             }
+            cycleCount++;
 
             isWorking = false;
             workResetEvent.Set();

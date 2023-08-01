@@ -4,6 +4,7 @@ using NoiseEngine.Mathematics;
 using NoiseEngine.Physics;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
+using NoiseEngine.Tests.Jobs;
 using System.Threading;
 
 namespace NoiseEngine.Tests.Physics;
@@ -32,13 +33,16 @@ public class PhysicsTest : ApplicationTestEnvironment {
         );
 
         for (int x = 0; x < 1; x += 2) {
-            for (int y = 0; y < 1; y += 2) {
-                scene.Spawn(
-                    new TransformComponent(new Vector3<float>(x, 0, y)),
-                    new MeshRendererComponent(scene.Primitive.GetSphereMesh(), scene.Primitive.DefaultMaterial),
-                    new RigidBodyComponent(),
-                    new ColliderComponent(new SphereCollider())
-                );
+            for (int y = 0; y < 10; y += 2) {
+                for (int z = 0; z < 1; z += 2) {
+                    scene.Spawn(
+                        new TransformComponent(new Vector3<float>(x, y * 5 + 10, z)),
+                        new MeshRendererComponent(scene.Primitive.GetSphereMesh(), scene.Primitive.DefaultMaterial),
+                        new RigidBodyComponent(),
+                        new ColliderComponent(new SphereCollider()),
+                        new MockComponentA("ds", null)
+                    );
+                }
             }
         }
 

@@ -20,7 +20,9 @@ internal class ContactPointsBufferSegment {
 
             while (index >= segment.Size) {
                 index -= segment.Size;
-                segment = segment.Next ?? throw new UnreachableException();
+                if (segment.Next is null)
+                    segment.CreateNext();
+                segment = segment.Next!;
             }
 
             return ref segment.buffer[index];
