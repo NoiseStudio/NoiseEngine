@@ -33,14 +33,13 @@ public class PhysicsTest : ApplicationTestEnvironment {
         );
 
         for (int x = 0; x < 1; x += 2) {
-            for (int y = 0; y < 10; y += 2) {
+            for (int y = 0; y < 200; y += 2) {
                 for (int z = 0; z < 1; z += 2) {
                     scene.Spawn(
                         new TransformComponent(new Vector3<float>(x, y * 5 + 10, z)),
                         new MeshRendererComponent(scene.Primitive.GetSphereMesh(), scene.Primitive.DefaultMaterial),
                         new RigidBodyComponent(),
-                        new ColliderComponent(new SphereCollider()),
-                        new MockComponentA("ds", null)
+                        new ColliderComponent(new SphereCollider())
                     );
                 }
             }

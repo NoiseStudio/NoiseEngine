@@ -23,12 +23,6 @@ internal static class SphereToSphere {
         if (otherTransform.IsRigidBody)
             depth /= 2;
 
-        Vector3<float> relativeVelocity = currentTransform.Velocity - otherTransform.Velocity;
-        float e = 0.5f;
-        float j = -(1 + e) * relativeVelocity.Dot(normal);
-        if (otherTransform.IsRigidBody)
-            j /= 2;
-
         buffer.Add(currentEntity, new ContactPoint(
             normal,
             depth,

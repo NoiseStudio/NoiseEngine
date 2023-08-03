@@ -7,5 +7,6 @@ namespace NoiseEngine.Physics;
 public record struct RigidBodyComponent(
     float Mass = 1f,
     Vector3<float> CenterOfMass = default,
-    Vector3<float> Velocity = default
+    Vector3<float> Velocity = default,
+    byte Sleeped = 0
 ) : IComponent;

@@ -27,13 +27,16 @@ internal sealed partial class SimulationSystem : EntitySystem {
         Entity entity, ref RigidBodyComponent rigidBody, ref RigidBodyMiddleDataComponent middle,
         RigidBodyFinalDataComponent data, TransformComponent transform, ColliderComponent collider
     ) {
-        rigidBody.Velocity = rigidBody.Velocity = rigidBody.Velocity with {
-            Y = rigidBody.Velocity.Y - gravityAcceleration
-        };
+        if (rigidBody.Sleeped < 2) {
+            rigidBody.Velocity = rigidBody.Velocity = rigidBody.Velocity with {
+                Y = rigidBody.Velocity.Y - gravityAcceleration
+            };
 
-        middle.Position = data.TargetPosition + rigidBody.Velocity * DeltaTimeF;
+            middle.Position = data.TargetPosition + rigidBody.Velocity * DeltaTimeF;
+        }
+
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            middle.Position, transform.Rotation, transform.Scale, rigidBody.Velocity, true
+            middle.Position, transform.Rotation, transform.Scale, rigidBody.Velocity, rigidBody.Sleeped < 2
         ), collider));
     }
 

@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Collections.Concurrent;
+using NoiseEngine.Common;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
@@ -62,7 +63,7 @@ internal class Archetype {
             columnType = typeof(ArchetypeColumn<,>).MakeGenericType(typeof(EntityInternalComponent), columnType);
 
         this.columnType = columnType;
-        RecordSize = offset;
+        RecordSize = ManagedUtils.SizeOf(columnType);
 
         foreach ((Type type, _, int affectiveHashCode) in componentTypes)
             HashCodes.Add(type, type.GetHashCode() + affectiveHashCode * 16777619);
