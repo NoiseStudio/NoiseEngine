@@ -6,6 +6,8 @@ internal readonly record struct ColliderTransform(
     Vector3<float> Position,
     Quaternion<float> Rotation,
     Vector3<float> Scale,
-    Vector3<float> Velocity,
-    bool IsRigidBody
+    Vector3<float> LinearVelocity,
+    float InverseMass,
+    // -(1f + Restitution)
+    float RestitutionPlusOneNegative
 );

@@ -2,7 +2,7 @@
 
 public class PhysicsSettings {
 
-    private const double DefaultGravity = 9.80665;
+    private const double DefaultGravity = -9.80665;
 
     private double gravity = DefaultGravity;
 

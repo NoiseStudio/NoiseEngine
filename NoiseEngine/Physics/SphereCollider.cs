@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics;
 
-public readonly record struct SphereCollider(bool IsTrigger = false, float Radius = 1f) {
+public readonly record struct SphereCollider(bool IsTrigger = false, float Radius = 0.5f) {
 
     public SphereCollider() : this(false) {
     }

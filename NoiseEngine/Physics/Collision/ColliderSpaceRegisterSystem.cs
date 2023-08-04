@@ -16,8 +16,12 @@ internal partial class ColliderSpaceRegisterSystem : EntitySystem {
     }
 
     private void OnUpdateEntity(Entity entity, TransformComponent transform, ColliderComponent collider) {
+        // Immovable objects have infinite mass.
+        // 1f / inf == 0f
+        const float InverseMass = 0f;
+
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            transform.Position, transform.Rotation, transform.Scale, Vector3<float>.Zero, false
+            transform.Position, transform.Rotation, transform.Scale, Vector3<float>.Zero, InverseMass, -1.5f
         ), collider));
     }
 

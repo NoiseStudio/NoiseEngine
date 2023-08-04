@@ -1,5 +1,4 @@
 ﻿using NoiseEngine.Collections.Concurrent;
-using NoiseEngine.Common;
 using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
@@ -42,13 +41,6 @@ internal class Archetype {
         HashCode = hashCode;
         ComponentTypes = componentTypes;
 
-        Offsets.Add(typeof(EntityInternalComponent), 0);
-        nint offset = Unsafe.SizeOf<EntityInternalComponent>();
-        foreach ((Type type, int size, _) in componentTypes) {
-            Offsets.Add(type, offset);
-            offset += size;
-        }
-
         Type? columnType = null;
         for (int i = componentTypes.Length - 1; i >= 0; i--) {
             if (columnType is null)
@@ -57,13 +49,36 @@ internal class Archetype {
                 columnType = typeof(ArchetypeColumn<,>).MakeGenericType(componentTypes[i].type, columnType);
         }
 
-        if (columnType is null)
+        if (columnType is null) {
             columnType = typeof(EntityInternalComponent);
-        else
+            Offsets.Add(typeof(EntityInternalComponent), 0);
+        } else {
             columnType = typeof(ArchetypeColumn<,>).MakeGenericType(typeof(EntityInternalComponent), columnType);
+            ArchetypeColumn<nint, nint> offsets = (ArchetypeColumn<nint, nint>)columnType.GetMethod(
+                nameof(ArchetypeColumn<nint, nint>.GetOffsets)
+            )!.Invoke(null, null)!;
+
+            Offsets.Add(typeof(EntityInternalComponent), offsets.Element1);
+            nint offset = offsets.Element2;
+
+            Type columnTypeFragment = columnType;
+            for (int i = 0; i < componentTypes.Length - 1; i++) {
+                columnTypeFragment = columnTypeFragment.GetField(
+                    nameof(ArchetypeColumn<nint, nint>.Element2)
+                )!.FieldType;
+                offsets = (ArchetypeColumn<nint, nint>)columnTypeFragment.GetMethod(
+                    nameof(ArchetypeColumn<nint, nint>.GetOffsets)
+                )!.Invoke(null, null)!;
+
+                Offsets.Add(componentTypes[i].type, offset + offsets.Element1);
+                offset += offsets.Element2;
+            }
+
+            Offsets.Add(componentTypes[componentTypes.Length - 1].type, offset);
+        }
 
         this.columnType = columnType;
-        RecordSize = ManagedUtils.SizeOf(columnType);
+        RecordSize = (nint)columnType.GetMethod(nameof(ArchetypeColumn<nint, nint>.GetSize))!.Invoke(null, null)!;
 
         foreach ((Type type, _, int affectiveHashCode) in componentTypes)
             HashCodes.Add(type, type.GetHashCode() + affectiveHashCode * 16777619);

@@ -3,6 +3,7 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -47,7 +48,12 @@ public abstract class EntitySystem : IDisposable {
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public unsafe Entity? GetInternalComponent(nint pointer) {
-                return Unsafe.ReadUnaligned<EntityInternalComponent>((void*)pointer).Entity;
+                Entity? entity = Unsafe.Read<EntityInternalComponent>((void*)pointer).Entity;
+#if (DEBUG)
+                if (entity is not null)
+                    Debug.Assert(!entity.IsDespawned);
+#endif
+                return entity;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
