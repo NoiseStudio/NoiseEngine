@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Mathematics;
+using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics.Collision;
 
@@ -10,4 +11,11 @@ internal readonly record struct ColliderTransform(
     float InverseMass,
     // -(1f + Restitution)
     float RestitutionPlusOneNegative
-);
+) {
+
+    public bool IsMovable {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => InverseMass != 0;
+    }
+
+}

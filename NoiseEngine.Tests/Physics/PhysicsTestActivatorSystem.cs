@@ -4,6 +4,7 @@ using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Physics.Collision;
 using NoiseEngine.Physics.FrameSmoothing;
+using NoiseEngine.Physics.Internal;
 using NoiseEngine.Physics.Simulation;
 
 namespace NoiseEngine.Tests.Physics;
@@ -51,6 +52,9 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
         scene.AddSystem(colliderSpaceRegisterSystem, cycleTime);
         scene.AddSystem(collisionDetectionSystem, cycleTime);
         scene.AddSystem(collisionResolveSystem, cycleTime);
+
+        RigidBodyInitializerSystem initalizer = new RigidBodyInitializerSystem();
+        scene.AddSystem(initalizer, cycleTime);
     }
 
     private void OnUpdateEntity() {

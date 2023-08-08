@@ -18,46 +18,49 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
     ) {
         ContactPointsBufferIterator iterator2 = contactPoints.IterateThrough(entity);
         if (iterator2.MoveNext()) {
-            for (int i = 0; i < 1; i++) {
-                bool yBlocked = false;
-                ContactPointsBufferIterator iterator = contactPoints.IterateThrough(entity);
-                while (iterator.MoveNext()) {
-                    if (iterator.Current.Normal.Y < 0)
-                        yBlocked = true;
+            bool yBlocked = false;
+            ContactPointsBufferIterator iterator = contactPoints.IterateThrough(entity);
+            while (iterator.MoveNext()) {
+                if (iterator.Current.Normal.Y < 0)
+                    yBlocked = true;
+            }
+
+            iterator = contactPoints.IterateThrough(entity);
+            while (iterator.MoveNext()) {
+                if (iterator.Current.Normal.Y > 0 && yBlocked)
+                    continue;
+
+                middle.Position -= iterator.Current.Normal * iterator.Current.Depth;
+
+                if (iterator.Current.Depth >= 0.5f) {
+                    middle.Position += new Vector3<float>(
+                        (Random.Shared.NextSingle() - 0.5f) / 10000f,
+                        (Random.Shared.NextSingle() - 0.5f) / 10000f,
+                        (Random.Shared.NextSingle() - 0.5f) / 10000f
+                    );
                 }
 
-                iterator = contactPoints.IterateThrough(entity);
-                while (iterator.MoveNext()) {
-                    if (iterator.Current.Normal.Y > 0 && yBlocked)
-                        continue;
+                Vector3<float> ra = iterator.Current.Position - middle.Position; // Change to center of mass.
+                Vector3<float> angularVelocityChange = iterator.Current.Normal.Cross(ra) * 10;
+                float jA = rigidBody.InverseMass + iterator.Current.Normal.Dot(angularVelocityChange.Cross(ra));
 
-                    Vector3<float> normal = iterator.Current.Normal;
-                    middle.Position -= normal * iterator.Current.Depth;
+                Vector3<float> relativeVelocity = rigidBody.LinearVelocity - iterator.Current.OtherVelocity;
+                float j =
+                    iterator.Current.MinRestitutionPlusOneNegative * relativeVelocity.Dot(iterator.Current.Normal);
+                j /= jA + iterator.Current.SumInverseMass;
 
-                    if (iterator.Current.Depth > 0.5f) {
-                        normal = Quaternion.EulerRadians(
-                            Random.Shared.NextSingle() / 10000f,
-                            Random.Shared.NextSingle() / 10000f,
-                            Random.Shared.NextSingle() / 10000f
-                        ) * normal;
-                        normal = normal.Normalize();
-                    }
+                rigidBody.LinearVelocity += iterator.Current.Normal * (j * rigidBody.InverseMass);
+                rigidBody.AngularVelocity -= angularVelocityChange;
+            }
 
-                    Vector3<float> relativeVelocity = rigidBody.LinearVelocity - iterator.Current.OtherVelocity;
-                    float j = iterator.Current.MinRestitutionPlusOneNegative * relativeVelocity.Dot(normal);
-                    j /= iterator.Current.SumInverseMass;
-                    j *= rigidBody.InverseMass;
-                    rigidBody.LinearVelocity += normal * j;
-                }
+            if (data.TargetPosition.DistanceSquared(middle.Position) <= 0.01f * 0.01f) {
+                rigidBody.Sleeped = 20;
+                return;
             }
         }
 
-        if (data.TargetPosition.DistanceSquared(middle.Position) <= 0.005f * 0.005f) {
-            if (rigidBody.Sleeped < 2)
-                rigidBody.Sleeped++;
-        } else {
-            rigidBody.Sleeped = 0;
-        }
+        if (rigidBody.Sleeped > 0)
+            rigidBody.Sleeped--;
 
         data.TargetPosition = middle.Position;
         data.MaxDistance = 1 / DeltaTimeF;

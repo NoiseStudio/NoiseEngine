@@ -3,13 +3,14 @@ using NoiseEngine.Mathematics;
 
 namespace NoiseEngine.Physics;
 
-[AppendComponentDefault(typeof(RigidBodyMiddleDataComponent), typeof(RigidBodyFinalDataComponent))]
+[AppendComponentDefault(typeof(RigidBodyFinalDataComponent))]
 public record struct RigidBodyComponent : IComponent {
 
     private float mass = 1f;
 
     public Vector3<float> CenterOfMass { get; set; }
     public Vector3<float> LinearVelocity { get; set; }
+    public Vector3<float> AngularVelocity { get; set; }
 
     public float Mass {
         readonly get => mass;

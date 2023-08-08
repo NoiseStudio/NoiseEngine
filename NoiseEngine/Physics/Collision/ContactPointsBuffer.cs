@@ -11,7 +11,7 @@ internal class ContactPointsBuffer {
 
     private readonly ConcurrentDictionary<Entity, int> pointers = new ConcurrentDictionary<Entity, int>();
 
-    private ContactPointsBufferSegment points = new ContactPointsBufferSegment(256);
+    private ContactPointsBufferSegment points = new ContactPointsBufferSegment(2560);
     private int nextPoint = 1;
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]

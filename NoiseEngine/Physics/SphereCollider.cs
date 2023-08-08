@@ -8,6 +8,11 @@ public readonly record struct SphereCollider(bool IsTrigger = false, float Radiu
     public SphereCollider() : this(false) {
     }
 
+    internal static Vector3<float> ComputeComInertiaTensor(float mass, float radius) {
+        float a = radius * radius * mass * 0.4f;
+        return new Vector3<float>(a, a, a);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal float ScaledRadius(Vector3<float> scale) {
         return Radius * scale.MaxComponent();

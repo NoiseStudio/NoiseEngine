@@ -5,6 +5,7 @@ namespace NoiseEngine.Physics;
 
 public readonly record struct ContactPoint {
 
+    public Vector3<float> Position { get; }
     public Vector3<float> Normal { get; }
     public float Depth { get; }
 
@@ -15,9 +16,10 @@ public readonly record struct ContactPoint {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ContactPoint(
-        Vector3<float> normal, float depth, Vector3<float> otherVelocity, float inverseMass, float sumInverseMass,
-        float minRestitutionPlusOneNegative
+        Vector3<float> position, Vector3<float> normal, float depth, Vector3<float> otherVelocity, float inverseMass,
+        float sumInverseMass, float minRestitutionPlusOneNegative
     ) {
+        Position = position;
         Normal = normal;
         Depth = depth;
         OtherVelocity = otherVelocity;

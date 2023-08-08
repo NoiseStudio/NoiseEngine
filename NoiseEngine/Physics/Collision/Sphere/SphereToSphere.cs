@@ -12,21 +12,35 @@ internal static class SphereToSphere {
         ContactPointsBuffer buffer, SphereCollider current, ColliderTransform currentTransform, Entity currentEntity,
         SphereCollider other, ColliderTransform otherTransform, Entity otherEntity
     ) {
-        float c = current.ScaledRadius(currentTransform.Scale) + other.ScaledRadius(otherTransform.Scale);
+        float currentRadius = current.ScaledRadius(currentTransform.Scale);
+        float c = currentRadius + other.ScaledRadius(otherTransform.Scale);
         float squaredDistance = currentTransform.Position.DistanceSquared(otherTransform.Position);
         if (squaredDistance > c * c)
             return;
 
         float depth = c - MathF.Sqrt(squaredDistance);
-        if (otherTransform.InverseMass != 0f)
+        Vector3<float> normal = (otherTransform.Position - currentTransform.Position).Normalize();
+        Vector3<float> contactPoint;
+        float jB;
+
+        if (otherTransform.IsMovable) {
             depth *= 0.5f;
+            contactPoint = normal * (currentRadius - depth) + currentTransform.Position;
+
+            Vector3<float> rb = contactPoint - otherTransform.Position; // Change to center of mass.
+            jB = otherTransform.InverseMass + normal.Dot(normal.Cross(rb).Cross(rb));
+        } else {
+            contactPoint = normal * (currentRadius - depth) + currentTransform.Position;
+            jB = 0;
+        }
 
         buffer.Add(currentEntity, new ContactPoint(
-            (otherTransform.Position - currentTransform.Position).Normalize(),
+            contactPoint,
+            normal,
             depth,
             otherTransform.LinearVelocity,
             currentTransform.InverseMass,
-            currentTransform.InverseMass + otherTransform.InverseMass,
+            jB,//currentTransform.InverseMass + otherTransform.InverseMass,
             MathF.Max(currentTransform.RestitutionPlusOneNegative, otherTransform.RestitutionPlusOneNegative)
         ));
     }
