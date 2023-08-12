@@ -46,9 +46,9 @@ public class Matrix3x3Test {
 
     private Matrix3x3<T> FromSpan<T>(ReadOnlySpan<T> data) where T : INumber<T> {
         return new Matrix3x3<T>(
-            data[0], data[1], data[2],
-            data[3], data[4], data[5],
-            data[6], data[7], data[8]
+            new Vector3<T>(data[0], data[1], data[2]),
+            new Vector3<T>(data[3], data[4], data[5]),
+            new Vector3<T>(data[6], data[7], data[8])
         );
     }
 

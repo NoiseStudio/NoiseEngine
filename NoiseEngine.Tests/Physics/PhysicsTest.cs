@@ -34,7 +34,7 @@ public class PhysicsTest : ApplicationTestEnvironment {
         );
 
         for (int x = 0; x < 1; x += 2) {
-            for (int y = 0; y < 1; y += 2) {
+            for (int y = 0; y < 40; y += 2) {
                 for (int z = 0; z < 1; z += 2) {
                     scene.Spawn(
                         new TransformComponent(new Vector3<float>(x, y * 3 + 4.5f, z)),

@@ -12,7 +12,10 @@ internal sealed partial class RigidBodyInitializerSystem : EntitySystem {
         );
     }
 
-    private void OnUpdateEntity(Entity entity, SystemCommands commands, TransformComponent transform) {
+    private void OnUpdateEntity(
+        Entity entity, SystemCommands commands, ref RigidBodyComponent rigidBody, TransformComponent transform
+    ) {
+        rigidBody.RecalculateProperties(entity);
         commands.GetEntity(entity).Insert(new RigidBodyMiddleDataComponent(transform.Position));
     }
 

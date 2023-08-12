@@ -12,7 +12,9 @@ internal sealed partial class RigidBodyFrameSmoothingSystem : EntitySystem {
                 LastPosition = transform.Position
             };
         } else {
-            transform = transform with { Position = transform.Position.Lerp(rigidBodyData.TargetPosition, 1) };
+            transform = transform with { Position = transform.Position.Lerp(
+                rigidBodyData.TargetPosition, DeltaTimeF * rigidBodyData.SmoothingMultipler
+            ) };
             rigidBodyData = rigidBodyData with { LastPosition = transform.Position };
         }
     }

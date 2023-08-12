@@ -8,9 +8,13 @@ public readonly record struct SphereCollider(bool IsTrigger = false, float Radiu
     public SphereCollider() : this(false) {
     }
 
-    internal static Vector3<float> ComputeComInertiaTensor(float mass, float radius) {
+    internal static Matrix3x3<float> ComputeComInertiaTensorMatrix(float mass, float radius) {
         float a = radius * radius * mass * 0.4f;
-        return new Vector3<float>(a, a, a);
+        return new Matrix3x3<float>(
+            new Vector3<float>(a, 0, 0),
+            new Vector3<float>(0, a, 0),
+            new Vector3<float>(0, 0, a)
+        );
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

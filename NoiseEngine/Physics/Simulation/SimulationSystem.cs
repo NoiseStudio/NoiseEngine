@@ -2,7 +2,6 @@
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Physics.Collision;
-using System;
 
 namespace NoiseEngine.Physics.Simulation;
 
@@ -43,8 +42,8 @@ internal sealed partial class SimulationSystem : EntitySystem {
         }
 
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            middle.Position, transform.Rotation, transform.Scale, rigidBody.LinearVelocity,
-            rigidBody.Sleeped < 20 ? rigidBody.InverseMass : 0, -1.5f
+            middle.Position, middle.Position + rigidBody.CenterOfMass, transform.Scale, rigidBody.LinearVelocity,
+            rigidBody.InverseInertiaTensorMatrix, rigidBody.Sleeped < 20 ? rigidBody.InverseMass : 0, -1.5f
         ), collider));
     }
 

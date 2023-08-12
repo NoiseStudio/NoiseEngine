@@ -7,9 +7,14 @@ namespace NoiseEngine.Physics.Collision;
 internal sealed partial class CollisionResolveSystem : EntitySystem {
 
     private readonly ContactPointsBuffer contactPoints;
+    private float smoothingMultipler;
 
     public CollisionResolveSystem(ContactPointsBuffer contactPoints) {
         this.contactPoints = contactPoints;
+    }
+
+    protected override void OnUpdate() {
+        smoothingMultipler = 1000f / (float)(CycleTime ?? throw new InvalidOperationException());
     }
 
     private void OnUpdateEntity(
@@ -40,8 +45,9 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                     );
                 }
 
-                Vector3<float> ra = iterator.Current.Position - middle.Position; // Change to center of mass.
-                Vector3<float> angularVelocityChange = iterator.Current.Normal.Cross(ra) * 10;
+                Vector3<float> ra = iterator.Current.Position - middle.Position + rigidBody.CenterOfMass;
+                Vector3<float> angularVelocityChange =
+                    rigidBody.InverseInertiaTensorMatrix * iterator.Current.Normal.Cross(ra);
                 float jA = rigidBody.InverseMass + iterator.Current.Normal.Dot(angularVelocityChange.Cross(ra));
 
                 Vector3<float> relativeVelocity = rigidBody.LinearVelocity - iterator.Current.OtherVelocity;
@@ -63,7 +69,7 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
             rigidBody.Sleeped--;
 
         data.TargetPosition = middle.Position;
-        data.MaxDistance = 1 / DeltaTimeF;
+        data.SmoothingMultipler = smoothingMultipler;
     }
 
 }

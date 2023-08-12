@@ -36,7 +36,7 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
         ContactPointsBuffer contactPoints = new ContactPointsBuffer();
 
         SimulationSystem simulationSystem = new SimulationSystem(space);
-        ColliderSpaceRegisterSystem colliderSpaceRegisterSystem = new ColliderSpaceRegisterSystem(space);
+        ImmovableColliderRegisterSystem colliderSpaceRegisterSystem = new ImmovableColliderRegisterSystem(space);
         CollisionDetectionSystem collisionDetectionSystem = new CollisionDetectionSystem(space, contactPoints);
         CollisionResolveSystem collisionResolveSystem = new CollisionResolveSystem(contactPoints);
 

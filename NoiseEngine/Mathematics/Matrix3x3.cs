@@ -28,7 +28,7 @@ public readonly record struct Matrix3x3<T>(Vector3<T> C1, Vector3<T> C2, Vector3
     public T M33 => C3.Z;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Matrix3x3(T m11, T m21, T m31, T m12, T m22, T m32, T m13, T m23, T m33) : this(
+    private Matrix3x3(T m11, T m21, T m31, T m12, T m22, T m32, T m13, T m23, T m33) : this(
         new Vector3<T>(m11, m21, m31), new Vector3<T>(m12, m22, m32), new Vector3<T>(m13, m23, m33)
     ) {
     }

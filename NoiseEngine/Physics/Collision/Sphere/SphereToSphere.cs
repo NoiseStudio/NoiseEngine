@@ -27,8 +27,10 @@ internal static class SphereToSphere {
             depth *= 0.5f;
             contactPoint = normal * (currentRadius - depth) + currentTransform.Position;
 
-            Vector3<float> rb = contactPoint - otherTransform.Position; // Change to center of mass.
-            jB = otherTransform.InverseMass + normal.Dot(normal.Cross(rb).Cross(rb));
+            Vector3<float> rb = contactPoint - otherTransform.WorldCenterOfMass;
+            jB = otherTransform.InverseMass + normal.Dot(
+                (otherTransform.InverseInertiaTensorMatrix * normal.Cross(rb)).Cross(rb)
+            );
         } else {
             contactPoint = normal * (currentRadius - depth) + currentTransform.Position;
             jB = 0;
@@ -40,7 +42,7 @@ internal static class SphereToSphere {
             depth,
             otherTransform.LinearVelocity,
             currentTransform.InverseMass,
-            jB,//currentTransform.InverseMass + otherTransform.InverseMass,
+            jB,
             MathF.Max(currentTransform.RestitutionPlusOneNegative, otherTransform.RestitutionPlusOneNegative)
         ));
     }
