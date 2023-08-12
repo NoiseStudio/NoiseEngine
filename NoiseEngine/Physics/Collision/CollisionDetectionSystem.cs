@@ -20,7 +20,7 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private void FromSphere(
         Entity entity, CollisionDetectionThreadStorage storage, SphereCollider current,
-        ColliderTransform currentTransform
+        float currentRestitutionPlusOneNegative, ColliderTransform currentTransform
     ) {
         foreach (ConcurrentBag<ColliderData> bag in storage.ColliderDataBuffer) {
             foreach (ColliderData other in bag) {
@@ -30,8 +30,9 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
                 switch (other.Collider.Type) {
                     case ColliderType.Sphere:
                         SphereToSphere.Collide(
-                            buffer, current, currentTransform, entity, other.Collider.UnsafeCastToSphereCollider(),
-                            other.Transform, other.Entity
+                            buffer, current, currentRestitutionPlusOneNegative, currentTransform, entity,
+                            other.Collider.UnsafeCastToSphereCollider(), other.Collider.RestitutionPlusOneNegative,
+                            other.Transform
                         );
                         break;
                     default:
@@ -55,13 +56,16 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
     ) {
         ColliderTransform currentTransform = new ColliderTransform(
             middle.Position, middle.Position + rigidBody.CenterOfMass, transform.Scale, rigidBody.LinearVelocity,
-            rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, -1.1f
+            rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass
         );
         space.GetNearColliders(storage.ColliderDataBuffer);
 
         switch (collider.Type) {
             case ColliderType.Sphere:
-                FromSphere(entity, storage, collider.UnsafeCastToSphereCollider(), currentTransform);
+                FromSphere(
+                    entity, storage, collider.UnsafeCastToSphereCollider(), collider.RestitutionPlusOneNegative,
+                    currentTransform
+                );
                 break;
             default:
                 throw new NotImplementedException();

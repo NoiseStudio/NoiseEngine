@@ -8,10 +8,21 @@ namespace NoiseEngine.Physics;
 
 public readonly struct ColliderComponent : IComponent {
 
+    private readonly PhysicsMaterial? material;
     private readonly ColliderComponentInner inner;
 
     public bool IsTrigger { get; init; }
     public ColliderType Type { get; }
+
+    public PhysicsMaterial? Material {
+        get => material;
+        init {
+            material = value;
+            RestitutionPlusOneNegative = value?.Restitution ?? -1.1f;
+        }
+    }
+
+    internal float RestitutionPlusOneNegative { get; private init; }
 
     /// <summary>
     /// Do not use default constructor for this type, always throws <see cref="InvalidOperationException"/>.
@@ -29,6 +40,7 @@ public readonly struct ColliderComponent : IComponent {
 
     public ColliderComponent(SphereCollider sphereCollider) {
         IsTrigger = sphereCollider.IsTrigger;
+        Material = sphereCollider.Material;
         Type = ColliderType.Sphere;
         inner = new ColliderComponentInner(sphereCollider);
     }
@@ -42,7 +54,7 @@ public readonly struct ColliderComponent : IComponent {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal readonly SphereCollider UnsafeCastToSphereCollider() {
         Debug.Assert(Type == ColliderType.Sphere);
-        return new SphereCollider(IsTrigger, inner.SphereRadius);
+        return new SphereCollider(IsTrigger, Material, inner.SphereRadius);
     }
 
     internal readonly Matrix3x3<float> ComputeComInertiaTensorMatrix(float mass) {

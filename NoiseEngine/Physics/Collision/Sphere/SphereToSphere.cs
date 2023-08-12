@@ -9,8 +9,9 @@ internal static class SphereToSphere {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void Collide(
-        ContactPointsBuffer buffer, SphereCollider current, ColliderTransform currentTransform, Entity currentEntity,
-        SphereCollider other, ColliderTransform otherTransform, Entity otherEntity
+        ContactPointsBuffer buffer, SphereCollider current, float currentRestitutionPlusOneNegative,
+        ColliderTransform currentTransform, Entity currentEntity, SphereCollider other,
+        float otherRestitutionPlusOneNegative, ColliderTransform otherTransform
     ) {
         float currentRadius = current.ScaledRadius(currentTransform.Scale);
         float c = currentRadius + other.ScaledRadius(otherTransform.Scale);
@@ -43,7 +44,7 @@ internal static class SphereToSphere {
             otherTransform.LinearVelocity,
             currentTransform.InverseMass,
             jB,
-            MathF.Max(currentTransform.RestitutionPlusOneNegative, otherTransform.RestitutionPlusOneNegative)
+            MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative)
         ));
     }
 

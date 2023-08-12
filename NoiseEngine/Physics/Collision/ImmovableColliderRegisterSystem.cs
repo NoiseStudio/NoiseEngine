@@ -26,8 +26,7 @@ internal partial class ImmovableColliderRegisterSystem : EntitySystem {
             transform.Scale,
             Vector3<float>.Zero,
             default, // Inverse inertia tensor matrix is not needed for immovable objects.
-            InverseMass,
-            -1.1f
+            InverseMass
         ), collider));
     }
 
