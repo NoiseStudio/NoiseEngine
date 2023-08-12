@@ -34,11 +34,9 @@ internal sealed partial class SimulationSystem : EntitySystem {
             rigidBody.LinearVelocity = rigidBody.LinearVelocity = rigidBody.LinearVelocity with {
                 Y = rigidBody.LinearVelocity.Y + gravityAcceleration
             };
-            transform = transform with {
-                Rotation = transform.Rotation * Quaternion.EulerRadians(rigidBody.AngularVelocity * fixedDeltaTime)
-            };
 
             middle.Position = data.TargetPosition + rigidBody.LinearVelocity * fixedDeltaTime;
+            data.TargetRotation *= Quaternion.EulerRadians(rigidBody.AngularVelocity * fixedDeltaTime);
         }
 
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
