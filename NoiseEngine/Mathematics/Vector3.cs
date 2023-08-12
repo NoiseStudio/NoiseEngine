@@ -100,11 +100,11 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     /// <summary>
-    /// Calculates inverse of this <see cref="Vector3{T}"/>.
+    /// Calculates reciprocal of this <see cref="Vector3{T}"/>.
     /// </summary>
-    /// <returns>Inverse <see cref="Vector3{T}"/> of this <see cref="Vector3{T}"/>.</returns>
+    /// <returns>Reciprocal <see cref="Vector3{T}"/> of this <see cref="Vector3{T}"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector3<T> Inverse() {
+    public Vector3<T> Reciprocal() {
         return new Vector3<T>(T.One / X, T.One / Y, T.One / Z);
     }
 
