@@ -9,9 +9,13 @@ internal ref struct ContactPointsBufferIterator {
     private readonly ContactPointsBufferSegment points;
     private int pointer;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ContactPointsBufferIterator(ContactPointsBufferSegment points, int pointer) {
         this.points = points;
-        this.pointer = pointer;
+
+        ref ContactPointWithPointer current = ref points[pointer];
+        Current = ref current.Point;
+        this.pointer = current.Pointer;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

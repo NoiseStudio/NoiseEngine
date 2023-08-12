@@ -55,7 +55,7 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
     ) {
         ColliderTransform currentTransform = new ColliderTransform(
             middle.Position, middle.Position + rigidBody.CenterOfMass, transform.Scale, rigidBody.LinearVelocity,
-            rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, -1.5f
+            rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, -1.1f
         );
         space.GetNearColliders(storage.ColliderDataBuffer);
 

@@ -11,20 +11,20 @@ public readonly record struct ContactPoint {
 
     internal Vector3<float> OtherVelocity { get; }
     internal float InverseMass { get; }
-    internal float SumInverseMass { get; }
+    internal float ResolveImpulseB { get; }
     internal float MinRestitutionPlusOneNegative { get; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ContactPoint(
         Vector3<float> position, Vector3<float> normal, float depth, Vector3<float> otherVelocity, float inverseMass,
-        float sumInverseMass, float minRestitutionPlusOneNegative
+        float resolveImpulseB, float minRestitutionPlusOneNegative
     ) {
         Position = position;
         Normal = normal;
         Depth = depth;
         OtherVelocity = otherVelocity;
         InverseMass = inverseMass;
-        SumInverseMass = sumInverseMass;
+        ResolveImpulseB = resolveImpulseB;
         MinRestitutionPlusOneNegative = minRestitutionPlusOneNegative;
     }
 

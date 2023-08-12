@@ -35,10 +35,14 @@ internal class ContactPointsBuffer {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public ContactPointsBufferIterator IterateThrough(Entity entity) {
-        if (pointers.TryGetValue(entity, out int pointer))
-            return new ContactPointsBufferIterator(points, pointer);
-        return default;
+    public bool TryIterateThrough(Entity entity, out ContactPointsBufferIterator iterator) {
+        if (pointers.TryGetValue(entity, out int pointer)) {
+            iterator = new ContactPointsBufferIterator(points, pointer);
+            return true;
+        }
+
+        iterator = default;
+        return false;
     }
 
     public void Clear() {
