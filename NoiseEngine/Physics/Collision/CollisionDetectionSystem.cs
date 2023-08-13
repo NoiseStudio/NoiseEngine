@@ -54,6 +54,9 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
         Entity entity, SystemCommands commands, CollisionDetectionThreadStorage storage, TransformComponent transform,
         RigidBodyComponent rigidBody, RigidBodyMiddleDataComponent middle, ColliderComponent collider
     ) {
+        if (rigidBody.IsSleeping)
+            return;
+
         ColliderTransform currentTransform = new ColliderTransform(
             middle.Position, middle.Position + rigidBody.CenterOfMass, transform.Scale, rigidBody.LinearVelocity,
             rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, true

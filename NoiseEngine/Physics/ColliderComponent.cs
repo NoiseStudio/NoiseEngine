@@ -18,7 +18,7 @@ public readonly struct ColliderComponent : IComponent {
         get => material;
         init {
             material = value;
-            RestitutionPlusOneNegative = value?.Restitution ?? -1.75f;
+            RestitutionPlusOneNegative = value?.Restitution ?? -1.1f;
         }
     }
 

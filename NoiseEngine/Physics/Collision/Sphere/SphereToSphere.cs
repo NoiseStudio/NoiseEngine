@@ -38,7 +38,7 @@ internal static class SphereToSphere {
             jB = 0;
 
             if (otherTransform.IsRigidBody)
-                commands.GetEntity(otherEntity).Remove<RigidBodySleepComponent>();
+                commands.GetEntity(otherEntity).Insert(new RigidBodySleepComponent(true));
         }
 
         buffer.Add(currentEntity, new ContactPoint(

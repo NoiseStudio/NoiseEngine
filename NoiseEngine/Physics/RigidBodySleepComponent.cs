@@ -2,4 +2,4 @@
 
 namespace NoiseEngine.Physics;
 
-internal readonly record struct RigidBodySleepComponent : IComponent;
+internal readonly record struct RigidBodySleepComponent(bool WakeUp) : IComponent;

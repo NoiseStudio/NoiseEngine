@@ -3,13 +3,15 @@ using NoiseEngine.Mathematics;
 
 namespace NoiseEngine.Physics;
 
-[AppendComponentDefault(typeof(RigidBodyFinalDataComponent))]
+[AppendComponentDefault(typeof(RigidBodyFinalDataComponent), typeof(RigidBodySleepComponent))]
 public record struct RigidBodyComponent : IComponent {
 
-    internal const int SleepThreshold = 12;
+    internal const int SleepThreshold = 30;
+    internal const int MaxSleepAccumulator = SleepThreshold + 2;
 
     private float mass = 1f;
 
+    public bool UseGravity { get; set; } = true;
     public Vector3<float> CenterOfMass { get; set; }
     public Vector3<float> LinearVelocity { get; set; }
     public Vector3<float> AngularVelocity { get; set; }
@@ -39,6 +41,8 @@ public record struct RigidBodyComponent : IComponent {
     internal Matrix3x3<float> InverseInertiaTensorMatrix { get; private set; }
     internal float InverseMass { get; private set; } = 1f;
     internal int SleepAccumulator { get; set; }
+
+    internal bool IsSleeping => SleepAccumulator >= SleepThreshold;
 
     public RigidBodyComponent() {
     }

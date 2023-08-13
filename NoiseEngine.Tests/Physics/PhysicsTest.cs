@@ -1,11 +1,9 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.DeveloperTools.Systems;
-using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Physics;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
-using NoiseEngine.Tests.Jobs;
 using System.Threading;
 
 namespace NoiseEngine.Tests.Physics;
@@ -37,7 +35,7 @@ public class PhysicsTest : ApplicationTestEnvironment {
             for (int y = 0; y < 40; y += 2) {
                 for (int z = 0; z < 1; z += 2) {
                     scene.Spawn(
-                        new TransformComponent(new Vector3<float>(x, y * 3 + 14.5f, z)),
+                        new TransformComponent(new Vector3<float>(x, y * 3 + 4.5f, z)),
                         new MeshRendererComponent(scene.Primitive.GetSphereMesh(), scene.Primitive.DefaultMaterial),
                         new RigidBodyComponent(),
                         new ColliderComponent(new SphereCollider())

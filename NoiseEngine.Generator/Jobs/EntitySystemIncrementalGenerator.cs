@@ -408,6 +408,8 @@ public class EntitySystemIncrementalGenerator : IIncrementalGenerator {
                 .Append(i).AppendLine(".Inner is not null)");
             builder.AppendIndentation(4).Append("data.Changed.Add((observers").Append(i).Append(", changed").Append(i)
                 .AppendLine(".Inner));");
+
+            i++;
         }
 
         if (threadStorageType is not null) {

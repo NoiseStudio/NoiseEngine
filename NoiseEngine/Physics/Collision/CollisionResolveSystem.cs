@@ -18,9 +18,12 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
     }
 
     private void OnUpdateEntity(
-        Entity entity, SystemCommands commands, ref RigidBodyComponent rigidBody, ref RigidBodyFinalDataComponent data,
+        Entity entity, ref RigidBodyComponent rigidBody, ref RigidBodyFinalDataComponent data,
         RigidBodyMiddleDataComponent middle
     ) {
+        if (rigidBody.IsSleeping)
+            return;
+
         if (contactPoints.TryIterateThrough(entity, out ContactPointsBufferIterator iterator)) {
             bool yNotBlocked = true;
 
@@ -61,19 +64,16 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 }
             } while (iterator.MoveNext());
 
-            Log.Info($"{rigidBody.LinearVelocity.MagnitudeSquared()}");
             if (
                 rigidBody.LinearVelocity.MagnitudeSquared() <= 0.1f &&
-                //data.TargetPosition.DistanceSquared(middle.Position) <= 0.005f * 0.005f &&
                 rigidBody.AngularVelocity.MagnitudeSquared() <= 0.005f * 0.005f
             ) {
-                Log.Info($"{rigidBody.LinearVelocity.MagnitudeSquared()} sleeped");
+                rigidBody.LinearVelocity = Vector3<float>.Zero;
+                rigidBody.AngularVelocity = Vector3<float>.Zero;
 
-                rigidBody.SleepAccumulator += 3;
-                if (rigidBody.SleepAccumulator >= RigidBodyComponent.SleepThreshold) {
-                    rigidBody.SleepAccumulator = 0;
-                    commands.GetEntity(entity).Insert(new RigidBodySleepComponent());
-                }
+                rigidBody.SleepAccumulator++;
+                if (rigidBody.SleepAccumulator > RigidBodyComponent.SleepThreshold)
+                    rigidBody.SleepAccumulator = RigidBodyComponent.MaxSleepAccumulator;
 
                 data.TargetPosition = middle.Position;
                 data.SmoothingMultipler = smoothingMultipler;

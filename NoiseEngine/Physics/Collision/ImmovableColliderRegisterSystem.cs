@@ -3,6 +3,7 @@ using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics.Collision;
 
@@ -15,7 +16,10 @@ internal partial class ImmovableColliderRegisterSystem : EntitySystem {
         Filter = new EntityFilter(Enumerable.Empty<Type>(), new Type[] { typeof(RigidBodyComponent) });
     }
 
-    private void OnUpdateEntity(Entity entity, TransformComponent transform, ColliderComponent collider) {
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void RegisterImmovable(
+        CollisionSpace space, Entity entity, TransformComponent transform, ColliderComponent collider
+    ) {
         // Immovable objects have infinite mass.
         // 1f / inf == 0f
         const float InverseMass = 0f;
@@ -29,6 +33,10 @@ internal partial class ImmovableColliderRegisterSystem : EntitySystem {
             InverseMass,
             false
         ), collider));
+    }
+
+    private void OnUpdateEntity(Entity entity, TransformComponent transform, ColliderComponent collider) {
+        RegisterImmovable(space, entity, transform, collider);
     }
 
 }

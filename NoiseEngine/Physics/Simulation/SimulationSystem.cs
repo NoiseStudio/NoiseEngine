@@ -28,11 +28,24 @@ internal sealed partial class SimulationSystem : EntitySystem {
 
     private void OnUpdateEntity(
         Entity entity, ref RigidBodyComponent rigidBody, ref RigidBodyMiddleDataComponent middle,
-        RigidBodyFinalDataComponent data, ref TransformComponent transform, ColliderComponent collider
+        RigidBodyFinalDataComponent data, ref TransformComponent transform, ColliderComponent collider,
+        ref RigidBodySleepComponent sleep
     ) {
-        rigidBody.LinearVelocity = rigidBody.LinearVelocity = rigidBody.LinearVelocity with {
-            Y = rigidBody.LinearVelocity.Y + gravityAcceleration
-        };
+        if (rigidBody.IsSleeping) {
+            if (sleep.WakeUp) {
+                rigidBody.SleepAccumulator--;
+                sleep = new RigidBodySleepComponent(false);
+            }
+
+            ImmovableColliderRegisterSystem.RegisterImmovable(space, entity, transform, collider);
+            return;
+        }
+
+        if (rigidBody.UseGravity) {
+            rigidBody.LinearVelocity = rigidBody.LinearVelocity = rigidBody.LinearVelocity with {
+                Y = rigidBody.LinearVelocity.Y + gravityAcceleration
+            };
+        }
 
         middle.Position = data.TargetPosition + rigidBody.LinearVelocity * fixedDeltaTime;
         data.TargetRotation *= Quaternion.EulerRadians(rigidBody.AngularVelocity * fixedDeltaTime);
