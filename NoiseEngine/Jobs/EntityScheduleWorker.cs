@@ -289,12 +289,12 @@ internal class EntityScheduleWorker : IDisposable {
                 // Copy internal component.
                 Buffer.MemoryCopy((void*)ptr, di, iSize, iSize);
 
+                entity.chunk = newChunk;
+                entity.index = newIndex;
+
                 // Clear old data.
                 new Span<byte>((void*)ptr, (int)oldChunk.Archetype.RecordSize).Clear();
             }
-
-            entity.chunk = newChunk;
-            entity.index = newIndex;
 
             oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
             newArchetype.InitializeRecord();

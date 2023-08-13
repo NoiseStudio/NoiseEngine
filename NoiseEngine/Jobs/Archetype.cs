@@ -47,10 +47,13 @@ internal class Archetype {
 
         Type? columnType = null;
         for (int i = componentTypes.Count - 1; i >= 0; i--) {
-            if (columnType is null)
-                columnType = componentTypes[i].type;
-            else
-                columnType = typeof(ArchetypeColumn<,>).MakeGenericType(componentTypes[i].type, columnType);
+            if (columnType is null) {
+                columnType = WrapReference(componentTypes[i].type);
+            } else {
+                columnType = typeof(ArchetypeColumn<,>).MakeGenericType(
+                    WrapReference(componentTypes[i].type), columnType
+                );
+            }
         }
 
         if (columnType is null) {
@@ -113,6 +116,12 @@ internal class Archetype {
         if (component is IAffectiveComponent<T> affectiveComponent)
             return unchecked(typeof(T).GetHashCode() + (affectiveComponent.GetAffectiveHashCode() * 16777619));
         return typeof(T).GetHashCode();
+    }
+
+    private static Type WrapReference(Type type) {
+        if (type.IsValueType)
+            return type;
+        return typeof(ArchetypeColumnReferenceWrapper<>).MakeGenericType(type);
     }
 
     public void Initialize() {

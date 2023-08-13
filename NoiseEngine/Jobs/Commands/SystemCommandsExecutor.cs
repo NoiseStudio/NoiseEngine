@@ -195,6 +195,9 @@ internal class SystemCommandsExecutor {
                     // Set internal component.
                     Unsafe.AsRef<EntityInternalComponent>(di) = new EntityInternalComponent(entity);
 
+                    entity.chunk = newChunk;
+                    entity.index = newIndex;
+
                     // Clear old data.
                     Debug.Assert(Unsafe.Read<EntityInternalComponent>(si).Entity == entity);
                     new Span<byte>(si, (int)oldChunk.Archetype.RecordSize).Clear();
@@ -215,9 +218,6 @@ internal class SystemCommandsExecutor {
                 }
             }
         }
-
-        entity.chunk = newChunk;
-        entity.index = newIndex;
 
         held.Dispose();
         newArchetype.InitializeRecord();
