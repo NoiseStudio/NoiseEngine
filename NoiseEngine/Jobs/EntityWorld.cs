@@ -195,7 +195,7 @@ public partial class EntityWorld : IDisposable {
     /// <returns>New <see cref="Entity"/>.</returns>
     public Entity Spawn() {
         if (!TryGetArchetype(0, out Archetype? archetype))
-            archetype = CreateArchetype(0, Array.Empty<(Type type, int size, int affectiveHashCode)>());
+            archetype = CreateArchetype(0, Array.Empty<(Type type, int affectiveHashCode)>());
 
         (ArchetypeChunk chunk, nint index) = archetype.TakeRecord();
         Entity entity = new Entity(chunk, index);

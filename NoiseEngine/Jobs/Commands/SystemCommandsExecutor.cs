@@ -10,8 +10,8 @@ namespace NoiseEngine.Jobs.Commands;
 internal class SystemCommandsExecutor {
 
     private readonly FastList<SystemCommand> commands;
-    private readonly Dictionary<Type, (IComponent? value, int size, int affectiveHashCode)> components =
-        new Dictionary<Type, (IComponent? value, int size, int affectiveHashCode)>();
+    private readonly Dictionary<Type, (IComponent? value, int affectiveHashCode)> components =
+        new Dictionary<Type, (IComponent? value, int affectiveHashCode)>();
 
     private SystemCommandsInner? inner;
     private int index;
@@ -44,15 +44,14 @@ internal class SystemCommandsExecutor {
                     break;
                 case SystemCommandType.EntityInsert:
                     writeAccess = true;
-                    (IComponent component, int size, int affectiveHashCode) value =
-                        ((IComponent, int, int))command.Value!;
+                    (IComponent component, int affectiveHashCode) value = ((IComponent, int))command.Value!;
                     Type type = value.component.GetType();
                     components[type] = value;
                     break;
                 case SystemCommandType.EntityRemove:
                     Type typeB = (Type)command.Value!;
                     writeAccess |= entityCommands!.Entity.Contains(typeB);
-                    components[typeB] = (null, 0, 0);
+                    components[typeB] = (null, 0);
                     break;
                 default:
                     throw new UnreachableException();
@@ -83,7 +82,7 @@ internal class SystemCommandsExecutor {
         }
 
         if (!writeAccess) {
-            foreach ((Type type, (IComponent? value, _, _)) in components) {
+            foreach ((Type type, (IComponent? value, _)) in components) {
                 if ((value is null && entityCommands.Entity.Contains(type)) || !entityCommands.Entity.Contains(type)) {
                     held.Dispose();
                     writeAccess = true;
@@ -99,7 +98,7 @@ internal class SystemCommandsExecutor {
                 x => x.Value.value is not null
             ).Select(x => (x.Key, x.Value.affectiveHashCode)).UnionBy(
                 entity.chunk!.Archetype.ComponentTypes.Select(x => (x.type, x.affectiveHashCode)).Where(
-                    x => !components.TryGetValue(x.type, out (IComponent? value, int size, int affectiveHashCode) o) ||
+                    x => !components.TryGetValue(x.type, out (IComponent? value, int affectiveHashCode) o) ||
                         o.value is not null
                 ), x => x.Item1)
             ) {
@@ -109,12 +108,12 @@ internal class SystemCommandsExecutor {
             EntityWorld world = entity.chunk!.Archetype.World;
             if (!world.TryGetArchetype(hashCode, out Archetype? newArchetype)) {
                 newArchetype = world.CreateArchetype(hashCode, components.Where(x => x.Value.value is not null)
-                    .Select(x => (x.Key, x.Value.size, x.Value.affectiveHashCode))
+                    .Select(x => (x.Key, x.Value.affectiveHashCode))
                     .UnionBy(entity.chunk!.Archetype.ComponentTypes.Where(
                         x => !components.TryGetValue(
-                            x.type, out (IComponent? value, int size, int affectiveHashCode) o
+                            x.type, out (IComponent? value, int affectiveHashCode) o
                         ) || o.value is not null
-                    ), x => x.Item1).ToArray()
+                    ).Select(x => (x.type, x.affectiveHashCode)), x => x.Item1).ToArray()
                 );
             }
 
@@ -170,7 +169,7 @@ internal class SystemCommandsExecutor {
                     byte* si = sp + oldIndex;
 
                     foreach ((Type type, int size, _) in newChunk.Archetype.ComponentTypes) {
-                        (IComponent? value, int size, int affectiveHashCode) component;
+                        (IComponent? value, int affectiveHashCode) component;
                         if (oldChunk.Offsets.TryGetValue(type, out nint oldOffset)) {
                             // Copy old component.
                             if (!components.TryGetValue(type, out component)) {
@@ -203,7 +202,7 @@ internal class SystemCommandsExecutor {
                     Debug.Assert(Unsafe.Read<EntityInternalComponent>(si).Entity is null);
                     Debug.Assert(Unsafe.Read<EntityInternalComponent>(di).Entity == entity);
 
-                    //oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
+                    oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
 
                     // Notify changed observers.
                     if (changed is not null) {
@@ -233,11 +232,12 @@ internal class SystemCommandsExecutor {
                 byte* di = dp + entity.index;
 
                 // Update components.
-                foreach ((Type type, (IComponent? value, int size, int affectiveHashCode)) in components) {
+                foreach ((Type type, (IComponent? value, int affectiveHashCode)) in components) {
                     if (value is null)
                         continue;
 
-                    nint componentPointer = (nint)di + chunk.Offsets[type];
+                    (nint offset, int size) = chunk.ExtendedInformation[type];
+                    nint componentPointer = (nint)di + offset;
                     IComponent old = chunk.ReadComponentBoxed(type, size, componentPointer);
                     IComponent component = value;
                     ComponentMemoryCopy(ref component, type, componentPointer, size);

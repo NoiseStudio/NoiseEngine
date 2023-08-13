@@ -32,6 +32,7 @@ internal class Archetype {
     internal (Type type, int size, int affectiveHashCode)[] ComponentTypes { get; }
     internal Dictionary<Type, nint> Offsets { get; } = new Dictionary<Type, nint>();
     internal Dictionary<Type, int> HashCodes { get; } = new Dictionary<Type, int>();
+    internal Dictionary<Type, (nint offset, int size)> ExtendedInformation = new Dictionary<Type, (nint, int)>();
     internal ConcurrentDictionary<Type, ChangedObserverContext[]> ChangedObserversLookup { get; } =
         new ConcurrentDictionary<Type, ChangedObserverContext[]>();
 
@@ -94,8 +95,10 @@ internal class Archetype {
 
         this.columnType = columnType;
 
-        foreach ((Type type, int affectiveHashCode) in componentTypes)
+        foreach ((Type type, int size, int affectiveHashCode) in ComponentTypes) {
             HashCodes.Add(type, type.GetHashCode() + affectiveHashCode * 16777619);
+            ExtendedInformation.Add(type, (Offsets[type], size));
+        }
 
         // Enqueue affective systems.
         foreach (AffectiveSystem affectiveSystem in world.AffectiveSystems)

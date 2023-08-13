@@ -27,6 +27,7 @@ internal class ArchetypeChunk {
     internal byte[] StorageData { get; }
     internal Dictionary<Type, nint> Offsets { get; }
     internal Dictionary<Type, int> HashCodes { get; }
+    internal Dictionary<Type, (nint offset, int size)> ExtendedInformation { get; }
     internal ConcurrentDictionary<Type, ChangedObserverContext[]> ChangedObserversLookup { get; }
 
     internal Span<byte> StorageDataSpan {
@@ -41,6 +42,7 @@ internal class ArchetypeChunk {
         ArchetypeHashCode = archetype.HashCode;
         Offsets = archetype.Offsets;
         HashCodes = archetype.HashCodes;
+        ExtendedInformation = archetype.ExtendedInformation;
         ChangedObserversLookup = archetype.ChangedObserversLookup;
         RecordSize = archetype.RecordSize;
 
