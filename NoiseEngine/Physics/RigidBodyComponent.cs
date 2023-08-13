@@ -6,8 +6,8 @@ namespace NoiseEngine.Physics;
 [AppendComponentDefault(typeof(RigidBodyFinalDataComponent), typeof(RigidBodySleepComponent))]
 public record struct RigidBodyComponent : IComponent {
 
-    internal const int SleepThreshold = 30;
-    internal const int MaxSleepAccumulator = SleepThreshold + 2;
+    internal const int SleepThreshold = 10;
+    internal const int MaxSleepAccumulator = SleepThreshold + 3;
 
     private float mass = 1f;
 

@@ -18,7 +18,8 @@ internal partial class ImmovableColliderRegisterSystem : EntitySystem {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void RegisterImmovable(
-        CollisionSpace space, Entity entity, TransformComponent transform, ColliderComponent collider
+        CollisionSpace space, Entity entity, TransformComponent transform, ColliderComponent collider,
+        bool isRigidBody
     ) {
         // Immovable objects have infinite mass.
         // 1f / inf == 0f
@@ -31,12 +32,12 @@ internal partial class ImmovableColliderRegisterSystem : EntitySystem {
             Vector3<float>.Zero,
             default, // Inverse inertia tensor matrix is not needed for immovable objects.
             InverseMass,
-            false
+            isRigidBody
         ), collider));
     }
 
     private void OnUpdateEntity(Entity entity, TransformComponent transform, ColliderComponent collider) {
-        RegisterImmovable(space, entity, transform, collider);
+        RegisterImmovable(space, entity, transform, collider, false);
     }
 
 }

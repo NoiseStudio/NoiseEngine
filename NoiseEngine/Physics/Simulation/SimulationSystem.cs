@@ -37,7 +37,7 @@ internal sealed partial class SimulationSystem : EntitySystem {
                 sleep = new RigidBodySleepComponent(false);
             }
 
-            ImmovableColliderRegisterSystem.RegisterImmovable(space, entity, transform, collider);
+            ImmovableColliderRegisterSystem.RegisterImmovable(space, entity, transform, collider, true);
             return;
         }
 
