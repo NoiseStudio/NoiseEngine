@@ -157,15 +157,15 @@ internal class SystemCommandsExecutor {
     private void ChangeArchetype(Archetype newArchetype, EntityLockerHeld held) {
         Entity entity = entityCommands!.Entity;
         ArchetypeChunk oldChunk = entity.chunk!;
-        (ArchetypeChunk newChunk, nint newIndex) = newArchetype.TakeRecord();
-
-        entity.chunk = newChunk;
         nint oldIndex = entity.index;
-        entity.index = newIndex;
+        (ArchetypeChunk newChunk, nint newIndex) = newArchetype.TakeRecord();
 
         unsafe {
             fixed (byte* dp = newChunk.StorageData) {
                 byte* di = dp + newIndex;
+
+                Debug.Assert(Unsafe.Read<EntityInternalComponent>(di).Entity is null);
+
                 fixed (byte* sp = oldChunk.StorageData) {
                     byte* si = sp + oldIndex;
 
@@ -193,13 +193,17 @@ internal class SystemCommandsExecutor {
                         ComponentMemoryCopy(ref component.value!, type, componentPointer, size);
                     }
 
-                    // Copy internal component.
-                    int iSize = Unsafe.SizeOf<EntityInternalComponent>();
-                    Buffer.MemoryCopy(si, di, iSize, iSize);
+                    // Set internal component.
+                    Unsafe.AsRef<EntityInternalComponent>(di) = new EntityInternalComponent(entity);
 
                     // Clear old data.
+                    Debug.Assert(Unsafe.Read<EntityInternalComponent>(si).Entity == entity);
                     new Span<byte>(si, (int)oldChunk.Archetype.RecordSize).Clear();
-                    oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
+
+                    Debug.Assert(Unsafe.Read<EntityInternalComponent>(si).Entity is null);
+                    Debug.Assert(Unsafe.Read<EntityInternalComponent>(di).Entity == entity);
+
+                    //oldChunk.Archetype.ReleaseRecord(oldChunk, oldIndex);
 
                     // Notify changed observers.
                     if (changed is not null) {
@@ -212,6 +216,9 @@ internal class SystemCommandsExecutor {
                 }
             }
         }
+
+        entity.chunk = newChunk;
+        entity.index = newIndex;
 
         held.Dispose();
         newArchetype.InitializeRecord();

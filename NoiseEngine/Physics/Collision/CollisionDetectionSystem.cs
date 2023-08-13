@@ -19,8 +19,8 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private void FromSphere(
-        Entity entity, CollisionDetectionThreadStorage storage, SphereCollider current,
-        float currentRestitutionPlusOneNegative, ColliderTransform currentTransform
+        Entity entity, SystemCommands commands, CollisionDetectionThreadStorage storage, in SphereCollider current,
+        float currentRestitutionPlusOneNegative, in ColliderTransform currentTransform
     ) {
         foreach (ConcurrentBag<ColliderData> bag in storage.ColliderDataBuffer) {
             foreach (ColliderData other in bag) {
@@ -30,9 +30,9 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
                 switch (other.Collider.Type) {
                     case ColliderType.Sphere:
                         SphereToSphere.Collide(
-                            buffer, current, currentRestitutionPlusOneNegative, currentTransform, entity,
+                            commands, buffer, current, currentRestitutionPlusOneNegative, currentTransform, entity,
                             other.Collider.UnsafeCastToSphereCollider(), other.Collider.RestitutionPlusOneNegative,
-                            other.Transform
+                            other.Transform, other.Entity
                         );
                         break;
                     default:
@@ -51,20 +51,20 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
     }
 
     private void OnUpdateEntity(
-        Entity entity, CollisionDetectionThreadStorage storage, TransformComponent transform,
+        Entity entity, SystemCommands commands, CollisionDetectionThreadStorage storage, TransformComponent transform,
         RigidBodyComponent rigidBody, RigidBodyMiddleDataComponent middle, ColliderComponent collider
     ) {
         ColliderTransform currentTransform = new ColliderTransform(
             middle.Position, middle.Position + rigidBody.CenterOfMass, transform.Scale, rigidBody.LinearVelocity,
-            rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass
+            rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, true
         );
         space.GetNearColliders(storage.ColliderDataBuffer);
 
         switch (collider.Type) {
             case ColliderType.Sphere:
                 FromSphere(
-                    entity, storage, collider.UnsafeCastToSphereCollider(), collider.RestitutionPlusOneNegative,
-                    currentTransform
+                    entity, commands, storage, collider.UnsafeCastToSphereCollider(),
+                    collider.RestitutionPlusOneNegative, currentTransform
                 );
                 break;
             default:

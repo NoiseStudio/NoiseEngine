@@ -50,7 +50,7 @@ internal class ArchetypeChunk {
         storage = Array.CreateInstance(columnType, Capacity);
 
         StorageData = Unsafe.As<byte[]>(storage);
-        sizeInBytes = (int)(StorageData.Length * RecordSize);
+        sizeInBytes = (int)(Capacity * RecordSize);
     }
 
     public bool TryTakeRecord(out nint index) {
@@ -84,15 +84,19 @@ internal class ArchetypeChunk {
                 int j = -1;
                 for (nint i = (nint)ptr; i < end; i += RecordSize) {
                     j++;
-                    if (Unsafe.AsRef<EntityInternalComponent>((void*)i).Entity is null)
+                    Entity? entity = Unsafe.AsRef<EntityInternalComponent>((void*)i).Entity;
+                    if (entity is null)
                         continue;
 
                     components = new Dictionary<Type, IComponent>();
                     foreach ((Type type, int size, _) in Archetype.ComponentTypes)
                         components.Add(type, ReadComponentBoxed(type, size, i + Offsets[type]));
 
-                    if (Unsafe.AsRef<EntityInternalComponent>((void*)i).Entity is not null)
+                    Entity? finalEntity = Unsafe.AsRef<EntityInternalComponent>((void*)i).Entity;
+                    if (finalEntity == entity)
                         return true;
+                    if (finalEntity is not null)
+                        i -= RecordSize;
                 }
             }
         }

@@ -30,18 +30,17 @@ internal sealed partial class SimulationSystem : EntitySystem {
         Entity entity, ref RigidBodyComponent rigidBody, ref RigidBodyMiddleDataComponent middle,
         RigidBodyFinalDataComponent data, ref TransformComponent transform, ColliderComponent collider
     ) {
-        if (rigidBody.Sleeped < 20) {
-            rigidBody.LinearVelocity = rigidBody.LinearVelocity = rigidBody.LinearVelocity with {
-                Y = rigidBody.LinearVelocity.Y + gravityAcceleration
-            };
+        rigidBody.LinearVelocity = rigidBody.LinearVelocity = rigidBody.LinearVelocity with {
+            Y = rigidBody.LinearVelocity.Y + gravityAcceleration
+        };
 
-            middle.Position = data.TargetPosition + rigidBody.LinearVelocity * fixedDeltaTime;
-            data.TargetRotation *= Quaternion.EulerRadians(rigidBody.AngularVelocity * fixedDeltaTime);
-        }
+        middle.Position = data.TargetPosition + rigidBody.LinearVelocity * fixedDeltaTime;
+        data.TargetRotation *= Quaternion.EulerRadians(rigidBody.AngularVelocity * fixedDeltaTime);
 
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            middle.Position, middle.Position + rigidBody.CenterOfMass, transform.Scale, rigidBody.LinearVelocity,
-            rigidBody.InverseInertiaTensorMatrix, rigidBody.Sleeped < 20 ? rigidBody.InverseMass : 0
+            data.TargetPosition, data.TargetPosition + rigidBody.CenterOfMass, transform.Scale,
+            rigidBody.LinearVelocity, rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass,
+            true
         ), collider));
     }
 

@@ -2,17 +2,16 @@
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using System;
-using System.Linq;
 
 namespace NoiseEngine.Physics.Collision;
 
-internal partial class ImmovableColliderRegisterSystem : EntitySystem {
+internal partial class RigidBodySleepingColliderRegisterSystem : EntitySystem {
 
     private readonly CollisionSpace space;
 
-    public ImmovableColliderRegisterSystem(CollisionSpace space) {
+    public RigidBodySleepingColliderRegisterSystem(CollisionSpace space) {
         this.space = space;
-        Filter = new EntityFilter(Enumerable.Empty<Type>(), new Type[] { typeof(RigidBodyComponent) });
+        Filter = new EntityFilter(new Type[] { typeof(RigidBodyComponent), typeof(RigidBodySleepComponent) });
     }
 
     private void OnUpdateEntity(Entity entity, TransformComponent transform, ColliderComponent collider) {
@@ -27,7 +26,7 @@ internal partial class ImmovableColliderRegisterSystem : EntitySystem {
             Vector3<float>.Zero,
             default, // Inverse inertia tensor matrix is not needed for immovable objects.
             InverseMass,
-            false
+            true
         ), collider));
     }
 

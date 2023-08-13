@@ -9,9 +9,10 @@ internal static class SphereToSphere {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void Collide(
-        ContactPointsBuffer buffer, SphereCollider current, float currentRestitutionPlusOneNegative,
-        ColliderTransform currentTransform, Entity currentEntity, SphereCollider other,
-        float otherRestitutionPlusOneNegative, ColliderTransform otherTransform
+        SystemCommands commands, ContactPointsBuffer buffer, in SphereCollider current,
+        float currentRestitutionPlusOneNegative, in ColliderTransform currentTransform, Entity currentEntity,
+        SphereCollider other, float otherRestitutionPlusOneNegative, in ColliderTransform otherTransform,
+        Entity otherEntity
     ) {
         float currentRadius = current.ScaledRadius(currentTransform.Scale);
         float c = currentRadius + other.ScaledRadius(otherTransform.Scale);
@@ -33,8 +34,11 @@ internal static class SphereToSphere {
                 (otherTransform.InverseInertiaTensorMatrix * normal.Cross(rb)).Cross(rb)
             );
         } else {
-            contactPoint = normal * (currentRadius - depth) + currentTransform.Position;
+            contactPoint = normal * (currentRadius - (depth * 0.5f)) + currentTransform.Position;
             jB = 0;
+
+            if (otherTransform.IsRigidBody)
+                commands.GetEntity(otherEntity).Remove<RigidBodySleepComponent>();
         }
 
         buffer.Add(currentEntity, new ContactPoint(

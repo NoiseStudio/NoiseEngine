@@ -3,6 +3,7 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -34,15 +35,17 @@ internal class Archetype {
     internal ConcurrentDictionary<Type, ChangedObserverContext[]> ChangedObserversLookup { get; } =
         new ConcurrentDictionary<Type, ChangedObserverContext[]>();
 
-    public Archetype(EntityWorld world, int hashCode, (Type type, int size, int affectiveHashCode)[] componentTypes) {
+    public Archetype(
+        EntityWorld world, int hashCode, IReadOnlyList<(Type type, int affectiveHashCode)> componentTypes
+    ) {
         componentTypes = componentTypes.OrderBy(x => x.type.FullName).ToArray();
 
         World = world;
         HashCode = hashCode;
-        ComponentTypes = componentTypes;
+        ComponentTypes = new (Type, int, int)[componentTypes.Count];
 
         Type? columnType = null;
-        for (int i = componentTypes.Length - 1; i >= 0; i--) {
+        for (int i = componentTypes.Count - 1; i >= 0; i--) {
             if (columnType is null)
                 columnType = componentTypes[i].type;
             else
@@ -52,6 +55,7 @@ internal class Archetype {
         if (columnType is null) {
             columnType = typeof(EntityInternalComponent);
             Offsets.Add(typeof(EntityInternalComponent), 0);
+            RecordSize = Unsafe.SizeOf<EntityInternalComponent>();
         } else {
             columnType = typeof(ArchetypeColumn<,>).MakeGenericType(typeof(EntityInternalComponent), columnType);
             ArchetypeColumn<nint, nint> offsets = (ArchetypeColumn<nint, nint>)columnType.GetMethod(
@@ -62,7 +66,9 @@ internal class Archetype {
             nint offset = offsets.Element2;
 
             Type columnTypeFragment = columnType;
-            for (int i = 0; i < componentTypes.Length - 1; i++) {
+            (Type type, int affectiveHashCode) componentType;
+
+            for (int i = 0; i < componentTypes.Count - 1; i++) {
                 columnTypeFragment = columnTypeFragment.GetField(
                     nameof(ArchetypeColumn<nint, nint>.Element2)
                 )!.FieldType;
@@ -70,17 +76,25 @@ internal class Archetype {
                     nameof(ArchetypeColumn<nint, nint>.GetOffsets)
                 )!.Invoke(null, null)!;
 
-                Offsets.Add(componentTypes[i].type, offset + offsets.Element1);
+                componentType = componentTypes[i];
+                Offsets.Add(componentType.type, offset + offsets.Element1);
+                ComponentTypes[i] =
+                    (componentType.type, (int)(offsets.Element2 - offsets.Element1), componentType.affectiveHashCode);
+
                 offset += offsets.Element2;
             }
 
-            Offsets.Add(componentTypes[componentTypes.Length - 1].type, offset);
+            RecordSize = (nint)columnType.GetMethod(nameof(ArchetypeColumn<nint, nint>.GetSize))!.Invoke(null, null)!;
+
+            componentType = componentTypes[componentTypes.Count - 1];
+            Offsets.Add(componentType.type, offset);
+            ComponentTypes[componentTypes.Count - 1] =
+                (componentType.type, (int)(RecordSize - offset), componentType.affectiveHashCode);
         }
 
         this.columnType = columnType;
-        RecordSize = (nint)columnType.GetMethod(nameof(ArchetypeColumn<nint, nint>.GetSize))!.Invoke(null, null)!;
 
-        foreach ((Type type, _, int affectiveHashCode) in componentTypes)
+        foreach ((Type type, int affectiveHashCode) in componentTypes)
             HashCodes.Add(type, type.GetHashCode() + affectiveHashCode * 16777619);
 
         // Enqueue affective systems.
@@ -145,6 +159,7 @@ internal class Archetype {
     }
 
     public void ReleaseRecord(ArchetypeChunk chunk, nint index) {
+        Debug.Assert(index % RecordSize == 0);
         releasedRecords.Enqueue((chunk, index));
     }
 

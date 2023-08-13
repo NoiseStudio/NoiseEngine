@@ -9,7 +9,8 @@ internal readonly record struct ColliderTransform(
     Vector3<float> Scale,
     Vector3<float> LinearVelocity,
     Matrix3x3<float> InverseInertiaTensorMatrix,
-    float InverseMass
+    float InverseMass,
+    bool IsRigidBody
 ) {
 
     public bool IsMovable {

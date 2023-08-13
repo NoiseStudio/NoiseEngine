@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Jobs;
@@ -16,7 +17,12 @@ internal readonly struct ArchetypeColumn<T1, T2> {
     }
 
     public static nint GetSize() {
-        return Unsafe.SizeOf<ArchetypeColumn<T1, T2>>();
+        int size = Unsafe.SizeOf<ArchetypeColumn<T1, T2>>();
+#if DEBUG
+        if (Unsafe.SizeOf<ArchetypeColumn<ArchetypeColumn<T1, T2>, ArchetypeColumn<T1, T2>>>() / 2 != size)
+            throw new UnreachableException();
+#endif
+        return size;
     }
 
     public static unsafe ArchetypeColumn<nint, nint> GetOffsets() {

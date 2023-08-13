@@ -6,6 +6,8 @@ namespace NoiseEngine.Physics;
 [AppendComponentDefault(typeof(RigidBodyFinalDataComponent))]
 public record struct RigidBodyComponent : IComponent {
 
+    internal const int SleepThreshold = 12;
+
     private float mass = 1f;
 
     public Vector3<float> CenterOfMass { get; set; }
@@ -36,7 +38,7 @@ public record struct RigidBodyComponent : IComponent {
 
     internal Matrix3x3<float> InverseInertiaTensorMatrix { get; private set; }
     internal float InverseMass { get; private set; } = 1f;
-    internal byte Sleeped { get; set; }
+    internal int SleepAccumulator { get; set; }
 
     public RigidBodyComponent() {
     }
