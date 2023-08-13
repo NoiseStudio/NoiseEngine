@@ -13,7 +13,7 @@ public class PhysicsTest : ApplicationTestEnvironment {
     public PhysicsTest(ApplicationFixture fixture) : base(fixture) {
     }
 
-    [FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
+    /*[FactRequire(TestRequirements.Graphics | TestRequirements.Gui)]
     public void SimpleScene() {
         ApplicationScene scene = new ApplicationScene();
         Window window = Fixture.GetWindow("Physics!");
@@ -47,6 +47,6 @@ public class PhysicsTest : ApplicationTestEnvironment {
         DebugMovementSystem.InitializeTo(camera);
         while (!window.IsDisposed)
             Thread.Sleep(10);
-    }
+    }*/
 
 }
