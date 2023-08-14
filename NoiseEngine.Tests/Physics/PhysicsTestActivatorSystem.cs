@@ -56,7 +56,7 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
         scene.AddSystem(collisionResolveSystem, cycleTime);
 
         RigidBodyInitializerSystem initalizer = new RigidBodyInitializerSystem();
-        scene.AddSystem(initalizer, cycleTime);
+        scene.AddSystem(initalizer, 500);
     }
 
     private void OnUpdateEntity() {

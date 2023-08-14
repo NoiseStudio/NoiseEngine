@@ -188,6 +188,7 @@ public abstract class EntitySystem : IDisposable {
     private readonly object scheduleLocker = new object();
     private readonly object enabledLocker = new object();
     private readonly Dictionary<EntitySystem, uint> dependencies = new Dictionary<EntitySystem, uint>();
+    private readonly ConcurrentQueue<EntitySystem> waitingForExecution = new ConcurrentQueue<EntitySystem>();
 
     private EntityWorld? world;
     private uint ongoingWork;
@@ -323,7 +324,7 @@ public abstract class EntitySystem : IDisposable {
     /// <returns><see langword="true"/> when cycle was enqueued; otherwise <see langword="false"/>.</returns>
     public bool TryExecute() {
         EntitySchedule? schedule = Schedule;
-        if (schedule is null || !TryOrderWork())
+        if (schedule is null || !TryOrderWork(false))
             return false;
         schedule.Worker.EnqueueCycleBegin(this);
         return true;
@@ -335,7 +336,7 @@ public abstract class EntitySystem : IDisposable {
     /// <returns><see langword="true"/> when cycle was executed; otherwise <see langword="false"/>.</returns>
     public bool TryExecuteAndWait() {
         EntitySchedule? schedule = Schedule;
-        if (schedule is null || !TryOrderWork())
+        if (schedule is null || !TryOrderWork(false))
             return false;
         schedule.Worker.EnqueuePackages(this);
         Wait();
@@ -463,13 +464,18 @@ public abstract class EntitySystem : IDisposable {
         long executionTime = DateTime.UtcNow.Ticks;
 
         long difference = executionTime - lastExecutionTime;
+        Debug.Assert(difference >= 0);
+
         DeltaTime = difference / (double)TimeSpan.TicksPerSecond;
         DeltaTimeF = (float)DeltaTime;
 
         double? cycleTime = CycleTime;
         if (cycleTime.HasValue) {
             long cycleTimeInTicks = (long)(cycleTime.Value * TimeSpan.TicksPerMillisecond);
-            cycleTimeWithDelta = cycleTimeInTicks - (difference - cycleTimeInTicks);
+            if (difference <= cycleTimeInTicks)
+                cycleTimeWithDelta = cycleTimeInTicks;
+            else
+                cycleTimeWithDelta = cycleTimeInTicks - (difference - cycleTimeInTicks);
         }
 
         lastExecutionTime = executionTime;
@@ -520,6 +526,17 @@ public abstract class EntitySystem : IDisposable {
             workResetEvent.Set();
         }
 
+        if (!waitingForExecution.IsEmpty) {
+            long executionTime = DateTime.UtcNow.Ticks;
+            while (waitingForExecution.TryDequeue(out EntitySystem? system)) {
+                double executionTimeDifference = executionTime - system.lastExecutionTime;
+                if (system.cycleTimeWithDelta >= executionTimeDifference)
+                    continue;
+
+                system.TryExecute();
+            }
+        }
+
         if (!enabled) {
             lock (enabledLocker) {
                 OnStop();
@@ -528,12 +545,15 @@ public abstract class EntitySystem : IDisposable {
         }
     }
 
-    internal bool TryOrderWork() {
+    internal bool TryOrderWork(bool invokedFromSchedule) {
         if (!Enabled || IsDisposed || isWorking.Exchange(true))
             return false;
 
         foreach (EntitySystem system in Dependencies) {
             if (system.cycleCount == dependencies[system]) {
+                if (invokedFromSchedule)
+                    system.AddSystemToWaitingForExecution(this);
+
                 lock (workLocker) {
                     isWorking = false;
                     workResetEvent.Set();
@@ -544,6 +564,10 @@ public abstract class EntitySystem : IDisposable {
 
         OrderWork();
         return true;
+    }
+
+    internal void AddSystemToWaitingForExecution(EntitySystem system) {
+        waitingForExecution.Enqueue(system);
     }
 
     /// <summary>
@@ -583,7 +607,7 @@ public abstract class EntitySystem : IDisposable {
     }
 
     private void WaitWhenCanExecuteAndOrderWork() {
-        while (!TryOrderWork()) {
+        while (!TryOrderWork(false)) {
             AssertCouldExecute();
             Wait();
         }

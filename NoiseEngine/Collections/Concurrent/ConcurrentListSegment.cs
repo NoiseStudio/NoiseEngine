@@ -7,11 +7,11 @@ namespace NoiseEngine.Collections.Concurrent;
 
 internal class ConcurrentListSegment<T> : IEnumerable<T> {
 
-    private readonly ConcurrentListSegmentValue<T>[] items;
+    internal readonly ConcurrentListSegmentValue<T>[] items;
 
     private ConcurrentListSegment<T>? previous;
 
-    private int nextIndex;
+    internal int nextIndex;
     private int count;
 
     public int Capacity => items.Length;

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Xml.Linq;
 
 namespace NoiseEngine.Collections.Concurrent;
 
@@ -117,8 +118,11 @@ public class ConcurrentList<T> : ICollection<T>, IReadOnlyCollection<T>, ICollec
     /// from <see cref="ConcurrentList{T}"/>. The <see cref="Array"/> must have zero-based indexing.</param>
     /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
     public void CopyTo(T[] array, int arrayIndex) {
-        foreach (T element in this)
+        foreach (T element in this) {
+            if (arrayIndex >= array.Length)
+                break;
             array[arrayIndex++] = element;
+        }
     }
 
     /// <summary>

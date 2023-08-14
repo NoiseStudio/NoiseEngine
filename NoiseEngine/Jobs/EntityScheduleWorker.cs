@@ -100,8 +100,7 @@ internal class EntityScheduleWorker : IDisposable {
                 enqueueThreadLocker.WaitOne();
 
             long executionTime = DateTime.UtcNow.Ticks;
-            EntitySystem[] sortedSystems =
-                systems.OrderByDescending(x => executionTime - x.lastExecutionTime).ToArray();
+            EntitySystem[] sortedSystems = systems.OrderBy(x => x.lastExecutionTime + x.cycleTimeWithDelta).ToArray();
 
             if (sortedSystems.Length == 0)
                 continue;
@@ -110,14 +109,12 @@ internal class EntityScheduleWorker : IDisposable {
             foreach (EntitySystem system in sortedSystems) {
                 double executionTimeDifference = executionTime - system.lastExecutionTime;
                 if (system.cycleTimeWithDelta >= executionTimeDifference)
-                    break;
-
-                if (!system.TryOrderWork())
                     continue;
 
-                packages.Enqueue(new SchedulePackage(true, system, null, 0, 0));
-                SignalExecutorThreads();
+                if (!system.TryOrderWork(true))
+                    continue;
 
+                EnqueueCycleBegin(system);
                 needToWait = false;
             }
 
@@ -156,8 +153,8 @@ internal class EntityScheduleWorker : IDisposable {
 
                     EntityLocker locker = executionData.Chunk!.GetLocker();
                     if (
-                        executionData.System.ComponentWriteAccess ? !locker.TryEnterWriteLock(1) :
-                        !locker.TryEnterReadLock(1)
+                        executionData.System.ComponentWriteAccess ? !locker.TryEnterWriteLock(0) :
+                        !locker.TryEnterReadLock(0)
                     ) {
                         packages.Enqueue(executionData);
                         continue;
