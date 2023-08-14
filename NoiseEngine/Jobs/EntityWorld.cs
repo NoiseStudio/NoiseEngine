@@ -195,7 +195,7 @@ public partial class EntityWorld : IDisposable {
     /// <returns>New <see cref="Entity"/>.</returns>
     public Entity Spawn() {
         if (!TryGetArchetype(0, out Archetype? archetype))
-            archetype = CreateArchetype(0, Array.Empty<(Type type, int size, int affectiveHashCode)>());
+            archetype = CreateArchetype(0, Array.Empty<(Type type, int affectiveHashCode)>());
 
         (ArchetypeChunk chunk, nint index) = archetype.TakeRecord();
         Entity entity = new Entity(chunk, index);
@@ -229,22 +229,22 @@ public partial class EntityWorld : IDisposable {
         return archetypes.TryGetValue(hashCode, out archetype);
     }
 
-    internal Archetype CreateArchetype(int hashCode, (Type type, int size, int affectiveHashCode)[] components) {
+    internal Archetype CreateArchetype(int hashCode, (Type type, int affectiveHashCode)[] components) {
         AssertIsNotDisposed();
         Archetype? archetype;
         lock (archetypes) {
             if (archetypes.TryGetValue(hashCode, out archetype))
                 return archetype;
 
-            List<(Type type, int size, int affectiveHashCode)>? list = null;
+            List<(Type type, int affectiveHashCode)>? list = null;
             int referenceHashCode = hashCode;
 
-            foreach ((Type type, _, _) in components) {
+            foreach ((Type type, _) in components) {
                 foreach (
                     AppendComponentDefaultAttribute attribute in
                     type.GetCustomAttributes<AppendComponentDefaultAttribute>()
                 ) {
-                    list ??= new List<(Type type, int size, int affectiveHashCode)>(components);
+                    list ??= new List<(Type type, int affectiveHashCode)>(components);
                     foreach (Type t in attribute.Components) {
                         if (list.Any(x => x.type == t))
                             continue;
@@ -257,7 +257,7 @@ public partial class EntityWorld : IDisposable {
                         else
                             affectiveHashCode = 0;
 
-                        list.Add((t, Marshal.SizeOf(obj), affectiveHashCode));
+                        list.Add((t, affectiveHashCode));
                         referenceHashCode ^= unchecked(t.GetHashCode() + (affectiveHashCode * 16777619));
                     }
                 }

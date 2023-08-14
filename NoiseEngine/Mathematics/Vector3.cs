@@ -57,6 +57,18 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     /// <summary>
+    /// Returns greatest component of this <see cref="Vector3{T}"/>.
+    /// </summary>
+    /// <returns>
+    /// <see cref="X"/> if it greater than <see cref="Y"/> or <see cref="Z"/>; otherwise <see cref="Y"/> if it greater
+    /// than <see cref="Z"/>; otherwise <see cref="Z"/>.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T MaxComponent() {
+        return T.Max(X, T.Max(Y, Z));
+    }
+
+    /// <summary>
     /// Calculates dot product of this <see cref="Vector3{T}"/> and <paramref name="rhs"/>.
     /// </summary>
     /// <param name="rhs">Second <see cref="Vector3{T}"/>.</param>
@@ -85,6 +97,15 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Vector3<T> Scale(Vector3<T> rhs) {
         return new Vector3<T>(X * rhs.X, Y * rhs.Y, Z * rhs.Z);
+    }
+
+    /// <summary>
+    /// Calculates reciprocal of this <see cref="Vector3{T}"/>.
+    /// </summary>
+    /// <returns>Reciprocal <see cref="Vector3{T}"/> of this <see cref="Vector3{T}"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Vector3<T> Reciprocal() {
+        return new Vector3<T>(T.One / X, T.One / Y, T.One / Z);
     }
 
     /// <summary>

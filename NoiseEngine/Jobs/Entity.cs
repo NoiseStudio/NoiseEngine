@@ -107,7 +107,7 @@ public sealed class Entity : IDisposable {
                     byte* pi = ptr + index;
                     value = Unsafe.AsRef<T>(ptr + index + offset);
 
-                    if (Unsafe.AsRef<EntityInternalComponent>(pi).Entity is null)
+                    if (Unsafe.AsRef<EntityInternalComponent>(pi).Entity != this)
                         continue;
                 }
             }

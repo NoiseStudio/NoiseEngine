@@ -241,15 +241,17 @@ internal class EntityScheduleWorker : IDisposable {
         EntityWorld world = oldChunk.Archetype.World;
         foreach ((nint ptr, int hashCode) in changeArchetype) {
             if (!world.TryGetArchetype(hashCode, out Archetype? newArchetype)) {
-                (Type, int, int)[] componentTypes = ((Type, int, int)[])oldChunk.Archetype.ComponentTypes.Clone();
+                (Type, int)[] componentTypes =
+                    oldChunk.Archetype.ComponentTypes.Select(x => (x.type, x.affectiveHashCode)).ToArray();
 
                 for (int i = 0; i < componentTypes.Length; i++) {
-                    (Type type, int size, int affectiveHashCode) = componentTypes[i];
+                    (Type type, int affectiveHashCode) = componentTypes[i];
                     if (affectiveHashCode == 0 && !typeof(IAffectiveComponent).IsAssignableFrom(type))
                         continue;
 
-                    componentTypes[i] = (type, size, ((IAffectiveComponent)oldChunk.ReadComponentBoxed(
-                        type, size, ptr + oldChunk.Offsets[type]
+                    (nint offset, int size) = oldChunk.ExtendedInformation[type];
+                    componentTypes[i] = (type, ((IAffectiveComponent)oldChunk.ReadComponentBoxed(
+                        type, size, ptr + offset
                     )).GetAffectiveHashCode());
                 }
 
@@ -274,10 +276,7 @@ internal class EntityScheduleWorker : IDisposable {
 
             Entity entity = Unsafe.ReadUnaligned<EntityInternalComponent>((void*)ptr).Entity!;
             (ArchetypeChunk newChunk, nint newIndex) = newArchetype.TakeRecord();
-
-            entity.chunk = newChunk;
             nint oldIndex = entity.index;
-            entity.index = newIndex;
 
             fixed (byte* dp = newChunk.StorageData) {
                 byte* di = dp + newIndex;
@@ -289,6 +288,9 @@ internal class EntityScheduleWorker : IDisposable {
 
                 // Copy internal component.
                 Buffer.MemoryCopy((void*)ptr, di, iSize, iSize);
+
+                entity.chunk = newChunk;
+                entity.index = newIndex;
 
                 // Clear old data.
                 new Span<byte>((void*)ptr, (int)oldChunk.Archetype.RecordSize).Clear();

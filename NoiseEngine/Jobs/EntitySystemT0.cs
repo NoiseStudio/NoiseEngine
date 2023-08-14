@@ -3,6 +3,7 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -47,7 +48,12 @@ public abstract class EntitySystem : IDisposable {
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public unsafe Entity? GetInternalComponent(nint pointer) {
-                return Unsafe.ReadUnaligned<EntityInternalComponent>((void*)pointer).Entity;
+                Entity? entity = Unsafe.Read<EntityInternalComponent>((void*)pointer).Entity;
+#if (DEBUG)
+                if (entity is not null)
+                    Debug.Assert(!entity.IsDespawned);
+#endif
+                return entity;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -382,7 +388,7 @@ public abstract class EntitySystem : IDisposable {
         if (system == this)
             throw new ArgumentException("Entity system cannot be dependency on itself.");
         lock (dependencies)
-            dependencies.Add(system, system.cycleCount);
+            dependencies.Add(system, system.cycleCount - 1);
     }
 
     /// <summary>
@@ -504,11 +510,11 @@ public abstract class EntitySystem : IDisposable {
 
         OnLateUpdate();
         lock (workLocker) {
-            cycleCount++;
             lock (dependencies) {
                 foreach (EntitySystem system in Dependencies)
                     dependencies[system] = system.cycleCount;
             }
+            cycleCount++;
 
             isWorking = false;
             workResetEvent.Set();

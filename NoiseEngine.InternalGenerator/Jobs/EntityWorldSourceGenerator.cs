@@ -221,11 +221,11 @@ namespace NoiseEngine.InternalGenerator.Jobs {
 
                 builder.AppendIndentation(2).AppendLine("if (!TryGetArchetype(hashCode, out Archetype? archetype)) {");
                 builder.AppendIndentation(3).AppendLine(
-                    "archetype = CreateArchetype(hashCode, new (Type type, int size, int affectiveHashCode)[] {"
+                    "archetype = CreateArchetype(hashCode, new (Type type, int affectiveHashCode)[] {"
                 );
                 for (int j = 1; j <= i; j++) {
-                    builder.AppendIndentation(4).Append("(typeof(T").Append(j).Append("), Unsafe.SizeOf<T").Append(j)
-                        .Append(">(), IAffectiveComponent.GetAffectiveHashCode(component").Append(j).Append("))")
+                    builder.AppendIndentation(4).Append("(typeof(T").Append(j)
+                        .Append("), IAffectiveComponent.GetAffectiveHashCode(component").Append(j).Append("))")
                         .AppendLine(j == i ? "" : ",");
                 }
                 builder.AppendIndentation(3).AppendLine("});").AppendLine();

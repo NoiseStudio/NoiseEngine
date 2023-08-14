@@ -25,7 +25,7 @@ public ref struct EntityCommands {
     public EntityCommands Insert<T>(T component) where T : IComponent {
         SystemCommandsInner.AddCommand(Inner, new SystemCommand(
             SystemCommandType.EntityInsert,
-            ((IComponent)component, Unsafe.SizeOf<T>(), IAffectiveComponent.GetAffectiveHashCode(component))
+            ((IComponent)component, IAffectiveComponent.GetAffectiveHashCode(component))
         ));
         return this;
     }

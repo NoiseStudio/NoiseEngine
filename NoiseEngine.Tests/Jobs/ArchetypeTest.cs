@@ -32,4 +32,15 @@ public class ArchetypeTest : ApplicationTestEnvironment {
         Assert.False(archetype.TryReadAnyRecord(out _));
     }
 
+    [Fact]
+    public void PointerAlignment() {
+        MockComponentA a = MockComponentA.TestValueB;
+        using Entity entity = EntityWorld.Spawn(MockComponentG.TestValueA, a);
+
+        Assert.True(entity.TryGet(out MockComponentG g));
+        Assert.Equal(MockComponentG.TestValueA, g);
+        Assert.True(entity.TryGet(out MockComponentA? a2));
+        Assert.Equal(a, a2!);
+    }
+
 }

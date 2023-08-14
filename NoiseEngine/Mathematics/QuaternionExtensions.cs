@@ -93,4 +93,41 @@ public static class QuaternionExtensions {
         );
     }
 
+    /// <summary>
+    /// Linearly interpolates between <paramref name="lhs"/> and <paramref name="rhs"/> by <paramref name="t"/>.
+    /// </summary>
+    /// <typeparam name="T">Numeric type used in <see cref="Quaternion{T}"/>.</typeparam>
+    /// <param name="lhs">Start <see cref="Quaternion{T}"/>, returned when <paramref name="t"/> = 0.</param>
+    /// <param name="rhs">End <see cref="Quaternion{T}"/>, returned when <paramref name="t"/> = 1.</param>
+    /// <param name="t">
+    /// Not clamped value used to interpolate between <paramref name="lhs"/> and <paramref name="rhs"/>.
+    /// </param>
+    /// <returns>The interpolated <see cref="Quaternion{T}"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Quaternion<T> Lerp<T>(
+        this Quaternion<T> lhs, Quaternion<T> rhs, T t
+    ) where T : IFloatingPointIeee754<T> {
+        T t1 = T.One - t;
+        T dot = lhs.Dot(rhs);
+
+        Quaternion<T> result;
+        if (dot >= T.Zero) {
+            result = new Quaternion<T>(
+                t1 * lhs.X + t * rhs.X,
+                t1 * lhs.Y + t * rhs.Y,
+                t1 * lhs.Z + t * rhs.Z,
+                t1 * lhs.W + t * rhs.W
+            );
+        } else {
+            result = new Quaternion<T>(
+                t1 * lhs.X - t * rhs.X,
+                t1 * lhs.Y - t * rhs.Y,
+                t1 * lhs.Z - t * rhs.Z,
+                t1 * lhs.W - t * rhs.W
+            );
+        }
+
+        return result.Normalize();
+    }
+
 }

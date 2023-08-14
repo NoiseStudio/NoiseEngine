@@ -44,6 +44,9 @@ public class EntitySystemTest : ApplicationTestEnvironment {
 
         systemB.AddDependency(systemA);
 
+        systemA.ExecuteAndWait();
+        systemB.ExecuteAndWait();
+
         Assert.False(systemB.TryExecute());
         systemA.ExecuteAndWait();
         Assert.True(systemB.TryExecuteAndWait());

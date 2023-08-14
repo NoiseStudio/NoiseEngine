@@ -3,6 +3,7 @@ using NoiseEngine.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -31,41 +32,76 @@ internal class Archetype {
     internal (Type type, int size, int affectiveHashCode)[] ComponentTypes { get; }
     internal Dictionary<Type, nint> Offsets { get; } = new Dictionary<Type, nint>();
     internal Dictionary<Type, int> HashCodes { get; } = new Dictionary<Type, int>();
+    internal Dictionary<Type, (nint offset, int size)> ExtendedInformation = new Dictionary<Type, (nint, int)>();
     internal ConcurrentDictionary<Type, ChangedObserverContext[]> ChangedObserversLookup { get; } =
         new ConcurrentDictionary<Type, ChangedObserverContext[]>();
 
-    public Archetype(EntityWorld world, int hashCode, (Type type, int size, int affectiveHashCode)[] componentTypes) {
+    public Archetype(
+        EntityWorld world, int hashCode, IReadOnlyList<(Type type, int affectiveHashCode)> componentTypes
+    ) {
         componentTypes = componentTypes.OrderBy(x => x.type.FullName).ToArray();
 
         World = world;
         HashCode = hashCode;
-        ComponentTypes = componentTypes;
-
-        Offsets.Add(typeof(EntityInternalComponent), 0);
-        nint offset = Unsafe.SizeOf<EntityInternalComponent>();
-        foreach ((Type type, int size, _) in componentTypes) {
-            Offsets.Add(type, offset);
-            offset += size;
-        }
+        ComponentTypes = new (Type, int, int)[componentTypes.Count];
 
         Type? columnType = null;
-        for (int i = componentTypes.Length - 1; i >= 0; i--) {
-            if (columnType is null)
-                columnType = componentTypes[i].type;
-            else
-                columnType = typeof(ArchetypeColumn<,>).MakeGenericType(componentTypes[i].type, columnType);
+        for (int i = componentTypes.Count - 1; i >= 0; i--) {
+            if (columnType is null) {
+                columnType = WrapReference(componentTypes[i].type);
+            } else {
+                columnType = typeof(ArchetypeColumn<,>).MakeGenericType(
+                    WrapReference(componentTypes[i].type), columnType
+                );
+            }
         }
 
-        if (columnType is null)
+        if (columnType is null) {
             columnType = typeof(EntityInternalComponent);
-        else
+            Offsets.Add(typeof(EntityInternalComponent), 0);
+            RecordSize = Unsafe.SizeOf<EntityInternalComponent>();
+        } else {
             columnType = typeof(ArchetypeColumn<,>).MakeGenericType(typeof(EntityInternalComponent), columnType);
+            ArchetypeColumn<nint, nint> offsets = (ArchetypeColumn<nint, nint>)columnType.GetMethod(
+                nameof(ArchetypeColumn<nint, nint>.GetOffsets)
+            )!.Invoke(null, null)!;
+
+            Offsets.Add(typeof(EntityInternalComponent), offsets.Element1);
+            nint offset = offsets.Element2;
+
+            Type columnTypeFragment = columnType;
+            (Type type, int affectiveHashCode) componentType;
+
+            for (int i = 0; i < componentTypes.Count - 1; i++) {
+                columnTypeFragment = columnTypeFragment.GetField(
+                    nameof(ArchetypeColumn<nint, nint>.Element2)
+                )!.FieldType;
+                offsets = (ArchetypeColumn<nint, nint>)columnTypeFragment.GetMethod(
+                    nameof(ArchetypeColumn<nint, nint>.GetOffsets)
+                )!.Invoke(null, null)!;
+
+                componentType = componentTypes[i];
+                Offsets.Add(componentType.type, offset + offsets.Element1);
+                ComponentTypes[i] =
+                    (componentType.type, (int)(offsets.Element2 - offsets.Element1), componentType.affectiveHashCode);
+
+                offset += offsets.Element2;
+            }
+
+            RecordSize = (nint)columnType.GetMethod(nameof(ArchetypeColumn<nint, nint>.GetSize))!.Invoke(null, null)!;
+
+            componentType = componentTypes[componentTypes.Count - 1];
+            Offsets.Add(componentType.type, offset);
+            ComponentTypes[componentTypes.Count - 1] =
+                (componentType.type, (int)(RecordSize - offset), componentType.affectiveHashCode);
+        }
 
         this.columnType = columnType;
-        RecordSize = offset;
 
-        foreach ((Type type, _, int affectiveHashCode) in componentTypes)
+        foreach ((Type type, int size, int affectiveHashCode) in ComponentTypes) {
             HashCodes.Add(type, type.GetHashCode() + affectiveHashCode * 16777619);
+            ExtendedInformation.Add(type, (Offsets[type], size));
+        }
 
         // Enqueue affective systems.
         foreach (AffectiveSystem affectiveSystem in world.AffectiveSystems)
@@ -80,6 +116,12 @@ internal class Archetype {
         if (component is IAffectiveComponent<T> affectiveComponent)
             return unchecked(typeof(T).GetHashCode() + (affectiveComponent.GetAffectiveHashCode() * 16777619));
         return typeof(T).GetHashCode();
+    }
+
+    private static Type WrapReference(Type type) {
+        if (type.IsValueType)
+            return type;
+        return typeof(ArchetypeColumnReferenceWrapper<>).MakeGenericType(type);
     }
 
     public void Initialize() {
@@ -129,6 +171,7 @@ internal class Archetype {
     }
 
     public void ReleaseRecord(ArchetypeChunk chunk, nint index) {
+        Debug.Assert(index % RecordSize == 0);
         releasedRecords.Enqueue((chunk, index));
     }
 
