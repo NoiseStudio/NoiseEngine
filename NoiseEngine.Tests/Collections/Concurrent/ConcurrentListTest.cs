@@ -104,4 +104,26 @@ public class ConcurrentListTest {
         Assert.Equal(testList.OrderBy(x => x), list.OrderBy(x => x));
     }
 
+    [Fact]
+    public void IterateDuringGrowing() {
+        ConcurrentList<int> list = new ConcurrentList<int>();
+        bool works = true;
+
+        Task[] tasks = Enumerable.Range(0, Environment.ProcessorCount * 4).Select(_ => Task.Run(() => {
+            int i = 0;
+            while (works) {
+                list.Remove(i);
+                list.Add(i++);
+            }
+        })).ToArray();
+
+        for (int i = 0; i < Environment.ProcessorCount * 16; i++) {
+            foreach (int element in list)
+                Assert.True(element >= 0);
+        }
+
+        works = false;
+        Task.WaitAll(tasks);
+    }
+
 }
