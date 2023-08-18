@@ -50,18 +50,9 @@ global using ushort2 = NoiseEngine.Mathematics.Vector2<ushort>;
 global using ushort3 = NoiseEngine.Mathematics.Vector3<ushort>;
 global using ushort4 = NoiseEngine.Mathematics.Vector4<ushort>;
 
-#if NE_LARGE_WORLD
 #pragma warning disable CS8981
-global using pos = double;
+global using pos = NoiseEngine.Mathematics.Position;
 #pragma warning restore CS8981
-global using pos2 = NoiseEngine.Mathematics.Vector2<double>;
-global using pos3 = NoiseEngine.Mathematics.Vector3<double>;
-global using pos4 = NoiseEngine.Mathematics.Vector4<double>;
-#else
-#pragma warning disable CS8981
-global using pos = float;
-#pragma warning restore CS8981
-global using pos2 = NoiseEngine.Mathematics.Vector2<float>;
-global using pos3 = NoiseEngine.Mathematics.Vector3<float>;
-global using pos4 = NoiseEngine.Mathematics.Vector4<float>;
-#endif
+global using pos2 = NoiseEngine.Mathematics.Vector2<NoiseEngine.Mathematics.Position>;
+global using pos3 = NoiseEngine.Mathematics.Vector3<NoiseEngine.Mathematics.Position>;
+global using pos4 = NoiseEngine.Mathematics.Vector4<NoiseEngine.Mathematics.Position>;

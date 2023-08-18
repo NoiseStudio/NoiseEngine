@@ -1,4 +1,4 @@
-﻿using NoiseEngine.Mathematics;
+﻿using NoiseEngine.Mathematics.Helpers;
 
 namespace NoiseEngine.Tests.Mathematics;
 

@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿using NoiseEngine.Mathematics.Helpers;
+using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Mathematics;
@@ -43,18 +45,10 @@ public static class Vector3Extensions {
     /// <param name="vector"><see cref="Vector3{T}"/> to convert.</param>
     /// <returns><see cref="Vector3{T}"/> with <see cref="float"/> components.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float3 ToFloat(this float3 vector) {
-        return vector;
-    }
-
-    /// <summary>
-    /// Converts <see cref="Vector3{T}"/> to vector where T is <see cref="float"/>.
-    /// </summary>
-    /// <param name="vector"><see cref="Vector3{T}"/> to convert.</param>
-    /// <returns><see cref="Vector3{T}"/> with <see cref="float"/> components.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float3 ToFloat(this double3 vector) {
-        return new float3((float)vector.X, (float)vector.Y, (float)vector.Z);
+    public static float3 ToFloat<T>(this Vector3<T> vector) where T : IConvertible, INumber<T> {
+        return new float3(
+            VectorHelper.ToFloat(vector.X), VectorHelper.ToFloat(vector.Y), VectorHelper.ToFloat(vector.Z)
+        );
     }
 
     /// <summary>
@@ -63,22 +57,22 @@ public static class Vector3Extensions {
     /// <param name="vector"><see cref="Vector3{T}"/> to convert.</param>
     /// <returns><see cref="Vector3{T}"/> with <see cref="double"/> components.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double3 ToDouble(this float3 vector) {
-        return new double3(vector.X, vector.Y, vector.Z);
+    public static double3 ToDouble<T>(this Vector3<T> vector) where T : IConvertible, INumber<T> {
+        return new double3(
+            VectorHelper.ToDouble(vector.X), VectorHelper.ToDouble(vector.Y), VectorHelper.ToDouble(vector.Z)
+        );
     }
 
     /// <summary>
-    /// Converts <see cref="Vector3{T}"/> to vector where T is pos.
+    /// Converts <see cref="Vector3{T}"/> to vector where T is <see cref="Position"/>.
     /// </summary>
     /// <param name="vector"><see cref="Vector3{T}"/> to convert.</param>
-    /// <returns><see cref="Vector3{T}"/> with pos components.</returns>
+    /// <returns><see cref="Vector3{T}"/> with <see cref="Position"/> components.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static pos3 ToPos(this float3 vector) {
-#if NE_LARGE_WORLD
-        return vector.ToDouble();
-#else
-        return vector;
-#endif
+    public static pos3 ToPos<T>(this Vector3<T> vector) where T : IConvertible, INumber<T> {
+        return new pos3(
+            VectorHelper.ToPos(vector.X), VectorHelper.ToPos(vector.Y), VectorHelper.ToPos(vector.Z)
+        );
     }
 
 }

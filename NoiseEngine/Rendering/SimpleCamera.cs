@@ -1,4 +1,5 @@
 ﻿using NoiseEngine.Mathematics;
+using NoiseEngine.Mathematics.Helpers;
 using NoiseEngine.Rendering.Exceptions;
 using NoiseEngine.Rendering.Vulkan;
 using System;
@@ -23,7 +24,7 @@ public class SimpleCamera {
     public ProjectionType ProjectionType { get; set; } = ProjectionType.Perspective;
     public float NearClipPlane { get; set; } = 0.1f;
     public float FarClipPlane { get; set; } = 1000f;
-    public float FieldOfViewRadians { get; set; } = FloatingPointIeee754Helper.ConvertDegreesToRadians(60f);
+    public float FieldOfViewRadians { get; set; } = FloatingPointIeee754Helper<float>.ConvertDegreesToRadians(60f);
     public float OrthographicSize { get; set; } = 10f;
 
     public virtual pos3 Position {
@@ -61,8 +62,8 @@ public class SimpleCamera {
     }
 
     public float FieldOfViewDegrees {
-        get => FloatingPointIeee754Helper.ConvertRadiansToDegrees(FieldOfViewRadians);
-        set => FieldOfViewRadians = FloatingPointIeee754Helper.ConvertDegreesToRadians(value);
+        get => FloatingPointIeee754Helper<float>.ConvertRadiansToDegrees(FieldOfViewRadians);
+        set => FieldOfViewRadians = FloatingPointIeee754Helper<float>.ConvertDegreesToRadians(value);
     }
 
     /// <summary>
