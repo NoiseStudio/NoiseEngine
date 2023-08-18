@@ -37,4 +37,48 @@ public static class Vector4Extensions {
         return T.Sqrt(lhs.DistanceSquared(rhs));
     }
 
+    /// <summary>
+    /// Converts <see cref="Vector4{T}"/> to vector where T is <see cref="float"/>.
+    /// </summary>
+    /// <param name="vector"><see cref="Vector4{T}"/> to convert.</param>
+    /// <returns><see cref="Vector4{T}"/> with <see cref="float"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float4 ToFloat(this double4 vector) {
+        return new float4((float)vector.X, (float)vector.Y, (float)vector.Z, (float)vector.W);
+    }
+
+    /// <summary>
+    /// Converts <see cref="Vector4{T}"/> to vector where T is <see cref="float"/>.
+    /// </summary>
+    /// <param name="vector"><see cref="Vector4{T}"/> to convert.</param>
+    /// <returns><see cref="Vector4{T}"/> with <see cref="float"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float4 ToFloat(this float4 vector) {
+        return vector;
+    }
+
+    /// <summary>
+    /// Converts <see cref="Vector4{T}"/> to vector where T is <see cref="double"/>.
+    /// </summary>
+    /// <param name="vector"><see cref="Vector4{T}"/> to convert.</param>
+    /// <returns><see cref="Vector4{T}"/> with <see cref="double"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double4 ToDouble(this float4 vector) {
+        return new double4(vector.X, vector.Y, vector.Z, vector.W);
+    }
+
+    /// <summary>
+    /// Converts <see cref="Vector4{T}"/> to vector where T is pos.
+    /// </summary>
+    /// <param name="vector"><see cref="Vector4{T}"/> to convert.</param>
+    /// <returns><see cref="Vector4{T}"/> with pos components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static pos4 ToPos(this float4 vector) {
+#if NE_LARGE_WORLD
+        return vector.ToDouble();
+#else
+        return vector;
+#endif
+    }
+
 }

@@ -64,11 +64,11 @@ public class SimpleCameraTest : ApplicationTestEnvironment {
 
                 commandBuffer.DrawMeshUnchecked(
                     new Mesh<VertexPosition3Color3, ushort>(device, verticesA, indices), shared.DefaultMaterial,
-                    new TransformComponent(new Vector3<float>(0, 0, 5)).Matrix
+                    new TransformComponent(new pos3(0, 0, 5)).Matrix
                 );
                 commandBuffer.DrawMeshUnchecked(
                     new Mesh<VertexPosition3Color3, ushort>(device, verticesB, indices), shared.DefaultMaterial,
-                    new TransformComponent(new Vector3<float>(0, 0, 10)).Matrix
+                    new TransformComponent(new pos3(0, 0, 10)).Matrix
                 );
 
                 commandBuffer.DetachCameraUnchecked();

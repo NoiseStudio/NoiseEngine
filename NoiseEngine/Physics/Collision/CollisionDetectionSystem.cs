@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.Jobs;
+using NoiseEngine.Mathematics;
 using NoiseEngine.Physics.Collision.Sphere;
 using System;
 using System.Collections.Concurrent;
@@ -58,8 +59,8 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
             return;
 
         ColliderTransform currentTransform = new ColliderTransform(
-            middle.Position, middle.Position + rigidBody.CenterOfMass, transform.Scale, rigidBody.LinearVelocity,
-            rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, true
+            middle.Position, middle.Position + rigidBody.CenterOfMass.ToPos(), transform.Scale,
+            rigidBody.LinearVelocity, rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, true
         );
         space.GetNearColliders(storage.ColliderDataBuffer);
 

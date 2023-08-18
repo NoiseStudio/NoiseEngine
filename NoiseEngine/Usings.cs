@@ -1,6 +1,4 @@
-﻿global using Xunit;
-
-global using byte2 = NoiseEngine.Mathematics.Vector2<byte>;
+﻿global using byte2 = NoiseEngine.Mathematics.Vector2<byte>;
 global using byte3 = NoiseEngine.Mathematics.Vector3<byte>;
 global using byte4 = NoiseEngine.Mathematics.Vector4<byte>;
 

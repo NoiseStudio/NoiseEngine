@@ -4,10 +4,10 @@ using System.Runtime.CompilerServices;
 namespace NoiseEngine.Physics.Collision;
 
 internal readonly record struct ColliderTransform(
-    Vector3<float> Position,
-    Vector3<float> WorldCenterOfMass,
-    Vector3<float> Scale,
-    Vector3<float> LinearVelocity,
+    pos3 Position,
+    pos3 WorldCenterOfMass,
+    float3 Scale,
+    float3 LinearVelocity,
     Matrix3x3<float> InverseInertiaTensorMatrix,
     float InverseMass,
     bool IsRigidBody

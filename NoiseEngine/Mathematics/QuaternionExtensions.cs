@@ -130,4 +130,28 @@ public static class QuaternionExtensions {
         return result.Normalize();
     }
 
+    /// <summary>
+    /// Converts <see cref="Quaternion{T}"/> to quaternion where T is <see cref="double"/>.
+    /// </summary>
+    /// <param name="quaternion"><see cref="Quaternion{T}"/> to convert.</param>
+    /// <returns><see cref="Quaternion{T}"/> with <see cref="double"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Quaternion<double> ToDouble(this Quaternion<float> quaternion) {
+        return new Quaternion<double>(quaternion.X, quaternion.Y, quaternion.Z, quaternion.W);
+    }
+
+    /// <summary>
+    /// Converts <see cref="Quaternion{T}"/> to quaternion where T is pos.
+    /// </summary>
+    /// <param name="quaternion"><see cref="Quaternion{T}"/> to convert.</param>
+    /// <returns><see cref="Quaternion{T}"/> with pos components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Quaternion<pos> ToPos(this Quaternion<float> quaternion) {
+#if NE_LARGE_WORLD
+        return quaternion.ToDouble();
+#else
+        return quaternion;
+#endif
+    }
+
 }

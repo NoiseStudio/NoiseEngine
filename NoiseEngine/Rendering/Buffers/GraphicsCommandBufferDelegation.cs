@@ -26,8 +26,8 @@ internal abstract class GraphicsCommandBufferDelegation {
 
     public abstract void AttachCameraWorker(SimpleCamera camera);
 
-    public abstract void DispatchWorker(ComputeKernel kernel, ComputeMaterial material, Vector3<uint> groupCount);
+    public abstract void DispatchWorker(ComputeKernel kernel, ComputeMaterial material, uint3 groupCount);
 
-    public abstract void DrawMeshWorker(Mesh mesh, Material material, Matrix4x4<float> transform);
+    public abstract void DrawMeshWorker(Mesh mesh, Material material, Matrix4x4<pos> transform);
 
 }

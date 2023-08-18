@@ -10,7 +10,7 @@ public class SimpleCamera {
 
     private readonly object renderTargetLocker = new object();
 
-    protected Vector3<float> position;
+    protected pos3 position;
     protected Quaternion<float> rotation = Quaternion<float>.Identity;
 
     private CameraClearFlags clearFlags = CameraClearFlags.SolidColor;
@@ -26,7 +26,7 @@ public class SimpleCamera {
     public float FieldOfViewRadians { get; set; } = FloatingPointIeee754Helper.ConvertDegreesToRadians(60f);
     public float OrthographicSize { get; set; } = 10f;
 
-    public virtual Vector3<float> Position {
+    public virtual pos3 Position {
         get => position;
         set => position = value;
     }
@@ -97,14 +97,14 @@ public class SimpleCamera {
             if (renderTarget is null)
                 return float.NaN;
 
-            Vector3<uint> extent = renderTarget.Extent;
+            uint3 extent = renderTarget.Extent;
             return extent.X / (float)extent.Y;
         }
     }
 
-    public Matrix4x4<float> ViewMatrix => CalculateViewMatrix();
-    public Matrix4x4<float> ProjectionMatrix => CalculateProjectionMatrix();
-    public Matrix4x4<float> ProjectionViewMatrix => ProjectionMatrix * ViewMatrix;
+    public Matrix4x4<pos> ViewMatrix => CalculateViewMatrix();
+    public Matrix4x4<pos> ProjectionMatrix => CalculateProjectionMatrix();
+    public Matrix4x4<pos> ProjectionViewMatrix => ProjectionMatrix * ViewMatrix;
 
     internal SimpleCameraDelegation Delegation { get; }
 
@@ -155,7 +155,7 @@ public class SimpleCamera {
         }
     }
 
-    private Matrix4x4<float> CalculateViewMatrix() {
+    private Matrix4x4<pos> CalculateViewMatrix() {
         // TODO: Implement inverse quaternion in NoiseEngine.Mathematics
         float ls =
             rotation.X * rotation.X + rotation.Y * rotation.Y + rotation.Z * rotation.Z + rotation.W * rotation.W;
@@ -167,29 +167,29 @@ public class SimpleCamera {
             W = rotation.W * inverseNormal
         };
 
-        return Matrix4x4<float>.Rotate(inverseRotation) * Matrix4x4<float>.Translate(Vector3<float>.Zero - position);
+        return Matrix4x4<pos>.Rotate(inverseRotation.ToPos()) * Matrix4x4<pos>.Translate(pos3.Zero - position);
     }
 
-    private Matrix4x4<float> CalculateProjectionMatrix() {
-        float farMinusNear = FarClipPlane - NearClipPlane;
-
+    private Matrix4x4<pos> CalculateProjectionMatrix() {
         switch (ProjectionType) {
             case ProjectionType.Perspective:
                 float tanHalfFieldOfView = MathF.Tan(FieldOfViewRadians * 0.5f);
                 float zRange = NearClipPlane - FarClipPlane;
 
-                return new Matrix4x4<float>(
-                    new Vector4<float>(1 / (AspectRatio * tanHalfFieldOfView), 0.0f, 0.0f, 0.0f),
-                    new Vector4<float>(0.0f, -1 / tanHalfFieldOfView, 0.0f, 0.0f),
-                    new Vector4<float>(0.0f, 0.0f, (-NearClipPlane - FarClipPlane) / zRange, 1.0f),
-                    new Vector4<float>(0.0f, 0.0f, 2.0f * FarClipPlane * NearClipPlane / zRange, 0.0f));
+                return new Matrix4x4<pos>(
+                    new pos4(1 / (AspectRatio * tanHalfFieldOfView), 0.0f, 0.0f, 0.0f),
+                    new pos4(0.0f, -1 / tanHalfFieldOfView, 0.0f, 0.0f),
+                    new pos4(0.0f, 0.0f, (-NearClipPlane - FarClipPlane) / zRange, 1.0f),
+                    new pos4(0.0f, 0.0f, 2.0f * FarClipPlane * NearClipPlane / zRange, 0.0f));
 
             case ProjectionType.Orthographic:
-                return new Matrix4x4<float>(
-                    new Vector4<float>(1 / (OrthographicSize * AspectRatio), 0, 0, 0),
-                    new Vector4<float>(0, -1 / OrthographicSize, 0, 0),
-                    new Vector4<float>(0, 0, 1 / farMinusNear, 0),
-                    new Vector4<float>(0, 0, 0.5f * (-(FarClipPlane + NearClipPlane) / farMinusNear + 1), 1));
+                float farMinusNear = FarClipPlane - NearClipPlane;
+
+                return new Matrix4x4<pos>(
+                    new pos4(1 / (OrthographicSize * AspectRatio), 0, 0, 0),
+                    new pos4(0, -1 / OrthographicSize, 0, 0),
+                    new pos4(0, 0, 1 / farMinusNear, 0),
+                    new pos4(0, 0, 0.5f * (-(FarClipPlane + NearClipPlane) / farMinusNear + 1), 1));
 
             default:
                 throw new InvalidEnumArgumentException

@@ -43,11 +43,11 @@ public class PrimitiveCreator {
     /// <param name="scale">Scale of the cube.</param>
     /// <returns>Cube <see cref="Entity"/>.</returns>
     public Entity CreateCube(
-        Vector3<float>? position = null, Quaternion<float>? rotation = null, Vector3<float>? scale = null
+        pos3? position = null, Quaternion<float>? rotation = null, float3? scale = null
     ) {
         return scene.Spawn(
             new TransformComponent(
-                position ?? Vector3<float>.Zero, rotation ?? Quaternion<float>.Identity, scale ?? Vector3<float>.One
+                position ?? pos3.Zero, rotation ?? Quaternion<float>.Identity, scale ?? float3.One
             ),
             new MeshRendererComponent(CubeMesh, DefaultMaterial)
         );
@@ -61,11 +61,11 @@ public class PrimitiveCreator {
     /// <param name="scale">Scale of the sphere.</param>
     /// <returns>Sphere <see cref="Entity"/>.</returns>
     public Entity CreateSphere(
-        Vector3<float>? position = null, Quaternion<float>? rotation = null, Vector3<float>? scale = null
+        pos3? position = null, Quaternion<float>? rotation = null, float3? scale = null
     ) {
         return scene.Spawn(
             new TransformComponent(
-                position ?? Vector3<float>.Zero, rotation ?? Quaternion<float>.Identity, scale ?? Vector3<float>.One
+                position ?? pos3.Zero, rotation ?? Quaternion<float>.Identity, scale ?? float3.One
             ),
             new MeshRendererComponent(GetSphereMesh(), DefaultMaterial)
         );

@@ -44,7 +44,7 @@ public class Camera : SimpleCamera {
     }
 
     public Camera(
-        ApplicationScene scene, Vector3<float> position, Quaternion<float> rotation
+        ApplicationScene scene, pos3 position, Quaternion<float> rotation
     ) : base(scene.GraphicsDevice) {
         Scene = scene;
         Entity = scene.Spawn(
@@ -55,10 +55,10 @@ public class Camera : SimpleCamera {
         Scene.AddCameraToScene(this);
     }
 
-    public Camera(ApplicationScene scene, Vector3<float> position) : this(scene, position, Quaternion<float>.Identity) {
+    public Camera(ApplicationScene scene, pos3 position) : this(scene, position, Quaternion<float>.Identity) {
     }
 
-    public Camera(ApplicationScene scene) : this(scene, new Vector3<float>(0, 0, -5)) {
+    public Camera(ApplicationScene scene) : this(scene, new pos3(0, 0, -5)) {
     }
 
     /// <summary>

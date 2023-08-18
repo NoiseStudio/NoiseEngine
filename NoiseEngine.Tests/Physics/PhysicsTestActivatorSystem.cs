@@ -27,9 +27,9 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
         Enabled = false;
 
         scene.Primitive.CreateCube(
-            new Vector3<float>(0, 0, 15),
-            Quaternion.EulerDegrees(new Vector3<float>(0, 90, 0)),
-            new Vector3<float>(10, 10, 10)
+            new pos3(0, 0, 15),
+            Quaternion.EulerDegrees<float>(0, 90, 0),
+            new float3(10, 10, 10)
         );
 
         scene.AddFrameDependentSystem(new RigidBodyFrameSmoothingSystem());

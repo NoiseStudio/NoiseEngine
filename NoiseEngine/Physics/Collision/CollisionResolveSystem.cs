@@ -36,18 +36,18 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
             do {
                 bool notBlocked = yNotBlocked || iterator.Current.Normal.Y <= 0;
                 if (notBlocked)
-                    middle.Position -= iterator.Current.Normal * iterator.Current.Depth;
+                    middle.Position -= (iterator.Current.Normal * iterator.Current.Depth).ToPos();
 
                 if (iterator.Current.Depth >= 0.5f) {
-                    middle.Position += new Vector3<float>(
+                    middle.Position += new float3(
                         (Random.Shared.NextSingle() - 0.5f) / 10000f,
                         (Random.Shared.NextSingle() - 0.5f) / 10000f,
                         (Random.Shared.NextSingle() - 0.5f) / 10000f
-                    );
+                    ).ToPos();
                 }
 
-                Vector3<float> ra = iterator.Current.Position - middle.Position + rigidBody.CenterOfMass;
-                Vector3<float> angularVelocityChange =
+                float3 ra = (iterator.Current.Position - middle.Position).ToFloat() + rigidBody.CenterOfMass;
+                float3 angularVelocityChange =
                     rigidBody.InverseInertiaTensorMatrix * iterator.Current.Normal.Cross(ra);
 
                 rigidBody.AngularVelocity -= angularVelocityChange;
@@ -55,7 +55,7 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 if (notBlocked) {
                     float jA = rigidBody.InverseMass + iterator.Current.Normal.Dot(angularVelocityChange.Cross(ra));
 
-                    Vector3<float> relativeVelocity = rigidBody.LinearVelocity - iterator.Current.OtherVelocity;
+                    float3 relativeVelocity = rigidBody.LinearVelocity - iterator.Current.OtherVelocity;
                     float j =
                         iterator.Current.MinRestitutionPlusOneNegative * relativeVelocity.Dot(iterator.Current.Normal);
                     j /= jA + iterator.Current.ResolveImpulseB;
@@ -68,8 +68,8 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 rigidBody.LinearVelocity.MagnitudeSquared() <= 0.1f &&
                 rigidBody.AngularVelocity.MagnitudeSquared() <= 0.005f * 0.005f
             ) {
-                rigidBody.LinearVelocity = Vector3<float>.Zero;
-                rigidBody.AngularVelocity = Vector3<float>.Zero;
+                rigidBody.LinearVelocity = float3.Zero;
+                rigidBody.AngularVelocity = float3.Zero;
 
                 rigidBody.SleepAccumulator++;
                 if (rigidBody.SleepAccumulator > RigidBodyComponent.SleepThreshold)

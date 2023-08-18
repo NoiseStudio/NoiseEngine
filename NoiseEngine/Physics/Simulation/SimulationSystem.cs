@@ -47,11 +47,11 @@ internal sealed partial class SimulationSystem : EntitySystem {
             };
         }
 
-        middle.Position = data.TargetPosition + rigidBody.LinearVelocity * fixedDeltaTime;
+        middle.Position = data.TargetPosition + (rigidBody.LinearVelocity * fixedDeltaTime).ToPos();
         data.TargetRotation *= Quaternion.EulerRadians(rigidBody.AngularVelocity * fixedDeltaTime);
 
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            data.TargetPosition, data.TargetPosition + rigidBody.CenterOfMass, transform.Scale,
+            data.TargetPosition, data.TargetPosition + rigidBody.CenterOfMass.ToPos(), transform.Scale,
             rigidBody.LinearVelocity, rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass,
             true
         ), collider));

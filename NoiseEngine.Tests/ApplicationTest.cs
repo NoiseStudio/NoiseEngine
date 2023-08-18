@@ -1,6 +1,5 @@
 ﻿using NoiseEngine.DeveloperTools.Systems;
 using NoiseEngine.Jobs;
-using NoiseEngine.Mathematics;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
 using System.Threading;
@@ -23,7 +22,7 @@ public class ApplicationTest : ApplicationTestEnvironment {
 
             for (int x = -10; x < 10; x += 2) {
                 for (int y = -10; y < 10; y += 2) {
-                    scene.Primitive.CreateCube(new Vector3<float>(x, 0, y));
+                    scene.Primitive.CreateCube(new pos3(x, 0, y));
                 }
             }
 
