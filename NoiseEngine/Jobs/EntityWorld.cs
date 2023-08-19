@@ -87,6 +87,7 @@ public partial class EntityWorld : IDisposable {
 
         systems.Add(system);
         RegisterArchetypesToSystem(system);
+        system.TryEnableAfterInitialization();
 
         if (IsDisposed) {
             system.Dispose();
