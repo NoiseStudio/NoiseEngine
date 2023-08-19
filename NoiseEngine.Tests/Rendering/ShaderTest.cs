@@ -95,8 +95,8 @@ public class ShaderTest : ApplicationTestEnvironment {
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
             commandBuffer.AttachCameraUnchecked(camera);
             commandBuffer.DrawMeshUnchecked(
-                new Mesh<Vector4<float>, ushort>(device, new Vector4<float>[4], new ushort[] { 0, 1, 2 }),
-                new Material(shader), new Matrix4x4<float>()
+                new Mesh<float4, ushort>(device, new float4[4], new ushort[] { 0, 1, 2 }),
+                new Material(shader), new Matrix4x4<pos>()
             );
             commandBuffer.DetachCameraUnchecked();
 

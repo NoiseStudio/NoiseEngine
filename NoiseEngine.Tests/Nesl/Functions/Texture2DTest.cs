@@ -86,7 +86,7 @@ public class Texture2DTest : ApplicationTestEnvironment {
                 new ushort[] {
                     0, 1, 2, 3, 2, 1
                 }
-            ), material, new TransformComponent(new Vector3<float>(0, 0, 5)).Matrix);
+            ), material, new TransformComponent(new pos3(0, 0, 5)).Matrix);
             commandBuffer.DetachCameraUnchecked();
 
             commandBuffer.Execute();

@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace NoiseEngine.Mathematics;
+namespace NoiseEngine.Mathematics.Helpers;
 
 internal static class NumberHelper<T> where T : INumber<T> {
 

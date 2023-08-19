@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using NoiseEngine.Mathematics.Helpers;
 
 namespace NoiseEngine.Mathematics;
 
@@ -55,9 +56,9 @@ public static class Quaternion {
         where T : IFloatingPointIeee754<T>
     {
         return EulerRadians(
-            FloatingPointIeee754Helper.ConvertDegreesToRadians(x),
-            FloatingPointIeee754Helper.ConvertDegreesToRadians(y),
-            FloatingPointIeee754Helper.ConvertDegreesToRadians(z)
+            FloatingPointIeee754Helper<T>.ConvertDegreesToRadians(x),
+            FloatingPointIeee754Helper<T>.ConvertDegreesToRadians(y),
+            FloatingPointIeee754Helper<T>.ConvertDegreesToRadians(z)
         );
     }
 

@@ -10,26 +10,26 @@ namespace NoiseEngine.Systems;
 internal class MeshRendererResources {
 
     private readonly ConcurrentDictionary<
-        Shader, ConcurrentDictionary<Material, ConcurrentBag<(Mesh, Matrix4x4<float>)>>
+        Shader, ConcurrentDictionary<Material, ConcurrentBag<(Mesh, Matrix4x4<pos>)>>
     > meshes = new ConcurrentDictionary<
-        Shader, ConcurrentDictionary<Material, ConcurrentBag<(Mesh, Matrix4x4<float>)>>
+        Shader, ConcurrentDictionary<Material, ConcurrentBag<(Mesh, Matrix4x4<pos>)>>
     >();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void AddMesh(Mesh mesh, Material material, Matrix4x4<float> transform) {
+    public void AddMesh(Mesh mesh, Material material, Matrix4x4<pos> transform) {
         meshes.GetOrAdd(material.Shader, static _ =>
-            new ConcurrentDictionary<Material, ConcurrentBag<(Mesh, Matrix4x4<float>)>>()
-        ).GetOrAdd(material, static _ => new ConcurrentBag<(Mesh, Matrix4x4<float>)>()).Add((mesh, transform));
+            new ConcurrentDictionary<Material, ConcurrentBag<(Mesh, Matrix4x4<pos>)>>()
+        ).GetOrAdd(material, static _ => new ConcurrentBag<(Mesh, Matrix4x4<pos>)>()).Add((mesh, transform));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordMeshes(GraphicsCommandBuffer commandBuffer) {
         foreach (
-            (Shader shader, ConcurrentDictionary<Material, ConcurrentBag<(Mesh, Matrix4x4<float>)>> materialDictionary)
+            (Shader shader, ConcurrentDictionary<Material, ConcurrentBag<(Mesh, Matrix4x4<pos>)>> materialDictionary)
             in meshes.OrderBy(x => x.Key.Priority)
         ) {
-            foreach ((Material material, ConcurrentBag<(Mesh, Matrix4x4<float>)> bag) in materialDictionary) {
-                foreach ((Mesh, Matrix4x4<float>) meshData in bag)
+            foreach ((Material material, ConcurrentBag<(Mesh, Matrix4x4<pos>)> bag) in materialDictionary) {
+                foreach ((Mesh, Matrix4x4<pos>) meshData in bag)
                     commandBuffer.DrawMeshUnchecked(meshData.Item1, material, meshData.Item2);
             }
         }

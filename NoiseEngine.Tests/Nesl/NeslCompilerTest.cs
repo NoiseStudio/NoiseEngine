@@ -52,8 +52,8 @@ public class NeslCompilerTest : ApplicationTestEnvironment {
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
             commandBuffer.AttachCameraUnchecked(camera);
             commandBuffer.DrawMeshUnchecked(
-                new Mesh<(Vector3<float>, Vector3<float>), ushort>(device, vertices, triangles), new Material(shader),
-                new TransformComponent(new Vector3<float>(0, 0, 5)).Matrix
+                new Mesh<(float3, float3), ushort>(device, vertices, triangles), new Material(shader),
+                new TransformComponent(new pos3(0, 0, 5)).Matrix
             );
             commandBuffer.DetachCameraUnchecked();
 

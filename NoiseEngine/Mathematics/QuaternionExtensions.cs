@@ -1,5 +1,7 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using NoiseEngine.Mathematics.Helpers;
 
 namespace NoiseEngine.Mathematics;
 
@@ -38,9 +40,9 @@ public static class QuaternionExtensions {
     public static Vector3<T> ToEulerDegrees<T>(this Quaternion<T> quaternion) where T : IFloatingPointIeee754<T> {
         Vector3<T> r = quaternion.ToEulerRadians();
         return new Vector3<T>(
-            FloatingPointIeee754Helper.ConvertRadiansToDegrees(r.X),
-            FloatingPointIeee754Helper.ConvertRadiansToDegrees(r.Y),
-            FloatingPointIeee754Helper.ConvertRadiansToDegrees(r.Z)
+            FloatingPointIeee754Helper<T>.ConvertRadiansToDegrees(r.X),
+            FloatingPointIeee754Helper<T>.ConvertRadiansToDegrees(r.Y),
+            FloatingPointIeee754Helper<T>.ConvertRadiansToDegrees(r.Z)
         );
     }
 
@@ -71,7 +73,7 @@ public static class QuaternionExtensions {
         if (lhs.Equals(rhs))
             return T.Zero;
 
-        return FloatingPointIeee754Helper.ConvertRadiansToDegrees(T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One)));
+        return FloatingPointIeee754Helper<T>.ConvertRadiansToDegrees(T.Acos(T.Min(T.Abs(lhs.Dot(rhs)), T.One)));
     }
 
     /// <summary>
@@ -128,6 +130,45 @@ public static class QuaternionExtensions {
         }
 
         return result.Normalize();
+    }
+
+    /// <summary>
+    /// Converts <see cref="Quaternion{T}"/> to quaternion where T is <see cref="float"/>.
+    /// </summary>
+    /// <param name="quaternion"><see cref="Quaternion{T}"/> to convert.</param>
+    /// <returns><see cref="Quaternion{T}"/> with <see cref="float"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Quaternion<float> ToFloat<T>(this Quaternion<T> quaternion) where T : IConvertible, INumber<T> {
+        return new Quaternion<float>(
+            VectorHelper.ToFloat(quaternion.X), VectorHelper.ToFloat(quaternion.Y),
+            VectorHelper.ToFloat(quaternion.Z), VectorHelper.ToFloat(quaternion.W)
+        );
+    }
+
+    /// <summary>
+    /// Converts <see cref="Quaternion{T}"/> to quaternion where T is <see cref="double"/>.
+    /// </summary>
+    /// <param name="quaternion"><see cref="Quaternion{T}"/> to convert.</param>
+    /// <returns><see cref="Quaternion{T}"/> with <see cref="double"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Quaternion<double> ToDouble<T>(this Quaternion<T> quaternion) where T : IConvertible, INumber<T> {
+        return new Quaternion<double>(
+            VectorHelper.ToDouble(quaternion.X), VectorHelper.ToDouble(quaternion.Y),
+            VectorHelper.ToDouble(quaternion.Z), VectorHelper.ToDouble(quaternion.W)
+        );
+    }
+
+    /// <summary>
+    /// Converts <see cref="Quaternion{T}"/> to quaternion where T is <see cref="Position"/>.
+    /// </summary>
+    /// <param name="quaternion"><see cref="Quaternion{T}"/> to convert.</param>
+    /// <returns><see cref="Quaternion{T}"/> with <see cref="Position"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Quaternion<pos> ToPos<T>(this Quaternion<T> quaternion) where T : IConvertible, INumber<T> {
+        return new Quaternion<pos>(
+            VectorHelper.ToPos(quaternion.X), VectorHelper.ToPos(quaternion.Y), VectorHelper.ToPos(quaternion.Z),
+            VectorHelper.ToPos(quaternion.W)
+        );
     }
 
 }

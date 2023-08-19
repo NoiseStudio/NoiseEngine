@@ -13,7 +13,7 @@ namespace NoiseEngine.Rendering.Vulkan.Buffers;
 
 internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
 
-    private Matrix4x4<float> CameraProjectionViewMatrix { get; set; }
+    private Matrix4x4<pos> CameraProjectionViewMatrix { get; set; }
 
     private RenderPass? RenderPass { get; set; }
     private object? AttachedPipeline { get; set; }
@@ -80,7 +80,7 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
         CameraProjectionViewMatrix = camera.ProjectionViewMatrix;
     }
 
-    public override void DrawMeshWorker(Mesh mesh, Material material, Matrix4x4<float> transform) {
+    public override void DrawMeshWorker(Mesh mesh, Material material, Matrix4x4<pos> transform) {
         AttachShader(material.Shader);
         AttachMaterial(material);
 
@@ -107,7 +107,7 @@ internal class VulkanCommandBufferDelegation : GraphicsCommandBufferDelegation {
             foreach (PushConstantDescriptor descriptor in shaderDelegation.PushConstantDescriptors) {
                 switch (descriptor.Features) {
                     case RenderingFeatures.ObjectToClipPos:
-                        Matrix4x4<float> matrix = CameraProjectionViewMatrix * transform;
+                        Matrix4x4<float> matrix = (CameraProjectionViewMatrix * transform).ToFloat();
                         MemoryMarshal.Write(data[descriptor.Offset..], ref matrix);
                         break;
                     default:

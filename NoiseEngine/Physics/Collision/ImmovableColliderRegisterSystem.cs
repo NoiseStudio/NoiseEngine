@@ -29,7 +29,7 @@ internal partial class ImmovableColliderRegisterSystem : EntitySystem {
             transform.Position,
             default, // World center of mass is not needed for immovable objects.
             transform.Scale,
-            Vector3<float>.Zero,
+            float3.Zero,
             default, // Inverse inertia tensor matrix is not needed for immovable objects.
             InverseMass,
             isRigidBody

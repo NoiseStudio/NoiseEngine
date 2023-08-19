@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Mathematics.Helpers;
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -36,6 +37,42 @@ public static class Vector3Extensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T Distance<T>(this Vector3<T> lhs, Vector3<T> rhs) where T : INumber<T>, IRootFunctions<T> {
         return T.Sqrt(lhs.DistanceSquared(rhs));
+    }
+
+    /// <summary>
+    /// Converts <see cref="Vector3{T}"/> to vector where T is <see cref="float"/>.
+    /// </summary>
+    /// <param name="vector"><see cref="Vector3{T}"/> to convert.</param>
+    /// <returns><see cref="Vector3{T}"/> with <see cref="float"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float3 ToFloat<T>(this Vector3<T> vector) where T : IConvertible, INumber<T> {
+        return new float3(
+            VectorHelper.ToFloat(vector.X), VectorHelper.ToFloat(vector.Y), VectorHelper.ToFloat(vector.Z)
+        );
+    }
+
+    /// <summary>
+    /// Converts <see cref="Vector3{T}"/> to vector where T is <see cref="double"/>.
+    /// </summary>
+    /// <param name="vector"><see cref="Vector3{T}"/> to convert.</param>
+    /// <returns><see cref="Vector3{T}"/> with <see cref="double"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double3 ToDouble<T>(this Vector3<T> vector) where T : IConvertible, INumber<T> {
+        return new double3(
+            VectorHelper.ToDouble(vector.X), VectorHelper.ToDouble(vector.Y), VectorHelper.ToDouble(vector.Z)
+        );
+    }
+
+    /// <summary>
+    /// Converts <see cref="Vector3{T}"/> to vector where T is <see cref="Position"/>.
+    /// </summary>
+    /// <param name="vector"><see cref="Vector3{T}"/> to convert.</param>
+    /// <returns><see cref="Vector3{T}"/> with <see cref="Position"/> components.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static pos3 ToPos<T>(this Vector3<T> vector) where T : IConvertible, INumber<T> {
+        return new pos3(
+            VectorHelper.ToPos(vector.X), VectorHelper.ToPos(vector.Y), VectorHelper.ToPos(vector.Z)
+        );
     }
 
 }

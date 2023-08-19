@@ -5,8 +5,8 @@ namespace NoiseEngine.Physics;
 
 internal record struct RigidBodyFinalDataComponent(
     float SmoothingMultipler,
-    Vector3<float> LastPosition,
-    Vector3<float> TargetPosition,
+    pos3 LastPosition,
+    pos3 TargetPosition,
     Quaternion<float> LastRotation,
     Quaternion<float> TargetRotation
 ) : IComponent;

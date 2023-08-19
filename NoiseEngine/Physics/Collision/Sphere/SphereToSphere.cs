@@ -16,25 +16,25 @@ internal static class SphereToSphere {
     ) {
         float currentRadius = current.ScaledRadius(currentTransform.Scale);
         float c = currentRadius + other.ScaledRadius(otherTransform.Scale);
-        float squaredDistance = currentTransform.Position.DistanceSquared(otherTransform.Position);
+        float squaredDistance = currentTransform.Position.ToFloat().DistanceSquared(otherTransform.Position.ToFloat());
         if (squaredDistance > c * c)
             return;
 
         float depth = c - MathF.Sqrt(squaredDistance);
-        Vector3<float> normal = (otherTransform.Position - currentTransform.Position).Normalize();
-        Vector3<float> contactPoint;
+        float3 normal = (otherTransform.Position - currentTransform.Position).ToFloat().Normalize();
+        pos3 contactPoint;
         float jB;
 
         if (otherTransform.IsMovable) {
             depth *= 0.5f;
-            contactPoint = normal * (currentRadius - depth) + currentTransform.Position;
+            contactPoint = (normal * (currentRadius - depth)).ToPos() + currentTransform.Position;
 
-            Vector3<float> rb = contactPoint - otherTransform.WorldCenterOfMass;
+            float3 rb = (contactPoint - otherTransform.WorldCenterOfMass).ToFloat();
             jB = otherTransform.InverseMass + normal.Dot(
                 (otherTransform.InverseInertiaTensorMatrix * normal.Cross(rb)).Cross(rb)
             );
         } else {
-            contactPoint = normal * (currentRadius - (depth * 0.5f)) + currentTransform.Position;
+            contactPoint = (normal * (currentRadius - (depth * 0.5f))).ToPos() + currentTransform.Position;
             jB = 0;
 
             if (otherTransform.IsRigidBody)

@@ -3,7 +3,6 @@ using NoiseEngine.DeveloperTools.Components;
 using NoiseEngine.Inputs;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
-using NoiseEngine.Physics;
 using System;
 
 namespace NoiseEngine.DeveloperTools.Systems;
@@ -60,7 +59,7 @@ public partial class DebugMovementSystem : EntitySystem {
     private void OnUpdateEntity(ref TransformComponent transform, ref DebugMovementComponent movement) {
         WindowInput input = Window.Input;
 
-        Vector3<float> position = transform.Position;
+        pos3 position = transform.Position;
         bool changePosition = false;
 
         if (input.ScrollDelta.Y != 0) {
@@ -73,26 +72,26 @@ public partial class DebugMovementSystem : EntitySystem {
 
         // Move
         if (input.Pressed(Key.W)) {
-            position += transform.Front * (currentSpeed * SpeedMultipler * DeltaTimeF);
+            position += (transform.Front * (currentSpeed * SpeedMultipler * DeltaTimeF)).ToPos();
             changePosition = true;
         }
         if (input.Pressed(Key.S)) {
-            position += transform.Back * (currentSpeed * SpeedMultipler * DeltaTimeF);
+            position += (transform.Back * (currentSpeed * SpeedMultipler * DeltaTimeF)).ToPos();
             changePosition = true;
         }
 
         if (input.Pressed(Key.A)) {
-            position += transform.Left * (currentSpeed * SpeedMultipler * DeltaTimeF);
+            position += (transform.Left * (currentSpeed * SpeedMultipler * DeltaTimeF)).ToPos();
             changePosition = true;
         }
         if (input.Pressed(Key.D)) {
-            position += transform.Right * (currentSpeed * SpeedMultipler * DeltaTimeF);
+            position += (transform.Right * (currentSpeed * SpeedMultipler * DeltaTimeF)).ToPos();
             changePosition = true;
         }
 
         // Rotation
         movement = movement with {
-            MouseRotation = new Vector2<float>(
+            MouseRotation = new float2(
                 Math.Clamp(
                     (float)input.CursorPositionDelta.Y * Sensitivity + movement.MouseRotation.X,
                     -MouseDownLookLimiter,
@@ -101,11 +100,11 @@ public partial class DebugMovementSystem : EntitySystem {
                 (float)input.CursorPositionDelta.X * Sensitivity + movement.MouseRotation.Y
             )
         };
-        Quaternion<float> rotation = Quaternion.EulerRadians(new Vector3<float>(
+        Quaternion<float> rotation = Quaternion.EulerRadians(
             movement.MouseRotation.X,
             movement.MouseRotation.Y,
             0
-        ));
+        );
 
         if (changePosition) {
             movement = movement with { TimeUntilLastChangedPosition = 0 };

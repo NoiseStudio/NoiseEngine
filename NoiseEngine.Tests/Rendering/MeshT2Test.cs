@@ -79,8 +79,8 @@ public class MeshT2Test : ApplicationTestEnvironment {
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
             commandBuffer.AttachCameraUnchecked(camera);
             commandBuffer.DrawMeshUnchecked(
-                new Mesh<(Vector4<float>, Color), ushort>(device, vertices, triangles), new Material(shader),
-                new Matrix4x4<float>()
+                new Mesh<(float4, Color), ushort>(device, vertices, triangles), new Material(shader),
+                new Matrix4x4<pos>()
             );
             commandBuffer.DetachCameraUnchecked();
 
@@ -225,9 +225,9 @@ public class MeshT2Test : ApplicationTestEnvironment {
                 OrthographicSize = 0.5f
             };
 
-            Mesh mesh = new Mesh<(Vector3<float>, Vector3<float>), ushort>(device, vertices, triangles);
+            Mesh mesh = new Mesh<(float3, float3), ushort>(device, vertices, triangles);
             Material material = new Material(shader);
-            TransformComponent transform = new TransformComponent(new Vector3<float>(0, 0, 5));
+            TransformComponent transform = new TransformComponent(new pos3(0, 0, 5));
 
             GraphicsCommandBuffer commandBuffer = new GraphicsCommandBuffer(device, false);
 
@@ -246,7 +246,7 @@ public class MeshT2Test : ApplicationTestEnvironment {
 
             commandBuffer.AttachCameraUnchecked(camera);
             commandBuffer.DrawMeshUnchecked(
-                mesh, material, (transform with { Position = new Vector3<float>(0, 0, -100) }
+                mesh, material, (transform with { Position = new pos3(0, 0, -100) }
             ).Matrix);
             commandBuffer.DetachCameraUnchecked();
 

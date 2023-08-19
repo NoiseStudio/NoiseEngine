@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using NoiseEngine.Mathematics.Helpers;
 
 namespace NoiseEngine.Mathematics;
 
