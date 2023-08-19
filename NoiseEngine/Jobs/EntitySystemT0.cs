@@ -195,6 +195,7 @@ public abstract class EntitySystem : IDisposable {
     private AtomicBool isWorking;
     private AtomicBool isDisposed;
     private bool enabled;
+    private bool isEnabledUsed;
     private EntitySchedule? schedule;
     private double? cycleTime;
     private bool isDoneInitialize;
@@ -261,6 +262,8 @@ public abstract class EntitySystem : IDisposable {
                     AssertIsNotDisposed();
 
                     enabled = value;
+                    isEnabledUsed = true;
+
                     if (value) {
                         started = true;
                         OnStart();
@@ -439,11 +442,21 @@ public abstract class EntitySystem : IDisposable {
 #pragma warning restore CS0618
 
         OnInitialize();
-        Enabled = true;
 
         lock (scheduleLocker) {
             isDoneInitialize = true;
             Schedule ??= world.DefaultSchedule;
+        }
+    }
+
+    internal void TryEnableAfterInitialization() {
+        if (isEnabledUsed)
+            return;
+
+        lock (enabledLocker) {
+            if (isEnabledUsed)
+                return;
+            Enabled = true;
         }
     }
 

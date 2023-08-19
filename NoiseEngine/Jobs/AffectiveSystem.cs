@@ -69,6 +69,7 @@ public abstract class AffectiveSystem : IDisposable {
         if (!archetypes.Add(archetype))
             return;
 
+        bool created = false;
         if (!systems.TryGetValue(hashCode, out EntitySystem? system)) {
             lock (systems) {
                 if (!systems.TryGetValue(hashCode, out system)) {
@@ -76,12 +77,16 @@ public abstract class AffectiveSystem : IDisposable {
                     if (system is null)
                         return;
 
+                    created = true;
                     systems.Add(hashCode, system);
                 }
             }
         }
 
         system.RegisterArchetype(archetype);
+
+        if (created)
+            system.TryEnableAfterInitialization();
     }
 
     internal EntitySystem? InternalCreateFromComponents(Dictionary<Type, IComponent> components) {
