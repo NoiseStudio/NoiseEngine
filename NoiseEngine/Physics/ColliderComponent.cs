@@ -9,6 +9,7 @@ namespace NoiseEngine.Physics;
 public readonly struct ColliderComponent : IComponent {
 
     private readonly PhysicsMaterial? material;
+    private readonly object? referenceData;
     private readonly ColliderComponentInner inner;
 
     public bool IsTrigger { get; init; }
@@ -18,7 +19,7 @@ public readonly struct ColliderComponent : IComponent {
         get => material;
         init {
             material = value;
-            RestitutionPlusOneNegative = value?.Restitution ?? -1.1f;
+            RestitutionPlusOneNegative = value?.Restitution ?? -1.75f;
         }
     }
 
@@ -45,6 +46,13 @@ public readonly struct ColliderComponent : IComponent {
         inner = new ColliderComponentInner(sphereCollider);
     }
 
+    public ColliderComponent(MeshCollider meshCollider) {
+        IsTrigger = meshCollider.IsTrigger;
+        Material = meshCollider.Material;
+        Type = ColliderType.Mesh;
+        referenceData = meshCollider.Data;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void AssertType(ColliderComponent collider, ColliderType type) {
         if (collider.Type != type)
@@ -57,9 +65,16 @@ public readonly struct ColliderComponent : IComponent {
         return new SphereCollider(IsTrigger, Material, inner.SphereRadius);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal readonly MeshCollider UnsafeCastToMeshCollider() {
+        Debug.Assert(Type == ColliderType.Mesh);
+        return new MeshCollider(IsTrigger, Material, Unsafe.As<MeshColliderData>(referenceData)!);
+    }
+
     internal readonly Matrix3x3<float> ComputeComInertiaTensorMatrix(float mass) {
         return Type switch {
             ColliderType.Sphere => SphereCollider.ComputeComInertiaTensorMatrix(mass, inner.SphereRadius),
+            ColliderType.Mesh => default,
             _ => throw new NotImplementedException()
         };
     }
@@ -74,6 +89,18 @@ public readonly struct ColliderComponent : IComponent {
     public static explicit operator SphereCollider(ColliderComponent collider) {
         AssertType(collider, ColliderType.Sphere);
         return collider.UnsafeCastToSphereCollider();
+    }
+
+    /// <summary>
+    /// Casts <paramref name="collider"/> to <see cref="MeshCollider"/>.
+    /// </summary>
+    /// <param name="collider"><see cref="ColliderComponent"/> to cast.</param>
+    /// <exception cref="InvalidCastException">
+    /// Thrown when <paramref name="collider"/>.<see cref="Type"/> is not a <see cref="ColliderType.Mesh"/>.
+    /// </exception>
+    public static explicit operator MeshCollider(ColliderComponent collider) {
+        AssertType(collider, ColliderType.Mesh);
+        return collider.UnsafeCastToMeshCollider();
     }
 
 }

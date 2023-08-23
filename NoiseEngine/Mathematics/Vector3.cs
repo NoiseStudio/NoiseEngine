@@ -190,4 +190,24 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
         return new Vector3<T>(lhs.X % rhs, lhs.Y % rhs, lhs.Z % rhs);
     }
 
+    /// <summary>
+    /// Computes the unary negation of a value.
+    /// </summary>
+    /// <param name="value">The value for which to compute its unary negation.</param>
+    /// <returns>The unary negation of <paramref name="value" />.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3<T> operator -(Vector3<T> value) {
+        return new Vector3<T>(-value.X, -value.Y, -value.Z);
+    }
+
+    /// <summary>
+    /// Computes the unary plus of a value.
+    /// </summary>
+    /// <param name="value">The value for which to compute the unary plus.</param>
+    /// <returns>The unary plus of value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3<T> operator +(Vector3<T> value) {
+        return new Vector3<T>(+value.X, +value.Y, +value.Z);
+    }
+
 }

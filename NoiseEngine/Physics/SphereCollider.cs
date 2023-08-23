@@ -13,14 +13,14 @@ public readonly record struct SphereCollider(
     internal static Matrix3x3<float> ComputeComInertiaTensorMatrix(float mass, float radius) {
         float a = radius * radius * mass * 0.4f;
         return new Matrix3x3<float>(
-            new Vector3<float>(a, 0, 0),
-            new Vector3<float>(0, a, 0),
-            new Vector3<float>(0, 0, a)
+            new float3(a, 0, 0),
+            new float3(0, a, 0),
+            new float3(0, 0, a)
         );
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal float ScaledRadius(Vector3<float> scale) {
+    internal float ScaledRadius(float3 scale) {
         return Radius * scale.MaxComponent();
     }
 

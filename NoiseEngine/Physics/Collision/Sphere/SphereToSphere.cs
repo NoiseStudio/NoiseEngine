@@ -16,12 +16,14 @@ internal static class SphereToSphere {
     ) {
         float currentRadius = current.ScaledRadius(currentTransform.Scale);
         float c = currentRadius + other.ScaledRadius(otherTransform.Scale);
-        float squaredDistance = currentTransform.Position.ToFloat().DistanceSquared(otherTransform.Position.ToFloat());
+
+        float3 normal = (otherTransform.Position - currentTransform.Position).ToFloat();
+        float squaredDistance = normal.MagnitudeSquared();
         if (squaredDistance > c * c)
             return;
 
         float depth = c - MathF.Sqrt(squaredDistance);
-        float3 normal = (otherTransform.Position - currentTransform.Position).ToFloat().Normalize();
+        normal = normal.Normalize();
         pos3 contactPoint;
         float jB;
 

@@ -1,5 +1,6 @@
 ﻿namespace NoiseEngine.Physics;
 
 public enum ColliderType {
-    Sphere
+    Sphere,
+    Mesh
 }

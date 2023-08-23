@@ -1,6 +1,7 @@
 ﻿using NoiseEngine.Components;
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
+using NoiseEngine.Physics.Collision.Mesh;
 using NoiseEngine.Physics.Collision.Sphere;
 using System;
 using System.Collections.Concurrent;
@@ -43,6 +44,31 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private void FromMesh(
+        Entity entity, SystemCommands commands, CollisionDetectionThreadStorage storage, in MeshCollider current,
+        float currentRestitutionPlusOneNegative, in ColliderTransform currentTransform
+    ) {
+        foreach (ConcurrentBag<ColliderData> bag in storage.ColliderDataBuffer) {
+            foreach (ColliderData other in bag) {
+                if (entity == other.Entity)
+                    continue;
+
+                switch (other.Collider.Type) {
+                    case ColliderType.Mesh:
+                        MeshToMesh.Collide(
+                            World, commands, buffer, current, currentRestitutionPlusOneNegative, currentTransform, entity,
+                            other.Collider.UnsafeCastToMeshCollider(), other.Collider.RestitutionPlusOneNegative,
+                            other.Transform, other.Entity
+                        );
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+        }
+    }
+
     protected override void OnUpdate() {
         buffer.Clear();
     }
@@ -68,6 +94,12 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
             case ColliderType.Sphere:
                 FromSphere(
                     entity, commands, storage, collider.UnsafeCastToSphereCollider(),
+                    collider.RestitutionPlusOneNegative, currentTransform
+                );
+                break;
+            case ColliderType.Mesh:
+                FromMesh(
+                    entity, commands, storage, collider.UnsafeCastToMeshCollider(),
                     collider.RestitutionPlusOneNegative, currentTransform
                 );
                 break;

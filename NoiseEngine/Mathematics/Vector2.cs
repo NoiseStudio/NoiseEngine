@@ -145,4 +145,24 @@ public readonly record struct Vector2<T>(T X, T Y) where T : INumber<T> {
         return new Vector2<T>(lhs.X % rhs, lhs.Y % rhs);
     }
 
+    /// <summary>
+    /// Computes the unary negation of a value.
+    /// </summary>
+    /// <param name="value">The value for which to compute its unary negation.</param>
+    /// <returns>The unary negation of <paramref name="value" />.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector2<T> operator -(Vector2<T> value) {
+        return new Vector2<T>(-value.X, -value.Y);
+    }
+
+    /// <summary>
+    /// Computes the unary plus of a value.
+    /// </summary>
+    /// <param name="value">The value for which to compute the unary plus.</param>
+    /// <returns>The unary plus of value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector2<T> operator +(Vector2<T> value) {
+        return new Vector2<T>(+value.X, +value.Y);
+    }
+
 }
