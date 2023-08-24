@@ -25,7 +25,7 @@ internal static class Epa {
             );
 
             float distance = supportPoint.Value.Dot(face.Normal);
-            if (distance - face.Distance < Epsilon || i++ >= MaxIterations)
+            if (MathF.Abs(distance - face.Distance) <= Epsilon || i++ >= MaxIterations)
                 return new EpaResult(ComputeContactPoint(polytope, face), face.Normal, face.Distance);
 
             polytope.Add(supportPoint);
