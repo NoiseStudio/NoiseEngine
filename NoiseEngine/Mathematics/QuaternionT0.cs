@@ -17,12 +17,9 @@ public static class Quaternion {
     public static Quaternion<T> EulerRadians<T>(T x, T y, T z)
         where T : INumber<T>, ITrigonometricFunctions<T>
     {
-        T cy = T.Cos(z * NumberHelper<T>.Half);
-        T sy = T.Sin(z * NumberHelper<T>.Half);
-        T cp = T.Cos(y * NumberHelper<T>.Half);
-        T sp = T.Sin(y * NumberHelper<T>.Half);
-        T cr = T.Cos(x * NumberHelper<T>.Half);
-        T sr = T.Sin(x * NumberHelper<T>.Half);
+        (T sy, T cy) = T.SinCos(z * NumberHelper<T>.Half);
+        (T sp, T cp) = T.SinCos(y * NumberHelper<T>.Half);
+        (T sr, T cr) = T.SinCos(x * NumberHelper<T>.Half);
 
         return new Quaternion<T>(
             sr * cp * cy - cr * sp * sy,

@@ -5,10 +5,10 @@ namespace NoiseEngine.Collections;
 
 internal ref struct SpanList<T> {
 
-    private readonly Span<T> buffer;
+    internal readonly Span<T> buffer;
 
     public readonly Span<T> Data => buffer[..Count];
-    public int Count { readonly get; private set; }
+    public int Count { readonly get; set; }
 
     public SpanList(Span<T> buffer, int initCount) {
         this.buffer = buffer;

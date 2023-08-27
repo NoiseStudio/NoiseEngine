@@ -7,10 +7,11 @@ public class GjkTest {
     [Theory]
     [InlineData(1)]
     [InlineData(2)]
+    [InlineData(3)]
     public void Intersect(int dataIndex) {
         GjkTestData data = GjkTestData.GetData(dataIndex);
         bool result = Gjk.Intersect(
-            data.OffsetA, data.HullA, data.ScaleA, data.HullB, data.ScaleB, data.VerticesA, data.VerticesB,
+            data.Pos12, data.HullA, data.ScaleA, data.HullB, data.ScaleB, data.VerticesA, data.VerticesB,
             out Simplex3D simplex
         );
 

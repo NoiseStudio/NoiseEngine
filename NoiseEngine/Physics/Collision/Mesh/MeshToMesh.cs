@@ -13,7 +13,11 @@ internal static class MeshToMesh {
         MeshCollider other, float otherRestitutionPlusOneNegative, in ColliderTransform otherTransform,
         Entity otherEntity
     ) {
-        float3 offsetA = (currentTransform.Position - otherTransform.Position).ToFloat();
+        Isometry3<float> offsetA =
+            new Isometry3<pos>(currentTransform.Position, Quaternion<pos>.Identity).ConjugateMultiplication(
+                new Isometry3<pos>(otherTransform.Position, Quaternion<pos>.Identity)
+            ).ToFloat();
+
         float currentScaleMax = currentTransform.Scale.MaxComponent();
         float otherScaleMax = otherTransform.Scale.MaxComponent();
 
@@ -22,7 +26,7 @@ internal static class MeshToMesh {
 
         for (int i = 0; i < valueA.HullIds.Length; i++) {
             ref readonly ConvexHullId hullA = ref valueA.HullIds[i];
-            float3 sphereCenterA = hullA.SphereCenter * currentScaleMax + offsetA;
+            float3 sphereCenterA = hullA.SphereCenter * currentScaleMax + offsetA.Translation;
             float sphereRadiusA = hullA.SphereRadius * currentScaleMax;
 
             for (int j = 0; j < valueB.HullIds.Length; j++) {
@@ -43,10 +47,10 @@ internal static class MeshToMesh {
                         valueA.Vertices, valueB.Vertices
                     );
                     Log.Info($"C {currentTransform.Position - new pos3(0, -0.5f, 0)}");
-                    pos3 pos = epa.Position.ToPos() + otherTransform.Position;
+                    pos3 pos = epa.Position.ToPos() + currentTransform.Position;
                     Log.Info($"E {pos}");
 
-                    ((ApplicationScene)world).Primitive.CreateSphere(pos, Quaternion.EulerDegrees(epa.Normal * 180), (float3.One + epa.Normal) * epa.Depth);
+                    ((ApplicationScene)world).Primitive.CreateSphere(pos, null, float3.One / 10f);
 
                     /*float depth = 0.3f;
                     pos3 contactPoint = pos;

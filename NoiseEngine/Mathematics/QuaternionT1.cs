@@ -24,6 +24,15 @@ public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumbe
     }
 
     /// <summary>
+    /// Calculates conjugate of this <see cref="Quaternion{T}"/>.
+    /// </summary>
+    /// <returns>Conjugate of this <see cref="Quaternion{T}"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Quaternion<T> Conjugate() {
+        return new Quaternion<T>(-X, -Y, -Z, W);
+    }
+
+    /// <summary>
     /// Combines <paramref name="lhs"/> with <paramref name="rhs"/>.
     /// </summary>
     /// <param name="lhs">First <see cref="Quaternion{T}"/>.</param>

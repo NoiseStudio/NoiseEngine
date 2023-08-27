@@ -75,24 +75,4 @@ public static class Vector3Extensions {
         );
     }
 
-    internal static Vector3<T> Barycentric<T>(
-        this Vector3<T> p, in Vector3<T> a, in Vector3<T> b, in Vector3<T> c
-    ) where T : INumber<T> {
-        Vector3<T> v0 = b - a;
-        Vector3<T> v1 = c - a;
-        Vector3<T> v2 = p - a;
-
-        T d00 = v0.MagnitudeSquared();
-        T d01 = v0.Dot(v1);
-        T d11 = v1.MagnitudeSquared();
-        T d20 = v2.Dot(v0);
-        T d21 = v2.Dot(v1);
-        T inverseDenom = T.One / (d00 * d11 - d01 * d01);
-
-        T v = (d11 * d20 - d01 * d21) * inverseDenom;
-        T w = (d00 * d21 - d01 * d20) * inverseDenom;
-        T u = T.One - v - w;
-        return new Vector3<T>(u, v, w);
-    }
-
 }

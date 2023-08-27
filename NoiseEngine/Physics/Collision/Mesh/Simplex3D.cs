@@ -5,6 +5,7 @@ namespace NoiseEngine.Physics.Collision.Mesh;
 
 internal struct Simplex3D {
 
+    public int Dimensions;
     public SupportPoint A;
     public SupportPoint B;
     public SupportPoint C;

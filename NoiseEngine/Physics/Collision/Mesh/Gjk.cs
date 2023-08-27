@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Mathematics;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics.Collision.Mesh;
@@ -9,15 +10,15 @@ internal static class Gjk {
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     public static bool Intersect(
-        in float3 offsetA, in ConvexHullId hullA, in float3 scaleA, in ConvexHullId hullB, in float3 scaleB,
+        in Isometry3<float> pos12, in ConvexHullId hullA, in float3 scaleA, in ConvexHullId hullB, in float3 scaleB,
         ReadOnlySpan<float3> verticesA, ReadOnlySpan<float3> verticesB, out Simplex3D simplex
     ) {
         simplex = new Simplex3D();
 
         // A
-        float3 direction = FindFirstDirection(offsetA, hullA, hullB);
+        float3 direction = FindFirstDirection(pos12, hullA, hullB);
         if (Minkowski.TryFindSupportPoint(
-            direction, offsetA, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out SupportPoint supportPoint
+            direction, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out SupportPoint supportPoint
         )) {
             return false;
         }
@@ -26,7 +27,7 @@ internal static class Gjk {
         // B
         direction = -direction;
         if (Minkowski.TryFindSupportPoint(
-            direction, offsetA, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
+            direction, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
         )) {
             return false;
         }
@@ -34,8 +35,13 @@ internal static class Gjk {
 
         // C
         FindThirdDirection(ref direction, in simplex);
+        if (direction == float3.Zero) {
+            simplex.Dimensions = 1;
+            return true;
+        }
+
         if (Minkowski.TryFindSupportPoint(
-            direction, offsetA, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
+            direction, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
         )) {
             return false;
         }
@@ -43,8 +49,13 @@ internal static class Gjk {
 
         // D
         FindFourthDirection(ref direction, in simplex);
+        if (direction == float3.Zero) {
+            simplex.Dimensions = 2;
+            return true;
+        }
+
         if (Minkowski.TryFindSupportPoint(
-            direction, offsetA, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
+            direction, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
         )) {
             return false;
         }
@@ -62,7 +73,7 @@ internal static class Gjk {
             direction = da.Cross(db);
             if (direction.Dot(d0) > 0) {
                 if (Minkowski.TryFindSupportPoint(
-                    direction, offsetA, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
+                    direction, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
                 )) {
                     return false;
                 }
@@ -76,7 +87,7 @@ internal static class Gjk {
             direction = db.Cross(dc);
             if (direction.Dot(d0) > 0) {
                 if (Minkowski.TryFindSupportPoint(
-                    direction, offsetA, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
+                    direction, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
                 )) {
                     return false;
                 }
@@ -91,7 +102,7 @@ internal static class Gjk {
             direction = dc.Cross(da);
             if (direction.Dot(d0) > 0) {
                 if (Minkowski.TryFindSupportPoint(
-                    direction, offsetA, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
+                    direction, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB, out supportPoint
                 )) {
                     return false;
                 }
@@ -102,6 +113,7 @@ internal static class Gjk {
                 continue;
             }
 
+            simplex.Dimensions = 3;
             return true;
         }
 
@@ -109,8 +121,10 @@ internal static class Gjk {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    private static float3 FindFirstDirection(in float3 offsetA, in ConvexHullId hullA, in ConvexHullId hullB) {
-        return hullA.SphereCenter + offsetA - hullB.SphereCenter;
+    private static float3 FindFirstDirection(
+        in Isometry3<float> pos12, in ConvexHullId hullA, in ConvexHullId hullB
+    ) {
+        return (hullA.SphereCenter + pos12.Translation - hullB.SphereCenter).Normalize();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]

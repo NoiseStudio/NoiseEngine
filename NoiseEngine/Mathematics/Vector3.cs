@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -46,6 +47,17 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     /// Shorthand for writing new <see cref="Vector3{T}"/>(T.Zero, T.Zero, -T.One).
     /// </summary>
     public static Vector3<T> Back => new Vector3<T>(T.Zero, T.Zero, -T.One);
+
+    internal T this[int i] {
+        get {
+            return i switch {
+                0 => X,
+                1 => Y,
+                2 => Z,
+                _ => throw new IndexOutOfRangeException()
+            };
+        }
+    }
 
     /// <summary>
     /// Calculates squared length of this <see cref="Vector3{T}"/>.
@@ -133,6 +145,24 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
             Z * rhs.X - X * rhs.Z,
             X * rhs.Y - Y * rhs.X
         );
+    }
+
+    internal Vector3<T> CartesianToBarycentric(in Vector3<T> a, in Vector3<T> b, in Vector3<T> c) {
+        Vector3<T> v0 = b - a;
+        Vector3<T> v1 = c - a;
+        Vector3<T> v2 = this - a;
+
+        T d00 = v0.MagnitudeSquared();
+        T d01 = v0.Dot(v1);
+        T d11 = v1.MagnitudeSquared();
+        T d20 = v2.Dot(v0);
+        T d21 = v2.Dot(v1);
+        T inverseDenom = T.One / (d00 * d11 - d01 * d01);
+
+        T v = (d11 * d20 - d01 * d21) * inverseDenom;
+        T w = (d00 * d21 - d01 * d20) * inverseDenom;
+        T u = T.One - v - w;
+        return new Vector3<T>(u, v, w);
     }
 
     /// <summary>

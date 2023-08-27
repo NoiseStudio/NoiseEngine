@@ -1,37 +1,31 @@
 ﻿using NoiseEngine.Physics.Collision.Mesh;
-using System;
 
 namespace NoiseEngine.Tests.Physics.Collision.Mesh;
 
 public class EpaTest {
 
-    [Fact]
-    public void Process() {
-        Simplex3D simplex = new Simplex3D() {
-            A = new SupportPoint(new float3(18f, -12f, 0f), default),
-            B = new SupportPoint(new float3(-2f, 8f, 0f), default),
-            C = new SupportPoint(new float3(-2f, -12f, 0f), default),
-            D = new SupportPoint(new float3(8f, -2f, -10f), default),
-        };
-
-        ReadOnlySpan<float3> vertices = stackalloc float3[] {
-            new float3(-5f, -5f, -5f),
-            new float3(5f, -5f, -5f),
-            new float3(-5f, -5f, 5f),
-            new float3(5f, -5f, 5f),
-            new float3(-5f, 5f, -5f),
-            new float3(5f, 5f, -5f),
-            new float3(-5f, 5f, 5f),
-            new float3(5f, 5f, 5f)
-        };
-
-        EpaResult result = Epa.Process(
-            simplex, new float3(15, 0, 0) - new float3(7, 2, 0), new ConvexHullId(0, 8, default, default), float3.One,
-            new ConvexHullId(0, 8, default, default), float3.One, vertices, vertices
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Process(int dataIndex) {
+        GjkTestData data = GjkTestData.GetData(dataIndex);
+        bool r = Gjk.Intersect(
+            data.Pos12, data.HullA, data.ScaleA, data.HullB, data.ScaleB, data.VerticesA, data.VerticesB,
+            out Simplex3D simplex
         );
 
-        Assert.Equal(new float3(-1, 0, 0), result.Normal);
-        Assert.Equal(2, result.Depth);
+        Assert.Equal(data.Result, r);
+        if (!r)
+            return;
+
+        EpaResult result = Epa.Process(
+            simplex, data.Pos12, data.HullA, data.ScaleA, data.HullB, data.ScaleB, data.VerticesA, data.VerticesB
+        );
+
+        Assert.Equal(data.EpaPosition, result.Position);
+        Assert.Equal(data.EpaNormal, result.Normal);
+        Assert.Equal(data.EpaDepth, result.Depth);
     }
 
 }
