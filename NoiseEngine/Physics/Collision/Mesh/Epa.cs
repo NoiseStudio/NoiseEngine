@@ -17,6 +17,7 @@ internal static class Epa {
         Span<SupportPoint> polytopeVertices = stackalloc SupportPoint[MaxIterations];
         simplex.CopyTo(polytopeVertices);
         Span<PolytopeFace> polytopeFaces = stackalloc PolytopeFace[MaxIterations * 3];
+        Span<int> polytopeFaceIds = stackalloc int[MaxIterations * 3];
 
         int verticesCount;
         int facesCount;
@@ -48,16 +49,18 @@ internal static class Epa {
             polytopeFaces[0] = new PolytopeFace(polytopeVertices, new int3(0, 1, 2), new int3(1, 1, 1));
             polytopeFaces[1] = new PolytopeFace(polytopeVertices, new int3(0, 2, 1), new int3(0, 0, 0));
 
+            polytopeFaceIds[1] = 1;
+
             verticesCount = 3;
             facesCount = 2;
         }
 
-        Polytope3D polytope = new Polytope3D(polytopeVertices, verticesCount, polytopeFaces, facesCount);
+        Polytope3D polytope = new Polytope3D(polytopeVertices, verticesCount, polytopeFaces, facesCount, polytopeFaceIds, facesCount);
         int bestFace = 0;
         float maxDistance = float.MaxValue;
 
         int i = 0;
-        while (polytope.TryPop(out int faceId)) {
+        while (polytope.TryIterate(out int faceId)) {
             ref PolytopeFace face = ref polytopeFaces[faceId];
             if (face.IsDeleted)
                 continue;
@@ -67,18 +70,19 @@ internal static class Epa {
                 face.Normal, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB
             );
 
-            /*float candidateMaxDistance = supportPoint.Value.Dot(face.Normal);
-            if (candidateMaxDistance < maxDistance) {
+            float candidateMaxDistance = supportPoint.Value.Dot(face.Normal);
+            if (candidateMaxDistance < maxDistance && face.BarycentricData != default) {
                 bestFace = faceId;
                 maxDistance = candidateMaxDistance;
-            }*/
+            }
 
-            if (supportPoint.Value.Dot(face.Normal) - face.Distance <= Epsilon || i++ == MaxIterations) {
-                polytope.CheckTopology();
+            if (maxDistance - face.Distance <= Epsilon || i++ == MaxIterations) {
+                face = ref polytopeFaces[bestFace];
+                //polytope.CheckTopology();
                 return new EpaResult(ComputeContactPoint(polytope, face), face.Normal, face.Distance);
             }
 
-            polytope.Add(in face, supportPoint, faceId);
+            polytope.Add(ref face, supportPoint, faceId);
         }
 
         ref PolytopeFace faceResult = ref polytopeFaces[bestFace];
@@ -87,9 +91,9 @@ internal static class Epa {
 
     private static float3 ComputeContactPoint(in Polytope3D polytope, in PolytopeFace face) {
         Span<SupportPoint> vertices = polytope.Vertices;
-        float3 v = (face.Normal * face.Distance).CartesianToBarycentric(
+        /*float3 v = (face.Normal * face.Distance).CartesianToBarycentric(
             vertices[face.VertexId.X].Value, vertices[face.VertexId.Y].Value, vertices[face.VertexId.Z].Value
-        );
+        );*/
 
         /*float3 a = vertices[face.VertexIdA].Value;
         float3 b = vertices[face.VertexIdB].Value;
@@ -106,16 +110,16 @@ internal static class Epa {
         float3 n = ab.Cross(ac);
         float vc = n.Dot(ab.Cross(ap));
         float vb = -n.Dot(ac.Cross(cp));
-        float va = n.Dot(bc.Cross(bp));
+        float va = n.Dot(bc.Cross(bp));*/
 
-        float denom = 1 / (va + vb + vc);
-        float v = vb * denom;
-        float w = vc * denom;
-        float u = 1 - v - w;*/
+        float denom = 1 / (face.BarycentricData.X + face.BarycentricData.Y + face.BarycentricData.Z);
+        float v = face.BarycentricData.Y * denom;
+        float w = face.BarycentricData.Z * denom;
+        float u = 1 - v - w;
 
-        return vertices[face.VertexId.X].OriginA * v.X +
-            vertices[face.VertexId.Y].OriginA * v.Y +
-            vertices[face.VertexId.Z].OriginA * v.Z;
+        return vertices[face.VertexId.X].OriginA * u +
+            vertices[face.VertexId.Y].OriginA * v +
+            vertices[face.VertexId.Z].OriginA * w;
     }
 
 }

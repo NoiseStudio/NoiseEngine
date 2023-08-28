@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 
-namespace NoiseEngine.Collections;
+namespace NoiseEngine.Collections.Span;
 
 internal ref struct SpanList<T> {
 

@@ -1,7 +1,8 @@
-﻿using NoiseEngine.Collections;
+﻿using NoiseEngine.Collections.Span;
 using NoiseEngine.Mathematics;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics.Collision.Mesh;
@@ -10,13 +11,16 @@ internal ref struct Polytope3D {
 
     private SpanList<SupportPoint> vertices;
     private SpanList<PolytopeFace> faces;
+    private SpanList<int> faceIds;
+    private int i;
 
     public readonly Span<SupportPoint> Vertices => vertices.Data;
     public readonly Span<PolytopeFace> Faces => faces.Data;
 
-    public Polytope3D(Span<SupportPoint> vertices, int verticesCount, Span<PolytopeFace> faces, int facesCount) {
+    public Polytope3D(Span<SupportPoint> vertices, int verticesCount, Span<PolytopeFace> faces, int facesCount, Span<int> faceIds, int faceIdsCount) {
         this.vertices = new SpanList<SupportPoint>(vertices, verticesCount);
         this.faces = new SpanList<PolytopeFace>(faces, facesCount);
+        this.faceIds = new SpanList<int>(faceIds, faceIdsCount);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -61,25 +65,34 @@ internal ref struct Polytope3D {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryPop(out int faceId) {
-        if (faces.Count == 0) {
+    public bool TryIterate(out int faceId) {
+        /*if (faces.Count == i) {
             faceId = default;
             return false;
         }
 
-        faceId = --faces.Count;
+        faceId = i++;
+        return true;*/
+
+        if (faceIds.Count == 0) {
+            faceId = default;
+            return false;
+        }
+
+        faceId = faceIds.buffer[0];
+        faceIds.buffer[0] = faceIds.buffer[--faceIds.Count];
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly (PolytopeFace face, int faceId) ClosestFaceToOrigin() {
         Span<PolytopeFace> faces = Faces;
-        PolytopeFace face = faces[0];
+        PolytopeFace face = new PolytopeFace();
 
         int id = 0;
-        for (int i = 1; i < faces.Length; i++) {
+        for (int i = 0; i < faces.Length; i++) {
             ref PolytopeFace f = ref faces[i];
-            if (f.Distance < face.Distance && face.IsDeleted) {
+            if ((f.Distance < face.Distance || face.Distance == 0) && !face.IsDeleted) {
                 face = f;
                 id = i;
             }
@@ -89,20 +102,21 @@ internal ref struct Polytope3D {
     }
 
     //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Add(in PolytopeFace face, SupportPoint supportPoint, int faceId) {
+    public void Add(ref PolytopeFace face, SupportPoint supportPoint, int faceId) {
         SpanList<(int, int)> edges = new SpanList<(int, int)>(stackalloc (int, int)[Epa.MaxIterations * 9], 0);
 
-        faces.buffer[faceId].IsDeleted = true;
+        face.IsDeleted = true;
 
         int3 oppVertexId = face.NextCcw(faces.buffer);
         ComputeEdges(ref edges, faces.buffer, vertices.buffer, in supportPoint, face.NeighborId.X, oppVertexId.X);
         ComputeEdges(ref edges, faces.buffer, vertices.buffer, in supportPoint, face.NeighborId.Y, oppVertexId.Y);
         ComputeEdges(ref edges, faces.buffer, vertices.buffer, in supportPoint, face.NeighborId.Z, oppVertexId.Z);
 
-        Debug.Assert(edges.Count > 0);
-
         int supportPointId = vertices.Count;
         vertices.Add(supportPoint);
+
+        int firstNewFaceId = faces.Count;
+        Debug.Assert(edges.Count > 0);
 
         foreach ((int edgeFaceId, int b) in edges.Data) {
             ref PolytopeFace edgeFace = ref faces.buffer[edgeFaceId];
@@ -121,11 +135,23 @@ internal ref struct Polytope3D {
                 _ => throw new ArgumentOutOfRangeException(nameof(a)),
             };
 
-            faces.Add(new PolytopeFace(
+            PolytopeFace newFace = new PolytopeFace(
                 vertices.buffer, new int3(vertexId1, vertexId2, supportPointId),
                 new int3(edgeFaceId, newFaceId + 1, newFaceId - 1)
-            ));
+            );
+            faces.Add(newFace);
+
+            float3? barycentricData = newFace.IsInside(vertices.buffer);
+            if (barycentricData.HasValue) {
+                faces.buffer[newFaceId].BarycentricData = barycentricData.Value;
+                faceIds.Add(newFaceId);
+            }
         }
+
+        Debug.Assert(firstNewFaceId < faces.Count);
+        int countM = faces.Count - 1;
+        faces.buffer[firstNewFaceId].NeighborId = faces.buffer[firstNewFaceId].NeighborId with { Z = countM };
+        faces.buffer[countM].NeighborId = faces.buffer[countM].NeighborId with { Y = firstNewFaceId };
 
         /*Span<SupportPoint> vertices = Vertices;
         Span<PolytopeFace> faces = Faces;
