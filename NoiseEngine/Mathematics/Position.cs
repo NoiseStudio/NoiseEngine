@@ -7,9 +7,11 @@ using System.Runtime.InteropServices;
 using NoiseEngine.Mathematics.Helpers;
 
 #if NE_LARGE_WORLD
-using Inner = double;
+using Inner = System.Double;
 #else
-using Inner = float;
+using Inner = System.Single; //NOTE: Rider IDE incorrectly shows an error 'Identifier expected.' at this line when there
+                             //is 'float' instead of 'System.Single'. Same thing with using 'double' above.
+                             //Used Rider version: RD-232.9559.61
 #endif
 
 namespace NoiseEngine.Mathematics;
