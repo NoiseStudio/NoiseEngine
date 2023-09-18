@@ -17,7 +17,22 @@ public class Matrix3x3Test {
     )]
     public void Rotate(float[] init, float[] expected) {
         Quaternion<float> quaternion = NoiseEngine.Mathematics.Quaternion.EulerRadians(Vector3FromSpan<float>(init));
-        Assert.Equal(FromSpan<float>(expected), Matrix3x3<float>.Rotate(quaternion));
+        Assert.Equal(FromSpan<float>(expected).Transpose(), Matrix3x3<float>.Rotate(quaternion));
+    }
+
+    [Theory]
+    [InlineData(new float[] {
+        1, 4, 6,
+        8, 9, 7,
+        5, 3, 2
+    }, new float[] {
+        1, 8, 5,
+        4, 9, 3,
+        6, 7, 2
+    })]
+    public void Transpose(float[] init, float[] expected) {
+        Matrix3x3<float> matrix = FromSpan<float>(init);
+        Assert.Equal(FromSpan<float>(expected), matrix.Transpose());
     }
 
     [Theory]

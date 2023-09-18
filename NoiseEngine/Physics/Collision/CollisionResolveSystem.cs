@@ -46,19 +46,26 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                     ).ToPos();
                 }
 
+                Matrix3x3<float> rotation = Matrix3x3<float>.Rotate(data.TargetRotation);
+                Matrix3x3<float> inverseInertia =
+                    rotation * rigidBody.InverseInertiaTensorMatrix * rotation.Transpose();
+
                 float3 ra = (iterator.Current.Position - middle.Position).ToFloat() + rigidBody.CenterOfMass;
                 float relativeVelocity =
                     iterator.Current.Normal.Dot(rigidBody.LinearVelocity - iterator.Current.OtherVelocity);
                 float j = relativeVelocity * iterator.Current.MinRestitutionPlusOneNegative;
                 float sumMass = rigidBody.InverseMass + iterator.Current.InverseMass;
                 float absorption = iterator.Current.Normal.Dot(
-                    (rigidBody.InverseInertiaTensorMatrix * ra.Cross(iterator.Current.Normal)
+                    (inverseInertia * ra.Cross(iterator.Current.Normal)
                 ).Cross(iterator.Current.Normal));
 
                 j /= sumMass + absorption;
 
+                // NOTE: I do not know if normalization is correct, but without it objects rotate too much.
+                //       And with it results are similar to physics engines such as PhysX. - Vixen 2023-09-18
                 rigidBody.AngularVelocity -=
-                    rigidBody.InverseInertiaTensorMatrix * iterator.Current.Normal.Cross(ra * j);
+                    (inverseInertia * iterator.Current.Normal.Cross(ra * j)).Normalize();
+
                 if (notBlocked)
                     rigidBody.LinearVelocity += iterator.Current.Normal * (j * rigidBody.InverseMass);
             } while (iterator.MoveNext());

@@ -54,7 +54,9 @@ internal sealed partial class SimulationSystem : EntitySystem {
             rigidBody.AngularVelocity.Z,
             0
         );
-        data.TargetRotation += angularVelocity * data.TargetRotation * (fixedDeltaTime * 0.5f);
+        data.TargetRotation = (
+            data.TargetRotation + angularVelocity * data.TargetRotation * (fixedDeltaTime * 0.5f)
+        ).Normalize();
 
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
             data.TargetPosition, data.TargetRotation, data.TargetPosition + rigidBody.CenterOfMass.ToPos(),

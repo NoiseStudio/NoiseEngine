@@ -57,6 +57,19 @@ public readonly record struct Matrix3x3<T>(Vector3<T> C1, Vector3<T> C2, Vector3
     }
 
     /// <summary>
+    /// Creates transpose <see cref="Matrix3x3{T}"/> of this <see cref="Matrix3x3{T}"/>.
+    /// </summary>
+    /// <returns>Transposed <see cref="Matrix3x3{T}"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Matrix3x3<T> Transpose() {
+        return new Matrix3x3<T>(
+            M11, M12, M13,
+            M21, M22, M23,
+            M31, M32, M33
+        );
+    }
+
+    /// <summary>
     /// Calculates the determinant of this <see cref="Matrix3x3{T}"/>.
     /// </summary>
     /// <returns>The determinant.</returns>
