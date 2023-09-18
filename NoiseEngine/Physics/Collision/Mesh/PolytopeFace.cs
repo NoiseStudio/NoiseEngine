@@ -23,17 +23,16 @@ internal struct PolytopeFace {
         float3 ba = vertices[vertexId.Y].Value - a;
         float3 ca = vertices[vertexId.Z].Value - a;
         Normal = ba.Cross(ca).Normalize();
-        Debug.Assert(Normal.MagnitudeSquared() > 0, "Normal is zero vector.");
+        //Debug.Assert(Normal.MagnitudeSquared() > 0, "Normal is zero vector.");
 
         Distance = Normal.Dot(a);
 
-        /*if (Distance < -0.00001f) {
-            VertexIdB = vertexIdA;
-            VertexIdA = vertexIdC;
+        if (Distance < -0.00001f) {
+            VertexId = VertexId with { Y = vertexId.X, X = vertexId.Y };
             Normal = -Normal;
-            Distance = Normal.Dot(vertices[vertexIdB].Value);
+            Distance = Normal.Dot(vertices[vertexId.Y].Value);
             Debug.Assert(Distance > 0);
-        }*/
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]

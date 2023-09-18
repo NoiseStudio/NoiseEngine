@@ -33,6 +33,17 @@ public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumbe
     }
 
     /// <summary>
+    /// Adds <paramref name="lhs"/> and <paramref name="rhs"/> together to compute their sum.
+    /// </summary>
+    /// <param name="lhs">First <see cref="Quaternion{T}"/>.</param>
+    /// <param name="rhs">Second <see cref="Quaternion{T}"/>.</param>
+    /// <returns>Result of <paramref name="lhs"/> addition with <paramref name="rhs"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Quaternion<T> operator +(Quaternion<T> lhs, Quaternion<T> rhs) {
+        return new Quaternion<T>(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z, lhs.W + rhs.W);
+    }
+
+    /// <summary>
     /// Combines <paramref name="lhs"/> with <paramref name="rhs"/>.
     /// </summary>
     /// <param name="lhs">First <see cref="Quaternion{T}"/>.</param>
@@ -75,6 +86,17 @@ public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumbe
             (xy + wz) * point.X + (T.One - (xx + zz)) * point.Y + (yz - wx) * point.Z,
             (xz - wy) * point.X + (yz + wx) * point.Y + (T.One - (xx + yy)) * point.Z
         );
+    }
+
+    /// <summary>
+    /// Multiplies <paramref name="lhs"/> by <paramref name="rhs"/>.
+    /// </summary>
+    /// <param name="lhs">Multiplied <see cref="Quaternion{T}"/>.</param>
+    /// <param name="rhs">Multiplier of all components.</param>
+    /// <returns>Result of <paramref name="lhs"/> multiplication by <paramref name="rhs"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Quaternion<T> operator *(Quaternion<T> lhs, T rhs) {
+        return new Quaternion<T>(lhs.X * rhs, lhs.Y * rhs, lhs.Z * rhs, lhs.W * rhs);
     }
 
 }

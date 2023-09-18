@@ -27,8 +27,10 @@ internal partial class ImmovableColliderRegisterSystem : EntitySystem {
 
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
             transform.Position,
+            transform.Rotation,
             default, // World center of mass is not needed for immovable objects.
             transform.Scale,
+            float3.Zero,
             float3.Zero,
             default, // Inverse inertia tensor matrix is not needed for immovable objects.
             InverseMass,

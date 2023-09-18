@@ -62,10 +62,7 @@ internal static class Gjk {
         simplex.D = supportPoint;
 
         // Iteration
-        int max = Math.Min(
-            Math.Max(hullA.EndIndex - hullA.StartIndex, hullB.EndIndex - hullB.StartIndex) - 4, GjkMaxIterations
-        );
-        for (int i = 0; i < max; i++) {
+        for (int i = 0; i < GjkMaxIterations; i++) {
             float3 da = simplex.D.Value - simplex.A.Value;
             float3 db = simplex.D.Value - simplex.B.Value;
             float3 d0 = -simplex.D.Value;
@@ -130,14 +127,14 @@ internal static class Gjk {
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private static void FindThirdDirection(ref float3 direction, in Simplex3D simplex) {
         float3 ab = simplex.B.Value - simplex.A.Value;
-        direction = ab.Cross(-simplex.A.Value).Cross(ab);
+        direction = ab.Cross(-simplex.A.Value).Cross(ab).Normalize();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private static void FindFourthDirection(ref float3 direction, in Simplex3D simplex) {
         float3 ac = simplex.C.Value - simplex.A.Value;
         float3 ab = simplex.B.Value - simplex.A.Value;
-        direction = ac.Cross(ab);
+        direction = ac.Cross(ab).Normalize();
 
         if (direction.Dot(-simplex.A.Value) < 0)
             direction = -direction;

@@ -121,6 +121,14 @@ public readonly record struct Vector3<T>(T X, T Y, T Z) where T : INumber<T> {
     }
 
     /// <summary>
+    /// Calculates absolute value of this <see cref="Vector3{T}"/>.
+    /// </summary>
+    /// <returns>Absolute <see cref="Vector3{T}"/> of this <see cref="Vector3{T}"/>.</returns>
+    public Vector3<T> Abs() {
+        return new Vector3<T>(T.Abs(X), T.Abs(Y), T.Abs(Z));
+    }
+
+    /// <summary>
     /// Linearly interpolates between this <see cref="Vector3{T}"/> and <paramref name="rhs"/>.
     /// This <see cref="Vector3{T}"/> is start value, returned when <paramref name="t"/> = 0.
     /// </summary>

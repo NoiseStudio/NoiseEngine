@@ -28,7 +28,7 @@ internal sealed partial class SimulationSystem : EntitySystem {
 
     private void OnUpdateEntity(
         Entity entity, ref RigidBodyComponent rigidBody, ref RigidBodyMiddleDataComponent middle,
-        RigidBodyFinalDataComponent data, ref TransformComponent transform, ColliderComponent collider,
+        ref RigidBodyFinalDataComponent data, ref TransformComponent transform, ColliderComponent collider,
         ref RigidBodySleepComponent sleep
     ) {
         if (rigidBody.IsSleeping) {
@@ -48,12 +48,18 @@ internal sealed partial class SimulationSystem : EntitySystem {
         }
 
         middle.Position = data.TargetPosition + (rigidBody.LinearVelocity * fixedDeltaTime).ToPos();
-        data.TargetRotation *= Quaternion.EulerRadians(rigidBody.AngularVelocity * fixedDeltaTime);
+        Quaternion<float> angularVelocity = new Quaternion<float>(
+            rigidBody.AngularVelocity.X,
+            rigidBody.AngularVelocity.Y,
+            rigidBody.AngularVelocity.Z,
+            0
+        );
+        data.TargetRotation += angularVelocity * data.TargetRotation * (fixedDeltaTime * 0.5f);
 
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            data.TargetPosition, data.TargetPosition + rigidBody.CenterOfMass.ToPos(), transform.Scale,
-            rigidBody.LinearVelocity, rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass,
-            true
+            data.TargetPosition, data.TargetRotation, data.TargetPosition + rigidBody.CenterOfMass.ToPos(),
+            transform.Scale, rigidBody.LinearVelocity, rigidBody.AngularVelocity, rigidBody.InverseInertiaTensorMatrix,
+            rigidBody.InverseMass, true
         ), collider));
     }
 

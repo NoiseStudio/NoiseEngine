@@ -7,6 +7,20 @@ namespace NoiseEngine.Tests.Mathematics;
 public class Matrix3x3Test {
 
     [Theory]
+    [InlineData(
+        new float[] { 65, 55, 54 },
+        new float[] {
+            -0.0183499f, 0.9998223f, 0.0043115f,
+            0.0123642f, 0.0045388f, -0.9999133f,
+            -0.9997551f, -0.0182950f, -0.0124453f
+        }
+    )]
+    public void Rotate(float[] init, float[] expected) {
+        Quaternion<float> quaternion = NoiseEngine.Mathematics.Quaternion.EulerRadians(Vector3FromSpan<float>(init));
+        Assert.Equal(FromSpan<float>(expected), Matrix3x3<float>.Rotate(quaternion));
+    }
+
+    [Theory]
     [InlineData(new float[] { 2, 2, 1, -3, 0, 4, 1, -1, 5 }, 49)]
     [InlineData(new float[] { 4, 6, 5, 2, 1, 3, 7, 9, 8 }, 9)]
     public void Determinant(float[] init, float expected) {

@@ -105,71 +105,22 @@ internal ref struct Polytope3D {
     public void Add(ref PolytopeFace face, SupportPoint supportPoint, int faceId) {
         SpanList<(int, int)> edges = new SpanList<(int, int)>(stackalloc (int, int)[Epa.MaxIterations * 9], 0);
 
-        face.IsDeleted = true;
-
-        int3 oppVertexId = face.NextCcw(faces.buffer);
-        ComputeEdges(ref edges, faces.buffer, vertices.buffer, in supportPoint, face.NeighborId.X, oppVertexId.X);
-        ComputeEdges(ref edges, faces.buffer, vertices.buffer, in supportPoint, face.NeighborId.Y, oppVertexId.Y);
-        ComputeEdges(ref edges, faces.buffer, vertices.buffer, in supportPoint, face.NeighborId.Z, oppVertexId.Z);
-
-        int supportPointId = vertices.Count;
-        vertices.Add(supportPoint);
-
-        int firstNewFaceId = faces.Count;
-        Debug.Assert(edges.Count > 0);
-
-        foreach ((int edgeFaceId, int b) in edges.Data) {
-            ref PolytopeFace edgeFace = ref faces.buffer[edgeFaceId];
-            if (edgeFace.IsDeleted)
-                continue;
-
-            int a = (b + 1) % 3;
-            int newFaceId = faces.Count;
-            int vertexId1 = edgeFace.VertexId[(b + 2) % 3];
-            int vertexId2 = edgeFace.VertexId[a];
-
-            edgeFace.NeighborId = a switch {
-                0 => edgeFace.NeighborId with { X = newFaceId },
-                1 => edgeFace.NeighborId with { Y = newFaceId },
-                2 => edgeFace.NeighborId with { Z = newFaceId },
-                _ => throw new ArgumentOutOfRangeException(nameof(a)),
-            };
-
-            PolytopeFace newFace = new PolytopeFace(
-                vertices.buffer, new int3(vertexId1, vertexId2, supportPointId),
-                new int3(edgeFaceId, newFaceId + 1, newFaceId - 1)
-            );
-            faces.Add(newFace);
-
-            float3? barycentricData = newFace.IsInside(vertices.buffer);
-            if (barycentricData.HasValue) {
-                faces.buffer[newFaceId].BarycentricData = barycentricData.Value;
-                faceIds.Add(newFaceId);
-            }
-        }
-
-        Debug.Assert(firstNewFaceId < faces.Count);
-        int countM = faces.Count - 1;
-        faces.buffer[firstNewFaceId].NeighborId = faces.buffer[firstNewFaceId].NeighborId with { Z = countM };
-        faces.buffer[countM].NeighborId = faces.buffer[countM].NeighborId with { Y = firstNewFaceId };
-
-        /*Span<SupportPoint> vertices = Vertices;
+        Span<SupportPoint> vertices = Vertices;
         Span<PolytopeFace> faces = Faces;
 
-        int i = 0;
-        while (i < this.faces.Count) {
-            PolytopeFace face = faces[i];
-            float dot = face.Normal.Dot(supportPoint.Value - vertices[face.VertexId.X].Value);
-            if (dot > 0) {
-                RemoveOrAddEdge(ref edges, (face.VertexId.X, face.VertexId.Y));
-                RemoveOrAddEdge(ref edges, (face.VertexId.Y, face.VertexId.Z));
-                RemoveOrAddEdge(ref edges, (face.VertexId.Z, face.VertexId.X));
+        for (int i = 0; i < this.faces.Count; i++) {
+            PolytopeFace f = faces[i];
+            float dot = f.Normal.Dot(supportPoint.Value - vertices[f.VertexId.X].Value);
+            if (dot <= 0)
+                continue;
 
-                if (--this.faces.Count > 0)
-                    this.faces.buffer[i] = this.faces.buffer[this.faces.Count];
-            } else {
-                i++;
-            }
+            RemoveOrAddEdge(ref edges, (f.VertexId.X, f.VertexId.Y));
+            RemoveOrAddEdge(ref edges, (f.VertexId.Y, f.VertexId.Z));
+            RemoveOrAddEdge(ref edges, (f.VertexId.Z, f.VertexId.X));
+
+            if (--this.faces.Count > 0)
+                this.faces.buffer[i] = this.faces.buffer[this.faces.Count];
+            i--;
         }
 
         // Add vertex.
@@ -179,7 +130,7 @@ internal ref struct Polytope3D {
         // Add new faces.
         vertices = Vertices;
         foreach ((int a, int b) in edges.Data)
-            this.faces.Add(new PolytopeFace(vertices, new int3(n, a, b)));*/
+            this.faces.Add(new PolytopeFace(vertices, new int3(a, b, n), default));
     }
 
     public void CheckTopology() {

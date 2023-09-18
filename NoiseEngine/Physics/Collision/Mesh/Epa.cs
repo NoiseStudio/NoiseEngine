@@ -60,40 +60,34 @@ internal static class Epa {
         float maxDistance = float.MaxValue;
 
         int i = 0;
-        while (polytope.TryIterate(out int faceId)) {
+        while (true) {
+            (_, int faceId) = polytope.ClosestFaceToOrigin();
             ref PolytopeFace face = ref polytopeFaces[faceId];
-            if (face.IsDeleted)
-                continue;
+            //if (face.IsDeleted)
+            //    continue;
 
-            //(PolytopeFace face, int faceId) = polytope.ClosestFaceToOrigin();
             SupportPoint supportPoint = Minkowski.FindSupportPoint(
                 face.Normal, pos12, hullA, scaleA, hullB, scaleB, verticesA, verticesB
             );
 
-            float candidateMaxDistance = supportPoint.Value.Dot(face.Normal);
-            if (candidateMaxDistance < maxDistance && face.BarycentricData != default) {
-                bestFace = faceId;
-                maxDistance = candidateMaxDistance;
-            }
-
-            if (maxDistance - face.Distance <= Epsilon || i++ == MaxIterations) {
-                face = ref polytopeFaces[bestFace];
+            if (supportPoint.Value.Dot(face.Normal) - face.Distance <= Epsilon || i++ == MaxIterations) {
+                //face = ref polytopeFaces[bestFace];
                 //polytope.CheckTopology();
-                return new EpaResult(ComputeContactPoint(polytope, face), face.Normal, face.Distance);
+                return ComputeResult(polytope, face);
             }
 
             polytope.Add(ref face, supportPoint, faceId);
         }
 
-        ref PolytopeFace faceResult = ref polytopeFaces[bestFace];
-        return new EpaResult(ComputeContactPoint(polytope, faceResult), faceResult.Normal, faceResult.Distance);
+        //ref PolytopeFace faceResult = ref polytopeFaces[bestFace];
+        //return new EpaResult(ComputeResult(polytope, faceResult), faceResult.Normal, faceResult.Distance);
     }
 
-    private static float3 ComputeContactPoint(in Polytope3D polytope, in PolytopeFace face) {
+    private static EpaResult ComputeResult(in Polytope3D polytope, in PolytopeFace face) {
         Span<SupportPoint> vertices = polytope.Vertices;
-        /*float3 v = (face.Normal * face.Distance).CartesianToBarycentric(
+        float3 v = (face.Normal * face.Distance).CartesianToBarycentric(
             vertices[face.VertexId.X].Value, vertices[face.VertexId.Y].Value, vertices[face.VertexId.Z].Value
-        );*/
+        );
 
         /*float3 a = vertices[face.VertexIdA].Value;
         float3 b = vertices[face.VertexIdB].Value;
@@ -112,14 +106,19 @@ internal static class Epa {
         float vb = -n.Dot(ac.Cross(cp));
         float va = n.Dot(bc.Cross(bp));*/
 
-        float denom = 1 / (face.BarycentricData.X + face.BarycentricData.Y + face.BarycentricData.Z);
+        /*float denom = 1 / (face.BarycentricData.X + face.BarycentricData.Y + face.BarycentricData.Z);
         float v = face.BarycentricData.Y * denom;
         float w = face.BarycentricData.Z * denom;
-        float u = 1 - v - w;
+        float u = 1 - v - w;*/
 
-        return vertices[face.VertexId.X].OriginA * u +
-            vertices[face.VertexId.Y].OriginA * v +
-            vertices[face.VertexId.Z].OriginA * w;
+        float3 pointA = vertices[face.VertexId.X].OriginA * v.X +
+            vertices[face.VertexId.Y].OriginA * v.Y +
+            vertices[face.VertexId.Z].OriginA * v.Z;
+        float3 pointB = vertices[face.VertexId.X].OriginB * v.X +
+            vertices[face.VertexId.Y].OriginB * v.Y +
+            vertices[face.VertexId.Z].OriginB * v.Z;
+
+        return new EpaResult(pointA, face.Normal, pointA.Distance(pointB));
     }
 
 }

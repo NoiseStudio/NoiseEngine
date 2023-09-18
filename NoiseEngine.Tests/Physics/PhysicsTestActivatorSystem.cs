@@ -26,11 +26,11 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
             return;
         Enabled = false;
 
-        scene.Primitive.CreateCube(
+        /*scene.Primitive.CreateCube(
             new pos3(0, 0, 15),
             Quaternion.EulerDegrees<float>(0, 90, 0),
             new float3(10, 10, 10)
-        );
+        );*/
 
         scene.AddFrameDependentSystem(new RigidBodyFrameSmoothingSystem());
         double cycleTime = 20;

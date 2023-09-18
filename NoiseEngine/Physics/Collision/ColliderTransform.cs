@@ -5,9 +5,11 @@ namespace NoiseEngine.Physics.Collision;
 
 internal readonly record struct ColliderTransform(
     pos3 Position,
+    Quaternion<float> Rotation,
     pos3 WorldCenterOfMass,
     float3 Scale,
     float3 LinearVelocity,
+    float3 AngularVelocity,
     Matrix3x3<float> InverseInertiaTensorMatrix,
     float InverseMass,
     bool IsRigidBody

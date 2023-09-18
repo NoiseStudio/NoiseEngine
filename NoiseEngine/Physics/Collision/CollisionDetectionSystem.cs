@@ -79,14 +79,15 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
 
     private void OnUpdateEntity(
         Entity entity, SystemCommands commands, CollisionDetectionThreadStorage storage, TransformComponent transform,
-        RigidBodyComponent rigidBody, RigidBodyMiddleDataComponent middle, ColliderComponent collider
+        RigidBodyComponent rigidBody, RigidBodyMiddleDataComponent middle, RigidBodyFinalDataComponent final,
+        ColliderComponent collider
     ) {
         if (rigidBody.IsSleeping)
             return;
 
         ColliderTransform currentTransform = new ColliderTransform(
-            middle.Position, middle.Position + rigidBody.CenterOfMass.ToPos(), transform.Scale,
-            rigidBody.LinearVelocity, rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, true
+            middle.Position, final.TargetRotation, middle.Position + rigidBody.CenterOfMass.ToPos(), transform.Scale,
+            rigidBody.LinearVelocity, rigidBody.AngularVelocity, rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, true
         );
         space.GetNearColliders(storage.ColliderDataBuffer);
 

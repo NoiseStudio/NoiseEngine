@@ -47,21 +47,20 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 }
 
                 float3 ra = (iterator.Current.Position - middle.Position).ToFloat() + rigidBody.CenterOfMass;
-                float3 angularVelocityChange =
-                    rigidBody.InverseInertiaTensorMatrix * iterator.Current.Normal.Cross(ra);
+                float relativeVelocity =
+                    iterator.Current.Normal.Dot(rigidBody.LinearVelocity - iterator.Current.OtherVelocity);
+                float j = relativeVelocity * iterator.Current.MinRestitutionPlusOneNegative;
+                float sumMass = rigidBody.InverseMass + iterator.Current.InverseMass;
+                float absorption = iterator.Current.Normal.Dot(
+                    (rigidBody.InverseInertiaTensorMatrix * ra.Cross(iterator.Current.Normal)
+                ).Cross(iterator.Current.Normal));
 
-                rigidBody.AngularVelocity -= angularVelocityChange;
+                j /= sumMass + absorption;
 
-                if (notBlocked) {
-                    float jA = rigidBody.InverseMass + iterator.Current.Normal.Dot(angularVelocityChange.Cross(ra));
-
-                    float3 relativeVelocity = rigidBody.LinearVelocity - iterator.Current.OtherVelocity;
-                    float j =
-                        iterator.Current.MinRestitutionPlusOneNegative * relativeVelocity.Dot(iterator.Current.Normal);
-                    j /= jA + iterator.Current.ResolveImpulseB;
-
+                rigidBody.AngularVelocity -=
+                    rigidBody.InverseInertiaTensorMatrix * iterator.Current.Normal.Cross(ra * j);
+                if (notBlocked)
                     rigidBody.LinearVelocity += iterator.Current.Normal * (j * rigidBody.InverseMass);
-                }
             } while (iterator.MoveNext());
 
             if (

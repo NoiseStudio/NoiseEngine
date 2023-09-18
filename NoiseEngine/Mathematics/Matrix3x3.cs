@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using NoiseEngine.Mathematics.Helpers;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -31,6 +32,28 @@ public readonly record struct Matrix3x3<T>(Vector3<T> C1, Vector3<T> C2, Vector3
     private Matrix3x3(T m11, T m21, T m31, T m12, T m22, T m32, T m13, T m23, T m33) : this(
         new Vector3<T>(m11, m21, m31), new Vector3<T>(m12, m22, m32), new Vector3<T>(m13, m23, m33)
     ) {
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Matrix3x3<T> Rotate(Quaternion<T> quaternion) {
+        T x = quaternion.X * NumberHelper<T>.Value2;
+        T y = quaternion.Y * NumberHelper<T>.Value2;
+        T z = quaternion.Z * NumberHelper<T>.Value2;
+        T xx = quaternion.X * x;
+        T yy = quaternion.Y * y;
+        T zz = quaternion.Z * z;
+        T xy = quaternion.X * y;
+        T xz = quaternion.X * z;
+        T yz = quaternion.Y * z;
+        T wx = quaternion.W * x;
+        T wy = quaternion.W * y;
+        T wz = quaternion.W * z;
+
+        return new Matrix3x3<T>(
+            new Vector3<T>(T.One - (yy + zz), xy + wz, xz - wy),
+            new Vector3<T>(xy - wz, T.One - (xx + zz), yz + wx),
+            new Vector3<T>(xz + wy, yz - wx, T.One - (xx + yy))
+        );
     }
 
     /// <summary>
@@ -75,6 +98,21 @@ public readonly record struct Matrix3x3<T>(Vector3<T> C1, Vector3<T> C2, Vector3
             (M11 * M22 - M12 * M21) * i
         );
         return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Matrix3x3<T> operator *(Matrix3x3<T> lhs, Matrix3x3<T> rhs) {
+        return new Matrix3x3<T>(
+            (lhs.M11 * rhs.M11) + (lhs.M12 * rhs.M21) + (lhs.M13 * rhs.M31),
+            (lhs.M21 * rhs.M11) + (lhs.M22 * rhs.M21) + (lhs.M23 * rhs.M31),
+            (lhs.M31 * rhs.M11) + (lhs.M32 * rhs.M21) + (lhs.M33 * rhs.M31),
+            (lhs.M11 * rhs.M12) + (lhs.M12 * rhs.M22) + (lhs.M13 * rhs.M32),
+            (lhs.M21 * rhs.M12) + (lhs.M22 * rhs.M22) + (lhs.M23 * rhs.M32),
+            (lhs.M31 * rhs.M12) + (lhs.M32 * rhs.M22) + (lhs.M33 * rhs.M32),
+            (lhs.M11 * rhs.M13) + (lhs.M12 * rhs.M23) + (lhs.M13 * rhs.M33),
+            (lhs.M21 * rhs.M13) + (lhs.M22 * rhs.M23) + (lhs.M23 * rhs.M33),
+            (lhs.M31 * rhs.M13) + (lhs.M32 * rhs.M23) + (lhs.M33 * rhs.M33)
+        );
     }
 
     /// <summary>

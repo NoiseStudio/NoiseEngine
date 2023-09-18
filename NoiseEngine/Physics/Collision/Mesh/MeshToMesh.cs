@@ -1,5 +1,6 @@
 ﻿using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics.Collision.Mesh;
@@ -13,9 +14,10 @@ internal static class MeshToMesh {
         MeshCollider other, float otherRestitutionPlusOneNegative, in ColliderTransform otherTransform,
         Entity otherEntity
     ) {
+        Isometry3<pos> posA = new Isometry3<pos>(currentTransform.Position, currentTransform.Rotation.ToPos());
         Isometry3<float> offsetA =
-            new Isometry3<pos>(currentTransform.Position, Quaternion<pos>.Identity).ConjugateMultiplication(
-                new Isometry3<pos>(otherTransform.Position, Quaternion<pos>.Identity)
+            posA.ConjugateMultiplication(
+                new Isometry3<pos>(otherTransform.Position, otherTransform.Rotation.ToPos())
             ).ToFloat();
 
         float currentScaleMax = currentTransform.Scale.MaxComponent();
@@ -46,16 +48,15 @@ internal static class MeshToMesh {
                         simplex, in offsetA, in hullA, currentTransform.Scale, in hullB, otherTransform.Scale,
                         valueA.Vertices, valueB.Vertices
                     );
-                    Log.Info($"C {currentTransform.Position - new pos3(0, -0.5f, 0)}");
-                    pos3 pos = epa.Position.ToPos() + currentTransform.Position;
-                    Log.Info($"E {pos}");
+                    //Log.Info($"C {currentTransform.Position - new pos3(0, -0.5f, 0)}");
+                    pos3 pos = posA * epa.Position.ToPos();
+                    //Log.Info($"E {pos}");
 
-                    ((ApplicationScene)world).Primitive.CreateSphere(pos, null, float3.One / 10f);
+                    float3 normal = currentTransform.Rotation * epa.Normal;
+                    ((ApplicationScene)world).Primitive.CreateSphere(pos + (normal * 0.3f).ToPos(), null, (float3.One + normal.Abs() * 3) / 10f);
 
-                    /*float depth = 0.3f;
+                    float depth = epa.Depth;
                     pos3 contactPoint = pos;
-                    float3 normal = new float3(0, -1, 0);
-                    //epa.Normal;
                     float jB;
 
                     if (otherTransform.IsMovable) {
@@ -77,10 +78,13 @@ internal static class MeshToMesh {
                         normal,
                         depth,
                         otherTransform.LinearVelocity,
+                        otherTransform.Position,
+                        otherTransform.AngularVelocity,
+                        otherTransform.InverseMass,
                         currentTransform.InverseMass,
                         jB,
                         MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative)
-                    ));*/
+                    ));
                 }
             }
         }
