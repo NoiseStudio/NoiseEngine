@@ -21,6 +21,7 @@ anyhow = "1.0.71"
 image = "0.24.6"
 webp = "0.2.2"
 vma = "0.3.1"
+rodio = "0.17.1"
 
 [dependencies.uuid]
 version = "1.2.2"
