@@ -14,10 +14,11 @@ internal static class Epa {
         in Simplex3D simplex, in Isometry3<float> pos12, in ConvexHullId hullA, in float3 scaleA,
         in ConvexHullId hullB, in float3 scaleB, ReadOnlySpan<float3> verticesA, ReadOnlySpan<float3> verticesB
     ) {
-        Span<SupportPoint> polytopeVertices = stackalloc SupportPoint[MaxIterations];
+        int max = MaxIterations + 4;
+        Span<SupportPoint> polytopeVertices = stackalloc SupportPoint[max];
         simplex.CopyTo(polytopeVertices);
-        Span<PolytopeFace> polytopeFaces = stackalloc PolytopeFace[MaxIterations * 3];
-        Span<int> polytopeFaceIds = stackalloc int[MaxIterations * 3];
+        Span<PolytopeFace> polytopeFaces = stackalloc PolytopeFace[max * 3];
+        Span<int> polytopeFaceIds = stackalloc int[max * 3];
 
         int verticesCount;
         int facesCount;

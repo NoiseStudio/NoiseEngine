@@ -15,10 +15,9 @@ internal static class MeshToMesh {
         Entity otherEntity
     ) {
         Isometry3<pos> posA = new Isometry3<pos>(currentTransform.Position, currentTransform.Rotation.ToPos());
-        Isometry3<float> offsetA =
-            posA.ConjugateMultiplication(
-                new Isometry3<pos>(otherTransform.Position, otherTransform.Rotation.ToPos())
-            ).ToFloat();
+        Isometry3<float> offsetA = posA.ConjugateMultiplication(
+            new Isometry3<pos>(otherTransform.Position, otherTransform.Rotation.ToPos())
+        ).ToFloat();
 
         float currentScaleMax = currentTransform.Scale.MaxComponent();
         float otherScaleMax = otherTransform.Scale.MaxComponent();

@@ -55,11 +55,11 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                     iterator.Current.Normal.Dot(rigidBody.LinearVelocity - iterator.Current.OtherVelocity);
                 float j = relativeVelocity * iterator.Current.MinRestitutionPlusOneNegative;
                 float sumMass = rigidBody.InverseMass + iterator.Current.InverseMass;
-                float absorption = iterator.Current.Normal.Dot(
+                float denom = iterator.Current.Normal.Dot(
                     (inverseInertia * ra.Cross(iterator.Current.Normal)
                 ).Cross(iterator.Current.Normal));
 
-                j /= sumMass + absorption;
+                j /= sumMass + denom;
 
                 // NOTE: I do not know if normalization is correct, but without it objects rotate too much.
                 //       And with it results are similar to physics engines such as PhysX. - Vixen 2023-09-18
