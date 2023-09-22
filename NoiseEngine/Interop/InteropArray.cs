@@ -85,7 +85,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// Creates a view into the native memory. Span becomes invalid when the object is disposed.
     /// </summary>
     /// <returns>Span with the view of the memory held by this object.</returns>
-    public unsafe Span<T> AsSpan() {
+    public readonly unsafe Span<T> AsSpan() {
         return new Span<T>(pointer, Length);
     }
 
@@ -96,7 +96,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// <param name="start">Start index of the span.</param>
     /// <returns>Span with the view of the memory held by this object.</returns>
     /// <throws cref="ArgumentOutOfRangeException"><paramref name="start"/> is out of range.</throws>
-    public unsafe Span<T> AsSpan(int start) {
+    public readonly unsafe Span<T> AsSpan(int start) {
         if (start < 0 || start > Length) {
             throw new ArgumentOutOfRangeException(nameof(start));
         }
@@ -114,7 +114,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// <throws cref="ArgumentOutOfRangeException">
     /// <paramref name="start"/> is out of range or <paramref name="length"/> is invalid.
     /// </throws>
-    public unsafe Span<T> AsSpan(int start, int length) {
+    public readonly unsafe Span<T> AsSpan(int start, int length) {
         if (start < 0 || start > Length) {
             throw new ArgumentOutOfRangeException(nameof(start));
         }
