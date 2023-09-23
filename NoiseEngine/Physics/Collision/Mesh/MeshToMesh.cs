@@ -12,7 +12,7 @@ internal static class MeshToMesh {
         EntityWorld world, SystemCommands commands, ContactPointsBuffer buffer, in MeshCollider current,
         float currentRestitutionPlusOneNegative, in ColliderTransform currentTransform, Entity currentEntity,
         MeshCollider other, float otherRestitutionPlusOneNegative, in ColliderTransform otherTransform,
-        Entity otherEntity
+        Entity otherEntity, Polytope3DBuffer polytopeBuffer
     ) {
         Isometry3<pos> posA = new Isometry3<pos>(currentTransform.Position, currentTransform.Rotation.ToPos());
         Isometry3<float> offsetA = posA.ConjugateMultiplication(
@@ -45,7 +45,7 @@ internal static class MeshToMesh {
                 )) {
                     EpaResult epa = Epa.Process(
                         simplex, in offsetA, in hullA, currentTransform.Scale, in hullB, otherTransform.Scale,
-                        valueA.Vertices, valueB.Vertices
+                        valueA.Vertices, valueB.Vertices, polytopeBuffer
                     );
                     //Log.Info($"C {currentTransform.Position - new pos3(0, -0.5f, 0)}");
                     pos3 pos = posA * epa.Position.ToPos();

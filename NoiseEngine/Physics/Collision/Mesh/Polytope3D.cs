@@ -1,8 +1,7 @@
-﻿using NoiseEngine.Collections.Span;
+﻿using NoiseEngine.Collections;
+using NoiseEngine.Collections.Span;
 using NoiseEngine.Mathematics;
 using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics.Collision.Mesh;
@@ -10,26 +9,30 @@ namespace NoiseEngine.Physics.Collision.Mesh;
 internal ref struct Polytope3D {
 
     private SpanList<SupportPoint> vertices;
-    private SpanList<PolytopeFace> faces;
     private SpanList<int> faceIds;
-    private int i;
 
     public readonly Span<SupportPoint> Vertices => vertices.Data;
-    public readonly Span<PolytopeFace> Faces => faces.Data;
+    public readonly FastList<PolytopeFace> Faces { get; }
+    public readonly FastList<(int, int)> Edges { get; }
 
-    public Polytope3D(Span<SupportPoint> vertices, int verticesCount, Span<PolytopeFace> faces, int facesCount, Span<int> faceIds, int faceIdsCount) {
+    public Polytope3D(
+        Span<SupportPoint> vertices, int verticesCount, Polytope3DBuffer buffer, Span<int> faceIds,
+        int faceIdsCount
+    ) {
         this.vertices = new SpanList<SupportPoint>(vertices, verticesCount);
-        this.faces = new SpanList<PolytopeFace>(faces, facesCount);
+        Faces = buffer.Faces;
+        Edges = buffer.Edges;
         this.faceIds = new SpanList<int>(faceIds, faceIdsCount);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void RemoveOrAddEdge(ref SpanList<(int, int)> edges, (int, int) edge) {
+    private static void RemoveOrAddEdge(FastList<(int, int)> edges, (int, int) edge) {
         for (int i = 0; i < edges.Count; i++) {
-            (int a, int b) = edges.buffer[i];
+            (int a, int b) = edges[i];
             if (a == edge.Item2 && b == edge.Item1) {
-                if (--edges.Count >= 0)
-                    edges.buffer[i] = edges.buffer[edges.Count];
+                edges.RemoveLastWithoutClear(1);
+                if (edges.Count > 0)
+                    edges[i] = edges[edges.Count];
                 return;
             }
         }
@@ -86,12 +89,12 @@ internal ref struct Polytope3D {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly (PolytopeFace face, int faceId) ClosestFaceToOrigin() {
-        Span<PolytopeFace> faces = Faces;
+        FastList<PolytopeFace> faces = Faces;
         PolytopeFace face = new PolytopeFace();
 
         int id = 0;
-        for (int i = 0; i < faces.Length; i++) {
-            ref PolytopeFace f = ref faces[i];
+        for (int i = 0; i < faces.Count; i++) {
+            ref PolytopeFace f = ref faces.GetRef(i);
             if ((f.Distance < face.Distance || face.Distance == 0) && !face.IsDeleted) {
                 face = f;
                 id = i;
@@ -101,25 +104,26 @@ internal ref struct Polytope3D {
         return (face, id);
     }
 
-    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Add(ref PolytopeFace face, SupportPoint supportPoint, int faceId) {
-        SpanList<(int, int)> edges = new SpanList<(int, int)>(stackalloc (int, int)[Epa.MaxIterations * 9], 0);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Add(SupportPoint supportPoint) {
+        FastList<(int, int)> edges = Edges;
 
         Span<SupportPoint> vertices = Vertices;
-        Span<PolytopeFace> faces = Faces;
+        FastList<PolytopeFace> faces = Faces;
 
-        for (int i = 0; i < this.faces.Count; i++) {
+        for (int i = 0; i < faces.Count; i++) {
             PolytopeFace f = faces[i];
             float dot = f.Normal.Dot(supportPoint.Value - vertices[f.VertexId.X].Value);
             if (dot <= 0)
                 continue;
 
-            RemoveOrAddEdge(ref edges, (f.VertexId.X, f.VertexId.Y));
-            RemoveOrAddEdge(ref edges, (f.VertexId.Y, f.VertexId.Z));
-            RemoveOrAddEdge(ref edges, (f.VertexId.Z, f.VertexId.X));
+            RemoveOrAddEdge(edges, (f.VertexId.X, f.VertexId.Y));
+            RemoveOrAddEdge(edges, (f.VertexId.Y, f.VertexId.Z));
+            RemoveOrAddEdge(edges, (f.VertexId.Z, f.VertexId.X));
 
-            if (--this.faces.Count > 0)
-                this.faces.buffer[i] = this.faces.buffer[this.faces.Count];
+            faces.RemoveLastWithoutClear(1);
+            if (faces.Count > 0)
+                faces[i] = faces[faces.Count];
             i--;
         }
 
@@ -129,8 +133,9 @@ internal ref struct Polytope3D {
 
         // Add new faces.
         vertices = Vertices;
-        foreach ((int a, int b) in edges.Data)
-            this.faces.Add(new PolytopeFace(vertices, new int3(a, b, n), default));
+        foreach ((int a, int b) in edges)
+            faces.Add(new PolytopeFace(vertices, new int3(a, b, n), default));
+        edges.RemoveLastWithoutClear(edges.Count);
     }
 
     public void CheckTopology() {

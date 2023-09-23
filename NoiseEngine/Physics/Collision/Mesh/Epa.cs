@@ -12,16 +12,15 @@ internal static class Epa {
 
     public static EpaResult Process(
         in Simplex3D simplex, in Isometry3<float> pos12, in ConvexHullId hullA, in float3 scaleA,
-        in ConvexHullId hullB, in float3 scaleB, ReadOnlySpan<float3> verticesA, ReadOnlySpan<float3> verticesB
+        in ConvexHullId hullB, in float3 scaleB, ReadOnlySpan<float3> verticesA, ReadOnlySpan<float3> verticesB,
+        Polytope3DBuffer buffer
     ) {
         int max = MaxIterations + 4;
         Span<SupportPoint> polytopeVertices = stackalloc SupportPoint[max];
         simplex.CopyTo(polytopeVertices);
-        Span<PolytopeFace> polytopeFaces = stackalloc PolytopeFace[max * 3];
         Span<int> polytopeFaceIds = stackalloc int[max * 3];
 
         int verticesCount;
-        int facesCount;
         if (simplex.Dimensions == 3) {
             float3 dp1 = simplex.B.Value - simplex.A.Value;
             float3 dp2 = simplex.C.Value - simplex.A.Value;
@@ -31,13 +30,12 @@ internal static class Epa {
                 polytopeVertices[2] = simplex.B;
             }
 
-            polytopeFaces[0] = new PolytopeFace(polytopeVertices, new int3(0, 1, 2), new int3(3, 1, 2));
-            polytopeFaces[1] = new PolytopeFace(polytopeVertices, new int3(1, 3, 2), new int3(3, 2, 1));
-            polytopeFaces[2] = new PolytopeFace(polytopeVertices, new int3(0, 2, 3), new int3(0, 1, 3));
-            polytopeFaces[3] = new PolytopeFace(polytopeVertices, new int3(0, 3, 1), new int3(2, 1, 0));
+            buffer.Faces.UnsafeAdd(new PolytopeFace(polytopeVertices, new int3(0, 1, 2), new int3(3, 1, 2)));
+            buffer.Faces.UnsafeAdd(new PolytopeFace(polytopeVertices, new int3(1, 3, 2), new int3(3, 2, 1)));
+            buffer.Faces.UnsafeAdd(new PolytopeFace(polytopeVertices, new int3(0, 2, 3), new int3(0, 1, 3)));
+            buffer.Faces.UnsafeAdd(new PolytopeFace(polytopeVertices, new int3(0, 3, 1), new int3(2, 1, 0)));
 
             verticesCount = 4;
-            facesCount = 4;
         } else {
             Debug.Assert(simplex.Dimensions == 1 || simplex.Dimensions == 2);
             if (simplex.Dimensions == 1) {
@@ -47,23 +45,22 @@ internal static class Epa {
                 );
             }
 
-            polytopeFaces[0] = new PolytopeFace(polytopeVertices, new int3(0, 1, 2), new int3(1, 1, 1));
-            polytopeFaces[1] = new PolytopeFace(polytopeVertices, new int3(0, 2, 1), new int3(0, 0, 0));
+            buffer.Faces.UnsafeAdd(new PolytopeFace(polytopeVertices, new int3(0, 1, 2), new int3(1, 1, 1)));
+            buffer.Faces.UnsafeAdd(new PolytopeFace(polytopeVertices, new int3(0, 2, 1), new int3(0, 0, 0)));
 
             polytopeFaceIds[1] = 1;
 
             verticesCount = 3;
-            facesCount = 2;
         }
 
-        Polytope3D polytope = new Polytope3D(polytopeVertices, verticesCount, polytopeFaces, facesCount, polytopeFaceIds, facesCount);
+        Polytope3D polytope = new Polytope3D(polytopeVertices, verticesCount, buffer, polytopeFaceIds, 0);
         int bestFace = 0;
         float maxDistance = float.MaxValue;
 
         int i = 0;
         while (true) {
             (_, int faceId) = polytope.ClosestFaceToOrigin();
-            ref PolytopeFace face = ref polytopeFaces[faceId];
+            ref PolytopeFace face = ref buffer.Faces.GetRef(faceId);
             //if (face.IsDeleted)
             //    continue;
 
@@ -74,10 +71,11 @@ internal static class Epa {
             if (supportPoint.Value.Dot(face.Normal) - face.Distance <= Epsilon || i++ == MaxIterations) {
                 //face = ref polytopeFaces[bestFace];
                 //polytope.CheckTopology();
+                buffer.Faces.RemoveLastWithoutClear(buffer.Faces.Count);
                 return ComputeResult(polytope, face);
             }
 
-            polytope.Add(ref face, supportPoint, faceId);
+            polytope.Add(supportPoint);
         }
 
         //ref PolytopeFace faceResult = ref polytopeFaces[bestFace];

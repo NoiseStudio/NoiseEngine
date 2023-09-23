@@ -59,7 +59,7 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
                         MeshToMesh.Collide(
                             World, commands, buffer, current, currentRestitutionPlusOneNegative, currentTransform, entity,
                             other.Collider.UnsafeCastToMeshCollider(), other.Collider.RestitutionPlusOneNegative,
-                            other.Transform, other.Entity
+                            other.Transform, other.Entity, storage.PolytopeBuffer
                         );
                         break;
                     default:

@@ -51,6 +51,10 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                     rotation * rigidBody.InverseInertiaTensorMatrix * rotation.Transpose();
 
                 float3 ra = (iterator.Current.Position - middle.Position).ToFloat() + rigidBody.CenterOfMass;
+                float3 rb = (iterator.Current.Position - iterator.Current.OtherPosition).ToFloat();
+
+                float3 rv = rigidBody.LinearVelocity + rigidBody.AngularVelocity.Cross(ra);
+
                 float relativeVelocity =
                     iterator.Current.Normal.Dot(rigidBody.LinearVelocity - iterator.Current.OtherVelocity);
                 float j = relativeVelocity * iterator.Current.MinRestitutionPlusOneNegative;
@@ -68,6 +72,20 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
 
                 if (notBlocked)
                     rigidBody.LinearVelocity += iterator.Current.Normal * (j * rigidBody.InverseMass);
+
+                // Friction.
+                float3 t = -(rv - (iterator.Current.Normal * rv.Dot(iterator.Current.Normal))).Normalize();
+                float jt = (-rv.Dot(t)) / (sumMass + denom);
+
+                float3 impulse;
+                if (float.Abs(jt) < j * 0.6f)
+                    impulse = t * jt;
+                else
+                    impulse = t * -j * 0.6f;
+
+                rigidBody.AngularVelocity += inverseInertia * ra.Cross(impulse);
+                if (notBlocked)
+                    rigidBody.LinearVelocity += impulse * rigidBody.InverseMass;
             } while (iterator.MoveNext());
 
             if (

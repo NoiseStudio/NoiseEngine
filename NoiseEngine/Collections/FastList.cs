@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Collections;
 
@@ -75,6 +76,16 @@ public class FastList<T> : IList<T>, IReadOnlyList<T>, IList {
     }
 
     /// <summary>
+    /// Returns element at <paramref name="index"/> as a reference.
+    /// </summary>
+    /// <param name="index">Index of the element.</param>
+    /// <returns>Reference to element at <paramref name="index"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ref T GetRef(int index) {
+        return ref items[index];
+    }
+
+    /// <summary>
     /// Adds <paramref name="item"/> to the <see cref="FastList{T}"/>.
     /// </summary>
     /// <param name="item">Item to add.</param>
@@ -87,6 +98,7 @@ public class FastList<T> : IList<T>, IReadOnlyList<T>, IList {
     /// Adds <paramref name="item"/> to the <see cref="FastList{T}"/> without ensuring capacity.
     /// </summary>
     /// <param name="item">Item to add.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void UnsafeAdd(T item) {
         items[count++] = item;
     }
@@ -263,8 +275,17 @@ public class FastList<T> : IList<T>, IReadOnlyList<T>, IList {
     /// </summary>
     /// <param name="count">Number of elements to remove.</param>
     public void RemoveLast(int count) {
-        this.count -= count;
+        RemoveLastWithoutClear(count);
         Array.Clear(items, this.count, count);
+    }
+
+    /// <summary>
+    /// Removes <paramref name="count"/> elements on end of this <see cref="FastList{T}"/>.
+    /// </summary>
+    /// <param name="count">Number of elements to remove.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void RemoveLastWithoutClear(int count) {
+        this.count -= count;
     }
 
     /// <summary>

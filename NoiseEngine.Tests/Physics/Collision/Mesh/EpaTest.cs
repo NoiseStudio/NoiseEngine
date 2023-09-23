@@ -1,4 +1,5 @@
-﻿using NoiseEngine.Physics.Collision.Mesh;
+﻿using NoiseEngine.Collections;
+using NoiseEngine.Physics.Collision.Mesh;
 
 namespace NoiseEngine.Tests.Physics.Collision.Mesh;
 
@@ -20,7 +21,8 @@ public class EpaTest {
             return;
 
         EpaResult result = Epa.Process(
-            simplex, data.Pos12, data.HullA, data.ScaleA, data.HullB, data.ScaleB, data.VerticesA, data.VerticesB
+            simplex, data.Pos12, data.HullA, data.ScaleA, data.HullB, data.ScaleB, data.VerticesA, data.VerticesB,
+            new Polytope3DBuffer(new FastList<PolytopeFace>(), new FastList<(int, int)>())
         );
 
         Assert.Equal(data.EpaPosition, result.Position);

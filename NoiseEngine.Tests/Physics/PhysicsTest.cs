@@ -48,7 +48,7 @@ public class PhysicsTest : ApplicationTestEnvironment {
             for (int y = 0; y < 40; y += 2) {
                 for (int z = 0; z < 1; z += 2) {
                     scene.Spawn(
-                        new TransformComponent(new pos3(x, y * 0.5f - 4.5f, z)),
+                        new TransformComponent(new pos3(x, y + 4.5f, z)),
                         new MeshRendererComponent(scene.Primitive.CubeMesh, scene.Primitive.DefaultMaterial),
                         new RigidBodyComponent(),
                         new ColliderComponent(collider)
