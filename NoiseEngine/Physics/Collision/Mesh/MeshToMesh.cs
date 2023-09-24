@@ -51,8 +51,8 @@ internal static class MeshToMesh {
                     pos3 pos = posA * epa.Position.ToPos();
                     //Log.Info($"E {pos}");
 
-                    float3 normal = currentTransform.Rotation * epa.Normal;
-                    ((ApplicationScene)world).Primitive.CreateSphere(pos + (normal * 0.3f).ToPos(), null, (float3.One + normal.Abs() * 3) / 10f);
+                    float3 normal = currentTransform.Rotation * -epa.Normal;
+                    //((ApplicationScene)world).Primitive.CreateSphere(pos + (normal * 0.3f).ToPos(), null, (float3.One + normal.Abs() * 3) / 10f);
 
                     float depth = epa.Depth;
                     pos3 contactPoint = pos;

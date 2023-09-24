@@ -36,7 +36,7 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
             do {
                 bool notBlocked = yNotBlocked || iterator.Current.Normal.Y <= 0;
                 if (notBlocked)
-                    middle.Position -= (iterator.Current.Normal * iterator.Current.Depth).ToPos();
+                    middle.Position += (iterator.Current.Normal * iterator.Current.Depth).ToPos();
 
                 if (iterator.Current.Depth >= 0.5f) {
                     middle.Position += new float3(
@@ -53,39 +53,37 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 float3 ra = (iterator.Current.Position - middle.Position).ToFloat() + rigidBody.CenterOfMass;
                 float3 rb = (iterator.Current.Position - iterator.Current.OtherPosition).ToFloat();
 
-                float3 rv = rigidBody.LinearVelocity + rigidBody.AngularVelocity.Cross(ra);
+                float3 rv = iterator.Current.OtherVelocity + iterator.Current.OtherAngularVelocity.Cross(rb) -
+                    rigidBody.LinearVelocity - rigidBody.AngularVelocity.Cross(ra);
 
-                float relativeVelocity =
-                    iterator.Current.Normal.Dot(rigidBody.LinearVelocity - iterator.Current.OtherVelocity);
-                float j = relativeVelocity * iterator.Current.MinRestitutionPlusOneNegative;
+                float j = rv.Dot(iterator.Current.Normal) * iterator.Current.MinRestitutionPlusOneNegative;
                 float sumMass = rigidBody.InverseMass + iterator.Current.InverseMass;
                 float denom = iterator.Current.Normal.Dot(
                     (inverseInertia * ra.Cross(iterator.Current.Normal)
                 ).Cross(iterator.Current.Normal));
 
                 j /= sumMass + denom;
+                float3 impulse = iterator.Current.Normal * j;
 
                 // NOTE: I do not know if normalization is correct, but without it objects rotate too much.
                 //       And with it results are similar to physics engines such as PhysX. - Vixen 2023-09-18
-                rigidBody.AngularVelocity -=
-                    (inverseInertia * iterator.Current.Normal.Cross(ra * j)).Normalize();
+                rigidBody.AngularVelocity -= (inverseInertia * ra.Cross(impulse)).Normalize();
 
                 if (notBlocked)
-                    rigidBody.LinearVelocity += iterator.Current.Normal * (j * rigidBody.InverseMass);
+                    rigidBody.LinearVelocity -= impulse * rigidBody.InverseMass;
 
                 // Friction.
                 float3 t = -(rv - (iterator.Current.Normal * rv.Dot(iterator.Current.Normal))).Normalize();
                 float jt = (-rv.Dot(t)) / (sumMass + denom);
 
-                float3 impulse;
                 if (float.Abs(jt) < j * 0.6f)
                     impulse = t * jt;
                 else
                     impulse = t * -j * 0.6f;
 
-                rigidBody.AngularVelocity += inverseInertia * ra.Cross(impulse);
+                rigidBody.AngularVelocity -= (inverseInertia * ra.Cross(impulse)).Normalize();
                 if (notBlocked)
-                    rigidBody.LinearVelocity += impulse * rigidBody.InverseMass;
+                    rigidBody.LinearVelocity -= impulse * rigidBody.InverseMass;
             } while (iterator.MoveNext());
 
             if (
