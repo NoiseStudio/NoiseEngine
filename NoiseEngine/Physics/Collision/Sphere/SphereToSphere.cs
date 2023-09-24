@@ -52,7 +52,7 @@ internal static class SphereToSphere {
             otherTransform.AngularVelocity,
             otherTransform.InverseMass,
             currentTransform.InverseMass,
-            jB,
+            default,
             MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative)
         ));
     }

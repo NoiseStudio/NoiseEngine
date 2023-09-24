@@ -56,17 +56,18 @@ internal static class MeshToMesh {
 
                     float depth = epa.Depth;
                     pos3 contactPoint = pos;
-                    float jB;
+                    float3 jB;
 
                     if (otherTransform.IsMovable) {
                         depth *= 0.5f;
 
+                        Matrix3x3<float> rotation = Matrix3x3<float>.Rotate(otherTransform.Rotation);
+                        Matrix3x3<float> inverseInertia =
+                            rotation * otherTransform.InverseInertiaTensorMatrix * rotation.Transpose();
                         float3 rb = (contactPoint - otherTransform.WorldCenterOfMass).ToFloat();
-                        jB = otherTransform.InverseMass + normal.Dot(
-                            (otherTransform.InverseInertiaTensorMatrix * normal.Cross(rb)).Cross(rb)
-                        );
+                        jB = (inverseInertia * rb.Cross(normal)).Cross(rb);
                     } else {
-                        jB = 0;
+                        jB = default;
 
                         if (otherTransform.IsRigidBody)
                             commands.GetEntity(otherEntity).Insert(new RigidBodySleepComponent(true));

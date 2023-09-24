@@ -1,5 +1,4 @@
-﻿using NoiseEngine.Mathematics;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics;
 
@@ -14,13 +13,13 @@ public readonly record struct ContactPoint {
     internal float3 OtherAngularVelocity { get; }
     internal float OtherInverseMass { get; }
     internal float InverseMass { get; }
-    internal float ResolveImpulseB { get; }
+    internal float3 ResolveImpulseB { get; }
     internal float MinRestitutionPlusOneNegative { get; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ContactPoint(
         pos3 position, float3 normal, float depth, float3 otherVelocity, pos3 otherPosition, float3 otherAngularVelocity, float otherInverseMass, float inverseMass,
-        float resolveImpulseB, float minRestitutionPlusOneNegative
+        float3 resolveImpulseB, float minRestitutionPlusOneNegative
     ) {
         Position = position;
         Normal = normal;

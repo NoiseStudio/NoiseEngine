@@ -57,31 +57,29 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                     rigidBody.LinearVelocity - rigidBody.AngularVelocity.Cross(ra);
 
                 float j = rv.Dot(iterator.Current.Normal) * iterator.Current.MinRestitutionPlusOneNegative;
-                float sumMass = rigidBody.InverseMass + iterator.Current.InverseMass;
-                float denom = iterator.Current.Normal.Dot(
-                    (inverseInertia * ra.Cross(iterator.Current.Normal)
-                ).Cross(iterator.Current.Normal));
+                float denom = rigidBody.InverseMass + iterator.Current.OtherInverseMass + iterator.Current.Normal.Dot(
+                    (inverseInertia * ra.Cross(iterator.Current.Normal)).Cross(ra) +
+                    iterator.Current.ResolveImpulseB
+                );
 
-                j /= sumMass + denom;
+                j /= denom;
                 float3 impulse = iterator.Current.Normal * j;
+
+                // Friction.
+                float3 t = -(rv - (iterator.Current.Normal * rv.Dot(iterator.Current.Normal))).Normalize();
+                float jt = (-rv.Dot(t)) / denom;
+
+                if (float.Abs(jt) < j * 0.6f)
+                    impulse += t * jt;
+                else
+                    impulse += t * -j * 0.6f;
+
+                // Add impulse.
 
                 // NOTE: I do not know if normalization is correct, but without it objects rotate too much.
                 //       And with it results are similar to physics engines such as PhysX. - Vixen 2023-09-18
                 rigidBody.AngularVelocity -= (inverseInertia * ra.Cross(impulse)).Normalize();
 
-                if (notBlocked)
-                    rigidBody.LinearVelocity -= impulse * rigidBody.InverseMass;
-
-                // Friction.
-                float3 t = -(rv - (iterator.Current.Normal * rv.Dot(iterator.Current.Normal))).Normalize();
-                float jt = (-rv.Dot(t)) / (sumMass + denom);
-
-                if (float.Abs(jt) < j * 0.6f)
-                    impulse = t * jt;
-                else
-                    impulse = t * -j * 0.6f;
-
-                rigidBody.AngularVelocity -= (inverseInertia * ra.Cross(impulse)).Normalize();
                 if (notBlocked)
                     rigidBody.LinearVelocity -= impulse * rigidBody.InverseMass;
             } while (iterator.MoveNext());
