@@ -43,6 +43,8 @@
         <None Remove="BuiltInResources\**" />
     </ItemGroup>
 
+
+
     <Import Project="../NoiseEngine.Shared.xml" />
 
     <Target Name="CompileNative" BeforeTargets="AfterBuild" Condition="$(DoNotBuildMainNative) != 'true'">
