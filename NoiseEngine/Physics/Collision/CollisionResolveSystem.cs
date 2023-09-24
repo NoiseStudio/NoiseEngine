@@ -90,7 +90,7 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
 
             if (
                 rigidBody.LinearVelocity.MagnitudeSquared() <= 0.1f &&
-                rigidBody.AngularVelocity.MagnitudeSquared() <= 0.005f * 0.005f
+                rigidBody.AngularVelocity.MagnitudeSquared() <= 0.1f
             ) {
                 rigidBody.LinearVelocity = float3.Zero;
                 rigidBody.AngularVelocity = float3.Zero;

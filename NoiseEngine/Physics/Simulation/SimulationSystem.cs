@@ -31,6 +31,7 @@ internal sealed partial class SimulationSystem : EntitySystem {
         ref RigidBodyFinalDataComponent data, ref TransformComponent transform, ColliderComponent collider,
         ref RigidBodySleepComponent sleep
     ) {
+        // Sleeping.
         if (rigidBody.IsSleeping) {
             if (sleep.WakeUp) {
                 rigidBody.SleepAccumulator--;
@@ -41,13 +42,24 @@ internal sealed partial class SimulationSystem : EntitySystem {
             return;
         }
 
+        // Linear velocity.
         if (rigidBody.UseGravity) {
             rigidBody.LinearVelocity = rigidBody.LinearVelocity = rigidBody.LinearVelocity with {
                 Y = rigidBody.LinearVelocity.Y + gravityAcceleration
             };
         }
 
+        rigidBody.LinearVelocity -= rigidBody.LinearVelocity * (rigidBody.LinearDrag * fixedDeltaTime);
+        if (rigidBody.LinearVelocity.MagnitudeSquared() < 0.0001f)
+            rigidBody.LinearVelocity = float3.Zero;
+
         middle.Position = data.TargetPosition + (rigidBody.LinearVelocity * fixedDeltaTime).ToPos();
+
+        // Angular velocity.
+        rigidBody.AngularVelocity -= rigidBody.AngularVelocity * (rigidBody.AngularDrag * fixedDeltaTime);
+        if (rigidBody.AngularVelocity.MagnitudeSquared() < 0.0001f)
+            rigidBody.AngularVelocity = float3.Zero;
+
         Quaternion<float> angularVelocity = new Quaternion<float>(
             rigidBody.AngularVelocity.X,
             rigidBody.AngularVelocity.Y,
@@ -55,9 +67,10 @@ internal sealed partial class SimulationSystem : EntitySystem {
             0
         );
         data.TargetRotation = (
-            data.TargetRotation + angularVelocity * data.TargetRotation * (fixedDeltaTime * 0.5f)
+            data.TargetRotation + (angularVelocity * data.TargetRotation * (fixedDeltaTime * 0.5f))
         ).Normalize();
 
+        // Register.
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
             data.TargetPosition, data.TargetRotation, data.TargetPosition + rigidBody.CenterOfMass.ToPos(),
             transform.Scale, rigidBody.LinearVelocity, rigidBody.AngularVelocity, rigidBody.InverseInertiaTensorMatrix,

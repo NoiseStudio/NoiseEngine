@@ -12,9 +12,11 @@ public record struct RigidBodyComponent : IComponent {
     private float mass = 1f;
 
     public bool UseGravity { get; set; } = true;
-    public Vector3<float> CenterOfMass { get; set; }
-    public Vector3<float> LinearVelocity { get; set; }
-    public Vector3<float> AngularVelocity { get; set; }
+    public float3 CenterOfMass { get; set; }
+    public float3 LinearVelocity { get; set; }
+    public float3 AngularVelocity { get; set; }
+    public float LinearDrag { get; set; }
+    public float AngularDrag { get; set; } = 0.05f;
 
     public float Mass {
         readonly get => mass;
