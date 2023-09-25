@@ -59,7 +59,7 @@ public record struct RigidBodyComponent : IComponent {
     private readonly Matrix3x3<float> ComputeInertiaTensorMatrix(Matrix3x3<float> comInertiaTensor) {
         // Move inertia tensor by center of mass.
         // https://en.wikipedia.org/wiki/Parallel_axis_theorem#Tensor_generalization
-        float r = CenterOfMass.Dot(Vector3<float>.Zero);
+        float r = CenterOfMass.Dot(float3.Zero);
         if (r == 0)
             return comInertiaTensor;
         r *= r;

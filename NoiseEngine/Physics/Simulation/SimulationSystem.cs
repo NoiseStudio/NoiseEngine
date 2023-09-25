@@ -2,6 +2,7 @@
 using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Physics.Collision;
+using System;
 
 namespace NoiseEngine.Physics.Simulation;
 
@@ -22,7 +23,7 @@ internal sealed partial class SimulationSystem : EntitySystem {
     }
 
     protected override void OnUpdate() {
-        fixedDeltaTime = (float)((CycleTime ?? 50) / 1000f);
+        fixedDeltaTime = (float)((CycleTime ?? throw new NullReferenceException()) / 1000f);
         gravityAcceleration = Settings.GravityF * fixedDeltaTime;
     }
 

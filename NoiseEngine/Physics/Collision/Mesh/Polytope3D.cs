@@ -133,8 +133,13 @@ internal ref struct Polytope3D {
 
         // Add new faces.
         vertices = Vertices;
-        foreach ((int a, int b) in edges)
-            faces.Add(new PolytopeFace(vertices, new int3(a, b, n), default));
+        foreach ((int a, int b) in edges) {
+            PolytopeFace face = new PolytopeFace(vertices, new int3(a, b, n), default);
+
+            // Skip degenerate faces.
+            if (face.Distance != 0)
+                faces.Add(face);
+        }
         edges.RemoveLastWithoutClear(edges.Count);
     }
 

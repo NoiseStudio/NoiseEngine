@@ -29,12 +29,12 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
 
             ContactPointsBufferIterator iteratorCopy = iterator;
             do {
-                if (iteratorCopy.Current.Normal.Y < 0)
+                if (iteratorCopy.Current.Normal.Y > 0)
                     yNotBlocked = false;
             } while (iteratorCopy.MoveNext());
 
             do {
-                bool notBlocked = yNotBlocked || iterator.Current.Normal.Y <= 0;
+                bool notBlocked = yNotBlocked || iterator.Current.Normal.Y >= 0;
                 if (notBlocked)
                     middle.Position += (iterator.Current.Normal * iterator.Current.Depth).ToPos();
 
