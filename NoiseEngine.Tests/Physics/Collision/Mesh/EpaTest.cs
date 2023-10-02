@@ -25,7 +25,7 @@ public class EpaTest {
             new Polytope3DBuffer(new FastList<PolytopeFace>(), new FastList<(int, int)>())
         );
 
-        Assert.Equal(data.EpaPosition, result.Position);
+        Assert.Equal(data.EpaPosition, result.PositionA);
         Assert.Equal(data.EpaNormal, result.Normal);
         Assert.Equal(data.EpaDepth, result.Depth);
     }

@@ -20,6 +20,12 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static bool IgnoreOne(in pos3 current, in ColliderTransform other) {
+        return other.IsMovable && current.X <= other.Position.X && current.Y <= other.Position.Y &&
+            current.Z <= other.Position.Z;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private void FromSphere(
         Entity entity, SystemCommands commands, CollisionDetectionThreadStorage storage, in SphereCollider current,
         float currentRestitutionPlusOneNegative, in ColliderTransform currentTransform
@@ -47,11 +53,11 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private void FromMesh(
         Entity entity, SystemCommands commands, CollisionDetectionThreadStorage storage, in MeshCollider current,
-        float currentRestitutionPlusOneNegative, in ColliderTransform currentTransform
+        float currentRestitutionPlusOneNegative, in ColliderTransform currentTransform, in pos3 currentPos
     ) {
         foreach (ConcurrentBag<ColliderData> bag in storage.ColliderDataBuffer) {
             foreach (ColliderData other in bag) {
-                if (entity == other.Entity)
+                if (entity == other.Entity || IgnoreOne(currentPos, other.Transform))
                     continue;
 
                 switch (other.Collider.Type) {
@@ -86,8 +92,9 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
             return;
 
         ColliderTransform currentTransform = new ColliderTransform(
-            middle.Position, final.TargetRotation, middle.Position + rigidBody.CenterOfMass.ToPos(), transform.Scale,
-            rigidBody.LinearVelocity, rigidBody.AngularVelocity, rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, true
+            middle.Position, final.TargetRotation, middle.Position + rigidBody.CenterOfMass.ToPos(),
+            transform.Scale, rigidBody.LinearVelocity, rigidBody.AngularVelocity,
+            rigidBody.InverseInertiaTensorMatrix, rigidBody.InverseMass, true
         );
         space.GetNearColliders(storage.ColliderDataBuffer);
 
@@ -101,7 +108,7 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
             case ColliderType.Mesh:
                 FromMesh(
                     entity, commands, storage, collider.UnsafeCastToMeshCollider(),
-                    collider.RestitutionPlusOneNegative, currentTransform
+                    collider.RestitutionPlusOneNegative, currentTransform, final.TargetPosition
                 );
                 break;
             default:

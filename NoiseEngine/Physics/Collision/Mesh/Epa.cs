@@ -117,7 +117,7 @@ internal static class Epa {
             vertices[face.VertexId.Y].OriginB * v.Y +
             vertices[face.VertexId.Z].OriginB * v.Z;
 
-        return new EpaResult(pointA, face.Normal, pointA.Distance(pointB));
+        return new EpaResult(pointA, pointB, face.Normal, pointA.Distance(pointB));
     }
 
 }

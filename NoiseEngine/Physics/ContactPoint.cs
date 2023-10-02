@@ -12,7 +12,6 @@ public readonly record struct ContactPoint {
     internal pos3 OtherPosition { get; }
     internal float3 OtherAngularVelocity { get; }
     internal float OtherInverseMass { get; }
-    internal float InverseMass { get; }
     internal float3 ResolveImpulseB { get; }
     internal float MinRestitutionPlusOneNegative { get; }
 
@@ -28,7 +27,6 @@ public readonly record struct ContactPoint {
         OtherPosition = otherPosition;
         OtherAngularVelocity = otherAngularVelocity;
         OtherInverseMass = otherInverseMass;
-        InverseMass = inverseMass;
         ResolveImpulseB = resolveImpulseB;
         MinRestitutionPlusOneNegative = minRestitutionPlusOneNegative;
     }

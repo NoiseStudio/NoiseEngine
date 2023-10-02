@@ -27,12 +27,12 @@ internal struct PolytopeFace {
 
         Distance = Normal.Dot(a);
 
-        if (Distance < -0.00001f) {
+        /*if (Distance < -0.00001f) {
             VertexId = VertexId with { Y = vertexId.X, X = vertexId.Y };
             Normal = -Normal;
             Distance = Normal.Dot(vertices[vertexId.Y].Value);
             Debug.Assert(Distance > 0);
-        }
+        }*/
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]

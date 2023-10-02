@@ -15,9 +15,8 @@ internal static class MeshToMesh {
         Entity otherEntity, Polytope3DBuffer polytopeBuffer
     ) {
         Isometry3<pos> posA = new Isometry3<pos>(currentTransform.Position, currentTransform.Rotation.ToPos());
-        Isometry3<float> offsetA = posA.ConjugateMultiplication(
-            new Isometry3<pos>(otherTransform.Position, otherTransform.Rotation.ToPos())
-        ).ToFloat();
+        Isometry3<pos> posB = new Isometry3<pos>(otherTransform.Position, otherTransform.Rotation.ToPos());
+        Isometry3<float> offsetA = posA.ConjugateMultiplication(posB).ToFloat();
 
         float currentScaleMax = currentTransform.Scale.MaxComponent();
         float otherScaleMax = otherTransform.Scale.MaxComponent();
@@ -47,25 +46,48 @@ internal static class MeshToMesh {
                         simplex, in offsetA, in hullA, currentTransform.Scale, in hullB, otherTransform.Scale,
                         valueA.Vertices, valueB.Vertices, polytopeBuffer
                     );
-                    //Log.Info($"C {currentTransform.Position - new pos3(0, -0.5f, 0)}");
-                    pos3 pos = posA * epa.Position.ToPos();
-                    //Log.Info($"E {pos}");
 
-                    float3 normal = currentTransform.Rotation * -epa.Normal;
-                    //((ApplicationScene)world).Primitive.CreateSphere(pos + (normal * 0.3f).ToPos(), null, (float3.One + normal.Abs() * 3) / 10f);
+                    pos3 pointA = posA * epa.PositionA.ToPos();
+                    float3 normalA = currentTransform.Rotation * -epa.Normal;
 
                     float depth = epa.Depth;
-                    pos3 contactPoint = pos;
                     float3 jB;
 
                     if (otherTransform.IsMovable) {
                         depth *= 0.5f;
 
+                        //SpawnDebug(world, pointA, normalA);
+                        //SpawnDebug(world, pointB, normalB);
+
+                        // A.
                         Matrix3x3<float> rotation = Matrix3x3<float>.Rotate(otherTransform.Rotation);
                         Matrix3x3<float> inverseInertia =
                             rotation * otherTransform.InverseInertiaTensorMatrix * rotation.Transpose();
-                        float3 rb = (contactPoint - otherTransform.WorldCenterOfMass).ToFloat();
-                        jB = (inverseInertia * rb.Cross(normal)).Cross(rb);
+                        float3 rb = (pointA - otherTransform.WorldCenterOfMass).ToFloat();
+                        jB = (inverseInertia * rb.Cross(normalA)).Cross(rb);
+
+                        // B.
+                        pos3 pointB = posB * epa.PositionB.ToPos();
+                        float3 normalB = -normalA;
+
+                        Matrix3x3<float> rotation2 = Matrix3x3<float>.Rotate(currentTransform.Rotation);
+                        Matrix3x3<float> inverseInertia2 =
+                            rotation2 * currentTransform.InverseInertiaTensorMatrix * rotation2.Transpose();
+                        float3 ra = (pointB - currentTransform.WorldCenterOfMass).ToFloat();
+                        float3 jA = (inverseInertia2 * ra.Cross(normalB)).Cross(ra);
+
+                        buffer.Add(otherEntity, new ContactPoint(
+                            pointB,
+                            normalB,
+                            depth,
+                            currentTransform.LinearVelocity,
+                            currentTransform.Position,
+                            currentTransform.AngularVelocity,
+                            currentTransform.InverseMass,
+                            otherTransform.InverseMass,
+                            jA,
+                            MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative)
+                        ));
                     } else {
                         jB = default;
 
@@ -74,8 +96,8 @@ internal static class MeshToMesh {
                     }
 
                     buffer.Add(currentEntity, new ContactPoint(
-                        contactPoint,
-                        normal,
+                        pointA,
+                        normalA,
                         depth,
                         otherTransform.LinearVelocity,
                         otherTransform.Position,
@@ -88,6 +110,13 @@ internal static class MeshToMesh {
                 }
             }
         }
+    }
+
+    private static void SpawnDebug(EntityWorld world, pos3 point, float3 normal) {
+        Quaternion<float> rotation = Quaternion.LookRotation(normal);
+        ((ApplicationScene)world).Primitive.CreateCube(
+            point + (rotation * new float3(0, 5, 0)).ToPos(), rotation, new float3(0.01f, 5f, 0.01f)
+        );
     }
 
 }
