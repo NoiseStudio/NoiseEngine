@@ -43,7 +43,7 @@ internal static class SphereToSphere {
                 commands.GetEntity(otherEntity).Insert(new RigidBodySleepComponent(true));
         }
 
-        buffer.Add(currentEntity, new ContactPoint(
+        /*buffer.Add(currentEntity, new ContactPoint(
             contactPoint,
             normal,
             depth,
@@ -54,7 +54,7 @@ internal static class SphereToSphere {
             currentTransform.InverseMass,
             default,
             MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative)
-        ));
+        ));*/
     }
 
 }

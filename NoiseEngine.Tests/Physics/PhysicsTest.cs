@@ -45,10 +45,10 @@ public class PhysicsTest : ApplicationTestEnvironment {
         );
 
         for (int x = 0; x < 1; x += 2) {
-            for (int y = 0; y < 40; y += 2) {
+            for (int y = 0; y < 1; y += 2) {
                 for (int z = 0; z < 1; z += 2) {
                     scene.Spawn(
-                        new TransformComponent(new pos3(x, y - 4.5f, z)),
+                        new TransformComponent(new pos3(x, y + 4.5f, z), Quaternion.EulerDegrees<float>(30, 0, 0)),
                         new MeshRendererComponent(scene.Primitive.CubeMesh, scene.Primitive.DefaultMaterial),
                         new RigidBodyComponent(),
                         new ColliderComponent(collider)

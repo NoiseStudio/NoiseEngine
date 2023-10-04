@@ -5,18 +5,18 @@ using System.Threading;
 
 namespace NoiseEngine.Physics.Collision;
 
-internal class ContactPointsBufferSegment {
+internal class ContactPointsBufferSegment<T> {
 
-    private readonly ContactPointWithPointer[] buffer;
-    private ContactPointsBufferSegment? next;
+    private readonly ContactWithPointer<T>[] buffer;
+    private ContactPointsBufferSegment<T>? next;
 
     public int Size { get; }
-    public ContactPointsBufferSegment? Next => next;
+    public ContactPointsBufferSegment<T>? Next => next;
 
-    public ref ContactPointWithPointer this[int index] {
+    public ref ContactWithPointer<T> this[int index] {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get {
-            ContactPointsBufferSegment? segment = this;
+            ContactPointsBufferSegment<T>? segment = this;
 
             while (index >= segment.Size) {
                 index -= segment.Size;
@@ -30,7 +30,7 @@ internal class ContactPointsBufferSegment {
     }
 
     public ContactPointsBufferSegment(int size) {
-        buffer = new ContactPointWithPointer[size];
+        buffer = new ContactWithPointer<T>[size];
         Size = size;
     }
 
@@ -40,8 +40,8 @@ internal class ContactPointsBufferSegment {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ContactPointsBufferSpan AsSpan(int start) {
-        ContactPointsBufferSegment? segment = this;
+    public ContactPointsBufferSpan<T> AsSpan(int start) {
+        ContactPointsBufferSegment<T>? segment = this;
 
         while (start >= segment.Size) {
             start -= segment.Size;
@@ -51,19 +51,19 @@ internal class ContactPointsBufferSegment {
                 throw new UnreachableException();
         }
 
-        return new ContactPointsBufferSpan(segment, start);
+        return new ContactPointsBufferSpan<T>(segment, start);
     }
 
-    public Span<ContactPointWithPointer> GetData() {
+    public Span<ContactWithPointer<T>> GetData() {
         return buffer;
     }
 
-    public Span<ContactPointWithPointer> GetData(int start) {
+    public Span<ContactWithPointer<T>> GetData(int start) {
         return buffer.AsSpan(start);
     }
 
     public void CreateNext() {
-        Interlocked.CompareExchange(ref next, new ContactPointsBufferSegment(GetNextSize(Size)), null);
+        Interlocked.CompareExchange(ref next, new ContactPointsBufferSegment<T>(GetNextSize(Size)), null);
     }
 
     public void Clear(int used) {

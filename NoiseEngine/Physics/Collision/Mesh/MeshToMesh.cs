@@ -53,7 +53,14 @@ internal static class MeshToMesh {
                     float depth = epa.Depth;
                     float3 jB;
 
+                    int convexHullId = i << 16 | j;
+                    ref ContactData contactDataA = ref buffer.GetData(currentEntity, otherEntity, convexHullId);
+                    float restitutionPlusOneNegative = 
+                        MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative);
+
                     if (otherTransform.IsMovable) {
+                        ref ContactData contactDataB = ref buffer.GetData(otherEntity, currentEntity, convexHullId);
+
                         depth *= 0.5f;
 
                         //SpawnDebug(world, pointA, normalA);
@@ -76,18 +83,9 @@ internal static class MeshToMesh {
                         float3 ra = (pointB - currentTransform.WorldCenterOfMass).ToFloat();
                         float3 jA = (inverseInertia2 * ra.Cross(normalB)).Cross(ra);
 
-                        buffer.Add(otherEntity, new ContactPoint(
-                            pointB,
-                            normalB,
-                            depth,
-                            currentTransform.LinearVelocity,
-                            currentTransform.Position,
-                            currentTransform.AngularVelocity,
-                            currentTransform.InverseMass,
-                            otherTransform.InverseMass,
-                            jA,
-                            MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative)
-                        ));
+                        contactDataB.AddContactPoint(
+                            otherTransform, currentTransform, restitutionPlusOneNegative, pointB, normalB, depth
+                        );
                     } else {
                         jB = default;
 
@@ -95,7 +93,11 @@ internal static class MeshToMesh {
                             commands.GetEntity(otherEntity).Insert(new RigidBodySleepComponent(true));
                     }
 
-                    buffer.Add(currentEntity, new ContactPoint(
+                    contactDataA.AddContactPoint(
+                        currentTransform, otherTransform, restitutionPlusOneNegative, pointA, normalA, depth
+                    );
+
+                    /*buffer.Add(currentEntity, new ContactPoint(
                         pointA,
                         normalA,
                         depth,
@@ -106,14 +108,14 @@ internal static class MeshToMesh {
                         currentTransform.InverseMass,
                         jB,
                         MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative)
-                    ));
+                    ));*/
                 }
             }
         }
     }
 
     private static void SpawnDebug(EntityWorld world, pos3 point, float3 normal) {
-        Quaternion<float> rotation = Quaternion.LookRotation(normal);
+        Quaternion<float> rotation = Quaternion.LookRotation(normal).Normalize();
         ((ApplicationScene)world).Primitive.CreateCube(
             point + (rotation * new float3(0, 5, 0)).ToPos(), rotation, new float3(0.01f, 5f, 0.01f)
         );

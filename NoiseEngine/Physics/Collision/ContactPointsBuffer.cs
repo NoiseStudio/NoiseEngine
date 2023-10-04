@@ -10,28 +10,31 @@ namespace NoiseEngine.Physics.Collision;
 internal class ContactPointsBuffer {
 
     private readonly ConcurrentDictionary<Entity, int> pointers = new ConcurrentDictionary<Entity, int>();
+    private readonly ConcurrentDictionary<(Entity, Entity, int), int> earlierPoints = 
+        new ConcurrentDictionary<(Entity, Entity, int), int>();
 
-    private ContactPointsBufferSegment points = new ContactPointsBufferSegment(2560);
+    private ContactPointsBufferSegment<ContactData> points = new ContactPointsBufferSegment<ContactData>(1024);
     private int nextPoint = 1;
+    private ushort frameId;
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public void Add(Entity entity, ContactPoint point) {
-        int pointer = Interlocked.Increment(ref nextPoint) - 1;
-        points[pointer] = new ContactPointWithPointer(point, 0);
-        AppendPointer(entity, pointer);
+    public void NextFrame() {
+        frameId++;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public void Add(Entity entity, ReadOnlySpan<ContactPoint> points) {
-        int pointer = Interlocked.Add(ref nextPoint, points.Length) - points.Length;
-        ContactPointsBufferSpan span = this.points.AsSpan(pointer);
+    public ref ContactData GetData(Entity current, Entity other, int convexHullId) {
+        int pointer = earlierPoints.GetOrAdd((current, other, convexHullId), CreateEarlierPointer);
+        AppendPointer(current, pointer);
 
-        int max = points.Length - 1;
-        for (int i = 0; i < max;)
-            span[i] = new ContactPointWithPointer(points[i++], pointer + i);
-        span[max] = new ContactPointWithPointer(points[max], 0);
+        ref ContactWithPointer<ContactData> data = ref points[pointer];
+        //Debug.Assert(data.Element.Manifold.FrameId == 0 || data.Element.Manifold.FrameId != frameId);
+        data.Pointer = 0;
 
-        AppendPointer(entity, pointer);
+        if (data.Element.Manifold.FrameId + 1 != frameId)
+            data.Element.Manifold.Clear();
+        data.Element.Manifold.FrameId = frameId;
+
+        return ref data.Element;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -47,7 +50,7 @@ internal class ContactPointsBuffer {
 
     public void Clear() {
         if (points.Next is not null)
-            points = new ContactPointsBufferSegment(Math.Max(points.Size, nextPoint));
+            points = new ContactPointsBufferSegment<ContactData>(Math.Max(points.Size, nextPoint));
 
         pointers.Clear();
         nextPoint = 1;
@@ -63,6 +66,10 @@ internal class ContactPointsBuffer {
             continue;
 
         Debug.Assert(startPointer == 0);
+    }
+
+    private int CreateEarlierPointer((Entity, Entity, int) key) {
+        return Interlocked.Increment(ref nextPoint) - 1;
     }
 
 }

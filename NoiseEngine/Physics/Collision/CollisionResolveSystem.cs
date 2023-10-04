@@ -1,11 +1,13 @@
 ﻿using NoiseEngine.Jobs;
 using NoiseEngine.Mathematics;
 using System;
+using System.Collections.Concurrent;
 
 namespace NoiseEngine.Physics.Collision;
 
 internal sealed partial class CollisionResolveSystem : EntitySystem {
 
+    private readonly ConcurrentBag<Entity> debugLines = new ConcurrentBag<Entity>();
     private readonly ContactPointsBuffer contactPoints;
     private float smoothingMultipler;
 
@@ -15,6 +17,10 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
 
     protected override void OnUpdate() {
         smoothingMultipler = 1000f / (float)(CycleTime ?? throw new InvalidOperationException());
+
+        foreach (Entity entity in debugLines)
+            entity.Despawn();
+        debugLines.Clear();
     }
 
     private void OnUpdateEntity(
@@ -24,21 +30,25 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
         if (rigidBody.IsSleeping)
             return;
 
+        var angular = rigidBody.AngularVelocity;
+        var linear = rigidBody.LinearVelocity;
+        var position = middle.Position;
+
         if (contactPoints.TryIterateThrough(entity, out ContactPointsBufferIterator iterator)) {
             bool yNotBlocked = true;
 
             ContactPointsBufferIterator iteratorCopy = iterator;
             do {
-                if (iteratorCopy.Current.Normal.Y > 0)
+                if (iteratorCopy.CurrentPoint.Normal.Y > 0)
                     yNotBlocked = false;
             } while (iteratorCopy.MoveNext());
 
             do {
-                bool notBlocked = yNotBlocked || iterator.Current.Normal.Y >= 0;
+                bool notBlocked = yNotBlocked || iterator.CurrentPoint.Normal.Y >= 0;
                 if (notBlocked)
-                    middle.Position += (iterator.Current.Normal * iterator.Current.Depth).ToPos();
+                    middle.Position += (iterator.CurrentPoint.Normal * (iterator.CurrentPoint.Depth / iterator.Current.Manifold.Count)).ToPos();
 
-                if (iterator.Current.Depth >= 0.5f) {
+                if (iterator.CurrentPoint.Depth >= 0.5f) {
                     middle.Position += new float3(
                         (Random.Shared.NextSingle() - 0.5f) / 10000f,
                         (Random.Shared.NextSingle() - 0.5f) / 10000f,
@@ -50,23 +60,27 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 Matrix3x3<float> inverseInertia =
                     rotation * rigidBody.InverseInertiaTensorMatrix * rotation.Transpose();
 
-                float3 ra = (iterator.Current.Position - middle.Position).ToFloat() + rigidBody.CenterOfMass;
-                float3 rb = (iterator.Current.Position - iterator.Current.OtherPosition).ToFloat();
+                //var pos = (data.TargetRotation.ToPos() * iterator.CurrentPoint.Position) + middle.Position;
+                SpawnDebug(World, middle.Position, iterator.CurrentPoint.Normal);
+
+                float3 ra = (iterator.CurrentPoint.Position - middle.Position).ToFloat() + rigidBody.CenterOfMass;
+                float3 rb = (iterator.CurrentPoint.Position - iterator.Current.OtherPosition).ToFloat();
 
                 float3 rv = iterator.Current.OtherVelocity + iterator.Current.OtherAngularVelocity.Cross(rb) -
                     rigidBody.LinearVelocity - rigidBody.AngularVelocity.Cross(ra);
 
-                float j = rv.Dot(iterator.Current.Normal) * iterator.Current.MinRestitutionPlusOneNegative;
-                float denom = rigidBody.InverseMass + iterator.Current.OtherInverseMass + iterator.Current.Normal.Dot(
-                    (inverseInertia * ra.Cross(iterator.Current.Normal)).Cross(ra) +
-                    iterator.Current.ResolveImpulseB
-                );
+                float j = rv.Dot(iterator.CurrentPoint.Normal) * iterator.Current.MinRestitutionPlusOneNegative;
+                float denom = rigidBody.InverseMass + iterator.Current.OtherInverseMass;/* +
+                    iterator.CurrentPoint.Normal.Dot(
+                        (inverseInertia * ra.Cross(iterator.CurrentPoint.Normal)).Cross(ra) +
+                        iterator.CurrentPoint.ResolveImpulseB
+                    );*/
 
-                j /= denom;
-                float3 impulse = iterator.Current.Normal * j;
+                j /= denom * iterator.Current.Manifold.Count;
+                float3 impulse = iterator.CurrentPoint.Normal * j;
 
                 // Friction.
-                float3 t = -(rv - (iterator.Current.Normal * rv.Dot(iterator.Current.Normal))).Normalize();
+                float3 t = -(rv - (iterator.CurrentPoint.Normal * rv.Dot(iterator.CurrentPoint.Normal))).Normalize();
                 float jt = (-rv.Dot(t)) / denom;
 
                 if (float.Abs(jt) < j * 0.6f)
@@ -83,6 +97,10 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 if (notBlocked)
                     rigidBody.LinearVelocity -= impulse * rigidBody.InverseMass;
             } while (iterator.MoveNext());
+
+            //rigidBody.AngularVelocity = angular;
+            //rigidBody.LinearVelocity = linear;
+            //middle.Position = position;
 
             if (
                 rigidBody.LinearVelocity.MagnitudeSquared() <= 0.1f &&
@@ -105,6 +123,13 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
 
         data.TargetPosition = middle.Position;
         data.SmoothingMultipler = smoothingMultipler;
+    }
+
+    private void SpawnDebug(EntityWorld world, pos3 point, float3 normal) {
+        Quaternion<float> rotation = Quaternion.LookRotation(normal);
+        debugLines.Add(((ApplicationScene)world).Primitive.CreateCube(
+            point + (rotation * new float3(0.005f, 0.005f, 2.5f)).ToPos(), rotation, new float3(0.01f, 0.01f, 5f)
+        ));
     }
 
 }

@@ -77,6 +77,7 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
 
     protected override void OnUpdate() {
         buffer.Clear();
+        buffer.NextFrame();
     }
 
     protected override void OnLateUpdate() {
