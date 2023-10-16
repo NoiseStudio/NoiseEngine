@@ -43,6 +43,9 @@ You can see more specify structure about this repository [here](/docs/project-st
 ### Versioning
 We want to use [sementic versioning](https://semver.org/), and after first version release (v0.1.0) we want offten release patch updates. But we are of the opinion that branch master should always contains stable code for old features, as far as posible.
 
+### Technology stack
+NoiseEngine uses .NET 7 and new versions of Rust. For rendering we currently use a Vulkan, but support of other graphics APIs can be added in the future.
+
 ## Contribution
 ### How can I contribute?
 We welcome contributions! Without this, we are not fulfilling our golden goal.
