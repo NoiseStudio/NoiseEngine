@@ -94,7 +94,6 @@ internal static class TextureTestUtils {
                 MathF.Abs(e.B - a.B) > maxDifference ||
                 MathF.Abs(e.A - a.A) > maxDifference
             ) {
-                throw new Exception($"Expected {e}, got {a}. {i}");
                 return false;
             }
         }
