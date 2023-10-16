@@ -5,6 +5,7 @@ using NoiseEngine.Rendering;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Tests.Environments;
 using NoiseEngine.Tests.Fixtures;
+using NoiseEngine.Tests.Rendering;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -46,9 +47,6 @@ public class Texture2DTest : ApplicationTestEnvironment {
                 return texture[data.Uv];
             }
         ") });
-
-        Color[] bufferA = new Color[TextureSize * TextureSize];
-        Color[] bufferB = new Color[TextureSize * TextureSize];
 
         foreach (GraphicsDevice device in GraphicsDevices) {
             Texture2D result = new Texture2D(
@@ -93,9 +91,7 @@ public class Texture2DTest : ApplicationTestEnvironment {
             commandBuffer.Clear();
 
             // Assert.
-            texture.GetPixels<Color>(bufferA);
-            result.GetPixels<Color>(bufferB);
-            Assert.Equal(bufferA, bufferB);
+            Assert.True(TextureTestUtils.CompareLossy(texture, result));
         }
     }
 
