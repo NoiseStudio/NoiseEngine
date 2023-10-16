@@ -3,8 +3,10 @@ using NoiseEngine.Interop.Rendering;
 using NoiseEngine.Mathematics;
 using NoiseEngine.Rendering.Buffers;
 using NoiseEngine.Rendering.Buffers.CommandBuffers;
+using NoiseEngine.Rendering.Utils;
 using NoiseEngine.Rendering.Vulkan;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Rendering;
 

@@ -19,7 +19,7 @@ cgmath = "0.18.0"
 crossbeam-queue = "0.3.8"
 anyhow = "1.0.71"
 image = "0.24.6"
-webp = "0.2.2"
+webp = "0.2.6"
 vma = "0.3.1"
 
 [dependencies.uuid]

@@ -79,10 +79,10 @@ internal static class TextureTestUtils {
         if (expected.Format != TextureFormat.R8G8B8A8_SRGB && expected.Format != TextureFormat.R8G8B8A8_UNORM)
             throw new ArgumentException("Unsupported texture format.");
 
-        Color[] expectedData = new Color[expected.Width * expected.Height];
-        expected.GetPixels<Color>(expectedData);
-        Color[] actualData = new Color[actual.Width * actual.Height];
-        actual.GetPixels<Color>(actualData);
+        Color32[] expectedData = new Color32[expected.Width * expected.Height];
+        expected.GetPixels<Color32>(expectedData);
+        Color32[] actualData = new Color32[actual.Width * actual.Height];
+        actual.GetPixels<Color32>(actualData);
 
         for (int i = 0; i < expectedData.Length; i++) {
             Color e = expectedData[i];
@@ -94,6 +94,7 @@ internal static class TextureTestUtils {
                 MathF.Abs(e.B - a.B) > maxDifference ||
                 MathF.Abs(e.A - a.A) > maxDifference
             ) {
+                throw new Exception($"Expected {e}, got {a}. {i}");
                 return false;
             }
         }
