@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NoiseEngine.Mathematics;
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -41,6 +42,14 @@ internal struct ContactManifold {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public void AddContactPoint(ContactPoint point) {
+        /*for (int i = 0; i < Count; i++) {
+            ContactPoint current = this[i];
+            if (current.Position.DistanceSquared(point.Position) < 0.01f) {
+                this[i] = point;
+                return;
+            }
+        }*/
+
         Count = (byte)Math.Min(Count + 1, MaxContactPoints);
         this[Position++ % MaxContactPoints] = point;
     }
@@ -51,19 +60,19 @@ internal struct ContactManifold {
         Position = 0;
     }
 
-    public void ComputeResolveImpulse(in ColliderTransform current) {
+    public void ComputeResolveImpulse(in ColliderTransform current, Quaternion<float> a, pos3 b) {
         Debug.Assert(Count > 0);
-        PointA.ComputeResolveImpulse(current);
+        PointA.ComputeResolveImpulse(current, a, b);
 
         if (Count > 3) {
-            PointB.ComputeResolveImpulse(current);
-            PointC.ComputeResolveImpulse(current);
-            PointD.ComputeResolveImpulse(current);
+            PointB.ComputeResolveImpulse(current, a, b);
+            PointC.ComputeResolveImpulse(current, a, b);
+            PointD.ComputeResolveImpulse(current, a, b);
         } else if (Count > 2) {
-            PointB.ComputeResolveImpulse(current);
-            PointC.ComputeResolveImpulse(current);
+            PointB.ComputeResolveImpulse(current, a, b);
+            PointC.ComputeResolveImpulse(current, a, b);
         } else if (Count > 1) {
-            PointB.ComputeResolveImpulse(current);
+            PointB.ComputeResolveImpulse(current, a, b);
         }
     }
 

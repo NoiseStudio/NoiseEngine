@@ -43,12 +43,15 @@ public class Vector3Test {
         Assert.Equal(new Vector3<float>(1.5f, 2.5f, 3.5f), a.Lerp(b, 0.5f));
     }
 
-    [Fact]
-    public void Cross() {
-        Vector3<float> a = new Vector3<float>(7, -3, 5);
-        Vector3<float> b = new Vector3<float>(4, 3, 2);
+    [Theory]
+    [InlineData(new float[] { 7, -3, 5, 4, 3, 2 }, new float[] { -21, 6, 33 })]
+    [InlineData(new float[] { 1, 2, 3, 1, 5, 7 }, new float[] { -1, -4, 3 })]
+    [InlineData(new float[] { -1, -2, 3, 4, 0, -8 }, new float[] { 16, 4, 8 })]
+    public void Cross(float[] init, float[] expected) {
+        float3 a = new float3(init[0], init[1], init[2]);
+        float3 b = new float3(init[3], init[4], init[5]);
 
-        Assert.Equal(new Vector3<float>(-21, 6, 33), a.Cross(b));
+        Assert.Equal(new float3(expected[0], expected[1], expected[2]), a.Cross(b));
     }
 
     [Fact]

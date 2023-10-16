@@ -44,12 +44,16 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
             } while (iteratorCopy.MoveNext());
 
             do {
+                float a = iterator.Current.Manifold.Count < 4 ? 1f : 1f;
+                //float a = 1;  
+                
                 bool notBlocked = yNotBlocked || iterator.CurrentPoint.Normal.Y >= 0;
-                if (notBlocked)
-                    middle.Position += (iterator.CurrentPoint.Normal * (iterator.CurrentPoint.Depth / iterator.Current.Manifold.Count)).ToPos();
+                //if (notBlocked)
+                //if (iterator.Current.Manifold.Count >= 4)
+                //    position -= (iterator.CurrentPoint.Normal * (iterator.CurrentPoint.Depth / iterator.Current.Manifold.Count)).ToPos();
 
                 if (iterator.CurrentPoint.Depth >= 0.5f) {
-                    middle.Position += new float3(
+                    position += new float3(
                         (Random.Shared.NextSingle() - 0.5f) / 10000f,
                         (Random.Shared.NextSingle() - 0.5f) / 10000f,
                         (Random.Shared.NextSingle() - 0.5f) / 10000f
@@ -57,57 +61,81 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 }
 
                 Matrix3x3<float> rotation = Matrix3x3<float>.Rotate(data.TargetRotation);
-                Matrix3x3<float> inverseInertia =
+                Matrix3x3<float> inverseInertia = 
                     rotation * rigidBody.InverseInertiaTensorMatrix * rotation.Transpose();
 
-                //var pos = (data.TargetRotation.ToPos() * iterator.CurrentPoint.Position) + middle.Position;
-                SpawnDebug(World, middle.Position, iterator.CurrentPoint.Normal);
+                var pos = (data.TargetRotation.ToPos() * iterator.CurrentPoint.Position) + middle.Position;
+                SpawnDebug(World, pos, -iterator.CurrentPoint.Normal);
 
-                float3 ra = (iterator.CurrentPoint.Position - middle.Position).ToFloat() + rigidBody.CenterOfMass;
-                float3 rb = (iterator.CurrentPoint.Position - iterator.Current.OtherPosition).ToFloat();
+                float3 ra = iterator.CurrentPoint.Position.ToFloat() + rigidBody.CenterOfMass;
+                float3 rb = (pos - iterator.Current.OtherPosition).ToFloat();
 
                 float3 rv = iterator.Current.OtherVelocity + iterator.Current.OtherAngularVelocity.Cross(rb) -
                     rigidBody.LinearVelocity - rigidBody.AngularVelocity.Cross(ra);
+                float rvDot = iterator.CurrentPoint.Normal.Dot(rv);
 
-                float j = rv.Dot(iterator.CurrentPoint.Normal) * iterator.Current.MinRestitutionPlusOneNegative;
-                float denom = rigidBody.InverseMass + iterator.Current.OtherInverseMass;/* +
+                //Log.Info($"{iterator.Current.Manifold.Count} {rvDot}");
+                if (rvDot > 0)
+                    continue;
+
+                float j = rvDot * iterator.Current.MinRestitutionPlusOneNegative * a;
+                //float denom = rigidBody.InverseMass + iterator.Current.OtherInverseMass;
+                /* +
                     iterator.CurrentPoint.Normal.Dot(
                         (inverseInertia * ra.Cross(iterator.CurrentPoint.Normal)).Cross(ra) +
                         iterator.CurrentPoint.ResolveImpulseB
                     );*/
 
+                float3 raCrossN = ra.Cross(iterator.CurrentPoint.Normal);
+
+                float d1 = rigidBody.InverseMass + iterator.Current.OtherInverseMass;
+                float3 d2 = (inverseInertia * raCrossN).Cross(ra);
+                float3 d4 = inverseInertia * raCrossN.Scale(raCrossN);
+                float3 d3 = iterator.CurrentPoint.ResolveImpulseB;
+                float denom = d1 + iterator.CurrentPoint.Normal.Dot(d2 + d3);
+
                 j /= denom * iterator.Current.Manifold.Count;
                 float3 impulse = iterator.CurrentPoint.Normal * j;
 
                 // Friction.
-                float3 t = -(rv - (iterator.CurrentPoint.Normal * rv.Dot(iterator.CurrentPoint.Normal))).Normalize();
+                /*float3 t = -(rv - (iterator.CurrentPoint.Normal * rv.Dot(iterator.CurrentPoint.Normal))).Normalize();
                 float jt = (-rv.Dot(t)) / denom;
 
                 if (float.Abs(jt) < j * 0.6f)
                     impulse += t * jt;
                 else
-                    impulse += t * -j * 0.6f;
+                    impulse += t * (-j * 0.6f);*/
 
                 // Add impulse.
 
                 // NOTE: I do not know if normalization is correct, but without it objects rotate too much.
                 //       And with it results are similar to physics engines such as PhysX. - Vixen 2023-09-18
-                rigidBody.AngularVelocity -= (inverseInertia * ra.Cross(impulse)).Normalize();
+                var c = ra.Cross(impulse);
+                rigidBody.AngularVelocity -= inverseInertia * c;
 
-                if (notBlocked)
-                    rigidBody.LinearVelocity -= impulse * rigidBody.InverseMass;
+                //if (notBlocked)
+                rigidBody.LinearVelocity -= impulse * rigidBody.InverseMass;
+                //Log.Info($"{linear}");
             } while (iterator.MoveNext());
 
             //rigidBody.AngularVelocity = angular;
             //rigidBody.LinearVelocity = linear;
             //middle.Position = position;
 
+            /*float b = rigidBody.LinearVelocity.MagnitudeSquared();
+            if (b < 0.7f)
+                rigidBody.LinearVelocity *= b;
+
+            b = rigidBody.AngularVelocity.MagnitudeSquared();
+            if (b < 0.7f)
+                rigidBody.AngularVelocity *= b;
+
             if (
                 rigidBody.LinearVelocity.MagnitudeSquared() <= 0.1f &&
                 rigidBody.AngularVelocity.MagnitudeSquared() <= 0.1f
             ) {
-                rigidBody.LinearVelocity = float3.Zero;
-                rigidBody.AngularVelocity = float3.Zero;
+                //rigidBody.LinearVelocity = float3.Zero;
+                //rigidBody.AngularVelocity = float3.Zero;
 
                 rigidBody.SleepAccumulator++;
                 if (rigidBody.SleepAccumulator > RigidBodyComponent.SleepThreshold)
@@ -116,7 +144,7 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                 data.TargetPosition = middle.Position;
                 data.SmoothingMultipler = smoothingMultipler;
                 return;
-            }
+            }*/
         }
 
         rigidBody.SleepAccumulator = Math.Max(rigidBody.SleepAccumulator - 1, 0);

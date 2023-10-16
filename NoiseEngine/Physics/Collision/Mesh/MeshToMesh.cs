@@ -47,8 +47,8 @@ internal static class MeshToMesh {
                         valueA.Vertices, valueB.Vertices, polytopeBuffer
                     );
 
-                    pos3 pointA = posA * epa.PositionA.ToPos();
-                    float3 normalA = currentTransform.Rotation * -epa.Normal;
+                    pos3 pointA = epa.PositionA.ToPos();
+                    float3 normalA = currentTransform.Rotation * epa.Normal;
 
                     float depth = epa.Depth;
                     float3 jB;

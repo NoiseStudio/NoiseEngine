@@ -19,7 +19,7 @@ public readonly struct ColliderComponent : IComponent {
         get => material;
         init {
             material = value;
-            RestitutionPlusOneNegative = value?.Restitution ?? -1.0f;
+            RestitutionPlusOneNegative = value?.Restitution ?? -1.1f;
         }
     }
 
@@ -75,9 +75,9 @@ public readonly struct ColliderComponent : IComponent {
         return Type switch {
             ColliderType.Sphere => SphereCollider.ComputeComInertiaTensorMatrix(mass, inner.SphereRadius),
             ColliderType.Mesh => new Matrix3x3<float>(
-                new float3(1 / 6f, 0, 0),
-                new float3(0, 1 / 6f, 0),
-                new float3(0, 0, 1 / 6f)
+                new float3(mass / 6f, 0, 0),
+                new float3(0, mass / 6f, 0),
+                new float3(0, 0, mass / 6f)
             ),
             _ => throw new NotImplementedException()
         };

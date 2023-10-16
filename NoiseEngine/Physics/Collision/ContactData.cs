@@ -15,7 +15,7 @@ internal record struct ContactData(
         float3 normal, float depth
     ) {
         Manifold.AddContactPoint(new ContactPoint(position, normal, depth, default));
-        Manifold.ComputeResolveImpulse(in other);
+        Manifold.ComputeResolveImpulse(in other, current.Rotation, current.Position);
         Update(in other, restitutionPlusOneNegative);
     }
 

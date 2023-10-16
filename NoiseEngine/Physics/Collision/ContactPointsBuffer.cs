@@ -27,10 +27,9 @@ internal class ContactPointsBuffer {
         AppendPointer(current, pointer);
 
         ref ContactWithPointer<ContactData> data = ref points[pointer];
-        //Debug.Assert(data.Element.Manifold.FrameId == 0 || data.Element.Manifold.FrameId != frameId);
         data.Pointer = 0;
 
-        if (data.Element.Manifold.FrameId + 1 != frameId)
+        if (frameId - data.Element.Manifold.FrameId >= 2)
             data.Element.Manifold.Clear();
         data.Element.Manifold.FrameId = frameId;
 

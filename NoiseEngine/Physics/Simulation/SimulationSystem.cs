@@ -45,7 +45,7 @@ internal sealed partial class SimulationSystem : EntitySystem {
 
         // Linear velocity.
         if (rigidBody.UseGravity) {
-            rigidBody.LinearVelocity = rigidBody.LinearVelocity = rigidBody.LinearVelocity with {
+            rigidBody.LinearVelocity = rigidBody.LinearVelocity with {
                 Y = rigidBody.LinearVelocity.Y + gravityAcceleration
             };
         }
@@ -70,6 +70,20 @@ internal sealed partial class SimulationSystem : EntitySystem {
         data.TargetRotation = (
             data.TargetRotation + (angularVelocity * data.TargetRotation * (fixedDeltaTime * 0.5f))
         ).Normalize();
+
+        /*float3 ha = rigidBody.AngularVelocity * (fixedDeltaTime * 0.5f);
+        float l = ha.Magnitude();
+
+        Quaternion<float> a;
+        if (l > 0) {
+            ha *= float.Sin(l) / l;
+            a = new Quaternion<float>(ha.X, ha.Y, ha.Z, float.Cos(l));
+        } else {
+            a = new Quaternion<float>(ha.X, ha.Y, ha.Z, 1);
+        }
+        data.TargetRotation = (data.TargetRotation + a).Normalize();*/
+
+        //data.TargetRotation = (data.TargetRotation + Quaternion.EulerRadians(rigidBody.AngularVelocity * fixedDeltaTime * 2)).Normalize();
 
         // Register.
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
