@@ -35,8 +35,8 @@ Currently (before v0.1.0) initial documentation still is writen. And it is not p
 ### Project structure
 We have few repositories which contains another parts of entire project:
 - [Current](https://github.com/NoiseStudio/NoiseEngine) - contains core of the engine, all API which you will be used in your application.
-- [NoiseEngine.Cli](https://github.com/NoiseStudio/NoiseEngine.Cli) - command line interface tools of building and shipping games or apps with NoiseEngine
-- [NoiseEngine.Editor](https://github.com/NoiseStudio/NoiseEngine.Editor) graphical user interface for simplier game or apps creation
+- [NoiseEngine.Cli](https://github.com/NoiseStudio/NoiseEngine.Cli) - command line interface tools for building and shipping games or apps with NoiseEngine
+- [NoiseEngine.Editor](https://github.com/NoiseStudio/NoiseEngine.Editor) graphical user interface for simpler game or apps creation
 
 You can see more specify structure about this repository [here](/docs/project-structure.md).
 
