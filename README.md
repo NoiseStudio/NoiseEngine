@@ -1,7 +1,3 @@
-> WARNING:<br>
-NoiseEngine is still in VERY EARLY development. Still before even v0.1.0. Frequent changes, missing docs, instability may occur.<br>
-You SHOULD avoid using it for any game development before v0.1.0 was released. But [contributing](#how-can-i-contribute) are welcome.
-
 <img src="https://raw.githubusercontent.com/NoiseStudio/branding/master/NoiseEngine/renders/NoiseEngine-FullLogoColor.png" alt="NoiseEngine logo" height="130">
 
 ![Tests](https://github.com/NoiseStudio/NoiseEngine/actions/workflows/tests.yml/badge.svg)
@@ -17,6 +13,10 @@ You SHOULD avoid using it for any game development before v0.1.0 was released. B
 Completely free, open-source, cross-platform, and blazingly fast asynchronous engine for creating modern games and apps.
 
 https://noisestudio.net/
+
+> WARNING:<br>
+NoiseEngine is still in VERY EARLY development. Still before even v0.1.0. Frequent changes, missing docs, instability may occur.<br>
+You SHOULD avoid using it for any game development before v0.1.0 was released. But [contributing](#how-can-i-contribute) are welcome.
 
 ## Why?
 Popular game engines was created many years ago based on synchronous API which does not use all power of modern CPU's. When we creating own next generation procedural game prototype in 2021 with existing engine we started having difficulties to optimize interanal things in engine which we used. We started looking for a new engine, but they all had the same problems, so we rethought them and made the difficult decision to create our own engine - NoiseEngine.
