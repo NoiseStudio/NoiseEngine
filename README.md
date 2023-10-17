@@ -15,28 +15,28 @@ Completely free, open-source, cross-platform, and blazingly fast asynchronous en
 https://noisestudio.net/
 
 > WARNING:<br>
-NoiseEngine is still in VERY EARLY development. Still before even v0.1.0. Frequent changes, missing docs, instability may occur.<br>
-You SHOULD avoid using it for any game development before v0.1.0 was released. But [contributing](#how-can-i-contribute) are welcome.
+NoiseEngine is still in VERY EARLY development. Frequent changes, missing docs, and instability may occur.<br>
+You SHOULD avoid using it for any game development before v0.1.0 was released. But [contributions](#how-can-i-contribute) are welcome.
 
 ## Why?
-Popular game engines was created many years ago based on synchronous API which does not use all power of modern CPU's. When we creating own next generation procedural game prototype in 2021 with existing engine we started having difficulties to optimize interanal things in engine which we used. We started looking for a new engine, but they all had the same problems, so we rethought them and made the difficult decision to create our own engine - NoiseEngine.
+Popular game engines was created many years ago based on synchronous API which does not use all power of modern CPU's. When we creating own next generation procedural game prototype in 2021 with existing engine we started having difficulties to optimize internal things in engine which we used. We started looking for a new engine, but they all had the same problems, so we rethought them and made the difficult decision to create our own engine - NoiseEngine.
 
-Our golden goal is create most performant engine, which simple allowed to game developers create games which we currently cannot do. Also in AAA scale.
+Our golden goal is create most performant engine, which relatively easy to game developers create games which we currently cannot do. Also in AAA scale.
 
-NoiseEngine is not a story of 9th generation of consoles. Is not a story of simple tool like current engines. Is a story of future with new perspective.
+NoiseEngine is not a story of 9th generation of consoles. Is not a story of primitive tool like current engines. Is a story of future with new perspective.
 
-![Voxel terrain](/images/voxel-terrain.webp "What")
-*Real-time voxel terrain demo, render distance 8192 meters/blocks - 1 februrary 2023*
+![Voxel terrain](/images/voxel-terrain.webp)
+*Real-time voxel terrain demo, render distance 8192 meters/blocks - [1 Februrary 2023](https://github.com/NoiseStudio/NoiseEngine/releases/tag/v0.1.0-alpha1)*
 
 ## Overview
 ### Documentation
-Currently (before v0.1.0) initial documentation still is writen. And it is not published on any website, you can read it from source code. And manuals currently not exists, and examples you can find in [tests](/docs/project-structure.md). 
+Currently (before v0.1.0) initial documentation still is writen. It is not published on any website, you can read it from [documentation comments](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments). And manuals currently not exists, and examples you can find in [tests](/docs/project-structure.md). 
 
 ### Project structure
-We have few repositories which contains another parts of entire project:
+We have a few repositories which contain parts of the entire project:
 - [Current](https://github.com/NoiseStudio/NoiseEngine) - contains core of the engine, all API which you will be used in your application.
 - [NoiseEngine.Cli](https://github.com/NoiseStudio/NoiseEngine.Cli) - command line interface tools for building and shipping games or apps with NoiseEngine
-- [NoiseEngine.Editor](https://github.com/NoiseStudio/NoiseEngine.Editor) graphical user interface for simpler game or apps creation
+- [NoiseEngine.Editor](https://github.com/NoiseStudio/NoiseEngine.Editor) - graphical user interface for simpler game or apps creation
 
 You can see more specify structure about this repository [here](/docs/project-structure.md).
 
