@@ -23,8 +23,6 @@ Popular game engines were created many years ago and are based on synchronous AP
 
 Our golden goal is to create the most performant engine, one which enables game developers to create games which are hard to do with current generation engines. Also on AAA scale.
 
-Our goal is not to create an engine for the current generation of consoles. Our goal is to look even further, and create a bright future for the next generation of developers.
-
 ![Voxel terrain](/images/voxel-terrain.webp)
 *Real-time voxel terrain demo, render distance 8192 meters/blocks - [1 Februrary 2023](https://github.com/NoiseStudio/NoiseEngine/releases/tag/v0.1.0-alpha1)*
 
