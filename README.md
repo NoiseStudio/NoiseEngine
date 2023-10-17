@@ -14,45 +14,43 @@ Completely free, open-source, cross-platform, and blazingly fast asynchronous en
 
 https://noisestudio.net/
 
-> WARNING:<br>
-NoiseEngine is still in VERY EARLY development. Frequent changes, missing docs, and instability may occur.<br>
-You SHOULD avoid using it for any game development before v0.1.0 was released. But [contributions](#how-can-i-contribute) are welcome.
+> **Warning**
+NoiseEngine is still in **very early** development. Frequent changes, missing docs, and instabilities may occur.<br>
+You should avoid using it for **any** game development before v0.1.0 is released. [Contributions](#how-can-i-contribute) are welcome!
 
 ## Why?
-Popular game engines was created many years ago based on synchronous API which does not use all power of modern CPU's. When we creating own next generation procedural game prototype in 2021 with existing engine we started having difficulties to optimize internal things in engine which we used. We started looking for a new engine, but they all had the same problems, so we rethought them and made the difficult decision to create our own engine - NoiseEngine.
+Popular game engines were created many years ago and are based on synchronous APIs which do not take full advantage of modern CPUs. While building the prototype of our own next generation procedural game in 2021 using an existing engine, we had difficulties with optimizing internal things in the engine which we used. We started looking for alternatives, but they all had the same problems, so we made the difficult decision to create our own engine - NoiseEngine.
 
-Our golden goal is create most performant engine, which relatively easy to game developers create games which we currently cannot do. Also in AAA scale.
-
-NoiseEngine is not a story of 9th generation of consoles. Is not a story of primitive tool like current engines. Is a story of future with new perspective.
+Our golden goal is to create the most performant engine, one which enables game developers to create games which are hard to do with current generation engines. Also on AAA scale.
 
 ![Voxel terrain](/images/voxel-terrain.webp)
 *Real-time voxel terrain demo, render distance 8192 meters/blocks - [1 Februrary 2023](https://github.com/NoiseStudio/NoiseEngine/releases/tag/v0.1.0-alpha1)*
 
 ## Overview
 ### Documentation
-Currently (before v0.1.0) initial documentation still is writen. It is not published on any website, you can read it from [documentation comments](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments). And manuals currently not exists, and examples you can find in [tests](/docs/project-structure.md). 
+Currently (before v0.1.0) initial documentation is still being writen. It is not published on any website, but you can read it from [documentation comments](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments). You can find usage examples in [tests](/docs/project-structure.md). There is currently no user manual.
 
 ### Project structure
 We have a few repositories which contain parts of the entire project:
-- [Current](https://github.com/NoiseStudio/NoiseEngine) - contains core of the engine, all API which you will be used in your application.
-- [NoiseEngine.Cli](https://github.com/NoiseStudio/NoiseEngine.Cli) - command line interface tools for building and shipping games or apps with NoiseEngine
-- [NoiseEngine.Editor](https://github.com/NoiseStudio/NoiseEngine.Editor) - graphical user interface for simpler game or apps creation
+- [Current](https://github.com/NoiseStudio/NoiseEngine) - contains the core of the engine, all APIs which you will use when building your application.
+- [NoiseEngine.Cli](https://github.com/NoiseStudio/NoiseEngine.Cli) - command line interface tools for building and shipping games and apps with NoiseEngine
+- [NoiseEngine.Editor](https://github.com/NoiseStudio/NoiseEngine.Editor) - graphical user interface that simplifies creating games and apps
 
-You can see more specify structure about this repository [here](/docs/project-structure.md).
+You can see more details about the structure of this repository [here](/docs/project-structure.md).
 
 ### Versioning
-We want to use [sementic versioning](https://semver.org/), and after first version release (v0.1.0) we want offten release patch updates. But we are of the opinion that branch master should always contains stable code for old features, as far as posible.
+We use [sementic versioning](https://semver.org/). After the first version is released (v0.1.0), the plan is to often release patch updates. At the same time we are of the opinion that the `master` branch should always remain backwards compatible with as much code as possible.
 
 ### Technology stack
-NoiseEngine uses .NET 7 and new versions of Rust. For rendering we currently use a Vulkan, but support of other graphics APIs can be added in the future.
+NoiseEngine uses .NET 7 and recent versions of Rust. For rendering we currently use Vulkan. Support for other graphics APIs can be added in the future.
 
 ## Contribution
 ### How can I contribute?
-We welcome contributions! Without this, we are not fulfilling our golden goal.
+We welcome contributions! Without your help, we won't be able to fulfill our golden goal.
 - [Contributing](https://github.com/NoiseStudio/docs/blob/master/Contributing.md) explains what kinds of contributions we welcome.
 - [Building and testing](#building) instructions.
 
-In addition, do not forget to format the Rust code and detect errors and fix them with the compiler and clippy before you post a pull request.
+In addition, do not forget to format your Rust code with `rustfmt` and check it with `clippy` before filing a pull request:
 
 Formatting ([installation guide](https://github.com/rust-lang/rustfmt#on-the-stable-toolchain)):
 ```
@@ -65,9 +63,9 @@ cargo clippy
 ```
 
 ### Building and testing
-To compile this project you need to have [.NET 7.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) and [Rust 1.70 or newest](https://www.rust-lang.org/learn/get-started).
+To compile this project you will need [.NET 7.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0), as well as [the latest version of Rust](https://www.rust-lang.org/learn/get-started).
 
-After when you have this tools you can build project with running command in repository root:
+Once you have these, you can build the project by running the following command in the repository root:
 ```
 dotnet build
 ```
