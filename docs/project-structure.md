@@ -16,4 +16,4 @@ NoiseEngine (core) have few another code projects in their repository:
 - [NoiseEngine.Benchmarks](/NoiseEngine.Benchmarks/) - benchmarks of the engine.
 - [NoiseEngine.Builder](/NoiseEngine.Builder/) - internal core builder (not CLI) which compiles built in resources in the engine.
 - [NoiseEngine.InternalGenerator](/NoiseEngine.InternalGenerator/) - internal C# source generator which is only used in main code project to create engine source code.
-- [NoiseEngine.InternalGenerator](/NoiseEngine.InternalGenerator.Shared/) - internal C# source generator which is only used in this repository to create engine source code.
+- [NoiseEngine.InternalGenerator.Shared](/NoiseEngine.InternalGenerator.Shared/) - internal C# source generator which is only used in this repository to create engine source code.
