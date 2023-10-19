@@ -49,6 +49,7 @@ internal struct ResultError : IDisposable {
             ResultErrorKind.InvalidOperation => new InvalidOperationException(Message, innerException),
             ResultErrorKind.Overflow => new OverflowException(Message, innerException),
             ResultErrorKind.Argument => new ArgumentException(Message, innerException),
+            ResultErrorKind.PlatformNotSupported => new PlatformNotSupportedException(Message, innerException),
 
             ResultErrorKind.GraphicsUniversal => new GraphicsException(Message, innerException),
             ResultErrorKind.GraphicsInstanceCreate => new GraphicsInstanceCreateException(Message, innerException),
