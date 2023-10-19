@@ -72,11 +72,8 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
         if (!WindowInterop.Create(Id, title, width, height, new WindowSettingsRaw(settings)).TryGetValue(
             out InteropHandle<Window> handle, out ResultError error
-        ))
-        {
-            Exception exception = error.ToException();
-            error.Dispose();
-            throw new PlatformNotSupportedException(exception.Message);
+        )) {
+            error.ThrowAndDispose();
         }
 
         Handle = handle;
