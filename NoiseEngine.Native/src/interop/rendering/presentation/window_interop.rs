@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cgmath::Vector2;
 
 use crate::{
-    errors::invalid_operation::InvalidOperationError,
+    errors::platform_not_supported::PlatformNotSupportedError,
     interop::prelude::{InteropOption, InteropResult, InteropString},
     rendering::presentation::{input::InputData, window::Window, window_settings::WindowSettings},
 };
@@ -31,7 +31,7 @@ extern "C" fn rendering_presentation_window_interop_create(
 
     #[allow(unreachable_code)]
     InteropResult::with_err(
-        InvalidOperationError::with_str("Window is not supported on this device.").into(),
+        PlatformNotSupportedError::with_str("Window is not supported on this device.").into(),
     )
 }
 
