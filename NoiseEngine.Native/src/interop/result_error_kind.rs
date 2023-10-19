@@ -8,6 +8,7 @@ pub enum ResultErrorKind {
     InvalidOperation = 3,
     Overflow = 4,
     Argument = 5,
+    PlatformNotSupported = 6,
 
     GraphicsUniversal = 1000,
     GraphicsInstanceCreate = 1001,
