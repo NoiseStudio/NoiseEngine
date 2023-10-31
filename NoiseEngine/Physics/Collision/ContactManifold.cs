@@ -45,7 +45,7 @@ internal struct ContactManifold {
         /*for (int i = 0; i < Count; i++) {
             ContactPoint current = this[i];
             if (current.Position.DistanceSquared(point.Position) < 0.1f) {
-                this[i] = point;
+                this[i] = point with { PreviousNormalImpulse = current.PreviousNormalImpulse, Bias = current.Bias, Restitution = current.Restitution };
                 return;
             }
         }*/

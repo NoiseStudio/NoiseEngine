@@ -38,7 +38,7 @@ public class PhysicsTest : ApplicationTestEnvironment {
 
         scene.Spawn(
             new TransformComponent(
-                new pos3(0.5f, -5f, 0), Quaternion<float>.Identity, new float3(1, 1, 1)
+                new pos3(0.5f, -105f, 0), Quaternion<float>.Identity, new float3(1, 1, 1) * 200
             ),
             new MeshRendererComponent(scene.Primitive.CubeMesh, scene.Primitive.DefaultMaterial),
             new ColliderComponent(collider)

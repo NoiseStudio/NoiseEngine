@@ -45,12 +45,12 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
             } while (iteratorCopy.MoveNext());
 
             int d = 0;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 16; i++) {
                 ContactPointsBufferIterator iterator = iterator2;
                 do {
                     //if (iterator.Current.Manifold.Count < 4)
                     //    continue;
-                    float a = iterator.Current.Manifold.Count < 4 ? 0.01f : 1f;
+                    float a = iterator.Current.Manifold.Count < 4 ? 0.1f : 1f;
                     //float a = 1;  
 
                     bool notBlocked = yNotBlocked || iterator.CurrentPoint.Normal.Y >= 0;
@@ -112,9 +112,7 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                     //float denom = d1 + iterator.CurrentPoint.Normal.Dot(d4);
 
                     float denom = d1;
-                    var rn1 = iterator.CurrentPoint.Normal.Dot(ra);
-                    var rn2 = iterator.CurrentPoint.Normal.Dot(rb);
-                    denom += 6 * (ra.Dot(ra) - rn1 * rn1);
+                    denom += raCrossN.Dot(inverseInertia * raCrossN);
                     denom += 0;
 
                     //j /= denom;// * iterator.Current.Manifold.Count;
@@ -125,11 +123,15 @@ internal sealed partial class CollisionResolveSystem : EntitySystem {
                     //j *= a;
 
                     if (i == 0) {
+                        //iterator.CurrentPoint.Restitution = rvDot < -1 ? -rvDot * 0.5f : 0f;
                         //iterator.CurrentPoint.Bias = -0.2f / smoothingMultipler * Math.Max(0, iterator.CurrentPoint.Depth - 0.1f) + 0.5f * j;
-                        iterator.CurrentPoint.Restitution = rvDot < -1 ? rvDot * 0.5f : 0f;
                         //iterator.CurrentPoint.Bias = Math.Min(0, iterator.CurrentPoint.Depth + 0.004f) * 0.1f / smoothingMultipler;
                         
                         iterator.CurrentPoint.Bias = -0.2f * smoothingMultipler * Math.Min(0, -iterator.CurrentPoint.Depth + 0.01f);
+                        
+                        if (rvDot < -1)
+                            iterator.CurrentPoint.Bias += -0.0f * rvDot;
+                        
                         continue;
                     }
                     
