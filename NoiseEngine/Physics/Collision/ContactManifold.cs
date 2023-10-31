@@ -44,7 +44,7 @@ internal struct ContactManifold {
     public void AddContactPoint(ContactPoint point) {
         /*for (int i = 0; i < Count; i++) {
             ContactPoint current = this[i];
-            if (current.Position.DistanceSquared(point.Position) < 0.01f) {
+            if (current.Position.DistanceSquared(point.Position) < 0.1f) {
                 this[i] = point;
                 return;
             }
