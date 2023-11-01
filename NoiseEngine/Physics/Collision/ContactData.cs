@@ -1,10 +1,11 @@
-﻿using System.Runtime.CompilerServices;
+﻿using NoiseEngine.Mathematics;
+using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics.Collision;
 
 internal record struct ContactData(
-    float3 OtherVelocity, float3 OtherAngularVelocity, pos3 OtherPosition, float OtherInverseMass,
-    float MinRestitutionPlusOneNegative
+    float3 OtherVelocity, float3 OtherAngularVelocity, Quaternion<float> OtherRotation, pos3 OtherPosition, float OtherInverseMass,
+    float MinRestitutionPlusOneNegative, Matrix3x3<float> OtherInverseInertiaTensorMatrix
 ) {
 
     public ContactManifold Manifold;
@@ -26,8 +27,10 @@ internal record struct ContactData(
         OtherVelocity = other.LinearVelocity;
         OtherAngularVelocity = other.AngularVelocity;
         OtherPosition = other.Position;
+        OtherRotation = other.Rotation;
         OtherInverseMass = other.InverseMass;
         MinRestitutionPlusOneNegative = minRestitutionPlusOneNegative;
+        OtherInverseInertiaTensorMatrix = other.InverseInertiaTensorMatrix;
     }
 
 }

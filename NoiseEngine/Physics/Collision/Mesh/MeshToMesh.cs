@@ -63,9 +63,6 @@ internal static class MeshToMesh {
 
                         depth *= 0.5f;
 
-                        //SpawnDebug(world, pointA, normalA);
-                        //SpawnDebug(world, pointB, normalB);
-
                         // A.
                         Matrix3x3<float> rotation = Matrix3x3<float>.Rotate(otherTransform.Rotation);
                         Matrix3x3<float> inverseInertia =

@@ -6,9 +6,9 @@ namespace NoiseEngine.Physics;
 
 internal record struct ContactPoint(pos3 Position, float3 Normal, float Depth, float3 ResolveImpulseB) {
 
-    public float PreviousNormalImpulse;
-    public float Restitution;
+    public float MassNormal;
     public float Bias;
+    public float PreviousNormalImpulse;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ComputeResolveImpulse(in ColliderTransform current, Quaternion<float> a, pos3 b) {
@@ -16,8 +16,10 @@ internal record struct ContactPoint(pos3 Position, float3 Normal, float Depth, f
         Matrix3x3<float> inverseInertia =
             rotation * current.InverseInertiaTensorMatrix * rotation.Transpose();
 
-        var pos = (a.ToPos() * Position) + b;
+        pos3 pos = (a.ToPos() * Position) + b;
         float3 rb = (pos - current.WorldCenterOfMass).ToFloat();
+        float3 rbCrossN = rb.Cross(Normal);
+
         ResolveImpulseB = (inverseInertia * rb.Cross(Normal)).Cross(rb);
     }
 
