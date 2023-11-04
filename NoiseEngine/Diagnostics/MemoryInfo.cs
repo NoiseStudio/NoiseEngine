@@ -48,10 +48,10 @@ public static class MemoryInfo {
     }
 
     private static nuint GetAvailablePhysicalMemory() {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+        if (OperatingSystem.IsWindows()) {
             PerformanceInformation information = GetWindowsPerformanceInfo();
             return information.PhysicalAvailable * information.PageSize;
-        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+        } else if (OperatingSystem.IsLinux()) {
             return GetLinuxMemoryInfo("MemFree");
         }
 
