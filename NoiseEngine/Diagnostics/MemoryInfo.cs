@@ -17,10 +17,10 @@ public static class MemoryInfo {
         (float)(AvailablePhysicalMemory / (decimal)TotalPhysicalMemory);
 
     static MemoryInfo() {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+        if (OperatingSystem.IsWindows()) {
             PerformanceInformation information = GetWindowsPerformanceInfo();
             TotalPhysicalMemory = information.PhysicalTotal * information.PageSize;
-        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+        } else if (OperatingSystem.IsLinux()) {
             TotalPhysicalMemory = GetLinuxMemoryInfo("MemTotal");
         } else {
             throw new NotImplementedException();
