@@ -5,8 +5,7 @@ namespace NoiseEngine.Common;
 /// <summary>
 /// Collection of utility helpers memory management.
 /// </summary>
-internal static class MemoryHelper
-{
+internal static class MemoryHelper {
     
     /// <summary>
     /// Returns the alignment requirement (in bytes) of an unmanaged type.
@@ -26,4 +25,5 @@ internal static class MemoryHelper
     public static bool IsDangling<T>(nuint address) where T : unmanaged {
         return address == AlignmentOf<T>();    
     }
+    
 }
