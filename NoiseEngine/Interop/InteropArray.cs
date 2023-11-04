@@ -131,7 +131,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// Disposes this object.
     /// </summary>
     public unsafe void Dispose() {
-        if (pointer == null || Length <= 0 && MemoryHelper.IsDangling<T>((nuint)pointer))
+        if (pointer == null || (Length == 0 && MemoryHelper.IsDangling<T>((nuint)pointer)))
             return;
 
         NativeMemory.AlignedFree(pointer);
