@@ -2,9 +2,11 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NoiseEngine.Physics.Collision;
 
+[StructLayout(LayoutKind.Auto)]
 internal struct ContactManifold {
 
     public const byte MaxContactPoints = 4;

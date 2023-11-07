@@ -26,7 +26,7 @@ internal static class MeshToMesh {
 
         for (int i = 0; i < valueA.HullIds.Length; i++) {
             ref readonly ConvexHullId hullA = ref valueA.HullIds[i];
-            float3 sphereCenterA = hullA.SphereCenter * currentScaleMax + offsetA.Translation;
+            float3 sphereCenterA = (hullA.SphereCenter * currentScaleMax) + offsetA.Translation;
             float sphereRadiusA = hullA.SphereRadius * currentScaleMax;
 
             for (int j = 0; j < valueB.HullIds.Length; j++) {
@@ -55,7 +55,7 @@ internal static class MeshToMesh {
 
                     int convexHullId = i << 16 | j;
                     ref ContactData contactDataA = ref buffer.GetData(currentEntity, otherEntity, convexHullId);
-                    float restitutionPlusOneNegative = 
+                    float restitutionPlusOneNegative =
                         MathF.Max(currentRestitutionPlusOneNegative, otherRestitutionPlusOneNegative);
 
                     if (otherTransform.IsMovable) {
@@ -109,13 +109,6 @@ internal static class MeshToMesh {
                 }
             }
         }
-    }
-
-    private static void SpawnDebug(EntityWorld world, pos3 point, float3 normal) {
-        Quaternion<float> rotation = Quaternion.LookRotation(normal).Normalize();
-        ((ApplicationScene)world).Primitive.CreateCube(
-            point + (rotation * new float3(0, 5, 0)).ToPos(), rotation, new float3(0.01f, 5f, 0.01f)
-        );
     }
 
 }
