@@ -1,19 +1,21 @@
-﻿using System.Runtime.InteropServices;
-
-namespace NoiseEngine.Common;
+﻿namespace NoiseEngine.Interop;
 
 /// <summary>
 /// Collection of utility helpers memory management.
 /// </summary>
-internal static class MemoryHelper {
-    
+internal static class InteropMemoryHelper {
+
     /// <summary>
     /// Returns the alignment requirement (in bytes) of an unmanaged type.
     /// </summary>
     /// <typeparam name="T">The unmanaged type for which to determine the alignment.</typeparam>
     /// <returns>The alignment requirement (in bytes) of the specified unmanaged type.</returns>
     public static nuint AlignmentOf<T>() where T : unmanaged {
-        return (nuint)Marshal.SizeOf<T>();
+        MemoryAlignmentHelper<T> i = default;
+        unsafe {
+            byte* a = (byte*)&i;
+            return (nuint)((byte*)&i.Value - a);
+        }
     }
 
     /// <summary>
@@ -23,7 +25,7 @@ internal static class MemoryHelper {
     /// <param name="address">The memory address to check.</param>
     /// <returns>True if the memory address is equal to the alignment requirement of the specified unmanaged type; otherwise, false.</returns>
     public static bool IsDangling<T>(nuint address) where T : unmanaged {
-        return address == AlignmentOf<T>();    
+        return address == AlignmentOf<T>();
     }
-    
+
 }
