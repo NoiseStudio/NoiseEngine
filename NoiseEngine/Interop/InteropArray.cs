@@ -61,8 +61,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// </summary>
     /// <param name="length">Length of the array.</param>
     public unsafe InteropArray(int length) {
-        nuint size = (nuint)Marshal.SizeOf<T>();
-        pointer = (T*)NativeMemory.AlignedAlloc(size * (nuint)length, size);
+        pointer = (T*)NativeMemory.AlignedAlloc(MemoryHelper.AlignmentOf<T>() * (nuint)length, MemoryHelper.AlignmentOf<T>());
         Length = length;
     }
 
