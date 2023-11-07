@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using NoiseEngine.Common;
 
 namespace NoiseEngine.Interop;
 
@@ -131,7 +130,7 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// Disposes this object.
     /// </summary>
     public unsafe void Dispose() {
-        if (pointer == null || (Length == 0 && MemoryHelper.IsDangling<T>((nuint)pointer)))
+        if (pointer == null || (Length == 0 && InteropMemoryHelper.IsDangling<T>((nuint)pointer)))
             return;
 
         NativeMemory.AlignedFree(pointer);

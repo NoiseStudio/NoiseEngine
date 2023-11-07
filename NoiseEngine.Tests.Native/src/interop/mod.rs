@@ -1,6 +1,7 @@
 mod result_error_test;
 
 mod interop_array_test;
+mod interop_memory_helper_test;
 mod interop_option_test;
 mod interop_read_only_span_test;
 mod interop_result_test;
