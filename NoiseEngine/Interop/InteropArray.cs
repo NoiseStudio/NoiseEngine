@@ -60,8 +60,10 @@ public struct InteropArray<T> : IDisposable, IReadOnlyList<T> where T : unmanage
     /// Creates a new <see cref="InteropArray{T}"/> with the specified <paramref name="length"/>.
     /// </summary>
     /// <param name="length">Length of the array.</param>
-    public unsafe InteropArray(int length) {
-        pointer = (T*)NativeMemory.AlignedAlloc(MemoryHelper.AlignmentOf<T>() * (nuint)length, MemoryHelper.AlignmentOf<T>());
+    public unsafe InteropArray(int length)
+    {
+        var size = MemoryHelper.AlignmentOf<T>();
+        pointer = (T*)NativeMemory.AlignedAlloc(size * (nuint)length, size);
         Length = length;
     }
 
