@@ -39,6 +39,7 @@ public partial class InteropArrayTest {
     }
 
     [Theory]
+    [InlineData(0)]
     [InlineData(42)]
     public void UnmanagedCreateFromVec(int length) {
         using InteropArray<int> array = InteropUnmanagedCreateFromVec(length);
