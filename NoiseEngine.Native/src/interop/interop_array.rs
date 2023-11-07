@@ -1,4 +1,4 @@
-use std::{mem, slice, ptr::NonNull};
+use std::{mem, ptr::NonNull, slice};
 
 use super::interop_allocator;
 
@@ -39,7 +39,10 @@ impl<T> InteropArray<T> {
 
 impl<T> Drop for InteropArray<T> {
     fn drop(&mut self) {
-        if self.ptr.is_null() || (self.length == 0 && unsafe { NonNull::new_unchecked(self.ptr) } == NonNull::dangling()) {
+        if self.ptr.is_null()
+            || (self.length == 0
+                && unsafe { NonNull::new_unchecked(self.ptr) } == NonNull::dangling())
+        {
             return;
         }
 
