@@ -67,3 +67,9 @@ extern "C" fn interop_interop_array_test_unmanaged_as_mut_slice(
 ) -> InteropArray<i32> {
     Vec::from(array.as_mut_slice()).into()
 }
+
+#[no_mangle]
+extern "C" fn interop_interop_array_test_unmanaged_destroy_unmanaged_zero_capacity() {
+    // Create and drop.
+    let _array: InteropArray<i32> = Vec::<i32>::with_capacity(0).into();
+}
