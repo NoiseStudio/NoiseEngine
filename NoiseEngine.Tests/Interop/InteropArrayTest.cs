@@ -30,6 +30,9 @@ public partial class InteropArrayTest {
     [InteropImport("interop_interop_array_test_unmanaged_as_mut_slice", InteropConstants.DllName)]
     private static partial InteropArray<int> InteropUnmanagedAsMutSlice(InteropArray<int> array);
 
+    [InteropImport("interop_interop_array_test_unmanaged_destroy_unmanaged_zero_capacity", InteropConstants.DllName)]
+    private static partial void InteropUnmanagedDestroyUnmanagedZeroCapacity();
+
     [Theory]
     [InlineData(42)]
     public void UnmanagedCreate(int length) {
@@ -39,6 +42,7 @@ public partial class InteropArrayTest {
     }
 
     [Theory]
+    [InlineData(0)]
     [InlineData(42)]
     public void UnmanagedCreateFromVec(int length) {
         using InteropArray<int> array = InteropUnmanagedCreateFromVec(length);
@@ -117,6 +121,11 @@ public partial class InteropArrayTest {
         Span<int> span = array.AsSpan(start, length);
 
         Assert.Equal(data.AsSpan(start, length).ToArray(), span.ToArray());
+    }
+
+    [Fact]
+    public void UnmanagedDestroyUnmanagedZeroCapacity() {
+        InteropUnmanagedDestroyUnmanagedZeroCapacity();
     }
 
 }
