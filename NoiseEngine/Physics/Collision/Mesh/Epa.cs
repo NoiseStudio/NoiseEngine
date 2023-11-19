@@ -72,7 +72,7 @@ internal static class Epa {
                 //face = ref polytopeFaces[bestFace];
                 //polytope.CheckTopology();
                 buffer.Faces.RemoveLastWithoutClear(buffer.Faces.Count);
-                return ComputeResult(polytope, face);
+                return ComputeResult(pos12, polytope, face);
             }
 
             polytope.Add(supportPoint);
@@ -82,7 +82,7 @@ internal static class Epa {
         //return new EpaResult(ComputeResult(polytope, faceResult), faceResult.Normal, faceResult.Distance);
     }
 
-    private static EpaResult ComputeResult(in Polytope3D polytope, in PolytopeFace face) {
+    private static EpaResult ComputeResult(in Isometry3<float> pos12, in Polytope3D polytope, in PolytopeFace face) {
         Span<SupportPoint> vertices = polytope.Vertices;
         float3 v = (face.Normal * face.Distance).CartesianToBarycentric(
             vertices[face.VertexId.X].Value, vertices[face.VertexId.Y].Value, vertices[face.VertexId.Z].Value
@@ -117,7 +117,7 @@ internal static class Epa {
             vertices[face.VertexId.Y].OriginB * v.Y +
             vertices[face.VertexId.Z].OriginB * v.Z;
 
-        return new EpaResult(pointA, pointB, face.Normal, pointA.Distance(pointB));
+        return new EpaResult(pointA, pos12.InverseMultiplication(pointB), face.Normal, pointA.Distance(pointB));
     }
 
 }

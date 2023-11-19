@@ -5,7 +5,7 @@ namespace NoiseEngine.Tests.Mathematics;
 public class Isometry3Test {
 
     [Fact]
-    public void ConjugateMultiplication() {
+    public void InverseMultiplication() {
         Isometry3<float> a = new Isometry3<float>(
             new float3(53.1f, 14.6f, -74.1f),
             Quaternion.EulerRadians(14.0f, -42.6f, 256.0f)
@@ -15,7 +15,7 @@ public class Isometry3Test {
             Quaternion.EulerRadians(-67.0f, 684.23f, 83.23f)
         );
 
-        Isometry3<float> result = a.ConjugateMultiplication(b);
+        Isometry3<float> result = a.InverseMultiplication(b);
         Assert.Equal(new Isometry3<float>(
             new float3(119.452446f, -350.22327f, 4.4804454f),
             new Quaternion<float>(0.34461325f, -0.91064215f, 0.19555788f, -0.11720917f)

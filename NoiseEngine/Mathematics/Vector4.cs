@@ -67,6 +67,33 @@ public readonly record struct Vector4<T>(T X, T Y, T Z, T W) where T : INumber<T
     }
 
     /// <summary>
+    /// Returns greatest component index of this <see cref="Vector4{T}"/>.
+    /// </summary>
+    /// <returns>
+    /// Zero if <see cref="X"/> is greater than <see cref="Y"/>, <see cref="Z"/> and <see cref="W"/>;
+    /// otherwise one if <see cref="Y"/> is greater than <see cref="Z"/> and <see cref="W"/>;
+    /// otherwise two if <see cref="Z"/> is greater than <see cref="W"/>;
+    /// otherwise three.
+    /// </returns>
+    public int MaxComponentIndex() {
+        int index = 0;
+        T max = X;
+
+        if (Y > max) {
+            index = 1;
+            max = Y;
+        }
+        if (Z > max) {
+            index = 2;
+            max = Z;
+        }
+        if (W > max)
+            index = 3;
+
+        return index;
+    }
+
+    /// <summary>
     /// Calculates dot product of this <see cref="Vector4{T}"/> and <paramref name="rhs"/>.
     /// </summary>
     /// <param name="rhs">Second <see cref="Vector4{T}"/>.</param>

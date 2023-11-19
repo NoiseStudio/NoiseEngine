@@ -4,11 +4,14 @@ using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics;
 
-internal record struct ContactPoint(pos3 Position, float3 Normal, float Depth, float3 ResolveImpulseB) {
+internal record struct ContactPoint(pos3 Position, float3 PositionB, float3 Normal, float Depth, float3 ResolveImpulseB, pos3 Center) {
 
+    public float StartDepth;
     public float MassNormal;
     public float Bias;
     public float PreviousNormalImpulse;
+
+    public bool IsValid => float.Abs(StartDepth - Depth) < 0.25f;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ComputeResolveImpulse(in ColliderTransform current, Quaternion<float> a, pos3 b) {

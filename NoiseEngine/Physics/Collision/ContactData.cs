@@ -15,7 +15,7 @@ internal record struct ContactData(
         in ColliderTransform current, in ColliderTransform other, float restitutionPlusOneNegative, pos3 position,
         float3 normal, float depth
     ) {
-        Manifold.AddContactPoint(new ContactPoint(position, normal, depth, default));
+        Manifold.AddContactPoint(new ContactPoint(position, default, normal, depth, default, default));
         Manifold.ComputeResolveImpulse(in other, current.Rotation, current.Position);
         Update(in other, restitutionPlusOneNegative);
     }

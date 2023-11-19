@@ -9,14 +9,14 @@ internal static class MeshToMesh {
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void Collide(
-        EntityWorld world, SystemCommands commands, ContactPointsBuffer buffer, in MeshCollider current,
+        EntityWorld world, SystemCommands commands, ContactPointsBuffer buffer, ContactDataBuffer dataBuffer, in MeshCollider current,
         float currentRestitutionPlusOneNegative, in ColliderTransform currentTransform, Entity currentEntity,
         MeshCollider other, float otherRestitutionPlusOneNegative, in ColliderTransform otherTransform,
         Entity otherEntity, Polytope3DBuffer polytopeBuffer
     ) {
         Isometry3<pos> posA = new Isometry3<pos>(currentTransform.Position, currentTransform.Rotation.ToPos());
         Isometry3<pos> posB = new Isometry3<pos>(otherTransform.Position, otherTransform.Rotation.ToPos());
-        Isometry3<float> offsetA = posA.ConjugateMultiplication(posB).ToFloat();
+        Isometry3<float> offsetA = posA.InverseMultiplication(posB).ToFloat();
 
         float currentScaleMax = currentTransform.Scale.MaxComponent();
         float otherScaleMax = otherTransform.Scale.MaxComponent();
@@ -48,6 +48,7 @@ internal static class MeshToMesh {
                     );
 
                     pos3 pointA = epa.PositionA.ToPos();
+                    //pos3 pointA = posA * epa.PositionA.ToPos();
                     float3 normalA = currentTransform.Rotation * epa.Normal;
 
                     float depth = epa.Depth;
@@ -93,6 +94,18 @@ internal static class MeshToMesh {
                     contactDataA.AddContactPoint(
                         currentTransform, otherTransform, restitutionPlusOneNegative, pointA, normalA, depth
                     );
+
+                    // maybe valid
+                    //pos3 pointC = (offsetA.Inverse().ToPos() * epa.PositionB.ToPos()).ToPos();
+
+                    pos3 pointC = (offsetA.Rotation.Inverse() * (epa.PositionB - offsetA.Translation)).ToPos();
+
+                    var distance = (posA * pointA).Distance(posB * pointC);
+                    dataBuffer.AddContactPoint(currentEntity, otherEntity, convexHullId, new ContactPoint(
+                        pointA, epa.PositionB, normalA, depth, jB, currentTransform.Position
+                    ) {
+                        StartDepth = depth
+                    });
 
                     /*buffer.Add(currentEntity, new ContactPoint(
                         pointA,

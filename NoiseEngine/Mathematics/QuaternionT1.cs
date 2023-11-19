@@ -14,6 +14,15 @@ public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumbe
     public static Quaternion<T> Identity => new Quaternion<T>(T.Zero, T.Zero, T.Zero, T.One);
 
     /// <summary>
+    /// Calculates squared length of this <see cref="Vector2{T}"/>.
+    /// </summary>
+    /// <returns>Squared length of this <see cref="Vector2{T}"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T MagnitudeSquared() {
+        return X * X + Y * Y + Z * Z + W * W;
+    }
+
+    /// <summary>
     /// Calculates dot product of this <see cref="Quaternion{T}"/> and <paramref name="rhs"/>.
     /// </summary>
     /// <param name="rhs">Second <see cref="Quaternion{T}"/>.</param>
@@ -30,6 +39,16 @@ public readonly record struct Quaternion<T>(T X, T Y, T Z, T W) where T : INumbe
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Quaternion<T> Conjugate() {
         return new Quaternion<T>(-X, -Y, -Z, W);
+    }
+
+    /// <summary>
+    /// Calculates inverse of this <see cref="Quaternion{T}"/>.
+    /// </summary>
+    /// <returns>Inverse of this <see cref="Quaternion{T}"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Quaternion<T> Inverse() {
+        T inverse = T.One / MagnitudeSquared();
+        return Conjugate() * inverse;
     }
 
     /// <summary>

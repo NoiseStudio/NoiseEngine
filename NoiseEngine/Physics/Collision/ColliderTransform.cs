@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace NoiseEngine.Physics.Collision;
 
-internal readonly record struct ColliderTransform(
+internal record struct ColliderTransform(
     pos3 Position,
     Quaternion<float> Rotation,
     pos3 WorldCenterOfMass,
@@ -18,6 +18,11 @@ internal readonly record struct ColliderTransform(
     public bool IsMovable {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => InverseMass != 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public pos3 LocalToWorldPosition(float3 localPosition) {
+        return (Rotation * localPosition).ToPos() + Position;
     }
 
 }

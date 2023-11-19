@@ -13,10 +13,14 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
 
     private readonly CollisionSpace space;
     private readonly ContactPointsBuffer buffer;
+    private readonly ContactDataBuffer contactDataBuffer;
 
-    public CollisionDetectionSystem(CollisionSpace space, ContactPointsBuffer buffer) {
+    public CollisionDetectionSystem(
+        CollisionSpace space, ContactPointsBuffer buffer, ContactDataBuffer contactDataBuffer
+    ) {
         this.space = space;
         this.buffer = buffer;
+        this.contactDataBuffer = contactDataBuffer;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -63,7 +67,7 @@ internal sealed partial class CollisionDetectionSystem : EntitySystem<CollisionD
                 switch (other.Collider.Type) {
                     case ColliderType.Mesh:
                         MeshToMesh.Collide(
-                            World, commands, buffer, current, currentRestitutionPlusOneNegative, currentTransform, entity,
+                            World, commands, buffer, contactDataBuffer, current, currentRestitutionPlusOneNegative, currentTransform, entity,
                             other.Collider.UnsafeCastToMeshCollider(), other.Collider.RestitutionPlusOneNegative,
                             other.Transform, other.Entity, storage.PolytopeBuffer
                         );

@@ -87,7 +87,7 @@ internal sealed partial class SimulationSystem : EntitySystem {
 
         // Register.
         space.RegisterCollider(new ColliderData(entity, new ColliderTransform(
-            data.TargetPosition, data.TargetRotation, data.TargetPosition + rigidBody.CenterOfMass.ToPos(),
+            middle.Position, data.TargetRotation, data.TargetPosition + rigidBody.CenterOfMass.ToPos(),
             transform.Scale, rigidBody.LinearVelocity, rigidBody.AngularVelocity, rigidBody.InverseInertiaTensorMatrix,
             rigidBody.InverseMass, true
         ), collider));

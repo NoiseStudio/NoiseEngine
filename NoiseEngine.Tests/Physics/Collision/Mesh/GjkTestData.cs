@@ -27,14 +27,14 @@ internal readonly record struct GjkTestData(
     public static GjkTestData GetData(int index) {
         return index switch {
             1 => new GjkTestData(
-                new Isometry3<float>(new float3(-2, 0, 0)).ConjugateMultiplication(new Isometry3<float>(float3.Zero)),
+                new Isometry3<float>(new float3(-2, 0, 0)).InverseMultiplication(new Isometry3<float>(float3.Zero)),
                 cubeHullId, float3.One, cubeHullId, float3.One, cubeVertices,
                 cubeVertices, false, default,
                 // EPA
                 default, default, default
             ),
             2 => new GjkTestData(
-                new Isometry3<float>(new float3(-.5f, -.5f, -.5f)).ConjugateMultiplication(
+                new Isometry3<float>(new float3(-.5f, -.5f, -.5f)).InverseMultiplication(
                     new Isometry3<float>(float3.Zero)
                 ),
                 cubeHullId, float3.One, cubeHullId, float3.One, cubeVertices,
@@ -47,7 +47,7 @@ internal readonly record struct GjkTestData(
                 new float3(0.25f, 0.5f, 0.25f), new float3(0, 1, 0), 0.5f
             ),
             3 => new GjkTestData(
-                new Isometry3<float>(new float3(0f, .5f, 0f)).ConjugateMultiplication(
+                new Isometry3<float>(new float3(0f, .5f, 0f)).InverseMultiplication(
                     new Isometry3<float>(float3.Zero)
                 ),
                 cubeHullId, float3.One, cubeHullId, float3.One, cubeVertices,

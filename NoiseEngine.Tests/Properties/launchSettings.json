@@ -2,7 +2,7 @@
   "profiles": {
     "NoiseEngine.Tests": {
       "commandName": "Project",
-      "nativeDebugging": true
+      "nativeDebugging": false
     }
   }
 }

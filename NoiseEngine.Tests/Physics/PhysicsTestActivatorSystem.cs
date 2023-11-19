@@ -36,24 +36,26 @@ internal partial class PhysicsTestActivatorSystem : EntitySystem {
         double cycleTime = 20;
         CollisionSpace space = new CollisionSpace();
         ContactPointsBuffer contactPoints = new ContactPointsBuffer();
+        ContactDataBuffer contactDataBuffer = new ContactDataBuffer();
 
         SimulationSystem simulationSystem = new SimulationSystem(space);
-        CollisionDetectionSystem collisionDetectionSystem = new CollisionDetectionSystem(space, contactPoints);
-        CollisionResolveSystem collisionResolveSystem = new CollisionResolveSystem(contactPoints);
+        CollisionDetectionSystem collisionDetectionSystem = new CollisionDetectionSystem(space, contactPoints, contactDataBuffer);
+        SolverSystem solver = new SolverSystem(contactDataBuffer, space);
+        //CollisionResolveSystem collisionResolveSystem = new CollisionResolveSystem(contactPoints);
         ImmovableColliderRegisterSystem immovableColliderRegisterSystem = new ImmovableColliderRegisterSystem(space);
 
-        simulationSystem.AddDependency(collisionResolveSystem);
+        simulationSystem.AddDependency(solver);
         immovableColliderRegisterSystem.AddDependency(collisionDetectionSystem);
 
         collisionDetectionSystem.AddDependency(simulationSystem);
         collisionDetectionSystem.AddDependency(immovableColliderRegisterSystem);
 
-        collisionResolveSystem.AddDependency(collisionDetectionSystem);
+        solver.AddDependency(collisionDetectionSystem);
 
         scene.AddSystem(simulationSystem, cycleTime);
         scene.AddSystem(immovableColliderRegisterSystem, cycleTime);
         scene.AddSystem(collisionDetectionSystem, cycleTime);
-        scene.AddSystem(collisionResolveSystem, cycleTime);
+        scene.AddSystem(solver, cycleTime);
 
         RigidBodyInitializerSystem initalizer = new RigidBodyInitializerSystem();
         scene.AddSystem(initalizer, 500);
