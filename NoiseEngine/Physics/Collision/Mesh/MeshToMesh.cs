@@ -95,12 +95,10 @@ internal static class MeshToMesh {
                         currentTransform, otherTransform, restitutionPlusOneNegative, pointA, normalA, depth
                     );
 
-                    // maybe valid
-                    //pos3 pointC = (offsetA.Inverse().ToPos() * epa.PositionB.ToPos()).ToPos();
+                    pos3 pointC = posB * epa.PositionB.ToPos();
 
-                    pos3 pointC = (offsetA.Rotation.Inverse() * (epa.PositionB - offsetA.Translation)).ToPos();
+                    var distance = (posA * pointA - pointC).ToFloat().Dot(-(otherTransform.Rotation * epa.Normal));
 
-                    var distance = (posA * pointA).Distance(posB * pointC);
                     dataBuffer.AddContactPoint(currentEntity, otherEntity, convexHullId, new ContactPoint(
                         pointA, epa.PositionB, normalA, depth, jB, currentTransform.Position
                     ) {

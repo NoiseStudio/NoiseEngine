@@ -11,7 +11,7 @@ internal record struct ContactPoint(pos3 Position, float3 PositionB, float3 Norm
     public float Bias;
     public float PreviousNormalImpulse;
 
-    public bool IsValid => float.Abs(StartDepth - Depth) < 0.25f;
+    public bool IsValid => Depth < 0.01f;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ComputeResolveImpulse(in ColliderTransform current, Quaternion<float> a, pos3 b) {

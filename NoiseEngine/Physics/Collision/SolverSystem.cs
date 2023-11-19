@@ -71,11 +71,11 @@ internal sealed partial class SolverSystem : EntitySystem {
 
                 pos3 worldPositionOnB = transformB.LocalToWorldPosition(point.PositionB);
                 //point.Depth = (worldPosition - worldPositionOnB).ToFloat().Dot(point.Normal);
-                /*point.Depth = (worldPosition - worldPositionOnB).ToFloat().Magnitude();
+                point.Depth = (worldPosition - worldPositionOnB).ToFloat().Dot(-point.Normal);
                 if (!point.IsValid) {
                     manifold.RemoveContactPoint(i);
                     continue;
-                }*/
+                }
 
                 //pos3 worldPosition = localPosition;
                 SpawnDebug(World, worldPosition, -point.Normal);
@@ -91,7 +91,7 @@ internal sealed partial class SolverSystem : EntitySystem {
                 denom += rbCrossN.Dot(LocalInertiaToWorld(transformB.Rotation, transformB.InverseInertiaTensorMatrix) * rbCrossN);
                 point.MassNormal = 1 / denom;
 
-                point.Bias = -BiasFactor * invertedCycleTime * Math.Min(0, -point.Depth + AllowedPenetration);
+                point.Bias = -BiasFactor * invertedCycleTime * Math.Min(0, point.Depth + AllowedPenetration);
             }
 
             contactDataBuffer.UpdateContactPoint(bodyA, bodyB, convexHullId, manifold);
