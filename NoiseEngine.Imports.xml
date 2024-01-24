@@ -1,0 +1,36 @@
+<Project>
+
+    <Import Project="$(MSBuildThisFileDirectory)/NoiseEngine.Shared.xml" />
+
+    <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)/NoiseEngine/NoiseEngine.csproj" />
+        <ProjectReference
+            Include="$(MSBuildThisFileDirectory)/NoiseEngine.Generator/NoiseEngine.Generator.csproj"
+            OutputItemType="Analyzer" ReferenceOutputAssembly="false"
+        />
+    </ItemGroup>
+
+    <Target Name="CompileTestsNative" BeforeTargets="AfterBuild">
+        <PropertyGroup>
+            <NEOutput>$(MSBuildThisFileDirectory)NoiseEngine/$(OutputPath)</NEOutput>
+
+            <!-- Use NoiseEngine's .NET version when currently used .NET is not exists, this can occur when project has
+            another .NET version than NoiseEngine -->
+            <NEOutput
+                Condition="!Exists('$(NoiseEngineFiles)NoiseEngine.dll')"
+            >$(MSBuildThisFileDirectory)NoiseEngine/bin/Debug/$(NETargetFramework)/</NEOutput>
+        </PropertyGroup>
+
+        <Message Text=" MSBuildProjectExtension  = $(NEOutput)$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)" Importance="high" />
+
+        <Copy
+            SourceFiles="$(NEOutput)$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)"
+            DestinationFiles="$(OutputPath)/$(OSLibPrefix)NoiseEngine.Native.$(OSLibExt)"
+        />
+        <Copy
+            SourceFiles="$(NEOutput)System.nesil"
+            DestinationFiles="$(OutputPath)/Resources/Shaders/System.nesil"
+        />
+    </Target>
+
+</Project>

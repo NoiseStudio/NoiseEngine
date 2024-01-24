@@ -1,5 +1,9 @@
 <Project>
 
+    <PropertyGroup>
+        <NETargetFramework>net7.0</NETargetFramework>
+    </PropertyGroup>
+
     <!-- Windows -->
     <PropertyGroup Condition="$(OS) == 'Windows_NT'">
         <OSLibExt>dll</OSLibExt>

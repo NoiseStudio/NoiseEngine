@@ -19,7 +19,10 @@ internal static class Manager {
                 if (weak is not null && weak.TryGetTarget(out assembly))
                     return assembly;
 
-                assembly = NeslAssembly.LoadWithoutDefault(File.ReadAllBytes("Resources/Shaders/System.nesil"));
+                assembly = NeslAssembly.LoadWithoutDefault(File.ReadAllBytes(Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "Resources/Shaders/System.nesil"
+                )));
                 Manager.assembly = new WeakReference<NeslAssembly>(assembly);
                 return assembly;
             }
