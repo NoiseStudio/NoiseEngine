@@ -41,7 +41,7 @@ We have a few repositories which contain parts of the entire project:
 - [NoiseEngine.Cli](https://github.com/NoiseStudio/NoiseEngine.Cli) - command line interface tools for building and shipping games and apps with NoiseEngine
 - [NoiseEngine.Editor](https://github.com/NoiseStudio/NoiseEngine.Editor) - graphical user interface that simplifies creating games and apps
 
-You can see more details about the structure of this repository [here](/docs/project-structure.md).
+You can see more details about the structure of this repository [here](/docs/internal/project-structure.md).
 
 ### Versioning
 We use [sementic versioning](https://semver.org/). After the first version is released (v0.1.0), the plan is to often release patch updates. At the same time we are of the opinion that the `master` branch should always remain backwards compatible with as much code as possible.
