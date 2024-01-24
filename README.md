@@ -31,9 +31,9 @@ Our golden goal is to create the most performant engine, one which enables game 
 > [!IMPORTANT] 
 > Currently (before v0.1.0) initial documentation is still being writen. It is not published on any website.
 
-You can find information in [docs directory](/docs/README.md) which also have manual. Or see [examples directory](/examples/README.md) to see how it looks in code.
+You can find information in [docs directory](/docs/) which also have manual. Or see [examples directory](/examples/) to see how it looks in code.
 
-And do not forget to read about API from [documentation comments](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments). Also you can find another usage examples in [tests](/docs/project-structure.md).
+And do not forget to read about API from [documentation comments](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments). Also you can find another usage examples in [tests](/docs/internal/project-structure.md).
 
 ### Project structure
 We have a few repositories which contain parts of the entire project:

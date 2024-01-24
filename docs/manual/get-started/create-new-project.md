@@ -85,4 +85,4 @@ And now, after running application we should see:
 If you do not see it, probably you are rotated wrong, move your mouse fast and find a cube.
 
 ### Source code
-You can find source code of this and another examples [here](/examples/manual/get-started/create-new-project/README.md).
+You can find source code of this and another examples [here](/examples/manual/get-started/create-new-project/).
