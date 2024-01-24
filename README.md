@@ -14,8 +14,8 @@ Completely free, open-source, cross-platform, and blazingly fast asynchronous en
 
 https://noisestudio.net/
 
-> **Warning**
-NoiseEngine is still in **very early** development. Frequent changes, missing docs, and instabilities may occur.<br>
+> [!WARNING] 
+> NoiseEngine is still in **very early** development. Frequent changes, missing docs, and instabilities may occur.<br>
 You should avoid using it for **any** game development before v0.1.0 is released. [Contributions](#how-can-i-contribute) are welcome!
 
 ## Why?
@@ -28,7 +28,12 @@ Our golden goal is to create the most performant engine, one which enables game 
 
 ## Overview
 ### Documentation
-Currently (before v0.1.0) initial documentation is still being writen. It is not published on any website, but you can read it from [documentation comments](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments). You can find usage examples in [tests](/docs/project-structure.md). There is currently no user manual.
+> [!IMPORTANT] 
+> Currently (before v0.1.0) initial documentation is still being writen. It is not published on any website.
+
+You can find information in [docs directory](/docs/) which also have manual. Or see [examples directory](/examples/) to see how it looks in code.
+
+And do not forget to read about API from [documentation comments](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments). Also you can find another usage examples in [tests](/docs/internal/project-structure.md).
 
 ### Project structure
 We have a few repositories which contain parts of the entire project:
