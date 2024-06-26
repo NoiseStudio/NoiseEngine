@@ -143,7 +143,7 @@ public sealed class PerformanceRenderLoop : RenderLoop {
         AutoResetEvent rendererResetEvent = this.rendererResetEvent ?? throw new NullReferenceException();
         AutoResetEvent executeResetEvent = this.executeResetEvent ?? throw new NullReferenceException();
         ConcurrentStack<RenderFrameResources> frameResources = this.frameResources;
-        object poolEventsLocker = window.PoolEventsLocker;
+        object pollEventsLocker = window.PollEventsLocker;
         ConcurrentList<EntitySystem> frameDependentSystems = camera.Scene.FrameDependentSystems;
 
         MeshRendererSystem meshRendererSystem = new MeshRendererSystem(camera);
@@ -155,8 +155,8 @@ public sealed class PerformanceRenderLoop : RenderLoop {
             TransformComponent transform;
 
             while (renderThreadWork) {
-                lock (poolEventsLocker) {
-                    window.PoolEvents();
+                lock (pollEventsLocker) {
+                    window.PollEvents();
 
                     foreach (EntitySystem system in frameDependentSystems)
                         system.TryExecute();

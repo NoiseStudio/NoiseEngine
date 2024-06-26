@@ -49,7 +49,7 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
 
     internal ulong Id { get; }
     internal InteropHandle<Window> Handle { get; private set; }
-    internal object PoolEventsLocker { get; } = new object();
+    internal object PollEventsLocker { get; } = new object();
 
     private IReferenceCoutable ReferenceCoutable => this;
 
@@ -159,12 +159,12 @@ public class Window : IDisposable, ICameraRenderTarget, IReferenceCoutable {
         }
     }
 
-    internal void PoolEvents() {
+    internal void PollEvents() {
         unsafe {
-            fixed (WindowInputRaw* pointer = &Input.ProcessBeforePoolEvents())
-                WindowInterop.PoolEvents(Handle, new InteropHandle<WindowInputRaw>((IntPtr)pointer));
+            fixed (WindowInputRaw* pointer = &Input.ProcessBeforePollEvents())
+                WindowInterop.PollEvents(Handle, new InteropHandle<WindowInputRaw>((IntPtr)pointer));
         }
-        Input.ProcessAfterPoolEvents();
+        Input.ProcessAfterPollEvents();
     }
 
     internal void RaiseUserClosed() {

@@ -131,12 +131,12 @@ public class WindowInput {
         return GetKeyState(key, out keyModifier) == KeyState.JustPressed;
     }
 
-    internal ref WindowInputRaw ProcessBeforePoolEvents() {
+    internal ref WindowInputRaw ProcessBeforePollEvents() {
         lastCursorPosition = CursorPosition;
         return ref raw;
     }
 
-    internal void ProcessAfterPoolEvents() {
+    internal void ProcessAfterPollEvents() {
         if (CursorLockMode == CursorLockMode.Locked && Window.IsFocused)
             CursorPosition = new Vector2<double>(Window.Width / 2, Window.Height / 2);
         else

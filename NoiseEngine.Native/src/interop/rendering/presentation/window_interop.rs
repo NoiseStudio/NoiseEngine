@@ -49,11 +49,11 @@ extern "C" fn rendering_presentation_window_interop_dispose(
 }
 
 #[no_mangle]
-extern "C" fn rendering_presentation_window_interop_pool_events(
+extern "C" fn rendering_presentation_window_interop_poll_events(
     window: &Arc<dyn Window>,
     input_data: &'static mut InputData,
 ) {
-    window.pool_events(input_data);
+    window.poll_events(input_data);
 }
 
 #[no_mangle]
