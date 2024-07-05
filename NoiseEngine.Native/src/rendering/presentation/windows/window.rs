@@ -457,7 +457,7 @@ impl WindowWindows {
         self.thread_last_signaler.set(signal.clone());
 
         match task {
-            WindowWindowsThreadTask::PoolEvents => self.pool_events_thread(),
+            WindowWindowsThreadTask::PollEvents => self.poll_events_thread(),
             WindowWindowsThreadTask::Hide => self.hide_thread(),
             WindowWindowsThreadTask::IsFocused => self.is_focused_thread(data),
             WindowWindowsThreadTask::Dispose => self.dispose_thread(),
@@ -469,7 +469,7 @@ impl WindowWindows {
         }
     }
 
-    fn pool_events_thread(&self) {
+    fn poll_events_thread(&self) {
         let mut msg = Msg::default();
         loop {
             let result = unsafe { PeekMessageW(&mut msg, self.h_wnd, 0, 0, 1) };
@@ -557,7 +557,7 @@ impl Window for WindowWindows {
         self.data().height
     }
 
-    fn pool_events(&self, input_data: &'static mut InputData) {
+    fn poll_events(&self, input_data: &'static mut InputData) {
         input_data.scroll_delta = Vector2::zero();
 
         for i in 0..input_data.key_values.len() {
@@ -580,7 +580,7 @@ impl Window for WindowWindows {
         }
 
         self.data_mut().input_data = input_data;
-        self.execute_task_wait(WindowWindowsThreadTask::PoolEvents);
+        self.execute_task_wait(WindowWindowsThreadTask::PollEvents);
     }
 
     fn hide(&self) {
@@ -887,7 +887,7 @@ struct WindowWindowsData {
 }
 
 enum WindowWindowsThreadTask {
-    PoolEvents,
+    PollEvents,
     Hide,
     IsFocused,
     Dispose,

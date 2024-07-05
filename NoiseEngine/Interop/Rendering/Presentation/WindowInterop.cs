@@ -17,8 +17,8 @@ internal static partial class WindowInterop {
     [InteropImport("rendering_presentation_window_interop_dispose")]
     public static partial InteropResult<None> Dispose(InteropHandle<Window> handle);
 
-    [InteropImport("rendering_presentation_window_interop_pool_events")]
-    public static partial void PoolEvents(InteropHandle<Window> handle, InteropHandle<WindowInputRaw> windowInputRaw);
+    [InteropImport("rendering_presentation_window_interop_poll_events")]
+    public static partial void PollEvents(InteropHandle<Window> handle, InteropHandle<WindowInputRaw> windowInputRaw);
 
     [InteropImport("rendering_presentation_window_interop_set_position")]
     public static partial InteropResult<None> SetPosition(
